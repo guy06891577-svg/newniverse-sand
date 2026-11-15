@@ -52,15 +52,16 @@
   <button id="gear" aria-label="설정">⚙️</button>
   <div id="hint">← 화면을 옆으로 밀어보세요 →</div>
   <div id="dots"><i class="on"></i><i></i><i></i></div>
-  <div id="dock"></div>
+  <div id="safe" style="position:absolute;visibility:hidden;padding-bottom:env(safe-area-inset-bottom)"></div>
   <div id="toast"></div>
   <div id="sheet">
     <h3>모래 전환 설정 <button id="close">✕</button></h3>
     <div class="sub">값을 바꾸고 화면을 밀어보세요. 마음에 드는 조합을 찾아주세요.</div>
     <div class="row"><label>바람 세기 <span id="vWind"></span></label><input id="sWind" type="range" min="0.3" max="2.5" step="0.05"></div>
     <div class="row"><label>모래알 크기 <span id="vSize"></span></label><input id="sSize" type="range" min="1" max="6" step="0.5"></div>
-    <div class="row"><label>소용돌이(난기류) <span id="vTurb"></span></label><input id="sTurb" type="range" min="0" max="2.5" step="0.05"></div>
-    <div class="row"><label>흩어지는 시간 <span id="vDur"></span></label><input id="sDur" type="range" min="0.6" max="3" step="0.1"></div>
+    <div class="row"><label>바람 줄기(말림) <span id="vTurb"></span></label><input id="sTurb" type="range" min="0" max="2.5" step="0.05"></div>
+    <div class="row"><label>은은한 빛 <span id="vGlow"></span></label><input id="sGlow" type="range" min="0" max="1.5" step="0.05"></div>
+    <div class="row"><label>흩어지는 시간 <span id="vDur"></span></label><input id="sDur" type="range" min="0.6" max="3.5" step="0.1"></div>
     <div class="btns"><button id="reset">기본값</button><button class="p" id="demo">미리보기 ▶</button></div>
     <div id="stats"></div>
   </div>
@@ -75,27 +76,28 @@ const phone=document.getElementById('phone'), bg=document.getElementById('bg'), 
 const $=id=>document.getElementById(id);
 
 // ---------- 설정 ----------
-const DEF={wind:1.0,size:2.0,turb:1.0,dur:1.4};
+const DEF={wind:1.0,size:2.0,turb:1.0,dur:2.0,glow:0.6};
 let S=Object.assign({},DEF);
-try{Object.assign(S,JSON.parse(localStorage.getItem('nv_sand')||'{}'))}catch(e){}
+try{Object.assign(S,JSON.parse(localStorage.getItem('nv_sand2')||'{}'))}catch(e){}
 const weak=(navigator.hardwareConcurrency||4)<=4||(navigator.deviceMemory||4)<=3;
 let CAP=weak?40000:90000;
 
 // ---------- 앱 데이터 ----------
 const A=(n,e,c1,c2,t)=>({n,e,c1,c2,t});
+const F=(n,items)=>({n,folder:true,items});
 const PAGES=[
   {widget:true,apps:[
-    A('카카오톡','💬','#FEE500','#F5C800','#3a1d1d'),A('네이버','N','#03C75A','#02a84b'),A('은행','🏦','#2f6bff','#1946c7'),A('정부24','🏛️','#3a7bd5','#1d4f9a'),
+    A('카카오톡','💬','#FEE500','#F5C800','#3a1d1d'),A('네이버','N','#03C75A','#02a84b'),F('금융',[A('은행','🏦','#2f6bff','#1946c7'),A('페이','💳','#6c5ce7','#4834b8'),A('증권','📈','#ff4d4d','#2f6bff'),A('보험','🛡️','#26a69a','#00796b')]),A('정부24','🏛️','#3a7bd5','#1d4f9a'),
     A('카메라','📷','#4a4a55','#26262e'),A('사진','🖼️','#ff9a62','#ff5e7a'),A('지도','🗺️','#34c3a0','#1a8c74'),A('설정','⚙️','#8e8e99','#5d5d69')]},
   {apps:[
     A('날씨','⛅','#56a8ff','#2f6fe0'),A('캘린더','📅','#ff6b6b','#d93c3c'),A('메모','📝','#ffd45e','#f2a93b'),A('시계','⏰','#2b2b3a','#111118'),
     A('음악','🎵','#ff4fa0','#b4247a'),A('동영상','▶️','#ff3b3b','#b31d1d'),A('웹툰','📖','#00d06c','#00964d'),A('뉴스','📰','#5a6bff','#3341b8'),
-    A('쇼핑','🛍️','#ff7a45','#e04a1a'),A('배달','🛵','#2ac1bc','#169a96'),A('택시','🚕','#ffcf3d','#f0a400','#222'),A('지하철','🚇','#43b649','#2b8a30'),
+    F('쇼핑',[A('쇼핑','🛍️','#ff7a45','#e04a1a'),A('중고거래','🥕','#ff8a3d','#e8641a'),A('선물','🎁','#ff5e7a','#d9345a'),A('장보기','🛒','#43b649','#2b8a30')]),A('배달','🛵','#2ac1bc','#169a96'),A('택시','🚕','#ffcf3d','#f0a400','#222'),A('지하철','🚇','#43b649','#2b8a30'),
     A('페이','💳','#6c5ce7','#4834b8'),A('증권','📈','#ff4d4d','#2f6bff'),A('메일','✉️','#3fa9f5','#1c6fc4'),A('번역','🌐','#4dd0e1','#1f8fa0'),
     A('건강','❤️','#ff6f91','#e03565'),A('게임','🎮','#9b5cff','#6227c9'),A('계산기','🧮','#ff9f0a','#d07a00'),A('파일','📁','#5ac8fa','#2e8fc4')]},
   {card:true,apps:[
     A('병원예약','🏥','#4fc3f7','#1e88c7'),A('학교','🎓','#7e57c2','#4d2c91'),A('국민연금','🪙','#26a69a','#00796b'),A('주민센터','🏢','#78909c','#455a64'),
-    A('녹음','🎙️','#ef5350','#b71c1c'),A('손전등','🔦','#ffca28','#ff8f00','#222'),A('스캐너','📄','#66bb6a','#2e7d32'),A('뉴니버스','🌌','#e6b85c','#7b3fe4')]}
+    A('녹음','🎙️','#ef5350','#b71c1c'),F('도구',[A('손전등','🔦','#ffca28','#ff8f00','#222'),A('스캐너','📄','#66bb6a','#2e7d32'),A('나침반','🧭','#4f7cff','#2a4fd1'),A('자','📏','#ffd45e','#f2a93b')]),A('뉴니버스','🌌','#e6b85c','#7b3fe4')]}
 ];
 const DOCK=[A('전화','📞','#34c759','#1f9d40'),A('메시지','💬','#5ac8fa','#2a86d9'),A('인터넷','🧭','#4f7cff','#2a4fd1'),A('연락처','👤','#ff9f43','#e06a1a')];
 
@@ -121,10 +123,25 @@ function drawIcon(c,a,x,y,s){
   c.save();c.font=`500 ${Math.max(11,s*.2)}px ${FONT}`;c.textAlign='center';c.textBaseline='top';
   c.shadowColor='rgba(0,0,0,.6)';c.shadowBlur=4;c.fillStyle='#fff';c.fillText(a.n,x+s/2,y+s+6);c.restore();
 }
+function drawFolder(c,f,x,y,s){
+  c.save();c.shadowColor='rgba(0,0,0,.3)';c.shadowBlur=s*.15;c.shadowOffsetY=s*.05;
+  rr(c,x,y,s,s,s*.3);c.fillStyle='rgba(255,255,255,.26)';c.fill();c.shadowColor='transparent';
+  c.strokeStyle='rgba(255,255,255,.35)';c.lineWidth=1;c.stroke();
+  const pd=s*.13,g=s*.07,ms=(s-pd*2-g)/2;
+  f.items.slice(0,4).forEach((a,i)=>{const mx=x+pd+(i%2)*(ms+g),my=y+pd+((i/2)|0)*(ms+g);
+    const gr=c.createLinearGradient(mx,my,mx+ms,my+ms);gr.addColorStop(0,a.c1);gr.addColorStop(1,a.c2);
+    rr(c,mx,my,ms,ms,ms*.28);c.fillStyle=gr;c.fill();
+    c.textAlign='center';c.textBaseline='middle';c.font=`${ms*.55}px ${EFONT}`;c.fillStyle='#fff';c.fillText(a.e,mx+ms/2,my+ms*.56)});
+  c.restore();
+  c.save();c.font=`500 ${Math.max(11,s*.2)}px ${FONT}`;c.textAlign='center';c.textBaseline='top';
+  c.shadowColor='rgba(0,0,0,.6)';c.shadowBlur=4;c.fillStyle='#fff';c.fillText(f.n,x+s/2,y+s+6);c.restore();
+}
 function glass(c,x,y,w,h,r){
   c.save();rr(c,x,y,w,h,r);c.fillStyle='rgba(255,255,255,.13)';c.fill();
   c.strokeStyle='rgba(255,255,255,.22)';c.lineWidth=1;c.stroke();c.restore();
 }
+function dockTop(){return H-14-safeB()-88}
+function safeB(){return parseFloat(getComputedStyle($('safe')).paddingBottom)||0}
 function widgetRect(){return {x:18,y:70,w:W-36,h:Math.min(190,H*.23)}}
 function gridTop(pi){
   if(pi===0){const r=widgetRect();return r.y+r.h+80}
@@ -171,8 +188,14 @@ function renderPage(pi){
   const top=gridTop(pi);
   P.apps.forEach((a,i)=>{
     const col=i%cols,row=(i/cols)|0,x=pad+col*cw+(cw-s)/2,y=top+row*rowH;
-    drawIcon(c,a,x,y,s);hitRects[pi].push({x,y,w:s,h:s+24,n:a.n});
+    (a.folder?drawFolder:drawIcon)(c,a,x,y,s);hitRects[pi].push({x,y,w:s,h:s+24,n:a.folder?`${a.n} 폴더 (${a.items.map(i=>i.n).join('·')})`:a.n});
   });
+  const dt=dockTop(),dx=14,dw=W-28,dh=88;
+  c.save();rr(c,dx,dt,dw,dh,30);c.fillStyle='rgba(255,255,255,.14)';c.fill();c.strokeStyle='rgba(255,255,255,.2)';c.lineWidth=1;c.stroke();c.restore();
+  const ds=54;DOCK.forEach((a,i)=>{const cx=dx+dw*(i+.5)/DOCK.length,x=cx-ds/2,y=dt+(dh-ds)/2;
+    c.save();c.shadowColor='rgba(0,0,0,.3)';c.shadowBlur=10;c.shadowOffsetY=4;const g=c.createLinearGradient(x,y,x+ds,y+ds);g.addColorStop(0,a.c1);g.addColorStop(1,a.c2);
+    rr(c,x,y,ds,ds,17);c.fillStyle=g;c.fill();c.shadowColor='transparent';c.textAlign='center';c.textBaseline='middle';c.font=`27px ${EFONT}`;c.fillStyle='#fff';c.fillText(a.e,x+ds/2,y+ds*.55);c.restore();
+    hitRects[pi].push({x,y,w:ds,h:ds,n:a.n});});
   pageCanvases[pi]=cnv;return cnv;
 }
 function drawBg(){
@@ -196,42 +219,51 @@ function prog(vs,fs){const p=gl.createProgram();gl.attachShader(p,sh(gl.VERTEX_S
 const VS=`
 precision highp float;
 attribute vec2 a_uv; attribute vec3 a_rnd;
-uniform vec2 u_res; uniform float u_t,u_dir,u_wind,u_turb,u_cell,u_time,u_dpr,u_off;
-varying vec2 v_uv; varying float v_p; varying float v_a; varying float v_tint;
+uniform vec2 u_res; uniform float u_t,u_dir,u_wind,u_turb,u_cell,u_time,u_dpr,u_off,u_glow;
+varying vec2 v_uv; varying float v_p; varying float v_a; varying float v_tint; varying float v_soft;
 void main(){
   float lead = u_dir<0.0 ? 1.0-a_uv.x : a_uv.x;
-  float wav = sin(a_uv.y*9.0+a_uv.x*4.0)*0.04 + sin(a_uv.y*23.0)*0.02;
-  float delay = lead*0.48 + a_rnd.x*0.22 + wav;
-  float p = clamp((u_t*1.08 - delay)/0.32, 0.0, 1.0);
+  float wav = sin(a_uv.y*6.0+a_uv.x*3.0)*0.05 + sin(a_uv.y*15.0+1.3)*0.02;
+  float delay = lead*0.42 + a_rnd.x*0.18 + wav;
+  float lp = clamp((u_t*1.1 - delay)/0.48, 0.0, 1.0);
+  float p = lp*lp*(3.0-2.0*lp);
   float e = p*p;
-  vec2 d = vec2(0.0);
-  float sp = 0.55 + a_rnd.y*0.9;
-  d.x = u_dir*u_wind*u_res.x*(e*1.25 + p*0.12)*sp;
-  d.y = (a_rnd.z-0.62)*0.32*u_res.y*e*u_wind + 0.10*u_res.y*e*e;
+  float tm = u_time*0.9;
+  float gust = 0.8 + 0.35*sin(a_uv.y*4.0 - tm*1.3) + 0.15*sin(a_uv.y*11.0 + tm*0.7);
+  float sp = (0.7 + a_rnd.y*0.6)*gust;
+  vec2 d;
+  d.x = u_dir*u_wind*u_res.x*(e*1.1 + p*0.18)*sp;
+  d.y = (a_rnd.z-0.55)*0.10*u_res.y*e - 0.05*u_res.y*sin(p*3.1416)*(0.5+a_rnd.x) + 0.04*u_res.y*e*e;
   float ph = a_rnd.x*6.2832;
-  d.x += sin(a_uv.y*18.0 + u_time*2.7 + ph + p*6.0)*u_turb*38.0*u_dpr*p;
-  d.y += cos(a_uv.x*15.0 + u_time*2.1 + a_rnd.y*6.2832 + p*7.0)*u_turb*55.0*u_dpr*p;
+  float ca = a_uv.y*7.0 + p*4.0 + tm + ph*0.3;
+  d.y += sin(ca)*u_turb*26.0*u_dpr*p;
+  d.x += cos(ca)*u_turb*14.0*u_dpr*p*u_dir;
   vec2 pos = a_uv*u_res + d + vec2(u_off,0.0);
   vec2 clip = pos/u_res*2.0-1.0;
   gl_Position = vec4(clip.x,-clip.y,0.0,1.0);
-  float grain = mix(1.0, 0.55+a_rnd.z*0.8, smoothstep(0.0,0.35,p));
-  gl_PointSize = u_cell*grain;
-  v_uv=a_uv; v_p=p; v_a = 1.0-smoothstep(0.35+a_rnd.y*0.3, 1.0, p); v_tint=a_rnd.z;
+  float m = smoothstep(0.0,0.3,p);
+  float soft = 1.0+u_glow*(1.2+1.6*p);
+  gl_PointSize = u_cell*mix(1.0, (0.6+a_rnd.z*0.6)*soft, m);
+  v_uv=a_uv; v_p=p; v_tint=a_rnd.z; v_soft=soft;
+  v_a = 1.0-smoothstep(0.3+a_rnd.y*0.25, 1.0, p);
 }`;
 const FS=`
 precision mediump float;
-uniform sampler2D u_tex; uniform vec2 u_cellUV;
-varying vec2 v_uv; varying float v_p; varying float v_a; varying float v_tint;
+uniform sampler2D u_tex; uniform vec2 u_cellUV; uniform highp float u_glow;
+varying vec2 v_uv; varying float v_p; varying float v_a; varying float v_tint; varying float v_soft;
 void main(){
   vec2 pc = gl_PointCoord-0.5;
-  float m = smoothstep(0.0,0.2,v_p);
+  float m = smoothstep(0.0,0.25,v_p);
   vec4 c = texture2D(u_tex, v_uv + pc*u_cellUV*(1.0-m));
-  float r = length(pc);
-  float shape = mix(1.0, 1.0-smoothstep(0.3,0.5,r), m);
-  vec3 sand = vec3(0.93,0.76,0.48)*c.a;
-  vec3 col = mix(c.rgb, mix(c.rgb, sand, 0.35+0.3*v_tint), m*0.75);
-  float a = shape*v_a;
-  if(c.a*a<0.01) discard;
+  float r = length(pc)*2.0*mix(1.0, v_soft, m);
+  float core = exp(-r*r*2.2);
+  float halo = exp(-r*r*0.45)*0.22*u_glow*(1.0-v_p);
+  float shape = mix(1.0, core + halo, m);
+  vec3 sand = vec3(0.95,0.78,0.52)*c.a;
+  vec3 warm = mix(sand, vec3(0.86,0.62,0.36)*c.a, v_tint);
+  vec3 col = mix(c.rgb, mix(c.rgb*0.35+warm*0.65, warm, v_p), m);
+  float a = shape*v_a*mix(1.0, 0.85, m);
+  if(c.a*a<0.004) discard;
   gl_FragColor = vec4(col, c.a)*a;
 }`;
 const QVS=`attribute vec2 a_p; uniform float u_s; varying vec2 v_uv;
@@ -240,7 +272,7 @@ const QFS=`precision mediump float; uniform sampler2D u_tex; uniform float u_a; 
 void main(){gl_FragColor=texture2D(u_tex,v_uv)*u_a;}`;
 const P1=prog(VS,FS),P2=prog(QVS,QFS);
 const U1={},U2={};
-['u_res','u_t','u_dir','u_wind','u_turb','u_cell','u_time','u_dpr','u_off','u_tex','u_cellUV'].forEach(n=>U1[n]=gl.getUniformLocation(P1,n));
+['u_res','u_t','u_dir','u_wind','u_turb','u_cell','u_time','u_dpr','u_off','u_tex','u_cellUV','u_glow'].forEach(n=>U1[n]=gl.getUniformLocation(P1,n));
 ['u_s','u_tex','u_a'].forEach(n=>U2[n]=gl.getUniformLocation(P2,n));
 const L1={uv:gl.getAttribLocation(P1,'a_uv'),rnd:gl.getAttribLocation(P1,'a_rnd')},L2=gl.getAttribLocation(P2,'a_p');
 const quad=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,quad);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
@@ -288,8 +320,7 @@ function layout(){
   GW=Math.round(W*DPR);GH=Math.round(H*DPR);cv.width=GW;cv.height=GH;
   drawBg();for(let i=0;i<3;i++){renderPage(i);upload(i)}
   buildParticles();
-  const dockTop=H-parseFloat(getComputedStyle($('dock')).bottom)-88;
-  $('dots').style.top=(dockTop-22)+'px';$('hint').style.top=(dockTop-50)+'px';
+  const dT=dockTop();$('dots').style.top=(dT-22)+'px';$('hint').style.top=(dT-50)+'px';
   draw();
 }
 function draw(){
@@ -309,7 +340,7 @@ function draw(){
   gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tex[cur]);gl.uniform1i(U1.u_tex,0);
   gl.uniform2f(U1.u_res,GW,GH);gl.uniform1f(U1.u_t,t);gl.uniform1f(U1.u_dir,dir);gl.uniform1f(U1.u_wind,S.wind);
   gl.uniform1f(U1.u_turb,S.turb);gl.uniform1f(U1.u_cell,cell);gl.uniform1f(U1.u_time,(now-startT)/1000);
-  gl.uniform1f(U1.u_dpr,DPR);gl.uniform1f(U1.u_off,off*DPR);gl.uniform2f(U1.u_cellUV,cell/GW,cell/GH);
+  gl.uniform1f(U1.u_dpr,DPR);gl.uniform1f(U1.u_off,off*DPR);gl.uniform2f(U1.u_cellUV,cell/GW,cell/GH);gl.uniform1f(U1.u_glow,S.glow*(weak?.7:1));
   gl.drawArrays(gl.POINTS,0,counts[cur]);
   gl.disableVertexAttribArray(L1.uv);gl.disableVertexAttribArray(L1.rnd);
 }
@@ -351,7 +382,7 @@ function setDots(){[...$('dots').children].forEach((d,i)=>d.classList.toggle('on
 // ---------- 입력 ----------
 let sx=0,sy=0,lx=0,lt=0,vx=0,moved=false,crossed=false,pid=null;
 phone.addEventListener('pointerdown',e=>{
-  if(e.target.closest('#sheet,#gear,#dock'))return;
+  if(e.target.closest('#sheet,#gear'))return;
   if($('sheet').classList.contains('open')){toggleSheet(false);return}
   if(anim){anim.t0=-1e9;loop(performance.now())}
   pid=e.pointerId;phone.setPointerCapture(pid);
@@ -385,19 +416,19 @@ function tap(e){
 let tt=0;function toast(m){const el=$('toast');el.textContent=m;el.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('show'),1600)}
 
 // 도크
-DOCK.forEach(a=>{const d=document.createElement('div');d.className='dk';d.innerHTML=`<b style="background:linear-gradient(135deg,${a.c1},${a.c2})">${a.e}</b>`;d.title=a.n;d.onclick=()=>toast(`${a.n} · 시제품이라 아직 열리지 않아요`);$('dock').appendChild(d)});
+
 
 // ---------- 설정 패널 ----------
 function toggleSheet(o){$('sheet').classList.toggle('open',o)}
 $('gear').onclick=e=>{e.stopPropagation();toggleSheet(!$('sheet').classList.contains('open'))};
 $('close').onclick=()=>toggleSheet(false);
-const sl={wind:['sWind','vWind',v=>v.toFixed(2)+'×'],size:['sSize','vSize',v=>v.toFixed(1)+'px'],turb:['sTurb','vTurb',v=>v.toFixed(2)],dur:['sDur','vDur',v=>v.toFixed(1)+'초']};
+const sl={wind:['sWind','vWind',v=>v.toFixed(2)+'×'],size:['sSize','vSize',v=>v.toFixed(1)+'px'],turb:['sTurb','vTurb',v=>v.toFixed(2)],dur:['sDur','vDur',v=>v.toFixed(1)+'초'],glow:['sGlow','vGlow',v=>v.toFixed(2)]};
 let sizeTimer=0;
 function syncUI(){for(const k in sl){$(sl[k][0]).value=S[k];$(sl[k][1]).textContent=sl[k][2](S[k])}}
 for(const k in sl){$(sl[k][0]).addEventListener('input',e=>{S[k]=parseFloat(e.target.value);$(sl[k][1]).textContent=sl[k][2](S[k]);
-  try{localStorage.setItem('nv_sand',JSON.stringify(S))}catch(_){}
+  try{localStorage.setItem('nv_sand2',JSON.stringify(S))}catch(_){}
   if(k==='size'){clearTimeout(sizeTimer);sizeTimer=setTimeout(()=>{buildParticles();draw()},150)}})}
-$('reset').onclick=()=>{S=Object.assign({},DEF);syncUI();try{localStorage.removeItem('nv_sand')}catch(_){}buildParticles();draw()};
+$('reset').onclick=()=>{S=Object.assign({},DEF);syncUI();try{localStorage.removeItem('nv_sand2')}catch(_){}buildParticles();draw()};
 $('demo').onclick=()=>{if(anim)return;const to=cur<2?cur+1:cur-1;go(to,to>cur?-1:1)};
 function updateStats(){$('stats').textContent=`모래알 ${counts[cur]?counts[cur].toLocaleString('ko-KR'):0}개 · 알갱이 ${cell}px · 최근 ${Math.round(lastFps)}fps${weak?' · 절약 모드':''}`}
 syncUI();
