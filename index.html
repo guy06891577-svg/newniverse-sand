@@ -7,7 +7,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>뉴니버스 · 모래 전환 시제품 v4</title>
+<title>뉴니버스 · 모래 전환 시제품 v5</title>
 <style>
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
   html,body{height:100%;background:#05040d;overflow:hidden;font-family:system-ui,-apple-system,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#fff;overscroll-behavior:none}
@@ -47,6 +47,20 @@
   #stats{font-size:11px;color:#8e88b0;margin-top:12px;text-align:center}
   #hint{position:absolute;left:0;right:0;text-align:center;font-size:12px;color:rgba(255,255,255,.75);z-index:5;pointer-events:none;transition:opacity 1s}
   #hint-desktop{display:none;position:fixed;bottom:12px;left:0;right:0;text-align:center;color:#777;font-size:12px}
+  #fold{position:absolute;inset:0;z-index:8;display:none;touch-action:none}
+  #fold .bd{position:absolute;inset:0;background:rgba(8,6,22,.45);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);opacity:0;transition:opacity .35s}
+  #fold.open .bd{opacity:1}
+  #fold .wrap{position:absolute;inset:0;transition:transform .42s cubic-bezier(.2,.9,.25,1.05),opacity .3s;opacity:0}
+  #fold.open .wrap{opacity:1}
+  #fold h2{position:absolute;left:0;right:0;top:20%;text-align:center;font-size:24px;font-weight:700;text-shadow:0 2px 10px rgba(0,0,0,.5)}
+  #fold .stage{position:absolute;left:0;right:0;top:50%;height:0;perspective:900px}
+  #fold .cd{position:absolute;left:50%;top:0;width:150px;height:150px;margin:-75px 0 0 -75px;border-radius:40px;display:flex;align-items:center;justify-content:center;font-size:76px;box-shadow:0 18px 40px rgba(0,0,0,.45);will-change:transform,opacity;backface-visibility:hidden}
+  #fold .cd::after{content:'';position:absolute;inset:0;border-radius:inherit;background:linear-gradient(rgba(255,255,255,.3),rgba(255,255,255,0) 55%);pointer-events:none}
+  #fold .lbl{position:absolute;left:0;right:0;top:calc(50% + 110px);text-align:center;font-size:19px;font-weight:600;text-shadow:0 2px 8px rgba(0,0,0,.6)}
+  #fold .fdots{position:absolute;left:0;right:0;top:calc(50% + 148px);display:flex;justify-content:center;gap:6px}
+  #fold .fdots i{width:6px;height:6px;border-radius:3px;background:rgba(255,255,255,.35);transition:all .2s}
+  #fold .fdots i.on{background:#fff;width:16px}
+  #fold .tip{position:absolute;left:0;right:0;bottom:16%;text-align:center;font-size:12px;color:rgba(255,255,255,.6)}
   #nogl{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;padding:30px;z-index:20;background:#0b0820}
 </style>
 </head>
@@ -60,6 +74,7 @@
   <div id="hint">← 화면을 옆으로 밀어보세요 →</div>
   <div id="dots"><i class="on"></i><i></i><i></i></div>
   <div id="safe" style="position:absolute;visibility:hidden;padding-bottom:env(safe-area-inset-bottom)"></div>
+  <div id="fold"><div class="bd"></div><div class="wrap"><h2></h2><div class="stage"></div><div class="lbl"></div><div class="fdots"></div><div class="tip">좌우로 휙 돌려보세요 · 아래로 내리거나 바깥을 누르면 닫혀요</div></div></div>
   <div id="toast"></div>
   <div id="sheet">
     <h3>모래 전환 설정 <button id="close">✕</button></h3>
@@ -87,7 +102,7 @@ const $=id=>document.getElementById(id);
 // ---------- 설정 ----------
 const DEF={style:'wind',wind:1.0,size:2.0,turb:1.0,dur:1.7,glow:0.5,star:0.6};
 let S=Object.assign({},DEF);
-try{Object.assign(S,JSON.parse(localStorage.getItem('nv_sand4')||'{}'))}catch(e){}
+try{Object.assign(S,JSON.parse(localStorage.getItem('nv_sand5')||'{}'))}catch(e){}
 const weak=(navigator.hardwareConcurrency||4)<=4||(navigator.deviceMemory||4)<=3;
 let CAP=weak?40000:90000;
 
@@ -96,17 +111,17 @@ const A=(n,e,c1,c2,t)=>({n,e,c1,c2,t});
 const F=(n,items)=>({n,folder:true,items});
 const PAGES=[
   {widget:true,apps:[
-    A('카카오톡','💬','#FEE500','#F5C800','#3a1d1d'),A('네이버','N','#03C75A','#02a84b'),F('금융',[A('은행','🏦','#2f6bff','#1946c7'),A('페이','💳','#6c5ce7','#4834b8'),A('증권','📈','#ff4d4d','#2f6bff'),A('보험','🛡️','#26a69a','#00796b')]),A('정부24','🏛️','#3a7bd5','#1d4f9a'),
+    A('카카오톡','💬','#FEE500','#F5C800','#3a1d1d'),A('네이버','N','#03C75A','#02a84b'),F('금융',[A('은행','🏦','#2f6bff','#1946c7'),A('페이','💳','#6c5ce7','#4834b8'),A('증권','📈','#ff4d4d','#2f6bff'),A('보험','🛡️','#26a69a','#00796b'),A('카드','💳','#ff7a45','#e04a1a'),A('가계부','📒','#43b649','#2b8a30'),A('환전','💱','#4dd0e1','#1f8fa0'),A('코인','🪙','#ffca28','#ff8f00','#222')]),A('정부24','🏛️','#3a7bd5','#1d4f9a'),
     A('카메라','📷','#4a4a55','#26262e'),A('사진','🖼️','#ff9a62','#ff5e7a'),A('지도','🗺️','#34c3a0','#1a8c74'),A('설정','⚙️','#8e8e99','#5d5d69')]},
   {apps:[
     A('날씨','⛅','#56a8ff','#2f6fe0'),A('캘린더','📅','#ff6b6b','#d93c3c'),A('메모','📝','#ffd45e','#f2a93b'),A('시계','⏰','#2b2b3a','#111118'),
     A('음악','🎵','#ff4fa0','#b4247a'),A('동영상','▶️','#ff3b3b','#b31d1d'),A('웹툰','📖','#00d06c','#00964d'),A('뉴스','📰','#5a6bff','#3341b8'),
-    F('쇼핑',[A('쇼핑','🛍️','#ff7a45','#e04a1a'),A('중고거래','🥕','#ff8a3d','#e8641a'),A('선물','🎁','#ff5e7a','#d9345a'),A('장보기','🛒','#43b649','#2b8a30')]),A('배달','🛵','#2ac1bc','#169a96'),A('택시','🚕','#ffcf3d','#f0a400','#222'),A('지하철','🚇','#43b649','#2b8a30'),
+    F('쇼핑',[A('쇼핑','🛍️','#ff7a45','#e04a1a'),A('중고거래','🥕','#ff8a3d','#e8641a'),A('선물','🎁','#ff5e7a','#d9345a'),A('장보기','🛒','#43b649','#2b8a30'),A('패션','👗','#9b5cff','#6227c9'),A('뷰티','💄','#ff6f91','#e03565'),A('가구','🛋️','#a1887f','#6d4c41')]),A('배달','🛵','#2ac1bc','#169a96'),A('택시','🚕','#ffcf3d','#f0a400','#222'),A('지하철','🚇','#43b649','#2b8a30'),
     A('페이','💳','#6c5ce7','#4834b8'),A('증권','📈','#ff4d4d','#2f6bff'),A('메일','✉️','#3fa9f5','#1c6fc4'),A('번역','🌐','#4dd0e1','#1f8fa0'),
     A('건강','❤️','#ff6f91','#e03565'),A('게임','🎮','#9b5cff','#6227c9'),A('계산기','🧮','#ff9f0a','#d07a00'),A('파일','📁','#5ac8fa','#2e8fc4')]},
   {card:true,apps:[
     A('병원예약','🏥','#4fc3f7','#1e88c7'),A('학교','🎓','#7e57c2','#4d2c91'),A('국민연금','🪙','#26a69a','#00796b'),A('주민센터','🏢','#78909c','#455a64'),
-    A('녹음','🎙️','#ef5350','#b71c1c'),F('도구',[A('손전등','🔦','#ffca28','#ff8f00','#222'),A('스캐너','📄','#66bb6a','#2e7d32'),A('나침반','🧭','#4f7cff','#2a4fd1'),A('자','📏','#ffd45e','#f2a93b')]),A('뉴니버스','🌌','#e6b85c','#7b3fe4')]}
+    A('녹음','🎙️','#ef5350','#b71c1c'),F('도구',[A('손전등','🔦','#ffca28','#ff8f00','#222'),A('스캐너','📄','#66bb6a','#2e7d32'),A('나침반','🧭','#4f7cff','#2a4fd1'),A('자','📏','#ffd45e','#f2a93b'),A('녹화','📹','#ef5350','#b71c1c'),A('타이머','⏱️','#5ac8fa','#2e8fc4')]),A('뉴니버스','🌌','#e6b85c','#7b3fe4')]}
 ];
 const DOCK=[A('전화','📞','#34c759','#1f9d40'),A('메시지','💬','#5ac8fa','#2a86d9'),A('인터넷','🧭','#4f7cff','#2a4fd1'),A('연락처','👤','#ff9f43','#e06a1a')];
 
@@ -197,7 +212,7 @@ function renderPage(pi){
   const top=gridTop(pi);
   P.apps.forEach((a,i)=>{
     const col=i%cols,row=(i/cols)|0,x=pad+col*cw+(cw-s)/2,y=top+row*rowH;
-    (a.folder?drawFolder:drawIcon)(c,a,x,y,s);hitRects[pi].push({x,y,w:s,h:s+24,n:a.folder?`${a.n} 폴더 (${a.items.map(i=>i.n).join('·')})`:a.n});
+    (a.folder?drawFolder:drawIcon)(c,a,x,y,s);hitRects[pi].push({x,y,w:s,h:s+24,n:a.n,f:a.folder?a:null});
   });
   const dt=dockTop(),dx=14,dw=W-28,dh=88;
   c.save();rr(c,dx,dt,dw,dh,30);c.fillStyle='rgba(255,255,255,.14)';c.fill();c.strokeStyle='rgba(255,255,255,.2)';c.lineWidth=1;c.stroke();c.restore();
@@ -623,7 +638,7 @@ function setDots(){[...$('dots').children].forEach((d,i)=>d.classList.toggle('on
 // ---------- 입력 ----------
 let sx=0,sy=0,lx=0,lt=0,vx=0,moved=false,crossed=false,pid=null;
 phone.addEventListener('pointerdown',e=>{
-  if(e.target.closest('#sheet,#gear'))return;
+  if(e.target.closest('#sheet,#gear,#fold'))return;
   if($('sheet').classList.contains('open')){toggleSheet(false);return}
   if(anim){anim.t0=-1e9;loop(performance.now())}
   pid=e.pointerId;phone.setPointerCapture(pid);
@@ -652,11 +667,82 @@ phone.addEventListener('pointerup',up);phone.addEventListener('pointercancel',up
 function tap(e){
   const r=phone.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
   const h=(hitRects[cur]||[]).find(o=>x>=o.x&&x<=o.x+o.w&&y>=o.y&&y<=o.y+o.h);
-  if(h)toast(`${h.n} · 시제품이라 아직 열리지 않아요`);
+  if(h&&h.f)openFolder(h.f,h);else if(h)toast(`${h.n} · 시제품이라 아직 열리지 않아요`);
 }
 let tt=0;function toast(m){const el=$('toast');el.textContent=m;el.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('show'),1600)}
 
-// 도크
+// ---------- 폴더: 회전 캐러셀 ----------
+const FO=$('fold'),FW=FO.querySelector('.wrap'),FSTG=FO.querySelector('.stage'),FL=FO.querySelector('.lbl'),FD=FO.querySelector('.fdots');
+let fItems=[],fCards=[],fPos=0,fVel=0,fTarget=0,fRaf=0,fOpen=false,fDrag=null,fLastIdx=-1;
+const SP=()=>Math.min(150,W*0.34);
+function openFolder(f,r){
+  fItems=f.items;FSTG.innerHTML='';FD.innerHTML='';
+  fCards=fItems.map((a,i)=>{const d=document.createElement('div');d.className='cd';d.style.background=`linear-gradient(135deg,${a.c1},${a.c2})`;
+    d.innerHTML=/^[A-Za-z]$/.test(a.e)?`<b style="font:900 80px ${FONT};color:${a.t||'#fff'}">${a.e}</b>`:a.e;FSTG.appendChild(d);FD.appendChild(document.createElement('i'));return d});
+  FO.querySelector('h2').textContent=f.n;
+  fPos=fTarget=0;fVel=0;fLastIdx=-1;renderCards();
+  const cx=r.x+r.w/2-W/2,cy=r.y+r.w/2-H/2;
+  FO._from=`translate(${cx}px,${cy}px) scale(.18)`;FW.style.transform=FO._from;
+  FO.style.display='block';void FO.offsetWidth;FO.classList.add('open');FW.style.transform='none';fOpen=true;
+}
+function closeFolder(){
+  if(!fOpen)return;fOpen=false;FO.classList.remove('open');
+  FW.style.transform=FO._from;
+  setTimeout(()=>{if(!fOpen)FO.style.display='none'},380);
+}
+function renderCards(){
+  const sp=SP();
+  fCards.forEach((d,i)=>{
+    const p=i-fPos,ap=Math.abs(p);
+    const x=Math.sign(p)*(ap<1?ap:1+(ap-1)*0.55)*sp;
+    const sc=1+0.25*Math.max(0,1-ap)-0.08*Math.min(ap,3);
+    const ry=-Math.max(-1.6,Math.min(1.6,p))*32;
+    d.style.transform=`translate3d(${x}px,0,${-Math.min(ap,4)*110}px) rotateY(${ry}deg) scale(${sc})`;
+    d.style.opacity=ap>3.4?0:Math.max(0,1-Math.max(0,ap-2.2)/1.2);
+    d.style.zIndex=100-Math.round(ap*10);
+  });
+  const idx=Math.max(0,Math.min(fItems.length-1,Math.round(fPos)));
+  if(idx!==fLastIdx){fLastIdx=idx;FL.textContent=fItems[idx].n;[...FD.children].forEach((e,i)=>e.classList.toggle('on',i===idx));if(fDrag&&navigator.vibrate)navigator.vibrate(4)}
+}
+function fStep(){
+  fRaf=0;
+  // 스프링: 관성 있게 돌다가 가장 가까운 카드에 착 맞춤
+  const k=0.11,dmp=0.76;fVel=(fVel+(fTarget-fPos)*k)*dmp;fPos+=fVel;
+  renderCards();
+  if(Math.abs(fVel)>0.0005||Math.abs(fTarget-fPos)>0.0005)fRaf=requestAnimationFrame(fStep);else{fPos=fTarget;renderCards()}
+}
+FO.addEventListener('pointerdown',e=>{
+  if(!fOpen)return;FO.setPointerCapture(e.pointerId);cancelAnimationFrame(fRaf);fRaf=0;fVel=0;
+  fDrag={x:e.clientX,y:e.clientY,p0:fPos,lx:e.clientX,lt:e.timeStamp,v:0,moved:false,id:e.pointerId,card:e.target.closest('.cd')};
+});
+FO.addEventListener('pointermove',e=>{
+  if(!fDrag||e.pointerId!==fDrag.id)return;
+  const dx=e.clientX-fDrag.x,dy=e.clientY-fDrag.y;if(Math.abs(dx)>6||Math.abs(dy)>6)fDrag.moved=true;
+  const dt=e.timeStamp-fDrag.lt;if(dt>0)fDrag.v=.6*fDrag.v+.4*((e.clientX-fDrag.lx)/dt);fDrag.lx=e.clientX;fDrag.lt=e.timeStamp;
+  if(dy>0&&dy>Math.abs(dx)){FW.style.transition='none';FW.style.transform=`translateY(${dy*.6}px) scale(${1-Math.min(.25,dy/1200)})`;return}
+  FW.style.transform='';
+  let np=fDrag.p0-dx/SP();const n=fItems.length-1;
+  if(np<0)np=np*.35;if(np>n)np=n+(np-n)*.35;fPos=np;renderCards();
+});
+function fUp(e){
+  if(!fDrag||e.pointerId!==fDrag.id)return;const d=fDrag;fDrag=null;
+  FW.style.transition='';
+  const dx=e.clientX-d.x,dy=e.clientY-d.y;
+  if(dy>90&&dy>Math.abs(dx)){closeFolder();return}
+  FW.style.transform='';
+  if(!d.moved){
+    if(!d.card){closeFolder();return}
+    const i=fCards.indexOf(d.card);
+    if(i===Math.round(fPos))toast(`${fItems[i].n} · 시제품이라 아직 열리지 않아요`);
+    else{fTarget=i;fStep()}
+    return;
+  }
+  const n=fItems.length-1;
+  fTarget=Math.max(0,Math.min(n,Math.round(fPos-d.v*260/SP())));
+  fVel=-d.v*16/SP();fStep();
+}
+FO.addEventListener('pointerup',fUp);FO.addEventListener('pointercancel',fUp);
+
 
 
 // ---------- 설정 패널 ----------
@@ -666,16 +752,16 @@ $('close').onclick=()=>toggleSheet(false);
 const sl={wind:['sWind','vWind',v=>v.toFixed(2)+'×'],size:['sSize','vSize',v=>v.toFixed(1)+'px'],turb:['sTurb','vTurb',v=>v.toFixed(2)],dur:['sDur','vDur',v=>v.toFixed(1)+'초'],star:['sStar','vStar',v=>v.toFixed(2)+'×'],glow:['sGlow','vGlow',v=>v.toFixed(2)]};
 let sizeTimer=0;
 function syncSeg(){[...$('styleSeg').children].forEach(b=>b.classList.toggle('on',b.dataset.s===S.style))}
-$('styleSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;S.style=b.dataset.s;syncSeg();try{localStorage.setItem('nv_sand4',JSON.stringify(S))}catch(_){}};
+$('styleSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;S.style=b.dataset.s;syncSeg();try{localStorage.setItem('nv_sand5',JSON.stringify(S))}catch(_){}};
 function syncUI(){syncSeg();for(const k in sl){$(sl[k][0]).value=S[k];$(sl[k][1]).textContent=sl[k][2](S[k])}}
 for(const k in sl){$(sl[k][0]).addEventListener('input',e=>{S[k]=parseFloat(e.target.value);$(sl[k][1]).textContent=sl[k][2](S[k]);
-  try{localStorage.setItem('nv_sand4',JSON.stringify(S))}catch(_){}
+  try{localStorage.setItem('nv_sand5',JSON.stringify(S))}catch(_){}
   if(k==='size'){clearTimeout(sizeTimer);sizeTimer=setTimeout(()=>{buildParticles();draw()},150)}})}
-$('reset').onclick=()=>{S=Object.assign({},DEF);syncUI();try{localStorage.removeItem('nv_sand4')}catch(_){}buildParticles();draw()};
+$('reset').onclick=()=>{S=Object.assign({},DEF);syncUI();try{localStorage.removeItem('nv_sand5')}catch(_){}buildParticles();draw()};
 $('demo').onclick=()=>{if(anim)return;const to=cur<2?cur+1:cur-1;go(to,to>cur?-1:1)};
-function updateStats(){$('stats').textContent=`v4 · 모래알 ${counts[cur]?counts[cur].toLocaleString('ko-KR'):0}개 · 알갱이 ${cell}px · 최근 ${Math.round(lastFps)}fps${weak?' · 절약 모드':''}`}
+function updateStats(){$('stats').textContent=`v5 · 모래알 ${counts[cur]?counts[cur].toLocaleString('ko-KR'):0}개 · 알갱이 ${cell}px · 최근 ${Math.round(lastFps)}fps${weak?' · 절약 모드':''}`}
 syncUI();
-window.__nv={pose:(to,d,tt)=>{target=to;dir=d;t=tt;draw()},cur:()=>cur};
+window.__nv={pose:(to,d,tt)=>{target=to;dir=d;t=tt;draw()},cur:()=>cur,hits:()=>hitRects[cur]};
 
 // ---------- 시계 ----------
 function tick(){
