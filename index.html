@@ -269,7 +269,9 @@ function syncWpSeg(){
 $('wpSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S.wp=b.dataset.w;try{localStorage.setItem('nv_sand9',JSON.stringify(S))}catch(_){}applyWallpaper()});
 applyWallpaper();
 fetch('wallpapers/wallpapers.json',{cache:'no-store'}).then(r=>r.ok?r.json():[]).then(list=>{
-  (Array.isArray(list)?list:list.wallpapers||[]).forEach(w=>{if(w&&w.id&&!WALLPAPERS.some(x=>x.id===w.id)){['src','poster','fallback'].forEach(k=>{if(w[k]&&!/^(https?:|\/|data:)/.test(w[k]))w[k]='wallpapers/'+w[k]});WALLPAPERS.push(w)}});
+  (Array.isArray(list)?list:list.wallpapers||[]).forEach(w=>{if(w&&w.id&&!WALLPAPERS.some(x=>x.id===w.id)){['src','poster','fallback'].forEach(k=>{if(w[k]&&!/^(https?:|\/|data:)/.test(w[k]))w[k]='wallpapers/'+w[k]});
+    // 정식 배경화면은 '예시' 항목보다 앞에
+    const ex=WALLPAPERS.findIndex(x=>/^예시/.test(x.name));if(!/^예시/.test(w.name||'')&&ex>=0)WALLPAPERS.splice(ex,0,w);else WALLPAPERS.push(w)}});
   applyWallpaper();
 }).catch(()=>{});
 
