@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0b0820">
+<title>뉴니버스 · 모래 전환 시제품</title>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+  html,body{height:100%;background:#05040d;overflow:hidden;font-family:system-ui,-apple-system,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#fff;overscroll-behavior:none}
+  body{display:flex;align-items:center;justify-content:center}
+  #phone{position:relative;width:100vw;height:100vh;height:100dvh;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+  @media (min-width:700px){
+    #phone{width:400px;height:min(860px,96vh);border-radius:44px;box-shadow:0 0 0 10px #16141f,0 0 0 12px #2b2838,0 30px 80px rgba(0,0,0,.7)}
+    #hint-desktop{display:block!important}
+  }
+  #bg,#gl{position:absolute;inset:0;width:100%;height:100%;display:block}
+  #status{position:absolute;top:0;left:0;right:0;height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font-size:13px;font-weight:600;z-index:5;pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,.4)}
+  #status .r{display:flex;gap:6px;align-items:center;font-size:12px}
+  #gear{position:absolute;top:40px;right:14px;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.12);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#fff;font-size:19px;z-index:6;display:flex;align-items:center;justify-content:center;cursor:pointer}
+  #dots{position:absolute;left:0;right:0;display:flex;justify-content:center;gap:8px;z-index:5;pointer-events:none}
+  #dots i{width:7px;height:7px;border-radius:4px;background:rgba(255,255,255,.4);transition:all .35s}
+  #dots i.on{width:20px;background:#fff}
+  #dock{position:absolute;left:14px;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));height:88px;border-radius:30px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);display:flex;justify-content:space-around;align-items:center;z-index:5}
+  .dk{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;cursor:pointer}
+  .dk b{width:54px;height:54px;border-radius:17px;display:flex;align-items:center;justify-content:center;font-size:27px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+  #toast{position:absolute;left:50%;bottom:190px;transform:translateX(-50%) translateY(20px);background:rgba(20,18,35,.85);padding:10px 18px;border-radius:20px;font-size:13px;opacity:0;transition:all .3s;z-index:9;pointer-events:none;white-space:nowrap;border:1px solid rgba(255,255,255,.15)}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  #sheet{position:absolute;left:0;right:0;bottom:0;z-index:10;background:rgba(18,15,34,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:26px 26px 0 0;padding:18px 22px calc(22px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .35s cubic-bezier(.2,.9,.3,1);border-top:1px solid rgba(255,255,255,.15)}
+  #sheet.open{transform:none}
+  #sheet h3{font-size:17px;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center}
+  #sheet h3 button{background:none;border:none;color:#aaa;font-size:22px;cursor:pointer}
+  #sheet .sub{font-size:12px;color:#a9a3c9;margin-bottom:14px}
+  .row{margin:12px 0}
+  .row label{display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px}
+  .row label span{color:#e6c37a;font-variant-numeric:tabular-nums}
+  input[type=range]{width:100%;accent-color:#e6b85c;height:28px}
+  .btns{display:flex;gap:8px;margin-top:14px}
+  .btns button{flex:1;padding:12px;border-radius:14px;border:none;font-size:14px;font-weight:600;cursor:pointer;background:rgba(255,255,255,.12);color:#fff}
+  .btns button.p{background:linear-gradient(135deg,#e6b85c,#d9813b);color:#1a1205}
+  #stats{font-size:11px;color:#8e88b0;margin-top:12px;text-align:center}
+  #hint{position:absolute;left:0;right:0;text-align:center;font-size:12px;color:rgba(255,255,255,.75);z-index:5;pointer-events:none;transition:opacity 1s}
+  #hint-desktop{display:none;position:fixed;bottom:12px;left:0;right:0;text-align:center;color:#777;font-size:12px}
+  #nogl{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;padding:30px;z-index:20;background:#0b0820}
+</style>
+</head>
+<body>
+<div id="phone">
+  <canvas id="bg"></canvas>
+  <canvas id="gl"></canvas>
+  <div id="status"><span id="sbTime">12:00</span><span class="r">📶 <span>LTE</span> 🔋 <span>87%</span></span></div>
+  <button id="gear" aria-label="설정">⚙️</button>
+  <div id="hint">← 화면을 옆으로 밀어보세요 →</div>
+  <div id="dots"><i class="on"></i><i></i><i></i></div>
+  <div id="dock"></div>
+  <div id="toast"></div>
+  <div id="sheet">
+    <h3>모래 전환 설정 <button id="close">✕</button></h3>
+    <div class="sub">값을 바꾸고 화면을 밀어보세요. 마음에 드는 조합을 찾아주세요.</div>
+    <div class="row"><label>바람 세기 <span id="vWind"></span></label><input id="sWind" type="range" min="0.3" max="2.5" step="0.05"></div>
+    <div class="row"><label>모래알 크기 <span id="vSize"></span></label><input id="sSize" type="range" min="1" max="6" step="0.5"></div>
+    <div class="row"><label>소용돌이(난기류) <span id="vTurb"></span></label><input id="sTurb" type="range" min="0" max="2.5" step="0.05"></div>
+    <div class="row"><label>흩어지는 시간 <span id="vDur"></span></label><input id="sDur" type="range" min="0.6" max="3" step="0.1"></div>
+    <div class="btns"><button id="reset">기본값</button><button class="p" id="demo">미리보기 ▶</button></div>
+    <div id="stats"></div>
+  </div>
+  <div id="nogl">이 기기에서는 WebGL을 사용할 수 없어 효과를 보여드릴 수 없어요.</div>
+</div>
+<div id="hint-desktop">PC에서는 마우스로 화면을 끌어서 넘겨보세요 · 뉴니버스 시제품 by Crazing Factory</div>
+
+<script>
+(()=>{
+'use strict';
+const phone=document.getElementById('phone'), bg=document.getElementById('bg'), cv=document.getElementById('gl');
+const $=id=>document.getElementById(id);
+
+// ---------- 설정 ----------
+const DEF={wind:1.0,size:2.0,turb:1.0,dur:1.4};
+let S=Object.assign({},DEF);
+try{Object.assign(S,JSON.parse(localStorage.getItem('nv_sand')||'{}'))}catch(e){}
+const weak=(navigator.hardwareConcurrency||4)<=4||(navigator.deviceMemory||4)<=3;
+let CAP=weak?40000:90000;
+
+// ---------- 앱 데이터 ----------
+const A=(n,e,c1,c2,t)=>({n,e,c1,c2,t});
+const PAGES=[
+  {widget:true,apps:[
+    A('카카오톡','💬','#FEE500','#F5C800','#3a1d1d'),A('네이버','N','#03C75A','#02a84b'),A('은행','🏦','#2f6bff','#1946c7'),A('정부24','🏛️','#3a7bd5','#1d4f9a'),
+    A('카메라','📷','#4a4a55','#26262e'),A('사진','🖼️','#ff9a62','#ff5e7a'),A('지도','🗺️','#34c3a0','#1a8c74'),A('설정','⚙️','#8e8e99','#5d5d69')]},
+  {apps:[
+    A('날씨','⛅','#56a8ff','#2f6fe0'),A('캘린더','📅','#ff6b6b','#d93c3c'),A('메모','📝','#ffd45e','#f2a93b'),A('시계','⏰','#2b2b3a','#111118'),
+    A('음악','🎵','#ff4fa0','#b4247a'),A('동영상','▶️','#ff3b3b','#b31d1d'),A('웹툰','📖','#00d06c','#00964d'),A('뉴스','📰','#5a6bff','#3341b8'),
+    A('쇼핑','🛍️','#ff7a45','#e04a1a'),A('배달','🛵','#2ac1bc','#169a96'),A('택시','🚕','#ffcf3d','#f0a400','#222'),A('지하철','🚇','#43b649','#2b8a30'),
+    A('페이','💳','#6c5ce7','#4834b8'),A('증권','📈','#ff4d4d','#2f6bff'),A('메일','✉️','#3fa9f5','#1c6fc4'),A('번역','🌐','#4dd0e1','#1f8fa0'),
+    A('건강','❤️','#ff6f91','#e03565'),A('게임','🎮','#9b5cff','#6227c9'),A('계산기','🧮','#ff9f0a','#d07a00'),A('파일','📁','#5ac8fa','#2e8fc4')]},
+  {card:true,apps:[
+    A('병원예약','🏥','#4fc3f7','#1e88c7'),A('학교','🎓','#7e57c2','#4d2c91'),A('국민연금','🪙','#26a69a','#00796b'),A('주민센터','🏢','#78909c','#455a64'),
+    A('녹음','🎙️','#ef5350','#b71c1c'),A('손전등','🔦','#ffca28','#ff8f00','#222'),A('스캐너','📄','#66bb6a','#2e7d32'),A('뉴니버스','🌌','#e6b85c','#7b3fe4')]}
+];
+const DOCK=[A('전화','📞','#34c759','#1f9d40'),A('메시지','💬','#5ac8fa','#2a86d9'),A('인터넷','🧭','#4f7cff','#2a4fd1'),A('연락처','👤','#ff9f43','#e06a1a')];
+
+// ---------- 레이아웃 ----------
+let W=0,H=0,DPR=1,GW=0,GH=0;
+let pageCanvases=[], hitRects=[];
+function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
+const FONT='system-ui,-apple-system,"Noto Sans KR","Apple SD Gothic Neo",sans-serif';
+const EFONT='"Noto Color Emoji","Apple Color Emoji","Segoe UI Emoji",sans-serif';
+
+function drawIcon(c,a,x,y,s){
+  c.save();
+  c.shadowColor='rgba(0,0,0,.35)';c.shadowBlur=s*.18;c.shadowOffsetY=s*.06;
+  const g=c.createLinearGradient(x,y,x+s,y+s);g.addColorStop(0,a.c1);g.addColorStop(1,a.c2);
+  rr(c,x,y,s,s,s*.3);c.fillStyle=g;c.fill();
+  c.shadowColor='transparent';
+  const hl=c.createLinearGradient(x,y,x,y+s*.6);hl.addColorStop(0,'rgba(255,255,255,.28)');hl.addColorStop(1,'rgba(255,255,255,0)');
+  rr(c,x+1,y+1,s-2,s*.55,s*.28);c.fillStyle=hl;c.fill();
+  c.textAlign='center';c.textBaseline='middle';
+  if(/^[A-Za-z]$/.test(a.e)){c.font=`900 ${s*.55}px ${FONT}`;c.fillStyle=a.t||'#fff';c.fillText(a.e,x+s/2,y+s*.53)}
+  else{c.font=`${s*.5}px ${EFONT}`;c.fillStyle=a.t||'#fff';c.fillText(a.e,x+s/2,y+s*.55)}
+  c.restore();
+  c.save();c.font=`500 ${Math.max(11,s*.2)}px ${FONT}`;c.textAlign='center';c.textBaseline='top';
+  c.shadowColor='rgba(0,0,0,.6)';c.shadowBlur=4;c.fillStyle='#fff';c.fillText(a.n,x+s/2,y+s+6);c.restore();
+}
+function glass(c,x,y,w,h,r){
+  c.save();rr(c,x,y,w,h,r);c.fillStyle='rgba(255,255,255,.13)';c.fill();
+  c.strokeStyle='rgba(255,255,255,.22)';c.lineWidth=1;c.stroke();c.restore();
+}
+function widgetRect(){return {x:18,y:70,w:W-36,h:Math.min(190,H*.23)}}
+function gridTop(pi){
+  if(pi===0){const r=widgetRect();return r.y+r.h+80}
+  if(pi===2)return 70+Math.min(150,H*.18)+30;
+  return 96;
+}
+function renderPage(pi){
+  let cnv=pageCanvases[pi]||document.createElement('canvas');
+  cnv.width=GW;cnv.height=GH;
+  const c=cnv.getContext('2d');c.setTransform(DPR,0,0,DPR,0,0);c.clearRect(0,0,W,H);
+  const P=PAGES[pi];hitRects[pi]=[];
+  const now=new Date();
+  if(P.widget){
+    const r=widgetRect();glass(c,r.x,r.y,r.w,r.h,28);
+    const hh=String(now.getHours()).padStart(2,'0'),mm=String(now.getMinutes()).padStart(2,'0');
+    c.fillStyle='#fff';c.textBaseline='alphabetic';c.textAlign='left';
+    c.font=`200 ${r.h*.46}px ${FONT}`;c.fillText(`${hh}:${mm}`,r.x+22,r.y+r.h*.52);
+    const days=['일','월','화','수','목','금','토'];
+    c.font=`600 ${r.h*.1}px ${FONT}`;c.fillStyle='rgba(255,255,255,.9)';
+    c.fillText(`${now.getMonth()+1}월 ${now.getDate()}일 ${days[now.getDay()]}요일`,r.x+24,r.y+r.h*.7);
+    c.font=`400 ${r.h*.085}px ${FONT}`;c.fillStyle='rgba(255,255,255,.7)';
+    c.fillText('서울 · 맑음 12°  |  미세먼지 좋음',r.x+24,r.y+r.h*.86);
+    c.textAlign='right';c.font=`${r.h*.3}px ${EFONT}`;c.fillText('☀️',r.x+r.w-22,r.y+r.h*.45);
+    hitRects[pi].push({x:r.x,y:r.y,w:r.w,h:r.h,n:'시계 위젯'});
+    // 검색창
+    const sy=r.y+r.h+18,sh=46;rr(c,18,sy,W-36,sh,23);c.fillStyle='rgba(255,255,255,.9)';c.fill();
+    c.textAlign='left';c.textBaseline='middle';c.font=`18px ${EFONT}`;c.fillText('🔍',34,sy+sh/2+1);
+    c.font=`400 15px ${FONT}`;c.fillStyle='#777';c.fillText('무엇이든 검색하세요',64,sy+sh/2);
+    c.font=`18px ${EFONT}`;c.textAlign='right';c.fillText('🎤',W-34,sy+sh/2+1);
+    hitRects[pi].push({x:18,y:sy,w:W-36,h:sh,n:'통합 검색'});
+  }
+  if(P.card){
+    const ch=Math.min(150,H*.18),x=18,y=70,w=W-36;
+    const g=c.createLinearGradient(x,y,x+w,y+ch);g.addColorStop(0,'rgba(123,63,228,.55)');g.addColorStop(1,'rgba(230,184,92,.45)');
+    rr(c,x,y,w,ch,26);c.fillStyle=g;c.fill();c.strokeStyle='rgba(255,255,255,.25)';c.stroke();
+    c.fillStyle='#fff';c.textAlign='left';c.textBaseline='alphabetic';
+    c.font=`700 13px ${FONT}`;c.fillStyle='rgba(255,255,255,.8)';c.fillText('뉴니버스 · 오늘의 한마디',x+20,y+32);
+    c.font=`700 ${Math.min(21,w*.058)}px ${FONT}`;c.fillStyle='#fff';
+    c.fillText('아무도 시도하지 않은 길이',x+20,y+ch*.5+4);c.fillText('새로운 세계가 됩니다.',x+20,y+ch*.5+32);
+    c.font=`${ch*.32}px ${EFONT}`;c.textAlign='right';c.fillText('🌌',x+w-18,y+ch*.42);
+    hitRects[pi].push({x,y,w,h:ch,n:'오늘의 한마디'});
+  }
+  const cols=4,pad=16,cw=(W-pad*2)/cols,s=Math.min(62,cw*.66),rowH=s+40;
+  const top=gridTop(pi);
+  P.apps.forEach((a,i)=>{
+    const col=i%cols,row=(i/cols)|0,x=pad+col*cw+(cw-s)/2,y=top+row*rowH;
+    drawIcon(c,a,x,y,s);hitRects[pi].push({x,y,w:s,h:s+24,n:a.n});
+  });
+  pageCanvases[pi]=cnv;return cnv;
+}
+function drawBg(){
+  bg.width=GW;bg.height=GH;const c=bg.getContext('2d');c.setTransform(DPR,0,0,DPR,0,0);
+  const g=c.createLinearGradient(0,0,W*.4,H);g.addColorStop(0,'#1a0f3d');g.addColorStop(.5,'#2b1250');g.addColorStop(1,'#0a1a3a');
+  c.fillStyle=g;c.fillRect(0,0,W,H);
+  const neb=(x,y,r,col)=>{const rg=c.createRadialGradient(x,y,0,x,y,r);rg.addColorStop(0,col);rg.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=rg;c.fillRect(0,0,W,H)};
+  neb(W*.8,H*.25,W*.8,'rgba(230,140,80,.35)');neb(W*.1,H*.7,W*.9,'rgba(90,60,220,.35)');neb(W*.6,H*.95,W*.6,'rgba(40,170,200,.25)');
+  let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  for(let i=0;i<260;i++){const x=rnd()*W,y=rnd()*H,r=rnd()*1.3+.2;c.globalAlpha=.3+rnd()*.7;c.fillStyle='#fff';c.beginPath();c.arc(x,y,r,0,7);c.fill()}
+  c.globalAlpha=1;
+  // 사구(모래 언덕) 실루엣
+  c.fillStyle='rgba(10,6,25,.55)';c.beginPath();c.moveTo(0,H);c.lineTo(0,H*.86);c.quadraticCurveTo(W*.35,H*.78,W*.6,H*.86);c.quadraticCurveTo(W*.85,H*.92,W,H*.84);c.lineTo(W,H);c.fill();
+}
+
+// ---------- WebGL ----------
+const gl=cv.getContext('webgl',{alpha:true,premultipliedAlpha:true,antialias:false,powerPreference:'high-performance'});
+if(!gl){$('nogl').style.display='flex';return}
+function sh(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw gl.getShaderInfoLog(s);return s}
+function prog(vs,fs){const p=gl.createProgram();gl.attachShader(p,sh(gl.VERTEX_SHADER,vs));gl.attachShader(p,sh(gl.FRAGMENT_SHADER,fs));gl.linkProgram(p);if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw gl.getProgramInfoLog(p);return p}
+const VS=`
+precision highp float;
+attribute vec2 a_uv; attribute vec3 a_rnd;
+uniform vec2 u_res; uniform float u_t,u_dir,u_wind,u_turb,u_cell,u_time,u_dpr,u_off;
+varying vec2 v_uv; varying float v_p; varying float v_a; varying float v_tint;
+void main(){
+  float lead = u_dir<0.0 ? 1.0-a_uv.x : a_uv.x;
+  float wav = sin(a_uv.y*9.0+a_uv.x*4.0)*0.04 + sin(a_uv.y*23.0)*0.02;
+  float delay = lead*0.48 + a_rnd.x*0.22 + wav;
+  float p = clamp((u_t*1.08 - delay)/0.32, 0.0, 1.0);
+  float e = p*p;
+  vec2 d = vec2(0.0);
+  float sp = 0.55 + a_rnd.y*0.9;
+  d.x = u_dir*u_wind*u_res.x*(e*1.25 + p*0.12)*sp;
+  d.y = (a_rnd.z-0.62)*0.32*u_res.y*e*u_wind + 0.10*u_res.y*e*e;
+  float ph = a_rnd.x*6.2832;
+  d.x += sin(a_uv.y*18.0 + u_time*2.7 + ph + p*6.0)*u_turb*38.0*u_dpr*p;
+  d.y += cos(a_uv.x*15.0 + u_time*2.1 + a_rnd.y*6.2832 + p*7.0)*u_turb*55.0*u_dpr*p;
+  vec2 pos = a_uv*u_res + d + vec2(u_off,0.0);
+  vec2 clip = pos/u_res*2.0-1.0;
+  gl_Position = vec4(clip.x,-clip.y,0.0,1.0);
+  float grain = mix(1.0, 0.55+a_rnd.z*0.8, smoothstep(0.0,0.35,p));
+  gl_PointSize = u_cell*grain;
+  v_uv=a_uv; v_p=p; v_a = 1.0-smoothstep(0.35+a_rnd.y*0.3, 1.0, p); v_tint=a_rnd.z;
+}`;
+const FS=`
+precision mediump float;
+uniform sampler2D u_tex; uniform vec2 u_cellUV;
+varying vec2 v_uv; varying float v_p; varying float v_a; varying float v_tint;
+void main(){
+  vec2 pc = gl_PointCoord-0.5;
+  float m = smoothstep(0.0,0.2,v_p);
+  vec4 c = texture2D(u_tex, v_uv + pc*u_cellUV*(1.0-m));
+  float r = length(pc);
+  float shape = mix(1.0, 1.0-smoothstep(0.3,0.5,r), m);
+  vec3 sand = vec3(0.93,0.76,0.48)*c.a;
+  vec3 col = mix(c.rgb, mix(c.rgb, sand, 0.35+0.3*v_tint), m*0.75);
+  float a = shape*v_a;
+  if(c.a*a<0.01) discard;
+  gl_FragColor = vec4(col, c.a)*a;
+}`;
+const QVS=`attribute vec2 a_p; uniform float u_s; varying vec2 v_uv;
+void main(){v_uv=a_p*0.5+0.5; v_uv.y=1.0-v_uv.y; gl_Position=vec4(a_p*u_s,0.0,1.0);}`;
+const QFS=`precision mediump float; uniform sampler2D u_tex; uniform float u_a; varying vec2 v_uv;
+void main(){gl_FragColor=texture2D(u_tex,v_uv)*u_a;}`;
+const P1=prog(VS,FS),P2=prog(QVS,QFS);
+const U1={},U2={};
+['u_res','u_t','u_dir','u_wind','u_turb','u_cell','u_time','u_dpr','u_off','u_tex','u_cellUV'].forEach(n=>U1[n]=gl.getUniformLocation(P1,n));
+['u_s','u_tex','u_a'].forEach(n=>U2[n]=gl.getUniformLocation(P2,n));
+const L1={uv:gl.getAttribLocation(P1,'a_uv'),rnd:gl.getAttribLocation(P1,'a_rnd')},L2=gl.getAttribLocation(P2,'a_p');
+const quad=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,quad);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+const maxPt=gl.getParameter(gl.ALIASED_POINT_SIZE_RANGE)[1]||64;
+
+let tex=[],bufs=[],counts=[],cell=2;
+function upload(pi){
+  if(!tex[pi])tex[pi]=gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D,tex[pi]);
+  gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL,true);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,pageCanvases[pi]);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+}
+let alphaData=[];
+function cellsFor(pi,cs){
+  const d=alphaData[pi],nx=Math.ceil(GW/cs),ny=Math.ceil(GH/cs),out=[];
+  for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){
+    let hit=false;const x0=i*cs,y0=j*cs,x1=Math.min(GW,x0+cs),y1=Math.min(GH,y0+cs);
+    for(let y=y0;y<y1&&!hit;y++){let o=(y*GW+x0)*4+3;for(let x=x0;x<x1;x++,o+=4)if(d[o]>6){hit=true;break}}
+    if(hit)out.push(i,j);
+  }
+  return out;
+}
+function buildParticles(){
+  for(let pi=0;pi<3;pi++)alphaData[pi]=pageCanvases[pi].getContext('2d',{willReadFrequently:true}).getImageData(0,0,GW,GH).data;
+  cell=Math.max(2,Math.round(S.size*DPR));
+  let cs;
+  for(;;){cs=[0,1,2].map(pi=>cellsFor(pi,cell));const mx=Math.max(...cs.map(a=>a.length/2));if(mx<=CAP||cell>=maxPt)break;cell++}
+  for(let pi=0;pi<3;pi++){
+    const c=cs[pi],n=c.length/2,arr=new Float32Array(n*5);
+    for(let k=0;k<n;k++){arr[k*5]=(c[k*2]+.5)*cell/GW;arr[k*5+1]=(c[k*2+1]+.5)*cell/GH;arr[k*5+2]=Math.random();arr[k*5+3]=Math.random();arr[k*5+4]=Math.random()}
+    if(!bufs[pi])bufs[pi]=gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER,bufs[pi]);gl.bufferData(gl.ARRAY_BUFFER,arr,gl.STATIC_DRAW);counts[pi]=n;
+  }
+  alphaData=[];updateStats();
+}
+
+// ---------- 상태 ----------
+let cur=0,target=-1,dir=-1,t=0,off=0,anim=null,dragging=false,startT=performance.now();
+let fpsAcc=0,fpsN=0,lastFps=60,needRebuild=false;
+
+function layout(){
+  const r=phone.getBoundingClientRect();W=r.width;H=r.height;DPR=Math.min(window.devicePixelRatio||1,2);
+  GW=Math.round(W*DPR);GH=Math.round(H*DPR);cv.width=GW;cv.height=GH;
+  drawBg();for(let i=0;i<3;i++){renderPage(i);upload(i)}
+  buildParticles();
+  const dockTop=H-parseFloat(getComputedStyle($('dock')).bottom)-88;
+  $('dots').style.top=(dockTop-22)+'px';$('hint').style.top=(dockTop-50)+'px';
+  draw();
+}
+function draw(){
+  const now=performance.now();
+  gl.viewport(0,0,GW,GH);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);
+  if(target>=0&&t>0){
+    const a=Math.min(1,Math.max(0,(t-.12)/.7));const ea=a*a*(3-2*a);
+    gl.useProgram(P2);gl.bindBuffer(gl.ARRAY_BUFFER,quad);gl.enableVertexAttribArray(L2);gl.vertexAttribPointer(L2,2,gl.FLOAT,false,0,0);
+    gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tex[target]);gl.uniform1i(U2.u_tex,0);
+    gl.uniform1f(U2.u_a,ea);gl.uniform1f(U2.u_s,.93+.07*ea);gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+    gl.disableVertexAttribArray(L2);
+  }
+  gl.useProgram(P1);gl.bindBuffer(gl.ARRAY_BUFFER,bufs[cur]);
+  gl.enableVertexAttribArray(L1.uv);gl.enableVertexAttribArray(L1.rnd);
+  gl.vertexAttribPointer(L1.uv,2,gl.FLOAT,false,20,0);gl.vertexAttribPointer(L1.rnd,3,gl.FLOAT,false,20,8);
+  gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tex[cur]);gl.uniform1i(U1.u_tex,0);
+  gl.uniform2f(U1.u_res,GW,GH);gl.uniform1f(U1.u_t,t);gl.uniform1f(U1.u_dir,dir);gl.uniform1f(U1.u_wind,S.wind);
+  gl.uniform1f(U1.u_turb,S.turb);gl.uniform1f(U1.u_cell,cell);gl.uniform1f(U1.u_time,(now-startT)/1000);
+  gl.uniform1f(U1.u_dpr,DPR);gl.uniform1f(U1.u_off,off*DPR);gl.uniform2f(U1.u_cellUV,cell/GW,cell/GH);
+  gl.drawArrays(gl.POINTS,0,counts[cur]);
+  gl.disableVertexAttribArray(L1.uv);gl.disableVertexAttribArray(L1.rnd);
+}
+let raf=0,lastFrame=0;
+function loop(ts){
+  raf=0;
+  if(lastFrame&&anim){const dt=ts-lastFrame;if(dt<100){fpsAcc+=dt;fpsN++}}
+  lastFrame=ts;
+  if(anim){
+    const k=Math.min(1,(ts-anim.t0)/anim.d);
+    const e=anim.ease?anim.ease(k):k;
+    t=anim.from+(anim.to-anim.from)*e;
+    if(anim.offFrom!==undefined)off=anim.offFrom*(1-e);
+    if(k>=1){const done=anim.done;anim=null;done&&done()}
+  }
+  draw();
+  if(anim||dragging)req();else lastFrame=0;
+}
+function req(){if(!raf)raf=requestAnimationFrame(loop)}
+const easeOut=k=>1-Math.pow(1-k,3);
+
+function finishTransition(){
+  if(fpsN>8){lastFps=1000/(fpsAcc/fpsN);if(lastFps<45&&CAP>12000){CAP=Math.round(CAP*.65);needRebuild=true}}
+  fpsAcc=0;fpsN=0;
+  cur=target;target=-1;t=0;setDots();updateStats();
+  if(needRebuild){needRebuild=false;buildParticles()}
+}
+function go(to,d){
+  target=to;dir=d;
+  const from=t;
+  anim={t0:performance.now(),d:Math.max(250,S.dur*1000*(1-from)),from,to:1,done:()=>{finishTransition();draw()}};
+  req();
+}
+function snapBack(){
+  anim={t0:performance.now(),d:420,from:t,to:0,offFrom:off,ease:easeOut,done:()=>{target=-1;off=0;draw()}};req();
+}
+function setDots(){[...$('dots').children].forEach((d,i)=>d.classList.toggle('on',i===cur))}
+
+// ---------- 입력 ----------
+let sx=0,sy=0,lx=0,lt=0,vx=0,moved=false,crossed=false,pid=null;
+phone.addEventListener('pointerdown',e=>{
+  if(e.target.closest('#sheet,#gear,#dock'))return;
+  if($('sheet').classList.contains('open')){toggleSheet(false);return}
+  if(anim){anim.t0=-1e9;loop(performance.now())}
+  pid=e.pointerId;phone.setPointerCapture(pid);
+  dragging=true;moved=false;crossed=false;sx=lx=e.clientX;sy=e.clientY;lt=e.timeStamp;vx=0;
+  $('hint').style.opacity=0;req();
+});
+phone.addEventListener('pointermove',e=>{
+  if(!dragging||e.pointerId!==pid)return;
+  const dx=e.clientX-sx;if(Math.abs(dx)>8||Math.abs(e.clientY-sy)>8)moved=true;
+  const dt=e.timeStamp-lt;if(dt>0){vx=.7*vx+.3*((e.clientX-lx)/dt)}lx=e.clientX;lt=e.timeStamp;
+  const d=dx<0?-1:1,to=cur-d;
+  if(to<0||to>2){target=-1;t=0;off=dx*.25/(1+Math.abs(dx)/300);return}
+  off=0;target=to;dir=d;
+  const frac=Math.abs(dx)/W;t=Math.min(.5,frac*.55);
+  const over=frac>.2;if(over&&!crossed&&navigator.vibrate)navigator.vibrate(8);crossed=over;
+});
+function up(e){
+  if(!dragging||e.pointerId!==pid)return;dragging=false;
+  const dx=e.clientX-sx,frac=Math.abs(dx)/W;
+  if(!moved){tap(e);target=-1;t=0;draw();return}
+  if(target>=0&&(frac>.2||(Math.abs(vx)>.45&&Math.sign(vx)===Math.sign(dx)&&frac>.05)))go(target,dir);
+  else snapBack();
+}
+phone.addEventListener('pointerup',up);phone.addEventListener('pointercancel',up);
+
+function tap(e){
+  const r=phone.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
+  const h=(hitRects[cur]||[]).find(o=>x>=o.x&&x<=o.x+o.w&&y>=o.y&&y<=o.y+o.h);
+  if(h)toast(`${h.n} · 시제품이라 아직 열리지 않아요`);
+}
+let tt=0;function toast(m){const el=$('toast');el.textContent=m;el.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('show'),1600)}
+
+// 도크
+DOCK.forEach(a=>{const d=document.createElement('div');d.className='dk';d.innerHTML=`<b style="background:linear-gradient(135deg,${a.c1},${a.c2})">${a.e}</b>`;d.title=a.n;d.onclick=()=>toast(`${a.n} · 시제품이라 아직 열리지 않아요`);$('dock').appendChild(d)});
+
+// ---------- 설정 패널 ----------
+function toggleSheet(o){$('sheet').classList.toggle('open',o)}
+$('gear').onclick=e=>{e.stopPropagation();toggleSheet(!$('sheet').classList.contains('open'))};
+$('close').onclick=()=>toggleSheet(false);
+const sl={wind:['sWind','vWind',v=>v.toFixed(2)+'×'],size:['sSize','vSize',v=>v.toFixed(1)+'px'],turb:['sTurb','vTurb',v=>v.toFixed(2)],dur:['sDur','vDur',v=>v.toFixed(1)+'초']};
+let sizeTimer=0;
+function syncUI(){for(const k in sl){$(sl[k][0]).value=S[k];$(sl[k][1]).textContent=sl[k][2](S[k])}}
+for(const k in sl){$(sl[k][0]).addEventListener('input',e=>{S[k]=parseFloat(e.target.value);$(sl[k][1]).textContent=sl[k][2](S[k]);
+  try{localStorage.setItem('nv_sand',JSON.stringify(S))}catch(_){}
+  if(k==='size'){clearTimeout(sizeTimer);sizeTimer=setTimeout(()=>{buildParticles();draw()},150)}})}
+$('reset').onclick=()=>{S=Object.assign({},DEF);syncUI();try{localStorage.removeItem('nv_sand')}catch(_){}buildParticles();draw()};
+$('demo').onclick=()=>{if(anim)return;const to=cur<2?cur+1:cur-1;go(to,to>cur?-1:1)};
+function updateStats(){$('stats').textContent=`모래알 ${counts[cur]?counts[cur].toLocaleString('ko-KR'):0}개 · 알갱이 ${cell}px · 최근 ${Math.round(lastFps)}fps${weak?' · 절약 모드':''}`}
+syncUI();
+
+// ---------- 시계 ----------
+function tick(){
+  const n=new Date();$('sbTime').textContent=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
+  if(GW&&!anim&&!dragging){renderPage(0);upload(0);draw()}
+}
+setInterval(tick,15000);
+let rz=0;window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(layout,200)});
+cv.addEventListener('webglcontextlost',e=>e.preventDefault());
+const start=()=>{layout();tick()};
+(document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(start);
+})();
+</script>
+</body>
+</html>
