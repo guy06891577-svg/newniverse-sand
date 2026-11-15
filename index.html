@@ -7,7 +7,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>뉴니버스 · 모래 전환 시제품 v9</title>
+<title>뉴니버스 · 모래 전환 시제품 v10</title>
 <style>
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
   html,body{height:100%;background:#05040d;overflow:hidden;font-family:system-ui,-apple-system,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#fff;overscroll-behavior:none}
@@ -18,6 +18,7 @@
     #hint-desktop{display:block!important}
   }
   #bg,#wp,#stars,#dune,#gl{position:absolute;inset:0;width:100%;height:100%;display:block}
+  #gl{z-index:2;pointer-events:none}
   #status{position:absolute;top:0;left:0;right:0;height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font-size:13px;font-weight:600;z-index:5;pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,.4)}
   #status .r{display:flex;gap:6px;align-items:center;font-size:12px}
   #gear{position:absolute;top:40px;right:14px;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.12);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#fff;font-size:19px;z-index:6;display:flex;align-items:center;justify-content:center;cursor:pointer}
@@ -61,6 +62,13 @@
   #fold .fdots i{width:6px;height:6px;border-radius:3px;background:rgba(255,255,255,.35);transition:all .2s}
   #fold .fdots i.on{background:#fff;width:16px}
   #fold .tip{position:absolute;left:0;right:0;bottom:16%;text-align:center;font-size:12px;color:rgba(255,255,255,.6)}
+  #me{position:absolute;display:none;z-index:1;pointer-events:none;touch-action:none}
+  #me img{position:absolute;inset:0;width:100%;height:100%;display:block;-webkit-user-drag:none}
+  #me .tint{position:absolute;inset:0;mix-blend-mode:soft-light;-webkit-mask-size:100% 100%;mask-size:100% 100%;pointer-events:none}
+  #me .ground{position:absolute;left:8%;right:8%;bottom:-4%;height:9%;opacity:.8;pointer-events:none}
+  #me.edit{pointer-events:auto;z-index:7;outline:1.5px dashed rgba(255,255,255,.75);outline-offset:6px;border-radius:12px;cursor:move}
+  #meDone{position:absolute;left:50%;top:44px;transform:translateX(-50%);z-index:8;display:none;padding:10px 26px;border-radius:20px;border:none;font-size:15px;font-weight:700;background:linear-gradient(135deg,#e6b85c,#d9813b);color:#1a1205}
+  #meProg{position:absolute;left:24px;right:24px;top:45%;z-index:9;display:none;text-align:center;padding:16px;border-radius:18px;background:rgba(18,15,34,.9);font-size:14px;line-height:1.5;border:1px solid rgba(255,255,255,.15)}
   #nogl{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;padding:30px;z-index:20;background:#0b0820}
 </style>
 </head>
@@ -70,6 +78,9 @@
   <div id="wp"></div>
   <canvas id="stars"></canvas>
   <canvas id="dune"></canvas>
+  <div id="me"><div class="ground"></div><img alt=""><div class="tint"></div></div>
+  <button id="meDone">완료</button>
+  <div id="meProg"></div>
   <canvas id="gl"></canvas>
   <div id="status"><span id="sbTime">12:00</span><span class="r">📶 <span>LTE</span> 🔋 <span>87%</span></span></div>
   <button id="gear" aria-label="설정">⚙️</button>
@@ -82,6 +93,7 @@
     <h3>모래 전환 설정 <button id="close">✕</button></h3>
     <div class="sub">값을 바꾸고 화면을 밀어보세요. 마음에 드는 조합을 찾아주세요.</div>
     <div class="row" style="margin-top:0"><label>배경화면</label><div class="seg" id="wpSeg" style="flex-wrap:wrap"></div></div>
+    <div class="row"><label>내 사진 합성 <span style="color:#a9a3c9;font-size:11px">사진은 이 폰 안에서만 처리돼요</span></label><div class="btns" style="margin-top:0"><button class="p" id="mePick">사진 고르기</button><button id="meEdit">위치·크기</button><button id="meDel">지우기</button></div><input type="file" id="meFile" accept="image/*" hidden></div>
     <div class="seg" id="styleSeg" style="flex-wrap:wrap"><button data-s="wind" style="flex-basis:100%">바람 한 방향 (흩날림→불어와 만들기)</button><button data-s="morph">흩어졌다 모이기</button><button data-s="dream">몽환</button><button data-s="storm">모래바람</button></div>
     <div class="row"><label>바람 세기 <span id="vWind"></span></label><input id="sWind" type="range" min="0.3" max="2.5" step="0.05"></div>
     <div class="row"><label>모래알 크기 <span id="vSize"></span></label><input id="sSize" type="range" min="1" max="6" step="0.5"></div>
@@ -105,7 +117,7 @@ const $=id=>document.getElementById(id);
 // ---------- 설정 ----------
 const DEF={style:'wind',wind:1.0,size:1.5,turb:1.0,dur:1.7,glow:0.5,star:0.6,wp:'nebula'};
 let S=Object.assign({},DEF);
-try{Object.assign(S,JSON.parse(localStorage.getItem('nv_sand9')||'{}'))}catch(e){}
+try{Object.assign(S,JSON.parse(localStorage.getItem('nv_sand10')||'{}'))}catch(e){}
 const weak=(navigator.hardwareConcurrency||4)<=4||(navigator.deviceMemory||4)<=3;
 let CAP=weak?60000:130000;
 
@@ -261,12 +273,13 @@ function applyWallpaper(){
     if(w.fallback)wpVideo.addEventListener('error',()=>{if(wpVideo){wpVideo.remove();wpVideo=null}wpEl.style.background=`center/cover no-repeat url("${w.fallback}")`});
     wpVideo.setAttribute('playsinline','');wpVideo.style.cssText='width:100%;height:100%;object-fit:cover';wpEl.appendChild(wpVideo);wpVideo.play().catch(()=>{})}
   syncWpSeg();
+  if(window.__meReady)updateTone();
 }
 function syncWpSeg(){
   const seg=$('wpSeg');if(seg.children.length!==WALLPAPERS.length){seg.innerHTML='';WALLPAPERS.forEach(w=>{const b=document.createElement('button');b.dataset.w=w.id;b.textContent=w.name;b.style.flexBasis='45%';seg.appendChild(b)})}
   [...seg.children].forEach(b=>b.classList.toggle('on',b.dataset.w===curWp().id));
 }
-$('wpSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S.wp=b.dataset.w;try{localStorage.setItem('nv_sand9',JSON.stringify(S))}catch(_){}applyWallpaper()});
+$('wpSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S.wp=b.dataset.w;try{localStorage.setItem('nv_sand10',JSON.stringify(S))}catch(_){}applyWallpaper()});
 applyWallpaper();
 fetch('wallpapers/wallpapers.json',{cache:'no-store'}).then(r=>r.ok?r.json():[]).then(list=>{
   (Array.isArray(list)?list:list.wallpapers||[]).forEach(w=>{if(w&&w.id&&!WALLPAPERS.some(x=>x.id===w.id)){['src','poster','fallback'].forEach(k=>{if(w[k]&&!/^(https?:|\/|data:)/.test(w[k]))w[k]='wallpapers/'+w[k]});
@@ -684,6 +697,100 @@ function spaceFrame(ts){
 }
 requestAnimationFrame(spaceFrame);
 
+// ---------- 내 사진 합성 (기기 안에서만 처리 · 서버 업로드 없음) ----------
+const ME_KEY='nv_me1';
+const meEl=$('me'),meImg=meEl.querySelector('img'),meTint=meEl.querySelector('.tint'),meGround=meEl.querySelector('.ground');
+let ME=null;   // {src,x,y,s,ar}  x,y=중심(화면 비율), s=폭(화면 폭 대비)
+try{ME=JSON.parse(localStorage.getItem(ME_KEY)||'null')}catch(_){}
+// 배경별 빛·색 맞춤(실시간 장면은 미리 정한 값, 이미지/영상은 평균색 측정)
+const WP_TONE={nebula:{c:'#7a4cc9',k:.42,b:.86,sat:.95,sh:'rgba(20,6,40,.55)'},starfield:{c:'#3a4a7a',k:.38,b:.72,sat:.85,sh:'rgba(0,0,0,.6)'},space:{c:'#4a3a8a',k:.36,b:.8,sat:.9,sh:'rgba(5,3,15,.55)'}};
+let tone={c:'#888',k:.25,b:1,sat:1,sh:'rgba(0,0,0,.45)'};
+function avgColor(src,cb){const im=new Image();im.onload=()=>{try{const c=document.createElement('canvas');c.width=c.height=16;const x=c.getContext('2d');x.drawImage(im,0,0,16,16);
+  const d=x.getImageData(0,0,16,16).data;let r=0,g=0,b=0;for(let i=0;i<d.length;i+=4){r+=d[i];g+=d[i+1];b+=d[i+2]}const n=d.length/4;cb([r/n,g/n,b/n])}catch(e){cb(null)}};im.onerror=()=>cb(null);im.src=src}
+function cssAvg(css){const m=css.match(/#[0-9a-f]{6}/gi)||[];if(!m.length)return null;let r=0,g=0,b=0;m.forEach(h=>{r+=parseInt(h.substr(1,2),16);g+=parseInt(h.substr(3,2),16);b+=parseInt(h.substr(5,2),16)});return [r/m.length,g/m.length,b/m.length]}
+function setToneRGB(rgb){if(!rgb)return;const L=(0.3*rgb[0]+0.59*rgb[1]+0.11*rgb[2])/255;
+  tone={c:`rgb(${rgb.map(v=>Math.round(v)).join(',')})`,k:.32,b:Math.min(1.08,.7+.45*L),sat:.9+.15*L,sh:L>.55?'rgba(40,25,30,.35)':'rgba(0,0,0,.5)'};applyMeStyle()}
+function updateTone(){
+  const w=curWp();
+  if(w.type==='live'){tone=WP_TONE[w.scene]||tone;applyMeStyle();return}
+  if(w.type==='css'){setToneRGB(cssAvg(w.css));return}
+  const src=w.type==='video'?(w.poster||null):w.src;
+  if(src)avgColor(src,setToneRGB);else applyMeStyle();
+}
+function applyMeStyle(){
+  if(!ME){meEl.style.display='none';return}
+  meEl.style.display='block';
+  if(meImg.getAttribute('src')!==ME.src){meImg.src=ME.src;const m=`url("${ME.src}")`;meTint.style.webkitMaskImage=meTint.style.maskImage=m}
+  const w=ME.s*W,h=w/ME.ar;
+  meEl.style.width=w+'px';meEl.style.height=h+'px';meEl.style.left=(ME.x*W-w/2)+'px';meEl.style.top=(ME.y*H-h/2)+'px';
+  meImg.style.filter=`brightness(${tone.b}) saturate(${tone.sat}) drop-shadow(0 ${Math.round(h*.02)}px ${Math.round(h*.04)}px ${tone.sh})`;
+  meTint.style.background=tone.c;meTint.style.opacity=tone.k;
+  meGround.style.background=`radial-gradient(closest-side,${tone.sh},rgba(0,0,0,0))`;
+}
+function saveMe(){try{if(ME)localStorage.setItem(ME_KEY,JSON.stringify(ME));else localStorage.removeItem(ME_KEY)}catch(e){toast('사진이 너무 커서 저장하지 못했어요')}}
+// 가장자리 부드럽게: 원본 × 흐린 알파 → 안쪽으로 살짝 페더링
+function feather(img,maxSide){
+  const sc=Math.min(1,maxSide/Math.max(img.width,img.height)),w=Math.round(img.width*sc),h=Math.round(img.height*sc);
+  // 피사체 경계에 맞춰 잘라내기
+  const a=document.createElement('canvas');a.width=w;a.height=h;const ax=a.getContext('2d');ax.drawImage(img,0,0,w,h);
+  // 희미하게 남은 배경 찌꺼기 제거(낮은 알파 컷 + 대비 보정)
+  const id=ax.getImageData(0,0,w,h),d=id.data;for(let i=3;i<d.length;i+=4){const v=d[i];d[i]=v<56?0:Math.min(255,(v-56)*255/180)}ax.putImageData(id,0,0);
+  let x0=w,y0=h,x1=0,y1=0;
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(d[(y*w+x)*4+3]>128){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}
+  if(x1<=x0||y1<=y0)return null;
+  const pad=Math.round(Math.max(w,h)*.02);x0=Math.max(0,x0-pad);y0=Math.max(0,y0-pad);x1=Math.min(w-1,x1+pad);y1=Math.min(h-1,y1+pad);
+  const cw=x1-x0+1,ch=y1-y0+1,r=Math.max(1.2,Math.max(cw,ch)/360);
+  const b=document.createElement('canvas');b.width=cw;b.height=ch;const bx=b.getContext('2d');
+  bx.drawImage(a,x0,y0,cw,ch,0,0,cw,ch);
+  const m=document.createElement('canvas');m.width=cw;m.height=ch;const mx=m.getContext('2d');mx.filter=`blur(${r}px)`;mx.drawImage(b,0,0);
+  bx.globalCompositeOperation='destination-in';bx.drawImage(m,0,0);
+  let url=b.toDataURL('image/webp',.9);if(!url.startsWith('data:image/webp'))url=b.toDataURL('image/png');
+  return {url,ar:cw/ch};
+}
+let bgLib=null;
+async function cutout(file){
+  const prog=$('meProg');
+  const setP=t=>{prog.textContent=t;prog.style.display='block'};
+  setP('사진을 준비하는 중…');
+  // 원본을 1024px 이하로 줄여 처리(빠르고 메모리 절약)
+  const bmp=await createImageBitmap(file);const sc=Math.min(1,1024/Math.max(bmp.width,bmp.height));
+  const c=document.createElement('canvas');c.width=Math.round(bmp.width*sc);c.height=Math.round(bmp.height*sc);c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
+  const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',.92));
+  setP('주인공(사람·동물)을 오려내는 중… 처음 한 번은 인식 모델(약 44MB)을 내려받아요');
+  if(!bgLib)bgLib=await import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/+esm');
+  const out=await bgLib.removeBackground(blob,{model:'isnet_quint8',output:{format:'image/png'},
+    progress:(key,cur,total)=>{if(/fetch/.test(key)&&total)setP(`인식 모델 내려받는 중… ${Math.round(cur/total*100)}% (처음 한 번만)`);else if(/compute/.test(key))setP('주인공을 오려내는 중…')}});
+  const img=await createImageBitmap(out);
+  const f=feather(img,720);prog.style.display='none';
+  if(!f){toast('사진에서 주인공을 찾지 못했어요');return}
+  ME={src:f.url,ar:f.ar,x:.5,y:.6,s:Math.min(.7,.55*Math.max(.7,f.ar))};
+  saveMe();updateTone();applyMeStyle();setMeEdit(true);
+}
+$('meFile').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];e.target.value='';if(!f)return;toggleSheet(false);
+  cutout(f).catch(err=>{console.warn('cutout',err);$('meProg').style.display='none';toast('오려내기에 실패했어요. 다른 사진으로 해보세요')})});
+$('mePick').onclick=()=>$('meFile').click();
+$('meEdit').onclick=()=>{if(!ME){toast('먼저 사진을 골라주세요');return}toggleSheet(false);setMeEdit(true)};
+$('meDel').onclick=()=>{ME=null;saveMe();setMeEdit(false);applyMeStyle();toast('합성한 사진을 지웠어요')};
+// 위치·크기 조정: 끌어서 이동, 두 손가락으로 크기(PC는 휠)
+let meEditing=false;const mePts=new Map();let meG=null;
+function setMeEdit(on){meEditing=on;meEl.classList.toggle('edit',on);$('meDone').style.display=on?'block':'none';if(!on){mePts.clear();meG=null;saveMe()}}
+$('meDone').onclick=()=>{setMeEdit(false);toast('사진 위치를 저장했어요')};
+function meGesture(){const p=[...mePts.values()];if(!p.length){meG=null;return}
+  const cx=p.reduce((a,b)=>a+b.x,0)/p.length,cy=p.reduce((a,b)=>a+b.y,0)/p.length,d=p.length>1?Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y):0;
+  meG={cx,cy,d,x:ME.x,y:ME.y,s:ME.s,n:p.length}}
+meEl.addEventListener('pointerdown',e=>{if(!meEditing)return;e.stopPropagation();meEl.setPointerCapture(e.pointerId);mePts.set(e.pointerId,{x:e.clientX,y:e.clientY});meGesture()});
+meEl.addEventListener('pointermove',e=>{if(!meEditing||!mePts.has(e.pointerId))return;mePts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  const p=[...mePts.values()];if(!meG||meG.n!==p.length){meGesture();return}
+  const cx=p.reduce((a,b)=>a+b.x,0)/p.length,cy=p.reduce((a,b)=>a+b.y,0)/p.length;
+  ME.x=Math.max(0,Math.min(1,meG.x+(cx-meG.cx)/W));ME.y=Math.max(0,Math.min(1,meG.y+(cy-meG.cy)/H));
+  if(p.length>1&&meG.d>0){const d=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);ME.s=Math.max(.12,Math.min(1.6,meG.s*d/meG.d))}
+  applyMeStyle()});
+const meUp=e=>{mePts.delete(e.pointerId);meGesture()};
+meEl.addEventListener('pointerup',meUp);meEl.addEventListener('pointercancel',meUp);
+meEl.addEventListener('wheel',e=>{if(!meEditing)return;e.preventDefault();ME.s=Math.max(.12,Math.min(1.6,ME.s*(e.deltaY<0?1.06:1/1.06)));applyMeStyle()},{passive:false});
+window.__nv_me={set:(o)=>{ME=Object.assign(ME||{},o);applyMeStyle()},get:()=>ME,edit:setMeEdit};
+
+window.__meReady=true;updateTone();applyMeStyle();
 // ---------- WebGL ----------
 const gl=cv.getContext('webgl',{alpha:true,premultipliedAlpha:true,antialias:false,powerPreference:'high-performance'});
 if(!gl){$('nogl').style.display='flex';return}
@@ -947,6 +1054,7 @@ function layout(){
   GW=Math.round(W*DPR);GH=Math.round(H*DPR);cv.width=GW;cv.height=GH;
   drawBg();for(let i=0;i<3;i++){renderPage(i);upload(i)}
   buildParticles();
+  if(window.__meReady)applyMeStyle();
   const dT=dockTop();$('dots').style.top=(dT-22)+'px';$('hint').style.top=(dT-50)+'px';
   draw();
 }
@@ -1051,7 +1159,7 @@ function setDots(){[...$('dots').children].forEach((d,i)=>d.classList.toggle('on
 // ---------- 입력 ----------
 let sx=0,sy=0,lx=0,lt=0,vx=0,moved=false,crossed=false,pid=null;
 phone.addEventListener('pointerdown',e=>{
-  if(e.target.closest('#sheet,#gear,#fold'))return;
+  if(e.target.closest('#sheet,#gear,#fold,#meDone,#me.edit'))return;
   if($('sheet').classList.contains('open')){toggleSheet(false);return}
   if(anim){anim.t0=-1e9;loop(performance.now())}
   pid=e.pointerId;phone.setPointerCapture(pid);
@@ -1165,14 +1273,14 @@ $('close').onclick=()=>toggleSheet(false);
 const sl={wind:['sWind','vWind',v=>v.toFixed(2)+'×'],size:['sSize','vSize',v=>v.toFixed(1)+'px'],turb:['sTurb','vTurb',v=>v.toFixed(2)],dur:['sDur','vDur',v=>v.toFixed(1)+'초'],star:['sStar','vStar',v=>v.toFixed(2)+'×'],glow:['sGlow','vGlow',v=>v.toFixed(2)]};
 let sizeTimer=0;
 function syncSeg(){[...$('styleSeg').children].forEach(b=>b.classList.toggle('on',b.dataset.s===S.style))}
-$('styleSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;S.style=b.dataset.s;syncSeg();try{localStorage.setItem('nv_sand9',JSON.stringify(S))}catch(_){}};
+$('styleSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;S.style=b.dataset.s;syncSeg();try{localStorage.setItem('nv_sand10',JSON.stringify(S))}catch(_){}};
 function syncUI(){syncSeg();for(const k in sl){$(sl[k][0]).value=S[k];$(sl[k][1]).textContent=sl[k][2](S[k])}}
 for(const k in sl){$(sl[k][0]).addEventListener('input',e=>{S[k]=parseFloat(e.target.value);$(sl[k][1]).textContent=sl[k][2](S[k]);
-  try{localStorage.setItem('nv_sand9',JSON.stringify(S))}catch(_){}
+  try{localStorage.setItem('nv_sand10',JSON.stringify(S))}catch(_){}
   if(k==='size'){clearTimeout(sizeTimer);sizeTimer=setTimeout(()=>{buildParticles();draw()},150)}})}
-$('reset').onclick=()=>{S=Object.assign({},DEF);syncUI();applyWallpaper();try{localStorage.removeItem('nv_sand9')}catch(_){}buildParticles();draw()};
+$('reset').onclick=()=>{S=Object.assign({},DEF);syncUI();applyWallpaper();try{localStorage.removeItem('nv_sand10')}catch(_){}buildParticles();draw()};
 $('demo').onclick=()=>{if(anim)return;const to=cur<2?cur+1:cur-1;go(to,to>cur?-1:1)};
-function updateStats(){$('stats').textContent=`v9 · 모래알 ${counts[cur]?counts[cur].toLocaleString('ko-KR'):0}개 · 알갱이 ${cell}px · 최근 ${Math.round(lastFps)}fps${weak?' · 절약 모드':''}`}
+function updateStats(){$('stats').textContent=`v10 · 모래알 ${counts[cur]?counts[cur].toLocaleString('ko-KR'):0}개 · 알갱이 ${cell}px · 최근 ${Math.round(lastFps)}fps${weak?' · 절약 모드':''}`}
 syncUI();
 window.__nv={pose:(to,d,tt)=>{target=to;dir=d;t=tt;draw()},cur:()=>cur,hits:()=>hitRects[cur]};
 
