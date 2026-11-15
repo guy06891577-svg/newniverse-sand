@@ -1,4 +1,5 @@
 [
+  {"id": "sakura", "name": "벚꽃길", "type": "video", "src": "sakura.mp4", "poster": "sakura.jpg", "fallback": "sakura.gif"},
   {"id": "ex-aurora-gif", "name": "예시 · 움직이는 오로라(GIF)", "type": "image", "src": "example-aurora.gif"},
   {"id": "ex-aurora-mp4", "name": "예시 · 오로라 영상(MP4)", "type": "video", "src": "example-aurora.mp4"},
   {"id": "ex-dunes", "name": "예시 · 사막 노을(이미지)", "type": "image", "src": "example-dunes.svg"}
