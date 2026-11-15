@@ -7,7 +7,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>뉴니버스 · 모래 전환 시제품 v6</title>
+<title>뉴니버스 · 모래 전환 시제품 v7</title>
 <style>
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
   html,body{height:100%;background:#05040d;overflow:hidden;font-family:system-ui,-apple-system,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#fff;overscroll-behavior:none}
@@ -103,9 +103,9 @@ const phone=document.getElementById('phone'), bg=document.getElementById('bg'), 
 const $=id=>document.getElementById(id);
 
 // ---------- 설정 ----------
-const DEF={style:'wind',wind:1.0,size:1.5,turb:1.0,dur:1.7,glow:0.5,star:0.6,wp:'space'};
+const DEF={style:'wind',wind:1.0,size:1.5,turb:1.0,dur:1.7,glow:0.5,star:0.6,wp:'nebula'};
 let S=Object.assign({},DEF);
-try{Object.assign(S,JSON.parse(localStorage.getItem('nv_sand6')||'{}'))}catch(e){}
+try{Object.assign(S,JSON.parse(localStorage.getItem('nv_sand7')||'{}'))}catch(e){}
 const weak=(navigator.hardwareConcurrency||4)<=4||(navigator.deviceMemory||4)<=3;
 let CAP=weak?60000:130000;
 
@@ -240,7 +240,9 @@ function drawBg(){
 // wallpapers/wallpapers.json 에 {"id","name","type":"image|video","src"} 항목을 추가하면 설정에 자동으로 나타나요.
 // type:'live' 는 코드로 그리는 실시간 장면(scene 이름), type:'css' 는 CSS 배경값.
 const WALLPAPERS=[
-  {id:'space',name:'3D 우주 (기본)',type:'live',scene:'space'},
+  {id:'nebula',name:'성운 속 (기본)',type:'live',scene:'nebula'},
+  {id:'starfield',name:'별밭',type:'live',scene:'starfield'},
+  {id:'space',name:'3D 우주 (v6)',type:'live',scene:'space'},
   {id:'ex-dusk',name:'예시 · 노을 그라데이션',type:'css',css:'linear-gradient(170deg,#2a1b4d 0%,#7a3b6e 45%,#e08a5a 80%,#f4c27a 100%)'},
 ];
 const wpEl=$('wp'),scv=$('stars'),dunecv=$('dune');
@@ -251,7 +253,7 @@ function applyWallpaper(){
   if(wpVideo){wpVideo.remove();wpVideo=null}
   wpEl.style.backgroundImage='';wpEl.style.background='';
   const live=w.type==='live';
-  scv.style.display=dunecv.style.display=live?'block':'none';
+  scv.style.display=live?'block':'none';dunecv.style.display=live&&w.scene==='space'?'block':'none';
   if(w.type==='css')wpEl.style.background=w.css;
   else if(w.type==='image')wpEl.style.background=`center/cover no-repeat url("${w.src}")`;
   else if(w.type==='video'){wpVideo=document.createElement('video');Object.assign(wpVideo,{src:w.src,muted:true,loop:true,autoplay:true,playsInline:true});
@@ -262,7 +264,7 @@ function syncWpSeg(){
   const seg=$('wpSeg');if(seg.children.length!==WALLPAPERS.length){seg.innerHTML='';WALLPAPERS.forEach(w=>{const b=document.createElement('button');b.dataset.w=w.id;b.textContent=w.name;b.style.flexBasis='45%';seg.appendChild(b)})}
   [...seg.children].forEach(b=>b.classList.toggle('on',b.dataset.w===curWp().id));
 }
-$('wpSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S.wp=b.dataset.w;try{localStorage.setItem('nv_sand6',JSON.stringify(S))}catch(_){}applyWallpaper()});
+$('wpSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S.wp=b.dataset.w;try{localStorage.setItem('nv_sand7',JSON.stringify(S))}catch(_){}applyWallpaper()});
 applyWallpaper();
 fetch('wallpapers/wallpapers.json',{cache:'no-store'}).then(r=>r.ok?r.json():[]).then(list=>{
   (Array.isArray(list)?list:list.wallpapers||[]).forEach(w=>{if(w&&w.id&&!WALLPAPERS.some(x=>x.id===w.id)){if(w.src&&!/^(https?:|\/|data:)/.test(w.src))w.src='wallpapers/'+w.src;WALLPAPERS.push(w)}});
@@ -271,9 +273,247 @@ fetch('wallpapers/wallpapers.json',{cache:'no-store'}).then(r=>r.ok?r.json():[])
 
 // ---------- 3D 우주 실시간 배경 (성운·은하수·별, 아주 느린 전진) ----------
 const SG=scv.getContext('webgl',{alpha:false,antialias:false,premultipliedAlpha:true});
-const space=(()=>{
-  if(!SG)return null;
-  const g=SG;
+// ---------- 실시간 배경 장면 레지스트리 ----------
+// 각 장면: LIVE_SCENES[이름]=(gl)=>({resize(), render(ts)}). WALLPAPERS 의 {type:'live',scene:'이름'} 으로 연결.
+// '별밭'(starfield)은 스타크의 우주멍 별 방식(절차적 구면 별 + 돔 회전)을 이식 — 다른 구현으로 교체하려면 LIVE_SCENES.starfield 만 바꾸면 돼요.
+const LIVE_SCENES={};
+const GLU={
+  prog(g,vs,fs){const c=(t,src)=>{const s=g.createShader(t);g.shaderSource(s,src);g.compileShader(s);if(!g.getShaderParameter(s,g.COMPILE_STATUS))throw g.getShaderInfoLog(s);return s};
+    const p=g.createProgram();g.attachShader(p,c(g.VERTEX_SHADER,vs));g.attachShader(p,c(g.FRAGMENT_SHADER,fs));g.linkProgram(p);
+    if(!g.getProgramParameter(p,g.LINK_STATUS))throw g.getProgramInfoLog(p);
+    const u={};const n=g.getProgramParameter(p,g.ACTIVE_UNIFORMS);for(let i=0;i<n;i++){const a=g.getActiveUniform(p,i);const nm=a.name.replace(/\[0\]$/,'');u[nm]=g.getUniformLocation(p,a.name)}p.u=u;return p},
+  quadBuf:null,
+  quad(g,p){if(!GLU.quadBuf){GLU.quadBuf=g.createBuffer();g.bindBuffer(g.ARRAY_BUFFER,GLU.quadBuf);g.bufferData(g.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),g.STATIC_DRAW)}
+    const l=g.getAttribLocation(p,'a_p');g.bindBuffer(g.ARRAY_BUFFER,GLU.quadBuf);g.enableVertexAttribArray(l);g.vertexAttribPointer(l,2,g.FLOAT,false,0,0);g.drawArrays(g.TRIANGLE_STRIP,0,4);g.disableVertexAttribArray(l)},
+  target(g){const f=g.createFramebuffer(),t=g.createTexture();const o={f,t,w:0,h:0,size(w,h){o.w=w;o.h=h;g.bindTexture(g.TEXTURE_2D,t);g.texImage2D(g.TEXTURE_2D,0,g.RGBA,w,h,0,g.RGBA,g.UNSIGNED_BYTE,null);
+      g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,g.LINEAR);
+      g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_S,g.CLAMP_TO_EDGE);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_T,g.CLAMP_TO_EDGE);
+      g.bindFramebuffer(g.FRAMEBUFFER,f);g.framebufferTexture2D(g.FRAMEBUFFER,g.COLOR_ATTACHMENT0,g.TEXTURE_2D,t,0);g.bindFramebuffer(g.FRAMEBUFFER,null)}};return o},
+  image(g,src,cb){const im=new Image();im.onload=()=>{try{const t=g.createTexture();g.bindTexture(g.TEXTURE_2D,t);g.pixelStorei(g.UNPACK_PREMULTIPLY_ALPHA_WEBGL,false);
+      g.texImage2D(g.TEXTURE_2D,0,g.RGBA,g.RGBA,g.UNSIGNED_BYTE,im);
+      g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,g.LINEAR);
+      g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_S,g.CLAMP_TO_EDGE);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_T,g.CLAMP_TO_EDGE);cb(t,im.width,im.height)}catch(e){console.warn('wallpaper texture',e)}};im.src=src},
+  // 회전 행렬 (Y 다음 X), 열 우선 mat3
+  rotYX(ay,ax){const cy=Math.cos(ay),sy=Math.sin(ay),cx=Math.cos(ax),sx=Math.sin(ax);
+    // R = Rx * Ry
+    return [cy,sx*sy,-cx*sy, 0,cx,sx, sy,-sx*cy,cx*cy]},
+  mul3(a,b){const r=new Array(9);for(let c=0;c<3;c++)for(let rI=0;rI<3;rI++){r[c*3+rI]=a[rI]*b[c*3]+a[3+rI]*b[c*3+1]+a[6+rI]*b[c*3+2]}return r},
+  FULL:`attribute vec2 a_p;varying vec2 v_uv;void main(){v_uv=a_p*0.5+0.5;gl_Position=vec4(a_p,0.0,1.0);}`,
+  // 스타크 우주멍 방식: 방향을 격자로 양자화해 해시로 별 유무·밝기·색 결정, 각거리로 크기 → 항상 둥글고 선명
+  STARS:`
+  float hash13(vec3 p){p=fract(p*0.1031);p+=dot(p,p.yzx+33.33);return fract((p.x+p.y)*p.z);}
+  vec3 starLayer(vec3 dir,float dense,float thresh,float s0,float s1,float bright,float minAng,float tw){
+    vec3 col=vec3(0.0);
+    for(int i=0;i<2;i++){
+      float scale=dense*(i==0?1.0:1.7);
+      vec3 id=floor(dir*scale);
+      float h=hash13(id+float(i)*17.1);
+      if(h>thresh){
+        vec3 sd=normalize(id+0.5);
+        float ang=acos(clamp(dot(dir,sd),-1.0,1.0));
+        float mag=clamp((h-thresh)/(1.0-thresh),0.0,1.0);
+        float sz=max(mix(s0,s1,pow(mag,1.6)),minAng);
+        float spark=smoothstep(sz,0.0,ang);
+        float ch=hash13(id+9.7);
+        vec3 sc=vec3(1.0,0.97,0.93);
+        if(ch<0.25)sc=vec3(0.82,0.88,1.0);else if(ch>0.78)sc=vec3(1.0,0.90,0.80);
+        float b=(0.25+0.75*mag)*bright*(1.0-tw*0.25*(0.5+0.5*sin(u_time*(1.0+ch*2.0)+h*60.0)));
+        float glow=(mag>0.65)?smoothstep(sz*1.7,0.0,ang)*mag*0.18*bright:0.0;
+        col+=sc*(spark*b+glow);
+      }
+    }
+    return col;
+  }`,
+};
+// 카메라: 세로 시야 55°, 픽셀 화면 → 시선 방향
+const CAMV=`vec3 camRay(vec2 fc,vec2 res){vec2 n=(fc/res)*2.0-1.0;float th=tan(radians(27.5));return normalize(vec3(n.x*th*res.x/res.y,n.y*th,-1.0));}`;
+
+// ===== 별밭 (스타크 우주멍 이식 + 은하수 + 밝은 별 십자광) =====
+LIVE_SCENES.starfield=(g)=>{
+  const MW=GLU.prog(g,GLU.FULL,`precision highp float;
+  uniform vec2 u_res;uniform mat3 u_M1;uniform float u_time;
+  ${CAMV}
+  float h3(vec3 p){p=fract(p*0.3183099+0.1);p*=17.0;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}
+  float n3(vec3 x){vec3 i=floor(x),f=fract(x);f=f*f*(3.0-2.0*f);
+    return mix(mix(mix(h3(i),h3(i+vec3(1,0,0)),f.x),mix(h3(i+vec3(0,1,0)),h3(i+vec3(1,1,0)),f.x),f.y),
+               mix(mix(h3(i+vec3(0,0,1)),h3(i+vec3(1,0,1)),f.x),mix(h3(i+vec3(0,1,1)),h3(i+vec3(1,1,1)),f.x),f.y),f.z);}
+  float fb(vec3 p){float v=0.0,a=0.5;for(int i=0;i<4;i++){v+=a*n3(p);p=p*2.03+vec3(1.7,9.2,3.1);a*=0.5;}return v;}
+  void main(){
+    vec3 d=u_M1*camRay(gl_FragCoord.xy,u_res);
+    vec3 N=normalize(vec3(0.62,-0.78,0.0));
+    float x=dot(d,N);
+    float along=dot(d,normalize(cross(N,vec3(0.0,0.0,1.0))));
+    float wide=exp(-x*x/0.030);
+    float core=exp(-x*x/0.006);
+    float cl=fb(d*5.0);
+    float dust=smoothstep(0.42,0.68,fb(d*13.0+3.0))*core;
+    float bright=wide*(0.35+0.9*cl)*(0.7+0.3*sin(along*3.0));
+    vec3 c=mix(vec3(0.20,0.22,0.36),vec3(0.50,0.38,0.26),core)*bright*0.42;
+    c+=vec3(0.40,0.38,0.62)*pow(fb(d*8.0+7.0),3.0)*wide*0.25;     // 푸른 성운 조각
+    c*=1.0-0.85*dust;
+    float hz=pow(fb(d*40.0),4.0)*wide*0.35;                 // 은하 속 미세 별 안개(저해상도에서 부드럽게 퍼짐)
+    c+=vec3(hz);
+    gl_FragColor=vec4(c,1.0);
+  }`);
+  const ST=GLU.prog(g,GLU.FULL,`precision highp float;
+  uniform vec2 u_res;uniform mat3 u_M1,u_M2;uniform float u_time,u_pxr,u_seed;uniform sampler2D u_mw;
+  uniform vec4 u_bs[10];uniform vec3 u_bc[10];uniform int u_nb;
+  ${CAMV}
+  ${GLU.STARS}
+  float gh(vec2 p){p=fract(p*vec2(443.897,441.423));p+=dot(p,p.yx+19.19);return fract((p.x+p.y)*p.x);}
+  void main(){
+    vec3 r=camRay(gl_FragCoord.xy,u_res);
+    float minA=0.62/u_pxr;
+    vec3 col=texture2D(u_mw,gl_FragCoord.xy/u_res).rgb;
+    col+=starLayer(u_M1*r,220.0,0.9925,0.00045,0.0010,0.9,minA,0.0);
+    col+=starLayer(u_M2*r,140.0,0.9955,0.00055,0.0012,1.05,minA,1.0);
+    // 밝은 별: 작은 코어 + 은은한 십자 회절광
+    for(int i=0;i<10;i++){ if(i>=u_nb)break;
+      vec2 dp=gl_FragCoord.xy-u_bs[i].xy; float b=u_bs[i].z; float s=u_bs[i].w;
+      vec2 a=abs(dp);
+      float core=exp(-dot(dp,dp)/(s*s*0.9));
+      float halo=exp(-length(dp)/(s*2.6))*0.22;
+      float spk=(exp(-a.y/(s*0.28))*exp(-a.x/(s*7.0))+exp(-a.x/(s*0.28))*exp(-a.y/(s*7.0)))*0.55;
+      col+=u_bc[i]*b*(core+halo+spk);
+    }
+    float n=gh(gl_FragCoord.xy+u_seed)+gh(gl_FragCoord.xy*1.37-u_seed)-1.0;
+    gl_FragColor=vec4(col+n*(1.2/255.0),1.0);
+  }`);
+  const mw=GLU.target(g);
+  // 밝은 별(가까운 돔 좌표계) — 화면에 3~5개 정도 보이게 구 전체에 분포
+  const BR=[];{let s=11;const rnd=()=>(s=(s*16807)%2147483647)/2147483647;
+    for(let i=0;i<70;i++){const u=rnd()*2-1,th=rnd()*6.2832,q=Math.sqrt(1-u*u);const k=rnd();
+      BR.push({d:[q*Math.cos(th),u,q*Math.sin(th)],b:0.55+rnd()*0.6,c:k<.45?[0.62,0.78,1.0]:k<.75?[1.0,0.97,0.93]:[1.0,0.66,0.36]})}
+    // 첫 화면에 몇 개 보이도록 정면(-Z) 근처에 배치
+    [[-.18,.33],[.12,.20],[.31,.12],[-.28,.08],[-.10,-.30],[.26,-.22]].forEach(([x,y],i)=>{const v=[x,y,-1],l=Math.hypot(...v);BR[i].d=v.map(e=>e/l)})}
+  let pr=Math.min(DPR,1.5),cw=0,ch=0,a1y=0,a1x=0,a2y=0,a2x=0,last=0,t0=0,acc=0,cnt=0,downs=0,frame=0,tilt=[0,0],tiltT=[0,0];
+  window.addEventListener('deviceorientation',e=>{if(e.gamma==null)return;tiltT=[Math.max(-1,Math.min(1,e.gamma/40)),Math.max(-1,Math.min(1,((e.beta||45)-45)/40))]});
+  const bsArr=new Float32Array(40),bcArr=new Float32Array(30);
+  function resize(){cw=Math.round(W*pr);ch=Math.round(H*pr);scv.width=cw;scv.height=ch;mw.size(Math.max(64,cw>>2),Math.max(64,ch>>2));frame=0}
+  function render(ts){
+    if(!t0)t0=ts;const dt=Math.min(.05,(ts-(last||ts))/1000);last=ts;
+    if(dt>0){acc+=dt;cnt++;if(cnt>=90){const avg=acc/cnt;acc=0;cnt=0;if(avg>1/45&&downs<2&&pr>1){downs++;pr=Math.max(1,pr-0.25);resize()}}}
+    const t=(ts-t0)/1000;
+    // 우주멍과 같은 속도: 천천히 빨라졌다 느려짐 × 설정값(기본 0.6 → 1배)
+    const sp=(0.42+0.28*Math.sin(t*0.07)+0.12*Math.sin(t*0.023))*(S.star/0.6);
+    a1y+=sp*dt*0.075;a1x+=sp*dt*0.018;a2y+=sp*dt*0.15;a2x+=sp*dt*0.035;
+    tilt[0]+=(tiltT[0]-tilt[0])*Math.min(1,dt*2);tilt[1]+=(tiltT[1]-tilt[1])*Math.min(1,dt*2);
+    const C=GLU.rotYX(tilt[0]*0.05+Math.sin(t*0.05)*0.01,tilt[1]*0.04+Math.cos(t*0.043)*0.008);
+    const M1=GLU.mul3(GLU.rotYX(a1y,a1x),C),M2=GLU.mul3(GLU.rotYX(a2y,a2x),C);
+    // 은하수: 1/4 해상도, 2프레임마다
+    if((frame++&1)===0){g.bindFramebuffer(g.FRAMEBUFFER,mw.f);g.viewport(0,0,mw.w,mw.h);g.disable(g.BLEND);g.useProgram(MW);
+      g.uniform2f(MW.u.u_res,mw.w,mw.h);g.uniformMatrix3fv(MW.u.u_M1,false,M1);g.uniform1f(MW.u.u_time,t);GLU.quad(g,MW);g.bindFramebuffer(g.FRAMEBUFFER,null)}
+    // 밝은 별 화면 투영: ray = M2^T * d
+    const th=Math.tan(27.5*Math.PI/180),asp=cw/ch;let nb=0;
+    for(const s of BR){if(nb>=10)break;const d=s.d;
+      const rx=M2[0]*d[0]+M2[1]*d[1]+M2[2]*d[2],ry=M2[3]*d[0]+M2[4]*d[1]+M2[5]*d[2],rz=M2[6]*d[0]+M2[7]*d[1]+M2[8]*d[2];
+      if(rz>=-0.2)continue;const nx=rx/(-rz)/(th*asp),ny=ry/(-rz)/th;if(Math.abs(nx)>1.1||Math.abs(ny)>1.1)continue;
+      bsArr.set([(nx*.5+.5)*cw,(ny*.5+.5)*ch,s.b*(0.85+0.15*Math.sin(t*1.3+nb*2.1)),1.1*pr],nb*4);bcArr.set(s.c,nb*3);nb++}
+    g.viewport(0,0,cw,ch);g.disable(g.BLEND);g.useProgram(ST);
+    g.activeTexture(g.TEXTURE0);g.bindTexture(g.TEXTURE_2D,mw.t);g.uniform1i(ST.u.u_mw,0);
+    g.uniform2f(ST.u.u_res,cw,ch);g.uniformMatrix3fv(ST.u.u_M1,false,M1);g.uniformMatrix3fv(ST.u.u_M2,false,M2);
+    g.uniform1f(ST.u.u_time,t);g.uniform1f(ST.u.u_pxr,ch*0.5/th);g.uniform1f(ST.u.u_seed,(frame*7.13)%100);
+    g.uniform4fv(ST.u.u_bs,bsArr);g.uniform3fv(ST.u.u_bc,bcArr);g.uniform1i(ST.u.u_nb,nb);
+    GLU.quad(g,ST);
+  }
+  return {resize,render};
+};
+
+// ===== 성운 속 (컨셉 이미지 + 깊이 시차 + 앞으로 지나가는 구름 + 숨쉬는 빛줄기 + 선명한 별) =====
+LIVE_SCENES.nebula=(g)=>{
+  let img=null,iw=720,ih=1280;
+  GLU.image(g,'wallpapers/scenes/nebula.jpg',(t,w,h)=>{img=t;iw=w;ih=h});
+  const FX=GLU.prog(g,GLU.FULL,`precision highp float;
+  uniform vec2 u_res;uniform float u_t,u_asp,u_fly;uniform vec2 u_sun,u_tilt;varying vec2 v_uv;
+  float hash(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
+  float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);
+    return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}
+  float fbm(vec2 p){float v=0.0,a=0.5;mat2 m=mat2(1.6,1.2,-1.2,1.6);for(int i=0;i<5;i++){v+=a*noise(p);p=m*p;a*=0.5;}return v;}
+  void main(){
+    vec2 uv=v_uv; vec2 c=u_sun;
+    vec2 p=(uv-c)*vec2(u_asp,1.0);
+    vec4 acc=vec4(0.0);
+    // 앞으로 지나가는 구름 2겹: 소실점(빛)에서 커지며 다가왔다가 화면 밖으로 흐려지며 지나감
+    for(int i=0;i<3;i++){
+      float ph=u_fly+float(i)/3.0; float f=fract(ph); float cyc=floor(ph);
+      float sc=mix(0.55,3.2,f*f);
+      vec2 q=p/sc + u_tilt*0.04*sc + vec2(cyc*3.7+float(i)*5.1, cyc*1.9);
+      float n=fbm(q*2.2+0.6*fbm(q*1.3+u_t*0.01));
+      float d=smoothstep(0.45,0.85,n);
+      float a=sin(3.14159*f); a*=a;
+      float tone=fbm(q*0.8+11.0);
+      vec3 col=mix(vec3(0.42,0.20,0.70),vec3(0.10,0.48,0.55),smoothstep(0.35,0.65,tone));
+      col=mix(col,vec3(0.95,0.62,0.30),smoothstep(0.55,0.0,length(p/sc))*0.5);
+      float al=d*a*mix(0.10,0.42,f);   // 가까울수록 진하지만 흐릿(초점 밖)
+      acc.rgb+=col*al*(1.0-acc.a); acc.a+=al*(1.0-acc.a);
+    }
+    // 숨겨진 별에서 퍼지는 따뜻한 빛줄기(천천히 숨쉬기)
+    float ang=atan(p.x,p.y); float r=length(p);
+    float rays=pow(noise(vec2(ang*7.0,u_t*0.05))*0.6+noise(vec2(ang*19.0,u_t*0.08+3.0))*0.4,2.2);
+    float up=smoothstep(-0.1,0.6,p.y/(r+1e-3));
+    float breathe=0.75+0.25*sin(u_t*0.35)+0.08*sin(u_t*1.1);
+    vec3 ray=vec3(1.0,0.66,0.32)*rays*up*exp(-r*2.6)*0.30*breathe;
+    ray+=vec3(1.0,0.72,0.40)*exp(-r*r*50.0)*0.16*breathe;
+    acc.rgb+=ray;
+    gl_FragColor=acc;
+  }`);
+  const CP=GLU.prog(g,GLU.FULL,`precision highp float;
+  uniform vec2 u_res,u_tilt;uniform float u_time,u_zoom,u_rot,u_pxr,u_seed,u_has;uniform vec2 u_scale,u_pan;uniform mat3 u_M;
+  uniform sampler2D u_img,u_fx;varying vec2 v_uv;
+  ${CAMV}
+  ${GLU.STARS}
+  float gh(vec2 p){p=fract(p*vec2(443.897,441.423));p+=dot(p,p.yx+19.19);return fract((p.x+p.y)*p.x);}
+  vec3 img(vec2 uv){vec2 q=(uv-0.5);float cs=cos(u_rot),sn=sin(u_rot);q=mat2(cs,-sn,sn,cs)*q;q=q*u_scale/u_zoom+0.5+u_pan;q.y=1.0-q.y;return texture2D(u_img,q).rgb;}
+  void main(){
+    vec2 uv=v_uv;
+    vec3 base=vec3(0.02,0.015,0.05);
+    if(u_has>0.5){
+      // 밝은 구름일수록 가깝다고 보고 시차를 더 줌 → 평면 사진이 입체로 움직임
+      vec3 c0=img(uv);float dep=dot(c0,vec3(0.3,0.5,0.2));
+      vec2 par=u_tilt*(0.006+0.03*dep);
+      base=img(uv+par);
+    }
+    vec4 fx=texture2D(u_fx,uv);
+    vec3 col=base*(1.0-fx.a*0.55)+fx.rgb;
+    col+=starLayer(u_M*camRay(gl_FragCoord.xy,u_res),150.0,0.9962,0.0005,0.0011,0.9,0.62/u_pxr,1.0);
+    col*=1.0-0.25*pow(length(uv-0.5)*1.25,2.0);
+    float n=gh(gl_FragCoord.xy+u_seed)+gh(gl_FragCoord.xy*1.37-u_seed)-1.0;
+    gl_FragColor=vec4(col+n*(1.5/255.0),1.0);
+  }`);
+  const fx=GLU.target(g);
+  let pr=Math.min(DPR,1.5),cw=0,ch=0,last=0,t0=0,acc=0,cnt=0,downs=0,frame=0,fly=0,fxs=0.3,tilt=[0,0],tiltT=[0,0],ay=0,ax=0;
+  window.addEventListener('deviceorientation',e=>{if(e.gamma==null)return;tiltT=[Math.max(-1,Math.min(1,e.gamma/40)),Math.max(-1,Math.min(1,((e.beta||45)-45)/40))]});
+  function resize(){cw=Math.round(W*pr);ch=Math.round(H*pr);scv.width=cw;scv.height=ch;fx.size(Math.max(64,Math.round(cw*fxs)),Math.max(64,Math.round(ch*fxs)));frame=0}
+  function render(ts){
+    if(!t0)t0=ts;const dt=Math.min(.05,(ts-(last||ts))/1000);last=ts;
+    if(dt>0){acc+=dt;cnt++;if(cnt>=90){const avg=acc/cnt;acc=0;cnt=0;if(avg>1/45&&downs<3){downs++;if(fxs>0.2){fxs*=0.75}else pr=Math.max(1,pr-0.25);resize()}}}
+    const t=(ts-t0)/1000,k=S.star/0.6;
+    fly+=dt*0.028*k;                         // 구름 사이로 아주 천천히 전진
+    ay+=dt*0.02*k;ax+=dt*0.006*k;
+    tilt[0]+=(tiltT[0]-tilt[0])*Math.min(1,dt*2);tilt[1]+=(tiltT[1]-tilt[1])*Math.min(1,dt*2);
+    const sway=[Math.sin(t*0.07)*0.6+tilt[0],Math.cos(t*0.053)*0.5+tilt[1]];
+    // 화면 비율에 맞춰 이미지 cover
+    const ia=iw/ih,ca=cw/ch;const scale=ca>ia?[1,ia/ca]:[ca/ia,1];
+    const sun=[0.68,1.0-0.40];   // 이미지 속 숨은 별 위치(아래→위 좌표)
+    if((frame++&1)===0){g.bindFramebuffer(g.FRAMEBUFFER,fx.f);g.viewport(0,0,fx.w,fx.h);g.disable(g.BLEND);g.useProgram(FX);
+      g.uniform2f(FX.u.u_res,fx.w,fx.h);g.uniform1f(FX.u.u_t,t);g.uniform1f(FX.u.u_asp,ca);g.uniform1f(FX.u.u_fly,fly);
+      g.uniform2f(FX.u.u_sun,sun[0],sun[1]);g.uniform2f(FX.u.u_tilt,sway[0],sway[1]);GLU.quad(g,FX);g.bindFramebuffer(g.FRAMEBUFFER,null)}
+    g.viewport(0,0,cw,ch);g.disable(g.BLEND);g.useProgram(CP);
+    g.activeTexture(g.TEXTURE0);g.bindTexture(g.TEXTURE_2D,img);g.uniform1i(CP.u.u_img,0);
+    g.activeTexture(g.TEXTURE1);g.bindTexture(g.TEXTURE_2D,fx.t);g.uniform1i(CP.u.u_fx,1);g.activeTexture(g.TEXTURE0);
+    g.uniform1f(CP.u.u_has,img?1:0);g.uniform2f(CP.u.u_res,cw,ch);g.uniform2f(CP.u.u_tilt,sway[0],sway[1]);
+    g.uniform1f(CP.u.u_time,t);g.uniform1f(CP.u.u_zoom,1.08+0.05*Math.sin(t*0.021)+0.02*Math.sin(t*0.047));
+    g.uniform1f(CP.u.u_rot,Math.sin(t*0.017)*0.015);g.uniform2f(CP.u.u_scale,scale[0],scale[1]);
+    g.uniform2f(CP.u.u_pan,Math.sin(t*0.013)*0.012,Math.cos(t*0.011)*0.01);
+    g.uniformMatrix3fv(CP.u.u_M,false,GLU.rotYX(ay+sway[0]*0.03,ax+sway[1]*0.02));
+    g.uniform1f(CP.u.u_pxr,ch*0.5/Math.tan(27.5*Math.PI/180));g.uniform1f(CP.u.u_seed,(frame*7.13)%100);
+    GLU.quad(g,CP);
+  }
+  return {resize,render};
+};
+
+// ===== 3D 우주 (v6) =====
+LIVE_SCENES.space=(g)=>{
   const mk=(vs,fs)=>{const c=(t,src)=>{const s=g.createShader(t);g.shaderSource(s,src);g.compileShader(s);if(!g.getShaderParameter(s,g.COMPILE_STATUS))throw g.getShaderInfoLog(s);return s};
     const p=g.createProgram();g.attachShader(p,c(g.VERTEX_SHADER,vs));g.attachShader(p,c(g.FRAGMENT_SHADER,fs));g.linkProgram(p);return p};
   const NOISE=`
@@ -416,13 +656,20 @@ const space=(()=>{
     g.disableVertexAttribArray(ls);g.disableVertexAttribArray(lc);
   }
   return {resize,render};
-})();
-let spW=0,spH=0;
+};
+let spW=0,spH=0,sceneName='',scene=null;const sceneCache={};
 function spaceFrame(ts){
   requestAnimationFrame(spaceFrame);
-  if(!space||!W||document.hidden||curWp().type!=='live')return;
-  if(spW!==GW||spH!==GH){spW=GW;spH=GH;space.resize()}
-  space.render(ts);
+  const w=curWp();
+  if(!SG||!W||document.hidden||w.type!=='live')return;
+  if(w.scene!==sceneName){
+    sceneName=w.scene;
+    try{scene=sceneCache[sceneName]||(sceneCache[sceneName]=LIVE_SCENES[sceneName](SG))}catch(e){console.warn('scene',sceneName,e);scene=null}
+    spW=0;
+  }
+  if(!scene)return;
+  if(spW!==GW||spH!==GH){spW=GW;spH=GH;scene.resize()}
+  scene.render(ts);
 }
 requestAnimationFrame(spaceFrame);
 
@@ -907,14 +1154,14 @@ $('close').onclick=()=>toggleSheet(false);
 const sl={wind:['sWind','vWind',v=>v.toFixed(2)+'×'],size:['sSize','vSize',v=>v.toFixed(1)+'px'],turb:['sTurb','vTurb',v=>v.toFixed(2)],dur:['sDur','vDur',v=>v.toFixed(1)+'초'],star:['sStar','vStar',v=>v.toFixed(2)+'×'],glow:['sGlow','vGlow',v=>v.toFixed(2)]};
 let sizeTimer=0;
 function syncSeg(){[...$('styleSeg').children].forEach(b=>b.classList.toggle('on',b.dataset.s===S.style))}
-$('styleSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;S.style=b.dataset.s;syncSeg();try{localStorage.setItem('nv_sand6',JSON.stringify(S))}catch(_){}};
+$('styleSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;S.style=b.dataset.s;syncSeg();try{localStorage.setItem('nv_sand7',JSON.stringify(S))}catch(_){}};
 function syncUI(){syncSeg();for(const k in sl){$(sl[k][0]).value=S[k];$(sl[k][1]).textContent=sl[k][2](S[k])}}
 for(const k in sl){$(sl[k][0]).addEventListener('input',e=>{S[k]=parseFloat(e.target.value);$(sl[k][1]).textContent=sl[k][2](S[k]);
-  try{localStorage.setItem('nv_sand6',JSON.stringify(S))}catch(_){}
+  try{localStorage.setItem('nv_sand7',JSON.stringify(S))}catch(_){}
   if(k==='size'){clearTimeout(sizeTimer);sizeTimer=setTimeout(()=>{buildParticles();draw()},150)}})}
-$('reset').onclick=()=>{S=Object.assign({},DEF);syncUI();applyWallpaper();try{localStorage.removeItem('nv_sand6')}catch(_){}buildParticles();draw()};
+$('reset').onclick=()=>{S=Object.assign({},DEF);syncUI();applyWallpaper();try{localStorage.removeItem('nv_sand7')}catch(_){}buildParticles();draw()};
 $('demo').onclick=()=>{if(anim)return;const to=cur<2?cur+1:cur-1;go(to,to>cur?-1:1)};
-function updateStats(){$('stats').textContent=`v6 · 모래알 ${counts[cur]?counts[cur].toLocaleString('ko-KR'):0}개 · 알갱이 ${cell}px · 최근 ${Math.round(lastFps)}fps${weak?' · 절약 모드':''}`}
+function updateStats(){$('stats').textContent=`v7 · 모래알 ${counts[cur]?counts[cur].toLocaleString('ko-KR'):0}개 · 알갱이 ${cell}px · 최근 ${Math.round(lastFps)}fps${weak?' · 절약 모드':''}`}
 syncUI();
 window.__nv={pose:(to,d,tt)=>{target=to;dir=d;t=tt;draw()},cur:()=>cur,hits:()=>hitRects[cur]};
 

@@ -15,3 +15,8 @@
 - `id`: 영문 고유 이름, `name`: 설정에 보이는 이름, `type`: `image` 또는 `video`, `src`: 이 폴더 안 파일명
 - 저장(커밋)하면 설정 ⚙️ → 배경화면 목록에 자동으로 나타나요.
 - 코드로 그리는 실시간 배경(기본 3D 우주 같은)은 `index.html`의 `WALLPAPERS` 배열에 `type:'live'`로 추가해요.
+
+## 실시간 3D 배경(코드)
+- `index.html`의 `LIVE_SCENES`에 장면 함수를 추가하고 `WALLPAPERS`에 `{id, name, type:'live', scene:'장면이름'}`을 넣어요.
+- 현재 장면: `nebula`(성운 속, 기본 · 이미지 `wallpapers/scenes/nebula.jpg` 사용), `starfield`(별밭 · 스타크 우주멍 별 방식), `space`(v6 우주).
+- 별밭을 다른 구현으로 바꾸려면 `LIVE_SCENES.starfield`만 교체하면 돼요 (`resize()`, `render(ts)` 두 함수만 지키면 됨).
