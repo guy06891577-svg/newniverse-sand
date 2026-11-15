@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#0b0820">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>뉴니버스 · 모래 전환 시제품</title>
 <style>
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
@@ -34,6 +37,9 @@
   .row{margin:12px 0}
   .row label{display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px}
   .row label span{color:#e6c37a;font-variant-numeric:tabular-nums}
+  .seg{display:flex;gap:6px;background:rgba(255,255,255,.08);padding:4px;border-radius:14px}
+  .seg button{flex:1;padding:9px 4px;border:none;border-radius:10px;background:none;color:#cfc9ea;font-size:13px;font-weight:600;cursor:pointer}
+  .seg button.on{background:linear-gradient(135deg,#e6b85c,#d9813b);color:#1a1205}
   input[type=range]{width:100%;accent-color:#e6b85c;height:28px}
   .btns{display:flex;gap:8px;margin-top:14px}
   .btns button{flex:1;padding:12px;border-radius:14px;border:none;font-size:14px;font-weight:600;cursor:pointer;background:rgba(255,255,255,.12);color:#fff}
@@ -57,6 +63,7 @@
   <div id="sheet">
     <h3>모래 전환 설정 <button id="close">✕</button></h3>
     <div class="sub">값을 바꾸고 화면을 밀어보세요. 마음에 드는 조합을 찾아주세요.</div>
+    <div class="seg" id="styleSeg"><button data-s="morph">흩어졌다 모이기</button><button data-s="dream">몽환</button><button data-s="storm">모래바람</button></div>
     <div class="row"><label>바람 세기 <span id="vWind"></span></label><input id="sWind" type="range" min="0.3" max="2.5" step="0.05"></div>
     <div class="row"><label>모래알 크기 <span id="vSize"></span></label><input id="sSize" type="range" min="1" max="6" step="0.5"></div>
     <div class="row"><label>바람 줄기(말림) <span id="vTurb"></span></label><input id="sTurb" type="range" min="0" max="2.5" step="0.05"></div>
@@ -76,9 +83,9 @@ const phone=document.getElementById('phone'), bg=document.getElementById('bg'), 
 const $=id=>document.getElementById(id);
 
 // ---------- 설정 ----------
-const DEF={wind:1.0,size:2.0,turb:1.0,dur:2.0,glow:0.6};
+const DEF={style:'morph',wind:1.0,size:2.0,turb:1.0,dur:2.3,glow:0.5};
 let S=Object.assign({},DEF);
-try{Object.assign(S,JSON.parse(localStorage.getItem('nv_sand2')||'{}'))}catch(e){}
+try{Object.assign(S,JSON.parse(localStorage.getItem('nv_sand3')||'{}'))}catch(e){}
 const weak=(navigator.hardwareConcurrency||4)<=4||(navigator.deviceMemory||4)<=3;
 let CAP=weak?40000:90000;
 
@@ -266,19 +273,111 @@ void main(){
   if(c.a*a<0.004) discard;
   gl_FragColor = vec4(col, c.a)*a;
 }`;
-const QVS=`attribute vec2 a_p; uniform float u_s; varying vec2 v_uv;
-void main(){v_uv=a_p*0.5+0.5; v_uv.y=1.0-v_uv.y; gl_Position=vec4(a_p*u_s,0.0,1.0);}`;
+const VS0=`
+precision highp float;
+attribute vec2 a_uv; attribute vec3 a_rnd;
+uniform vec2 u_res; uniform float u_t,u_dir,u_wind,u_turb,u_cell,u_time,u_dpr,u_off;
+varying vec2 v_uv; varying float v_p; varying float v_a; varying float v_tint;
+void main(){
+  float lead = u_dir<0.0 ? 1.0-a_uv.x : a_uv.x;
+  float wav = sin(a_uv.y*9.0+a_uv.x*4.0)*0.04 + sin(a_uv.y*23.0)*0.02;
+  float delay = lead*0.48 + a_rnd.x*0.22 + wav;
+  float p = clamp((u_t*1.08 - delay)/0.32, 0.0, 1.0);
+  float e = p*p;
+  vec2 d = vec2(0.0);
+  float sp = 0.55 + a_rnd.y*0.9;
+  d.x = u_dir*u_wind*u_res.x*(e*1.25 + p*0.12)*sp;
+  d.y = (a_rnd.z-0.62)*0.32*u_res.y*e*u_wind + 0.10*u_res.y*e*e;
+  float ph = a_rnd.x*6.2832;
+  d.x += sin(a_uv.y*18.0 + u_time*2.7 + ph + p*6.0)*u_turb*38.0*u_dpr*p;
+  d.y += cos(a_uv.x*15.0 + u_time*2.1 + a_rnd.y*6.2832 + p*7.0)*u_turb*55.0*u_dpr*p;
+  vec2 pos = a_uv*u_res + d + vec2(u_off,0.0);
+  vec2 clip = pos/u_res*2.0-1.0;
+  gl_Position = vec4(clip.x,-clip.y,0.0,1.0);
+  float grain = mix(1.0, 0.55+a_rnd.z*0.8, smoothstep(0.0,0.35,p));
+  gl_PointSize = u_cell*grain;
+  v_uv=a_uv; v_p=p; v_a = 1.0-smoothstep(0.35+a_rnd.y*0.3, 1.0, p); v_tint=a_rnd.z;
+}`;
+const FS0=`
+precision mediump float;
+uniform sampler2D u_tex; uniform vec2 u_cellUV;
+varying vec2 v_uv; varying float v_p; varying float v_a; varying float v_tint;
+void main(){
+  vec2 pc = gl_PointCoord-0.5;
+  float m = smoothstep(0.0,0.2,v_p);
+  vec4 c = texture2D(u_tex, v_uv + pc*u_cellUV*(1.0-m));
+  float r = length(pc);
+  float shape = mix(1.0, 1.0-smoothstep(0.3,0.5,r), m);
+  vec3 sand = vec3(0.93,0.76,0.48)*c.a;
+  vec3 col = mix(c.rgb, mix(c.rgb, sand, 0.35+0.3*v_tint), m*0.75);
+  float a = shape*v_a;
+  if(c.a*a<0.01) discard;
+  gl_FragColor = vec4(col, c.a)*a;
+}`;
+const VSM=`
+precision highp float;
+attribute vec4 a_sd; attribute vec3 a_rnd; attribute vec2 a_dup;
+uniform vec2 u_res; uniform float u_t,u_dir,u_wind,u_turb,u_cell,u_time,u_dpr,u_glow;
+varying vec2 v_s; varying vec2 v_d; varying float v_u; varying float v_m; varying float v_a; varying float v_tint; varying float v_soft;
+void main(){
+  vec2 s=a_sd.xy, d=a_sd.zw;
+  float lead = u_dir<0.0 ? 1.0-s.x : s.x;
+  float delay = lead*0.22 + a_rnd.x*0.10 + (sin(s.y*7.0+s.x*3.0)*0.5+0.5)*0.03;
+  float u = clamp((u_t - delay)/0.65, 0.0, 1.0);
+  float lift = smoothstep(0.0,0.45,u);
+  float k = clamp((u-0.30)/0.70, 0.0, 1.0);
+  float pull = k*k*k*(k*(k*6.0-15.0)+10.0);          // 부드럽게 출발, 부드럽게 착지
+  float bump = sin(3.14159*u);
+  float sp = 0.7+a_rnd.y*0.6;
+  float tm = u_time*0.8;
+  float ca = s.y*6.0 + u*5.0 + tm + a_rnd.x*1.6;
+  vec2 drift;
+  drift.x = u_dir*u_wind*u_res.x*0.30*sp*lift*(1.0-pull) + cos(ca)*u_turb*18.0*u_dpr*bump;
+  drift.y = sin(ca)*u_turb*30.0*u_dpr*bump - 0.05*u_res.y*bump*(0.3+a_rnd.z)*u_wind;
+  vec2 pos = mix(s,d,pull)*u_res + drift;
+  vec2 clip = pos/u_res*2.0-1.0;
+  float m = smoothstep(0.0,0.18,u)*(1.0-smoothstep(0.84,1.0,u));
+  float soft = 1.0+u_glow*1.3*m;
+  float a = mix(1.0, smoothstep(0.06,0.35,u), a_dup.x) * mix(1.0, 1.0-smoothstep(0.55,0.86,u), a_dup.y);
+  gl_Position = a<0.003 ? vec4(2.0,2.0,2.0,1.0) : vec4(clip.x,-clip.y,0.0,1.0);
+  gl_PointSize = a<0.003 ? 0.0 : u_cell*mix(1.0,(0.65+a_rnd.z*0.5)*soft,m);
+  v_s=s; v_d=d; v_u=u; v_m=m; v_a=a; v_tint=a_rnd.z; v_soft=soft;
+}`;
+const FSM=`
+precision mediump float;
+uniform sampler2D u_ta; uniform sampler2D u_tb; uniform vec2 u_cellUV; uniform highp float u_glow;
+varying vec2 v_s; varying vec2 v_d; varying float v_u; varying float v_m; varying float v_a; varying float v_tint; varying float v_soft;
+void main(){
+  vec2 pc = gl_PointCoord-0.5;
+  float crisp = 1.0-v_m;
+  vec4 ca = texture2D(u_ta, v_s + pc*u_cellUV*crisp);
+  vec4 cb = texture2D(u_tb, v_d + pc*u_cellUV*crisp);
+  vec4 c = mix(ca, cb, smoothstep(0.35,0.82,v_u));
+  float r = length(pc)*2.0*mix(1.0, v_soft, v_m);
+  float shape = mix(1.0, exp(-r*r*2.0) + exp(-r*r*0.5)*0.2*u_glow, v_m);
+  vec3 sand = mix(vec3(0.95,0.79,0.54), vec3(0.86,0.63,0.38), v_tint)*c.a;
+  vec3 col = mix(c.rgb, sand, v_m*0.55);
+  float a = shape*v_a;
+  if(c.a*a<0.004) discard;
+  gl_FragColor = vec4(col, c.a)*a;
+}`;
+const QVS=`attribute vec2 a_p; uniform float u_s; uniform float u_ox; varying vec2 v_uv;
+void main(){v_uv=a_p*0.5+0.5; v_uv.y=1.0-v_uv.y; gl_Position=vec4(a_p*u_s+vec2(u_ox,0.0),0.0,1.0);}`;
 const QFS=`precision mediump float; uniform sampler2D u_tex; uniform float u_a; varying vec2 v_uv;
 void main(){gl_FragColor=texture2D(u_tex,v_uv)*u_a;}`;
-const P1=prog(VS,FS),P2=prog(QVS,QFS);
-const U1={},U2={};
+const P1=prog(VS,FS),P2=prog(QVS,QFS),P0=prog(VS0,FS0),PM=prog(VSM,FSM);
+const U1={},U2={},U0={},UM={};
+['u_res','u_t','u_dir','u_wind','u_turb','u_cell','u_time','u_dpr','u_off','u_tex','u_cellUV'].forEach(n=>U0[n]=gl.getUniformLocation(P0,n));
+['u_res','u_t','u_dir','u_wind','u_turb','u_cell','u_time','u_dpr','u_glow','u_ta','u_tb','u_cellUV'].forEach(n=>UM[n]=gl.getUniformLocation(PM,n));
+const L0={uv:gl.getAttribLocation(P0,'a_uv'),rnd:gl.getAttribLocation(P0,'a_rnd')};
+const LM={sd:gl.getAttribLocation(PM,'a_sd'),rnd:gl.getAttribLocation(PM,'a_rnd'),dup:gl.getAttribLocation(PM,'a_dup')};
 ['u_res','u_t','u_dir','u_wind','u_turb','u_cell','u_time','u_dpr','u_off','u_tex','u_cellUV','u_glow'].forEach(n=>U1[n]=gl.getUniformLocation(P1,n));
-['u_s','u_tex','u_a'].forEach(n=>U2[n]=gl.getUniformLocation(P2,n));
+['u_s','u_tex','u_a','u_ox'].forEach(n=>U2[n]=gl.getUniformLocation(P2,n));
 const L1={uv:gl.getAttribLocation(P1,'a_uv'),rnd:gl.getAttribLocation(P1,'a_rnd')},L2=gl.getAttribLocation(P2,'a_p');
 const quad=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,quad);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
 const maxPt=gl.getParameter(gl.ALIASED_POINT_SIZE_RANGE)[1]||64;
 
-let tex=[],bufs=[],counts=[],cell=2;
+let tex=[],bufs=[],counts=[],cell=2,pairBufs={},pairCounts={};
 function upload(pi){
   if(!tex[pi])tex[pi]=gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D,tex[pi]);
@@ -308,7 +407,23 @@ function buildParticles(){
     if(!bufs[pi])bufs[pi]=gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER,bufs[pi]);gl.bufferData(gl.ARRAY_BUFFER,arr,gl.STATIC_DRAW);counts[pi]=n;
   }
-  alphaData=[];updateStats();
+  alphaData=[];
+  // 흩어졌다 모이기: 페이지 쌍마다 출발점(현재 페이지)→도착점(다음 페이지) 매핑
+  const sorted=cs.map(c=>{const n=c.length/2,idx=new Array(n);for(let k=0;k<n;k++)idx[k]=k;
+    const key=new Float32Array(n);for(let k=0;k<n;k++)key[k]=c[k*2+1]+c[k*2]*0.02+Math.random()*1.5;
+    idx.sort((a,b)=>key[a]-key[b]);return idx});
+  for(const [a,b] of [[0,1],[1,0],[1,2],[2,1]]){
+    const ca=cs[a],cb=cs[b],na=ca.length/2,nb=cb.length/2,N=Math.max(na,nb),arr=new Float32Array(N*9);
+    let pa=-1,pb=-1;
+    for(let i=0;i<N;i++){
+      const ia=Math.floor(i*na/N),ib=Math.floor(i*nb/N),ka=sorted[a][ia],kb=sorted[b][ib],o=i*9;
+      arr[o]=(ca[ka*2]+.5)*cell/GW;arr[o+1]=(ca[ka*2+1]+.5)*cell/GH;arr[o+2]=(cb[kb*2]+.5)*cell/GW;arr[o+3]=(cb[kb*2+1]+.5)*cell/GH;
+      arr[o+4]=Math.random();arr[o+5]=Math.random();arr[o+6]=Math.random();arr[o+7]=ia===pa?1:0;arr[o+8]=ib===pb?1:0;pa=ia;pb=ib;
+    }
+    const key=a+'-'+b;if(!pairBufs[key])pairBufs[key]=gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER,pairBufs[key]);gl.bufferData(gl.ARRAY_BUFFER,arr,gl.STATIC_DRAW);pairCounts[key]=N;
+  }
+  updateStats();
 }
 
 // ---------- 상태 ----------
@@ -323,26 +438,45 @@ function layout(){
   const dT=dockTop();$('dots').style.top=(dT-22)+'px';$('hint').style.top=(dT-50)+'px';
   draw();
 }
+function quadDraw(tx,alpha,scale,ox){
+  gl.useProgram(P2);gl.bindBuffer(gl.ARRAY_BUFFER,quad);gl.enableVertexAttribArray(L2);gl.vertexAttribPointer(L2,2,gl.FLOAT,false,0,0);
+  gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tx);gl.uniform1i(U2.u_tex,0);
+  gl.uniform1f(U2.u_a,alpha);gl.uniform1f(U2.u_s,scale);gl.uniform1f(U2.u_ox,ox);gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+  gl.disableVertexAttribArray(L2);
+}
 function draw(){
-  const now=performance.now();
+  const now=performance.now(),time=(now-startT)/1000;
   gl.viewport(0,0,GW,GH);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
   gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);
-  if(target>=0&&t>0){
-    const a=Math.min(1,Math.max(0,(t-.12)/.7));const ea=a*a*(3-2*a);
-    gl.useProgram(P2);gl.bindBuffer(gl.ARRAY_BUFFER,quad);gl.enableVertexAttribArray(L2);gl.vertexAttribPointer(L2,2,gl.FLOAT,false,0,0);
-    gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tex[target]);gl.uniform1i(U2.u_tex,0);
-    gl.uniform1f(U2.u_a,ea);gl.uniform1f(U2.u_s,.93+.07*ea);gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
-    gl.disableVertexAttribArray(L2);
+  if(target<0||t<=0){quadDraw(tex[cur],1,1,off*2/W);return}
+  const glow=S.glow*(weak?.7:1);
+  if(S.style==='morph'){
+    const key=cur+'-'+target;
+    gl.useProgram(PM);gl.bindBuffer(gl.ARRAY_BUFFER,pairBufs[key]);
+    gl.enableVertexAttribArray(LM.sd);gl.enableVertexAttribArray(LM.rnd);gl.enableVertexAttribArray(LM.dup);
+    gl.vertexAttribPointer(LM.sd,4,gl.FLOAT,false,36,0);gl.vertexAttribPointer(LM.rnd,3,gl.FLOAT,false,36,16);gl.vertexAttribPointer(LM.dup,2,gl.FLOAT,false,36,28);
+    gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tex[cur]);gl.uniform1i(UM.u_ta,0);
+    gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,tex[target]);gl.uniform1i(UM.u_tb,1);
+    gl.uniform2f(UM.u_res,GW,GH);gl.uniform1f(UM.u_t,t);gl.uniform1f(UM.u_dir,dir);gl.uniform1f(UM.u_wind,S.wind);
+    gl.uniform1f(UM.u_turb,S.turb);gl.uniform1f(UM.u_cell,cell);gl.uniform1f(UM.u_time,time);gl.uniform1f(UM.u_dpr,DPR);
+    gl.uniform1f(UM.u_glow,glow);gl.uniform2f(UM.u_cellUV,cell/GW,cell/GH);
+    gl.drawArrays(gl.POINTS,0,pairCounts[key]);
+    gl.disableVertexAttribArray(LM.sd);gl.disableVertexAttribArray(LM.rnd);gl.disableVertexAttribArray(LM.dup);
+    gl.activeTexture(gl.TEXTURE0);
+    return;
   }
-  gl.useProgram(P1);gl.bindBuffer(gl.ARRAY_BUFFER,bufs[cur]);
-  gl.enableVertexAttribArray(L1.uv);gl.enableVertexAttribArray(L1.rnd);
-  gl.vertexAttribPointer(L1.uv,2,gl.FLOAT,false,20,0);gl.vertexAttribPointer(L1.rnd,3,gl.FLOAT,false,20,8);
-  gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tex[cur]);gl.uniform1i(U1.u_tex,0);
-  gl.uniform2f(U1.u_res,GW,GH);gl.uniform1f(U1.u_t,t);gl.uniform1f(U1.u_dir,dir);gl.uniform1f(U1.u_wind,S.wind);
-  gl.uniform1f(U1.u_turb,S.turb);gl.uniform1f(U1.u_cell,cell);gl.uniform1f(U1.u_time,(now-startT)/1000);
-  gl.uniform1f(U1.u_dpr,DPR);gl.uniform1f(U1.u_off,off*DPR);gl.uniform2f(U1.u_cellUV,cell/GW,cell/GH);gl.uniform1f(U1.u_glow,S.glow*(weak?.7:1));
+  const a=Math.min(1,Math.max(0,(t-.12)/.7)),ea=a*a*(3-2*a);
+  quadDraw(tex[target],ea,.93+.07*ea,0);
+  const old=S.style==='storm',P=old?P0:P1,U=old?U0:U1,L=old?L0:L1;
+  gl.useProgram(P);gl.bindBuffer(gl.ARRAY_BUFFER,bufs[cur]);
+  gl.enableVertexAttribArray(L.uv);gl.enableVertexAttribArray(L.rnd);
+  gl.vertexAttribPointer(L.uv,2,gl.FLOAT,false,20,0);gl.vertexAttribPointer(L.rnd,3,gl.FLOAT,false,20,8);
+  gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tex[cur]);gl.uniform1i(U.u_tex,0);
+  gl.uniform2f(U.u_res,GW,GH);gl.uniform1f(U.u_t,t);gl.uniform1f(U.u_dir,dir);gl.uniform1f(U.u_wind,S.wind);
+  gl.uniform1f(U.u_turb,S.turb);gl.uniform1f(U.u_cell,cell);gl.uniform1f(U.u_time,time);
+  gl.uniform1f(U.u_dpr,DPR);gl.uniform1f(U.u_off,0);gl.uniform2f(U.u_cellUV,cell/GW,cell/GH);if(!old)gl.uniform1f(U.u_glow,glow);
   gl.drawArrays(gl.POINTS,0,counts[cur]);
-  gl.disableVertexAttribArray(L1.uv);gl.disableVertexAttribArray(L1.rnd);
+  gl.disableVertexAttribArray(L.uv);gl.disableVertexAttribArray(L.rnd);
 }
 let raf=0,lastFrame=0;
 function loop(ts){
@@ -375,7 +509,7 @@ function go(to,d){
   req();
 }
 function snapBack(){
-  anim={t0:performance.now(),d:420,from:t,to:0,offFrom:off,ease:easeOut,done:()=>{target=-1;off=0;draw()}};req();
+  anim={t0:performance.now(),d:S.style==='morph'?650:420,from:t,to:0,offFrom:off,ease:easeOut,done:()=>{target=-1;off=0;draw()}};req();
 }
 function setDots(){[...$('dots').children].forEach((d,i)=>d.classList.toggle('on',i===cur))}
 
@@ -396,7 +530,7 @@ phone.addEventListener('pointermove',e=>{
   const d=dx<0?-1:1,to=cur-d;
   if(to<0||to>2){target=-1;t=0;off=dx*.25/(1+Math.abs(dx)/300);return}
   off=0;target=to;dir=d;
-  const frac=Math.abs(dx)/W;t=Math.min(.5,frac*.55);
+  const frac=Math.abs(dx)/W;t=S.style==='morph'?Math.min(.32,frac*.45):Math.min(.5,frac*.55);
   const over=frac>.2;if(over&&!crossed&&navigator.vibrate)navigator.vibrate(8);crossed=over;
 });
 function up(e){
@@ -424,14 +558,17 @@ $('gear').onclick=e=>{e.stopPropagation();toggleSheet(!$('sheet').classList.cont
 $('close').onclick=()=>toggleSheet(false);
 const sl={wind:['sWind','vWind',v=>v.toFixed(2)+'×'],size:['sSize','vSize',v=>v.toFixed(1)+'px'],turb:['sTurb','vTurb',v=>v.toFixed(2)],dur:['sDur','vDur',v=>v.toFixed(1)+'초'],glow:['sGlow','vGlow',v=>v.toFixed(2)]};
 let sizeTimer=0;
-function syncUI(){for(const k in sl){$(sl[k][0]).value=S[k];$(sl[k][1]).textContent=sl[k][2](S[k])}}
+function syncSeg(){[...$('styleSeg').children].forEach(b=>b.classList.toggle('on',b.dataset.s===S.style))}
+$('styleSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;S.style=b.dataset.s;syncSeg();try{localStorage.setItem('nv_sand3',JSON.stringify(S))}catch(_){}};
+function syncUI(){syncSeg();for(const k in sl){$(sl[k][0]).value=S[k];$(sl[k][1]).textContent=sl[k][2](S[k])}}
 for(const k in sl){$(sl[k][0]).addEventListener('input',e=>{S[k]=parseFloat(e.target.value);$(sl[k][1]).textContent=sl[k][2](S[k]);
-  try{localStorage.setItem('nv_sand2',JSON.stringify(S))}catch(_){}
+  try{localStorage.setItem('nv_sand3',JSON.stringify(S))}catch(_){}
   if(k==='size'){clearTimeout(sizeTimer);sizeTimer=setTimeout(()=>{buildParticles();draw()},150)}})}
-$('reset').onclick=()=>{S=Object.assign({},DEF);syncUI();try{localStorage.removeItem('nv_sand2')}catch(_){}buildParticles();draw()};
+$('reset').onclick=()=>{S=Object.assign({},DEF);syncUI();try{localStorage.removeItem('nv_sand3')}catch(_){}buildParticles();draw()};
 $('demo').onclick=()=>{if(anim)return;const to=cur<2?cur+1:cur-1;go(to,to>cur?-1:1)};
-function updateStats(){$('stats').textContent=`모래알 ${counts[cur]?counts[cur].toLocaleString('ko-KR'):0}개 · 알갱이 ${cell}px · 최근 ${Math.round(lastFps)}fps${weak?' · 절약 모드':''}`}
+function updateStats(){$('stats').textContent=`v3 · 모래알 ${counts[cur]?counts[cur].toLocaleString('ko-KR'):0}개 · 알갱이 ${cell}px · 최근 ${Math.round(lastFps)}fps${weak?' · 절약 모드':''}`}
 syncUI();
+window.__nv={pose:(to,d,tt)=>{target=to;dir=d;t=tt;draw()}};
 
 // ---------- 시계 ----------
 function tick(){
