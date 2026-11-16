@@ -7,7 +7,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>뉴니버스 · 모래 전환 시제품 v14</title>
+<title>뉴니버스 · 모래 전환 시제품 v15</title>
 <style>
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
   html,body{height:100%;background:#05040d;overflow:hidden;font-family:system-ui,-apple-system,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#fff;overscroll-behavior:none}
@@ -30,6 +30,52 @@
   #recents .rc b{width:84px;height:84px;border-radius:26px;display:flex;align-items:center;justify-content:center;font-size:44px}
   #recents .rc span{font-size:18px;font-weight:700}
   #recents .rtip{text-align:center;font-size:12px;color:rgba(255,255,255,.6)}
+  #gear{display:none!important}
+  #dim{position:absolute;inset:0;background:#000;opacity:0;z-index:13;pointer-events:none}
+  #qpbd{position:absolute;inset:0;z-index:8;background:rgba(5,4,15,.45);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);opacity:0;pointer-events:none}
+  #qpbd.open{pointer-events:auto}
+  #qp{--bg:rgba(22,18,48,.78);--tile:rgba(255,255,255,.12);--on:linear-gradient(135deg,#8f7bff,#4fc3f7);--fg:#fff;--sub:rgba(255,255,255,.65);--r:24px;
+    position:absolute;left:8px;right:8px;top:0;z-index:9;padding:calc(14px + env(safe-area-inset-top)) 16px 10px;border-radius:0 0 30px 30px;background:var(--bg);color:var(--fg);
+    backdrop-filter:blur(24px) saturate(1.3);-webkit-backdrop-filter:blur(24px) saturate(1.3);border:1px solid rgba(255,255,255,.16);border-top:none;box-shadow:0 20px 50px rgba(0,0,0,.45);
+    transform:translateY(-105%);touch-action:none}
+  #qp .qtop{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  #qp .qtime{font-size:34px;font-weight:300;letter-spacing:-1px}
+  #qp .qdate{font-size:14px;color:var(--sub)}
+  #qp .qset{display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--tile);border:none;color:var(--fg);border-radius:18px;width:64px;height:60px;font-size:12px;font-weight:700}
+  #qp .qset .g{font-size:24px;line-height:1}
+  #qp .pills{display:flex;gap:10px;margin-bottom:12px}
+  #qp .pill{flex:1;display:flex;align-items:center;gap:10px;height:62px;border-radius:var(--r);border:none;background:var(--tile);color:var(--fg);padding:0 14px;text-align:left}
+  #qp .pill i{font-style:normal;font-size:22px;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.15)}
+  #qp .pill b{display:block;font-size:15px}#qp .pill small{font-size:11px;color:var(--sub)}
+  #qp .pill.on,#qp .qgrid button.on{background:var(--on)}
+  #qp .pill.on small{color:rgba(255,255,255,.85)}
+  #qp .qgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+  #qp .qgrid button{height:74px;border:none;border-radius:var(--r);background:var(--tile);color:var(--fg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:12px;font-weight:600}
+  #qp .qgrid i{font-style:normal;font-size:24px}
+  #qp .qslider{display:flex;align-items:center;gap:10px;height:48px;padding:0 14px;border-radius:24px;background:var(--tile);margin-bottom:10px}
+  #qp .qslider i{font-style:normal;font-size:20px}
+  #qp .qslider input{flex:1;accent-color:#b9a8ff;height:28px}
+  #qp .qgrip{width:44px;height:5px;border-radius:3px;background:rgba(255,255,255,.4);margin:6px auto 2px}
+  /* UI 스타일별 패널 */
+  #phone[data-ui=orbit] #qp{--bg:radial-gradient(120% 90% at 50% 0%,rgba(60,40,120,.85),rgba(12,10,32,.85));--on:radial-gradient(circle at 35% 30%,#ffe3a1,#e6a04a 60%,#9a5a20);--r:999px}
+  #phone[data-ui=orbit] #qp .qgrid button{border-radius:50%;aspect-ratio:1;height:auto}
+  #phone[data-ui=dune] #qp{--bg:linear-gradient(180deg,rgba(90,58,34,.88),rgba(150,100,58,.85));--tile:rgba(255,230,190,.16);--on:linear-gradient(135deg,#f3c27a,#c9783a);--r:18px 30px 18px 30px;border-radius:0 0 50% 50%/0 0 28px 28px}
+  #phone[data-ui=bojagi] #qp{--bg:rgba(240,230,210,.95);--tile:rgba(120,90,60,.12);--on:#b8433a;--fg:#2e2218;--sub:#6b5844;--r:8px;font-family:"Noto Serif KR","Nanum Myeongjo",serif;border:2px solid #b8433a;border-top:none}
+  #phone[data-ui=bojagi] #qp .qgrid button.on,#phone[data-ui=bojagi] #qp .pill.on{color:#fff4ea}
+  #phone[data-ui=bojagi] #qp .qslider input{accent-color:#b8433a}#phone[data-ui=dune] #qp .qslider input{accent-color:#f3c27a}#phone[data-ui=orbit] #qp .qslider input{accent-color:#ffd27a}
+  #phone[data-ui=bojagi] #qp .qgrip{background:#b8433a}
+  #drawer{position:absolute;left:0;right:0;top:0;bottom:calc(64px + env(safe-area-inset-bottom));z-index:9;display:flex;flex-direction:column;background:rgba(10,8,26,.72);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);transform:translateY(100%);opacity:0;pointer-events:none}
+  #drawer.open{pointer-events:auto}
+  #drawer .dhead{padding:calc(44px + env(safe-area-inset-top)) 22px 8px;font-size:22px;font-weight:700}
+  #drawer .dgrid{flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(4,1fr);gap:18px 6px;padding:10px 12px 20px;align-content:start;touch-action:pan-y;overscroll-behavior:contain}
+  #drawer .da{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:13px;color:#fff;text-align:center}
+  #drawer .da b{width:60px;height:60px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:30px;box-shadow:0 4px 10px rgba(0,0,0,.3)}
+  #drawer .dsearch{margin:6px 16px 12px;height:52px;border-radius:26px;background:rgba(255,255,255,.14);display:flex;align-items:center;gap:8px;padding:0 18px;border:1px solid rgba(255,255,255,.2)}
+  #drawer .dsearch input{flex:1;background:none;border:none;color:#fff;font-size:16px;outline:none}
+  #drawer .dsearch input::placeholder{color:rgba(255,255,255,.6)}
+  #phone[data-ui=dune] #drawer{background:rgba(70,44,26,.72)}
+  #phone[data-ui=bojagi] #drawer{background:rgba(240,230,210,.92);color:#2e2218}
+  #phone[data-ui=bojagi] #drawer .da{color:#2e2218}#phone[data-ui=bojagi] #drawer .dsearch{background:rgba(120,90,60,.12);border-color:#b8433a}#phone[data-ui=bojagi] #drawer .dsearch input{color:#2e2218}#phone[data-ui=bojagi] #drawer .dsearch input::placeholder{color:#6b5844}
   #fixed{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:3;pointer-events:none}
   #status{position:absolute;top:0;left:0;right:0;height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font-size:13px;font-weight:600;z-index:5;pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,.4)}
   #status .r{display:flex;gap:6px;align-items:center;font-size:12px}
@@ -40,7 +86,7 @@
   #dock{position:absolute;left:14px;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));height:88px;border-radius:30px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);display:flex;justify-content:space-around;align-items:center;z-index:5}
   .dk{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;cursor:pointer}
   .dk b{width:54px;height:54px;border-radius:17px;display:flex;align-items:center;justify-content:center;font-size:27px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
-  #toast{position:absolute;left:50%;bottom:190px;transform:translateX(-50%) translateY(20px);background:rgba(20,18,35,.85);padding:10px 18px;border-radius:20px;font-size:13px;opacity:0;transition:all .3s;z-index:9;pointer-events:none;white-space:nowrap;border:1px solid rgba(255,255,255,.15)}
+  #toast{position:absolute;left:50%;bottom:190px;transform:translateX(-50%) translateY(20px);background:rgba(20,18,35,.85);padding:10px 18px;border-radius:20px;font-size:13px;opacity:0;transition:all .3s;z-index:14;pointer-events:none;white-space:nowrap;border:1px solid rgba(255,255,255,.15)}
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   #sheet{position:absolute;left:0;right:0;bottom:calc(64px + env(safe-area-inset-bottom));z-index:10;max-height:76%;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;background:rgba(18,15,34,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:26px 26px 0 0;padding:18px 22px calc(22px + env(safe-area-inset-bottom));transform:translateY(calc(100% + 160px));visibility:hidden;transition:transform .35s cubic-bezier(.2,.9,.3,1),visibility 0s .35s;border-top:1px solid rgba(255,255,255,.15)}
   #sheet.open{transform:none;visibility:visible;transition:transform .35s cubic-bezier(.2,.9,.3,1),visibility 0s}
@@ -100,13 +146,32 @@
   <canvas id="gl"></canvas>
   <div id="status"><span id="sbTime">12:00</span><span class="r">📶 <span>LTE</span> 🔋 <span>87%</span></span></div>
   <button id="gear" aria-label="설정">⚙️</button>
-  <div id="hint">← 화면을 옆으로 밀어보세요 →</div>
+  <div id="hint">← 옆으로 밀면 다음 화면 →<br>↓ 내리면 빠른 설정 · ↑ 올리면 전체 앱</div>
   <div id="dots"><i class="on"></i><i></i><i></i></div>
   <div id="safe" style="position:absolute;visibility:hidden;padding-bottom:env(safe-area-inset-bottom)"></div>
   <div id="fold"><div class="bd"></div><div class="wrap"><h2></h2><div class="stage"></div><div class="lbl"></div><div class="fdots"></div><div class="tip">좌우로 휙 돌려보세요 · 아래로 내리거나 바깥을 누르면 닫혀요</div></div></div>
   <div id="toast"></div>
+  <div id="dim"></div>
+  <div id="qpbd"></div>
+  <div id="qp">
+    <div class="qtop"><div><div class="qtime" id="qTime">12:00</div><div class="qdate" id="qDate"></div></div>
+      <button class="qset" id="qSet" aria-label="설정"><span class="g">⚙</span><span>설정</span></button></div>
+    <div class="pills"><button class="pill on" data-q="wifi"><i>📶</i><span><b>Wi-Fi</b><small>뉴니버스_5G</small></span></button><button class="pill on" data-q="bt"><i><svg width="18" height="20" viewBox="0 0 18 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5l11 10-5 4V1l5 4L3 15"/></svg></i><span><b>블루투스</b><small>켜짐</small></span></button></div>
+    <div class="qgrid">
+      <button data-q="flash"><i>🔦</i><span>손전등</span></button><button data-q="air"><i>✈️</i><span>비행기 모드</span></button><button data-q="dnd"><i>🌙</i><span>방해 금지</span></button><button class="on" data-q="sound"><i>🔔</i><span>소리</span></button>
+      <button class="on" data-q="rot"><i>🔄</i><span>자동 회전</span></button><button class="on" data-q="loc"><i>📍</i><span>위치</span></button><button data-q="save"><i>🔋</i><span>절전</span></button><button data-q="hot"><i>📡</i><span>핫스팟</span></button>
+    </div>
+    <div class="qslider"><i>☀️</i><input id="qBright" type="range" min="0.25" max="1" step="0.01" value="1" aria-label="밝기"></div>
+    <div class="qslider"><i>🔊</i><input id="qVol" type="range" min="0" max="1" step="0.01" value="0.6" aria-label="소리 크기"></div>
+    <div class="qgrip"></div>
+  </div>
+  <div id="drawer">
+    <div class="dhead">전체 앱</div>
+    <div class="dgrid" id="dGrid"></div>
+    <div class="dsearch"><span>🔍</span><input id="dQ" type="search" placeholder="앱 이름으로 찾기" aria-label="앱 검색"></div>
+  </div>
   <div id="sheet">
-    <h3>모래 전환 설정 <button id="close">✕</button></h3>
+    <h3>설정 <button id="close">✕</button></h3>
     <div class="sub">값을 바꾸고 화면을 밀어보세요. 마음에 드는 조합을 찾아주세요.</div>
     <div class="row" style="margin-top:0"><label>UI 스타일</label><div class="seg" id="uiSeg" style="flex-wrap:wrap"></div></div>
     <div class="row"><label>배경화면</label><div class="seg" id="wpSeg" style="flex-wrap:wrap"></div></div>
@@ -134,7 +199,7 @@ const $=id=>document.getElementById(id);
 // ---------- 설정 ----------
 const DEF={ui:'classic',style:'wind',wind:1.0,size:1.5,turb:1.0,dur:1.7,glow:0.5,star:0.6,wp:'nebula'};
 let S=Object.assign({},DEF);
-try{Object.assign(S,JSON.parse(localStorage.getItem('nv_sand14')||'{}'))}catch(e){}
+try{Object.assign(S,JSON.parse(localStorage.getItem('nv_sand15')||'{}'))}catch(e){}
 const weak=(navigator.hardwareConcurrency||4)<=4||(navigator.deviceMemory||4)<=3;
 let CAP=weak?60000:130000;
 
@@ -501,12 +566,13 @@ $('navbtns').addEventListener('click',e=>{const b=e.target.closest('button');if(
 $('navbtns').addEventListener('pointerdown',e=>e.stopPropagation());
 function navAct(k){
   if(navigator.vibrate)navigator.vibrate(6);
+  const pq=qpOpen()||qpP>0,pd=drOpen()||drP>0;
   const open={fold:typeof fOpen!=='undefined'&&fOpen,sheet:$('sheet').classList.contains('open'),rec:$('recents').classList.contains('open'),edit:typeof meEditing!=='undefined'&&meEditing};
   if(k==='back'){
-    if(open.rec)return closeRecents();if(open.fold)return closeFolder();if(open.sheet)return toggleSheet(false);if(open.edit)return setMeEdit(false);
+    if(open.rec)return closeRecents();if(open.fold)return closeFolder();if(open.sheet)return toggleSheet(false);if(open.edit)return setMeEdit(false);if(pd)return closeDR();if(pq)return closeQP();
     if(anim)return;if(cur>0)go(cur-1,1);else toast('첫 화면이에요');return}
-  if(k==='home'){closeRecents();if(open.fold)closeFolder();if(open.sheet)toggleSheet(false);if(open.edit)setMeEdit(false);if(!anim&&cur!==0)go(0,1);return}
-  if(k==='recent'){if(open.fold)closeFolder();if(open.sheet)toggleSheet(false);open.rec?closeRecents():openRecents()}
+  if(k==='home'){closeRecents();if(pd)closeDR();if(pq)closeQP();if(open.fold)closeFolder();if(open.sheet)toggleSheet(false);if(open.edit)setMeEdit(false);if(!anim&&cur!==0)go(0,1);return}
+  if(k==='recent'){if(pd)closeDR();if(pq)closeQP();if(open.fold)closeFolder();if(open.sheet)toggleSheet(false);open.rec?closeRecents():openRecents()}
 }
 
 function drawBg(){
@@ -551,7 +617,7 @@ function syncWpSeg(){
   const seg=$('wpSeg');if(seg.children.length!==WALLPAPERS.length){seg.innerHTML='';WALLPAPERS.forEach(w=>{const b=document.createElement('button');b.dataset.w=w.id;b.textContent=w.name;b.style.flexBasis='45%';seg.appendChild(b)})}
   [...seg.children].forEach(b=>b.classList.toggle('on',b.dataset.w===curWp().id));
 }
-$('wpSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S.wp=b.dataset.w;try{localStorage.setItem('nv_sand14',JSON.stringify(S))}catch(_){}applyWallpaper()});
+$('wpSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S.wp=b.dataset.w;try{localStorage.setItem('nv_sand15',JSON.stringify(S))}catch(_){}applyWallpaper()});
 applyWallpaper();
 fetch('wallpapers/wallpapers.json',{cache:'no-store'}).then(r=>r.ok?r.json():[]).then(list=>{
   (Array.isArray(list)?list:list.wallpapers||[]).forEach(w=>{if(w&&w.id&&!WALLPAPERS.some(x=>x.id===w.id)){['src','poster','fallback'].forEach(k=>{if(w[k]&&!/^(https?:|\/|data:)/.test(w[k]))w[k]='wallpapers/'+w[k]});
@@ -1364,8 +1430,8 @@ function layout(){
   drawBg();for(let i=0;i<3;i++){renderPage(i);upload(i)}
   buildParticles();
   if(window.__meReady)applyMeStyle();
-  renderNav();
-  const dT=dockTop();const dY=uiDots!=null?uiDots:dT-22;$('dots').style.top=dY+'px';$('hint').style.top=(dY-28)+'px';
+  renderNav();phone.dataset.ui=S.ui||'classic';
+  const dT=dockTop();const dY=uiDots!=null?uiDots:dT-22;$('dots').style.top=dY+'px';$('hint').style.top=(dY-46)+'px';
   draw();
 }
 function quadDraw(tx,alpha,scale,ox){
@@ -1467,19 +1533,23 @@ function snapBack(){
 function setDots(){[...$('dots').children].forEach((d,i)=>d.classList.toggle('on',i===cur))}
 
 // ---------- 입력 ----------
-let sx=0,sy=0,lx=0,lt=0,vx=0,moved=false,crossed=false,pid=null;
+let sx=0,sy=0,lx=0,lt=0,vx=0,vy=0,ly=0,moved=false,crossed=false,pid=null,axis=null;
 phone.addEventListener('pointerdown',e=>{
-  if(e.target.closest('#sheet,#gear,#fold,#meDone,#me.edit'))return;
+  if(e.target.closest('#sheet,#gear,#fold,#meDone,#me.edit,#qp,#qpbd,#drawer,#recents'))return;
   if($('sheet').classList.contains('open')){toggleSheet(false);return}
+  if(qpOpen()||drOpen())return;
   if(anim){anim.t0=-1e9;loop(performance.now())}
   pid=e.pointerId;phone.setPointerCapture(pid);
-  dragging=true;moved=false;crossed=false;sx=lx=e.clientX;sy=e.clientY;lt=e.timeStamp;vx=0;
+  dragging=true;moved=false;crossed=false;axis=null;sx=lx=e.clientX;sy=ly=e.clientY;vy=0;lt=e.timeStamp;vx=0;
   $('hint').style.opacity=0;req();
 });
 phone.addEventListener('pointermove',e=>{
   if(!dragging||e.pointerId!==pid)return;
-  const dx=e.clientX-sx;if(Math.abs(dx)>8||Math.abs(e.clientY-sy)>8)moved=true;
-  const dt=e.timeStamp-lt;if(dt>0){vx=.7*vx+.3*((e.clientX-lx)/dt)}lx=e.clientX;lt=e.timeStamp;
+  const dx=e.clientX-sx,dy=e.clientY-sy;if(Math.abs(dx)>8||Math.abs(dy)>8)moved=true;
+  const dt=e.timeStamp-lt;if(dt>0){vx=.7*vx+.3*((e.clientX-lx)/dt);vy=.7*vy+.3*((e.clientY-ly)/dt)}lx=e.clientX;ly=e.clientY;lt=e.timeStamp;
+  if(!axis&&moved)axis=Math.abs(dy)>Math.abs(dx)*1.15?(dy>0?'down':'up'):'h';
+  if(axis==='down'){target=-1;t=0;off=0;setQP(Math.max(0,dy)/(QP.offsetHeight||500));return}
+  if(axis==='up'){target=-1;t=0;off=0;setDR(Math.max(0,-dy)/(H*.55));return}
   const d=dx<0?-1:1,to=cur-d;
   if(to<0||to>2){target=-1;t=0;off=dx*.25/(1+Math.abs(dx)/300);return}
   off=0;target=to;dir=d;
@@ -1488,7 +1558,9 @@ phone.addEventListener('pointermove',e=>{
 });
 function up(e){
   if(!dragging||e.pointerId!==pid)return;dragging=false;
-  const dx=e.clientX-sx,frac=Math.abs(dx)/W;
+  const dx=e.clientX-sx,dy=e.clientY-sy,frac=Math.abs(dx)/W;
+  if(axis==='down'){if(qpP>.3||vy>.4){updQP();setQP(1,true)}else setQP(0,true);draw();return}
+  if(axis==='up'){if(drP>.3||vy<-.4)openDR();else setDR(0,true);draw();return}
   if(!moved){target=-1;t=0;tap(e);if(!anim)draw();return}
   if(target>=0&&(frac>.2||(Math.abs(vx)>.45&&Math.sign(vx)===Math.sign(dx)&&frac>.05)))go(target,dir);
   else snapBack();
@@ -1499,7 +1571,7 @@ function tap(e){
   const r=phone.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
   const h=(hitRects[cur]||[]).find(o=>x>=o.x&&x<=o.x+o.w&&y>=o.y&&y<=o.y+o.h);
   if(h&&h.act){if(anim)return;if(h.act==='home'){if(cur!==0)go(0,1);else toast('첫 화면이에요')}else if(h.act==='back'){if(cur>0)go(cur-1,1);else toast('더 돌아갈 화면이 없어요')}else toast('최근 사용한 앱 · 시제품이라 아직 비어 있어요');return}
-  if(h&&h.f)openFolder(h.f,{x:h.x,y:h.y,w:Math.min(h.w,h.h)});else if(h){pushRecent(findApp(h.n));toast(`${h.n} · 시제품이라 아직 열리지 않아요`)}
+  if(h&&h.f)openFolder(h.f,{x:h.x,y:h.y,w:Math.min(h.w,h.h)});else if(h&&h.n==='설정'){pushRecent(findApp(h.n));toggleSheet(true)}else if(h){pushRecent(findApp(h.n));toast(`${h.n} · 시제품이라 아직 열리지 않아요`)}
 }
 let tt=0;function toast(m){const el=$('toast');el.textContent=m;el.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('show'),1600)}
 
@@ -1584,16 +1656,16 @@ $('close').onclick=()=>toggleSheet(false);
 const sl={wind:['sWind','vWind',v=>v.toFixed(2)+'×'],size:['sSize','vSize',v=>v.toFixed(1)+'px'],turb:['sTurb','vTurb',v=>v.toFixed(2)],dur:['sDur','vDur',v=>v.toFixed(1)+'초'],star:['sStar','vStar',v=>v.toFixed(2)+'×'],glow:['sGlow','vGlow',v=>v.toFixed(2)]};
 let sizeTimer=0;
 function syncUiSeg(){const g=$('uiSeg');if(!g.children.length)Object.keys(UI_NAMES).forEach(k=>{const b=document.createElement('button');b.dataset.u=k;b.textContent=UI_NAMES[k];b.style.flexBasis='45%';g.appendChild(b)});[...g.children].forEach(b=>b.classList.toggle('on',b.dataset.u===(S.ui||'classic')))}
-$('uiSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;S.ui=b.dataset.u;syncUiSeg();try{localStorage.setItem('nv_sand14',JSON.stringify(S))}catch(_){}layout()};
+$('uiSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;S.ui=b.dataset.u;syncUiSeg();try{localStorage.setItem('nv_sand15',JSON.stringify(S))}catch(_){}layout()};
 function syncSeg(){syncUiSeg();[...$('styleSeg').children].forEach(b=>b.classList.toggle('on',b.dataset.s===S.style))}
-$('styleSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;S.style=b.dataset.s;syncSeg();try{localStorage.setItem('nv_sand14',JSON.stringify(S))}catch(_){}};
+$('styleSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;S.style=b.dataset.s;syncSeg();try{localStorage.setItem('nv_sand15',JSON.stringify(S))}catch(_){}};
 function syncUI(){syncSeg();for(const k in sl){$(sl[k][0]).value=S[k];$(sl[k][1]).textContent=sl[k][2](S[k])}}
 for(const k in sl){$(sl[k][0]).addEventListener('input',e=>{S[k]=parseFloat(e.target.value);$(sl[k][1]).textContent=sl[k][2](S[k]);
-  try{localStorage.setItem('nv_sand14',JSON.stringify(S))}catch(_){}
+  try{localStorage.setItem('nv_sand15',JSON.stringify(S))}catch(_){}
   if(k==='size'){clearTimeout(sizeTimer);sizeTimer=setTimeout(()=>{buildParticles();draw()},150)}})}
-$('reset').onclick=()=>{S=Object.assign({},DEF);syncUI();applyWallpaper();try{localStorage.removeItem('nv_sand14')}catch(_){}layout()};
+$('reset').onclick=()=>{S=Object.assign({},DEF);syncUI();applyWallpaper();try{localStorage.removeItem('nv_sand15')}catch(_){}layout()};
 $('demo').onclick=()=>{if(anim)return;const to=cur<2?cur+1:cur-1;go(to,to>cur?-1:1)};
-function updateStats(){$('stats').textContent=`v14 · 모래알 ${counts[cur]?counts[cur].toLocaleString('ko-KR'):0}개 · 알갱이 ${cell}px · 최근 ${Math.round(lastFps)}fps${weak?' · 절약 모드':''}`}
+function updateStats(){$('stats').textContent=`v15 · 모래알 ${counts[cur]?counts[cur].toLocaleString('ko-KR'):0}개 · 알갱이 ${cell}px · 최근 ${Math.round(lastFps)}fps${weak?' · 절약 모드':''}`}
 syncUI();
 window.__nv={pose:(to,d,tt)=>{target=to;dir=d;t=tt;draw()},cur:()=>cur,hits:()=>hitRects[cur].map(h=>({x:h.x,y:h.y,w:h.w,h:h.h,n:h.n,act:h.act,f:!!h.f}))};
 
@@ -1607,6 +1679,56 @@ let rz=0;window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(la
 cv.addEventListener('webglcontextlost',e=>e.preventDefault());
 const start=()=>{layout();tick()};
 (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(start);
+// ---------- 상태 표시창(빠른 설정) · 전체 앱 서랍 ----------
+const QP=$('qp'),QB=$('qpbd'),DR=$('drawer');
+let qpP=0,drP=0; // 0=닫힘 1=열림
+function setQP(p,anim){qpP=Math.max(0,Math.min(1,p));QP.style.transition=anim?'transform .32s cubic-bezier(.2,.9,.3,1)':'none';QB.style.transition=anim?'opacity .32s':'none';
+  QP.style.transform=`translateY(${(qpP-1)*105}%)`;QB.style.opacity=qpP;QB.classList.toggle('open',qpP>.99);QP.classList.toggle('open',qpP>.99)}
+function setDR(p,anim){drP=Math.max(0,Math.min(1,p));DR.style.transition=anim?'transform .34s cubic-bezier(.2,.9,.3,1),opacity .34s':'none';
+  DR.style.transform=`translateY(${(1-drP)*40}%)`;DR.style.opacity=drP;DR.classList.toggle('open',drP>.99)}
+const qpOpen=()=>qpP>.99,drOpen=()=>drP>.99;
+function openQP(){updQP();setQP(1,true)}function closeQP(){setQP(0,true)}
+function openDR(){buildDrawer();setDR(1,true)}function closeDR(){$('dQ').blur();setDR(0,true)}
+function updQP(){const d=new Date();$('qTime').textContent=d.toLocaleTimeString('ko-KR',{hour:'numeric',minute:'2-digit'});
+  $('qDate').textContent=d.toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'long'})}
+const QN={wifi:'Wi-Fi',bt:'블루투스',flash:'손전등',air:'비행기 모드',dnd:'방해 금지',sound:'소리',rot:'자동 회전',loc:'위치',save:'절전',hot:'핫스팟'};
+QP.addEventListener('click',e=>{const b=e.target.closest('button[data-q]');if(!b)return;b.classList.toggle('on');const on=b.classList.contains('on');
+  if(b.classList.contains('pill'))b.querySelector('small').textContent=on?(b.dataset.q==='wifi'?'뉴니버스_5G':'켜짐'):'꺼짐';
+  if(navigator.vibrate)navigator.vibrate(6);toast(`${QN[b.dataset.q]} ${on?'켜짐':'꺼짐'} · 시제품 표시`)});
+$('qBright').oninput=e=>{$('dim').style.opacity=((1-e.target.value)*.75).toFixed(3)};
+$('qSet').onclick=e=>{e.stopPropagation();toggleSheet(true)};
+QB.addEventListener('pointerdown',e=>{e.stopPropagation();closeQP()});
+// 패널 위에서 위로 밀면 닫힘
+let qd=null;
+QP.addEventListener('pointerdown',e=>{e.stopPropagation();if(e.target.closest('input'))return;qd={y:e.clientY,id:e.pointerId,m:false}});
+QP.addEventListener('pointermove',e=>{if(!qd||e.pointerId!==qd.id)return;const dy=e.clientY-qd.y;if(Math.abs(dy)>8){qd.m=true;if(!QP.hasPointerCapture(qd.id))QP.setPointerCapture(qd.id)}if(qd.m&&dy<0)setQP(1+dy/QP.offsetHeight)});
+QP.addEventListener('pointerup',e=>{if(!qd)return;const dy=e.clientY-qd.y,m=qd.m;qd=null;if(m){if(dy<-50)closeQP();else setQP(1,true)}});
+QP.addEventListener('pointercancel',()=>{qd=null;setQP(1,true)});
+// 전체 앱
+function allApps(){const m=new Map();const add=a=>{if(a.folder)a.items.forEach(add);else if(!m.has(a.n))m.set(a.n,a)};PAGES.forEach(P=>P.apps.forEach(add));DOCK.forEach(add);
+  return [...m.values()].sort((a,b)=>a.n.localeCompare(b.n,'ko'))}
+function buildDrawer(){const q=$('dQ').value.trim(),g=$('dGrid');g.innerHTML='';
+  const list=allApps().filter(a=>!q||a.n.includes(q));
+  if(!list.length){g.innerHTML='<div style="grid-column:1/-1;text-align:center;opacity:.7;padding:40px 0">찾는 앱이 없어요</div>';return}
+  list.forEach(a=>{const d=document.createElement('div');d.className='da';const txt=/^[A-Za-z]$/.test(a.e);
+    d.innerHTML=`<b style="background:linear-gradient(135deg,${a.c1},${a.c2});color:${a.t||'#fff'};${txt?'font-weight:900;font-family:system-ui':''}">${a.e}</b><span>${a.n}</span>`;
+    d.onclick=()=>{pushRecent(a);if(a.n==='설정'){toggleSheet(true);return}toast(`${a.n} · 시제품이라 아직 열리지 않아요`)};g.appendChild(d)})}
+$('dQ').oninput=buildDrawer;
+let dd=null;
+DR.addEventListener('pointerdown',e=>{e.stopPropagation();if(e.target.closest('input')||e.pointerType==='touch')return;const g=$('dGrid');dd={y:e.clientY,id:e.pointerId,m:false,top:g.scrollTop<=0}});
+DR.addEventListener('pointermove',e=>{if(!dd||e.pointerId!==dd.id)return;const dy=e.clientY-dd.y;
+  if(!dd.m&&dy>10&&dd.top){dd.m=true;DR.setPointerCapture(dd.id)}if(dd.m)setDR(1-Math.max(0,dy)/(H*.6))});
+DR.addEventListener('pointerup',e=>{if(!dd)return;const dy=e.clientY-dd.y,m=dd.m;dd=null;if(m){if(dy>70)closeDR();else setDR(1,true)}});
+DR.addEventListener('pointercancel',()=>{if(dd&&dd.m)setDR(1,true);dd=null});
+// 손가락: 목록이 맨 위일 때 아래로 끌면 서랍이 따라 내려오며 닫힘 (목록 스크롤과 충돌하지 않게 터치 이벤트로 처리)
+let td=null;
+DR.addEventListener('touchstart',e=>{if(e.target.closest('input')){td=null;return}const g=$('dGrid');td={y:e.touches[0].clientY,top:g.scrollTop<=0||!e.target.closest('.dgrid'),m:false,last:e.touches[0].clientY,v:0,t:e.timeStamp}},{passive:true});
+DR.addEventListener('touchmove',e=>{if(!td)return;const y=e.touches[0].clientY,dy=y-td.y;const dt=e.timeStamp-td.t;if(dt>0)td.v=.7*td.v+.3*((y-td.last)/dt);td.last=y;td.t=e.timeStamp;
+  if(!td.m&&td.top&&dy>8)td.m=true;if(td.m){e.preventDefault();setDR(1-Math.max(0,dy)/(H*.6))}},{passive:false});
+DR.addEventListener('touchend',e=>{if(!td)return;const m=td.m,dy=td.last-td.y,v=td.v;td=null;if(m){if(dy>70||v>.5)closeDR();else setDR(1,true)}});
+DR.addEventListener('touchcancel',()=>{if(td&&td.m)setDR(1,true);td=null});
+setQP(0);setDR(0);
+window.__nv.panel=()=>({qp:qpP,dr:drP});window.__nv.S=S;window.__nv.layout=layout;window.__nv.buildDrawer=buildDrawer;
 })();
 </script>
 </body>
