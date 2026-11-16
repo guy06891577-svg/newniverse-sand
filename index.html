@@ -7,7 +7,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>뉴니버스 · 모래 전환 시제품 v12</title>
+<title>뉴니버스 · 모래 전환 시제품 v13</title>
 <style>
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
   html,body{height:100%;background:#05040d;overflow:hidden;font-family:system-ui,-apple-system,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#fff;overscroll-behavior:none}
@@ -120,7 +120,7 @@ const $=id=>document.getElementById(id);
 // ---------- 설정 ----------
 const DEF={ui:'classic',style:'wind',wind:1.0,size:1.5,turb:1.0,dur:1.7,glow:0.5,star:0.6,wp:'nebula'};
 let S=Object.assign({},DEF);
-try{Object.assign(S,JSON.parse(localStorage.getItem('nv_sand12')||'{}'))}catch(e){}
+try{Object.assign(S,JSON.parse(localStorage.getItem('nv_sand13')||'{}'))}catch(e){}
 const weak=(navigator.hardwareConcurrency||4)<=4||(navigator.deviceMemory||4)<=3;
 let CAP=weak?60000:130000;
 
@@ -458,7 +458,7 @@ function syncWpSeg(){
   const seg=$('wpSeg');if(seg.children.length!==WALLPAPERS.length){seg.innerHTML='';WALLPAPERS.forEach(w=>{const b=document.createElement('button');b.dataset.w=w.id;b.textContent=w.name;b.style.flexBasis='45%';seg.appendChild(b)})}
   [...seg.children].forEach(b=>b.classList.toggle('on',b.dataset.w===curWp().id));
 }
-$('wpSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S.wp=b.dataset.w;try{localStorage.setItem('nv_sand12',JSON.stringify(S))}catch(_){}applyWallpaper()});
+$('wpSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S.wp=b.dataset.w;try{localStorage.setItem('nv_sand13',JSON.stringify(S))}catch(_){}applyWallpaper()});
 applyWallpaper();
 fetch('wallpapers/wallpapers.json',{cache:'no-store'}).then(r=>r.ok?r.json():[]).then(list=>{
   (Array.isArray(list)?list:list.wallpapers||[]).forEach(w=>{if(w&&w.id&&!WALLPAPERS.some(x=>x.id===w.id)){['src','poster','fallback'].forEach(k=>{if(w[k]&&!/^(https?:|\/|data:)/.test(w[k]))w[k]='wallpapers/'+w[k]});
@@ -926,21 +926,58 @@ function feather(img,maxSide){
   let url=b.toDataURL('image/webp',.9);if(!url.startsWith('data:image/webp'))url=b.toDataURL('image/png');
   return {url,ar:cw/ch};
 }
-let bgLib=null;
+// 오려내기 모델: Google MediaPipe (Apache-2.0)
+//  1) DeepLab-v3 (Apache-2.0): 사람·고양이·개·새·말 등 주인공 종류와 위치 찾기
+//  2) MagicTouch 대화형 분할 (Apache-2.0): 찾은 위치를 눌러 경계를 정교하게 오려내기
+const MP_VER='0.10.21',MP_CDN=`https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VER}`;
+let mp=null;
+async function mpLoad(){
+  if(mp)return mp;
+  const m=await import(`${MP_CDN}/vision_bundle.mjs`);
+  const fs=await m.FilesetResolver.forVisionTasks(`${MP_CDN}/wasm`);
+  const seg=await m.ImageSegmenter.createFromOptions(fs,{baseOptions:{modelAssetPath:'models/deeplab_v3.tflite',delegate:'CPU'},runningMode:'IMAGE',outputCategoryMask:true,outputConfidenceMasks:true});
+  const inter=await m.InteractiveSegmenter.createFromOptions(fs,{baseOptions:{modelAssetPath:'models/magic_touch.tflite',delegate:'CPU'},outputCategoryMask:false,outputConfidenceMasks:true});
+  return mp={seg,inter};
+}
+const SUBJ={15:'사람',8:'고양이',12:'개',3:'새',13:'말',17:'양',10:'소'};
+function cutoutMask(c){
+  const {seg,inter}=mp,w=c.width,h=c.height,n=w*h;
+  // 1) 주인공 찾기
+  let cat=null,conf=null;
+  seg.segment(c,r=>{cat=r.categoryMask.getAsUint8Array().slice();const cm=r.confidenceMasks;conf=cm?cm.map(x=>x.getAsFloat32Array().slice()):null});
+  const cnt={};for(let i=0;i<n;i++){const k=cat[i];if(SUBJ[k])cnt[k]=(cnt[k]||0)+1}
+  let cls=null,best=0;for(const k in cnt)if(cnt[k]>best){best=cnt[k];cls=+k}
+  let px=.5,py=.55,dl=null;
+  if(cls!=null&&best>n*.01){
+    let sx=0,sy=0;for(let i=0;i<n;i++)if(cat[i]===cls){sx+=i%w;sy+=(i/w)|0}
+    const cx=sx/best,cy=sy/best;let bd=1e18,bi=0;
+    for(let i=0;i<n;i++)if(cat[i]===cls){const dx=i%w-cx,dy=((i/w)|0)-cy,d=dx*dx+dy*dy;if(d<bd){bd=d;bi=i}}
+    px=(bi%w)/w;py=((bi/w)|0)/h;
+    dl=conf&&conf[cls]?conf[cls]:Float32Array.from(cat,v=>v===cls?1:0);
+  }
+  // 2) 그 위치를 눌러 정교하게
+  let mt=null;
+  inter.segment(c,{keypoint:{x:px,y:py}},r=>{const cm=r.confidenceMasks;if(cm&&cm[0])mt=cm[0].getAsFloat32Array().slice()});
+  let alpha=mt||dl;
+  if(mt&&dl){let I=0,U=0;for(let i=0;i<n;i++){const a=mt[i]>.5,b=dl[i]>.5;if(a&&b)I++;if(a||b)U++}
+    alpha=(U&&I/U>.45)?mt:dl;}
+  return {alpha,kind:cls!=null?SUBJ[cls]:'주인공'};
+}
 async function cutout(file){
   const prog=$('meProg');
   const setP=t=>{prog.textContent=t;prog.style.display='block'};
   setP('사진을 준비하는 중…');
-  // 원본을 1024px 이하로 줄여 처리(빠르고 메모리 절약)
-  const bmp=await createImageBitmap(file);const sc=Math.min(1,1024/Math.max(bmp.width,bmp.height));
-  const c=document.createElement('canvas');c.width=Math.round(bmp.width*sc);c.height=Math.round(bmp.height*sc);c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
-  const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',.92));
-  setP('주인공(사람·동물)을 오려내는 중… 처음 한 번은 인식 모델(약 44MB)을 내려받아요');
-  if(!bgLib)bgLib=await import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/+esm');
-  const out=await bgLib.removeBackground(blob,{model:'isnet_quint8',output:{format:'image/png'},
-    progress:(key,cur,total)=>{if(/fetch/.test(key)&&total)setP(`인식 모델 내려받는 중… ${Math.round(cur/total*100)}% (처음 한 번만)`);else if(/compute/.test(key))setP('주인공을 오려내는 중…')}});
-  const img=await createImageBitmap(out);
-  const f=feather(img,720);prog.style.display='none';
+  const bmp=await createImageBitmap(file);const sc=Math.min(1,768/Math.max(bmp.width,bmp.height));
+  const c=document.createElement('canvas');c.width=Math.round(bmp.width*sc);c.height=Math.round(bmp.height*sc);const cx=c.getContext('2d',{willReadFrequently:true});cx.drawImage(bmp,0,0,c.width,c.height);
+  setP('인식 모델 준비 중… (처음 한 번 약 9MB)');
+  await mpLoad();
+  setP('주인공(사람·동물)을 오려내는 중…');
+  await new Promise(r=>setTimeout(r,30));
+  const {alpha}=cutoutMask(c);
+  const id=cx.getImageData(0,0,c.width,c.height),d=id.data;
+  for(let i=0,j=3;i<alpha.length;i++,j+=4)d[j]=Math.round(Math.min(1,Math.max(0,alpha[i]))*255);
+  cx.putImageData(id,0,0);
+  const f=feather(c,720);prog.style.display='none';
   if(!f){toast('사진에서 주인공을 찾지 못했어요');return}
   ME={src:f.url,ar:f.ar,x:.5,y:.6,s:Math.min(.7,.55*Math.max(.7,f.ar))};
   saveMe();updateTone();applyMeStyle();setMeEdit(true);
@@ -1453,16 +1490,16 @@ $('close').onclick=()=>toggleSheet(false);
 const sl={wind:['sWind','vWind',v=>v.toFixed(2)+'×'],size:['sSize','vSize',v=>v.toFixed(1)+'px'],turb:['sTurb','vTurb',v=>v.toFixed(2)],dur:['sDur','vDur',v=>v.toFixed(1)+'초'],star:['sStar','vStar',v=>v.toFixed(2)+'×'],glow:['sGlow','vGlow',v=>v.toFixed(2)]};
 let sizeTimer=0;
 function syncUiSeg(){const g=$('uiSeg');if(!g.children.length)Object.keys(UI_NAMES).forEach(k=>{const b=document.createElement('button');b.dataset.u=k;b.textContent=UI_NAMES[k];b.style.flexBasis='45%';g.appendChild(b)});[...g.children].forEach(b=>b.classList.toggle('on',b.dataset.u===(S.ui||'classic')))}
-$('uiSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;S.ui=b.dataset.u;syncUiSeg();try{localStorage.setItem('nv_sand12',JSON.stringify(S))}catch(_){}layout()};
+$('uiSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;S.ui=b.dataset.u;syncUiSeg();try{localStorage.setItem('nv_sand13',JSON.stringify(S))}catch(_){}layout()};
 function syncSeg(){syncUiSeg();[...$('styleSeg').children].forEach(b=>b.classList.toggle('on',b.dataset.s===S.style))}
-$('styleSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;S.style=b.dataset.s;syncSeg();try{localStorage.setItem('nv_sand12',JSON.stringify(S))}catch(_){}};
+$('styleSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;S.style=b.dataset.s;syncSeg();try{localStorage.setItem('nv_sand13',JSON.stringify(S))}catch(_){}};
 function syncUI(){syncSeg();for(const k in sl){$(sl[k][0]).value=S[k];$(sl[k][1]).textContent=sl[k][2](S[k])}}
 for(const k in sl){$(sl[k][0]).addEventListener('input',e=>{S[k]=parseFloat(e.target.value);$(sl[k][1]).textContent=sl[k][2](S[k]);
-  try{localStorage.setItem('nv_sand12',JSON.stringify(S))}catch(_){}
+  try{localStorage.setItem('nv_sand13',JSON.stringify(S))}catch(_){}
   if(k==='size'){clearTimeout(sizeTimer);sizeTimer=setTimeout(()=>{buildParticles();draw()},150)}})}
-$('reset').onclick=()=>{S=Object.assign({},DEF);syncUI();applyWallpaper();try{localStorage.removeItem('nv_sand12')}catch(_){}layout()};
+$('reset').onclick=()=>{S=Object.assign({},DEF);syncUI();applyWallpaper();try{localStorage.removeItem('nv_sand13')}catch(_){}layout()};
 $('demo').onclick=()=>{if(anim)return;const to=cur<2?cur+1:cur-1;go(to,to>cur?-1:1)};
-function updateStats(){$('stats').textContent=`v12 · 모래알 ${counts[cur]?counts[cur].toLocaleString('ko-KR'):0}개 · 알갱이 ${cell}px · 최근 ${Math.round(lastFps)}fps${weak?' · 절약 모드':''}`}
+function updateStats(){$('stats').textContent=`v13 · 모래알 ${counts[cur]?counts[cur].toLocaleString('ko-KR'):0}개 · 알갱이 ${cell}px · 최근 ${Math.round(lastFps)}fps${weak?' · 절약 모드':''}`}
 syncUI();
 window.__nv={pose:(to,d,tt)=>{target=to;dir=d;t=tt;draw()},cur:()=>cur,hits:()=>hitRects[cur].map(h=>({x:h.x,y:h.y,w:h.w,h:h.h,n:h.n,act:h.act,f:!!h.f}))};
 
