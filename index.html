@@ -134,6 +134,9 @@
   #phone[data-ui=bojagi] #settings .search{background:rgba(120,90,60,.12);border-color:#b8433a}
   #phone[data-ui=bojagi] #settings .pt{background:rgba(184,67,58,.15);color:#b8433a}
   #phone[data-ui=bojagi] #settings .sl input{accent-color:#b8433a}
+  html.native #status{visibility:hidden}
+  html.native #qp{padding-top:40px}
+  html.native #hint-desktop{display:none}
   #fixed{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:3;pointer-events:none}
   #status{position:absolute;top:0;left:0;right:0;height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font-size:13px;font-weight:600;z-index:5;pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,.4)}
   #status .r{display:flex;gap:6px;align-items:center;font-size:12px}
@@ -284,6 +287,62 @@ const PAGES=[
     A('녹음','🎙️','#ef5350','#b71c1c'),F('도구',[A('손전등','🔦','#ffca28','#ff8f00','#222'),A('스캐너','📄','#66bb6a','#2e7d32'),A('나침반','🧭','#4f7cff','#2a4fd1'),A('자','📏','#ffd45e','#f2a93b'),A('녹화','📹','#ef5350','#b71c1c'),A('타이머','⏱️','#5ac8fa','#2e8fc4')]),A('뉴니버스','🌌','#e6b85c','#7b3fe4')]}
 ];
 const DOCK=[A('전화','📞','#34c759','#1f9d40'),A('메시지','💬','#5ac8fa','#2a86d9'),A('인터넷','🧭','#4f7cff','#2a4fd1'),A('연락처','👤','#ff9f43','#e06a1a')];
+// ---------- 안드로이드 런처 모드 (APK 안에서 실행될 때만): 실제 설치된 앱으로 홈/독/서랍 구성 ----------
+const NATIVE=!!(window.NVNative&&/native=1/.test(location.search));
+const ROLE_GLYPH={'com.samsung.android.dialer':'phone','com.google.android.dialer':'phone','com.android.dialer':'phone',
+ 'com.samsung.android.messaging':'message','com.google.android.apps.messaging':'message','com.android.messaging':'message',
+ 'com.sec.android.app.camera':'camera','com.android.camera2':'camera','com.google.android.GoogleCamera':'camera','com.android.camera':'camera',
+ 'com.android.settings':'gear','com.samsung.android.app.contacts':'person','com.android.contacts':'person','com.google.android.contacts':'person',
+ 'com.sec.android.gallery3d':'gallery','com.android.gallery3d':'gallery','com.samsung.android.calendar':'calendar','com.android.calendar':'calendar',
+ 'com.sec.android.app.clockpackage':'clock','com.android.deskclock':'clock','com.google.android.deskclock':'clock',
+ 'com.sec.android.app.popupcalculator':'calc','com.android.calculator2':'calc','com.google.android.calculator':'calc',
+ 'com.samsung.android.app.notes':'memo','com.sec.android.app.myfiles':'folder','com.android.documentsui':'folder','com.google.android.documentsui':'folder',
+ 'com.sec.android.app.voicenote':'mic','com.sec.android.app.sbrowser':'globe','com.android.browser':'globe','com.sec.android.app.music':'music',
+ 'com.samsung.android.weather':'weather','com.sec.android.daemonapp':'weather','com.samsung.android.email.provider':'mail','com.android.email':'mail',
+ 'com.android.vending':'bag'};
+const FAV=['com.kakao.talk','com.nhn.android.search','com.sec.android.app.camera','com.sec.android.gallery3d','com.google.android.youtube','com.nhn.android.nmap','com.kakao.taxi','com.android.settings',
+ 'com.google.android.GoogleCamera','com.android.camera2','com.google.android.apps.photos','com.google.android.apps.maps','com.android.vending'];
+const PAL=[['#5b7cff','#3346c9'],['#3fc1a5','#1f8c74'],['#ff7a8a','#d6455a'],['#ffb347','#e07b00'],['#9b6bff','#6a35d1'],['#4fc3f7','#1e88c7']];
+let NAPPS=[];
+function shortName(s){s=String(s||'').trim();return s.length>7?s.slice(0,6)+'…':s}
+function nativeApps(){
+  let list=[],roles={};try{list=JSON.parse(NVNative.getApps())}catch(e){}try{roles=JSON.parse(NVNative.getRoles())}catch(e){}
+  list.sort((a,b)=>a.label.localeCompare(b.label,'ko'));
+  const old=new Map(NAPPS.map(a=>[a.pkg+'/'+a.act,a]));
+  NAPPS=list.map((o,i)=>{const p=old.get(o.pkg+'/'+o.act);if(p){p.full=o.label;return p}const c=PAL[i%PAL.length];
+    return {n:shortName(o.label),full:o.label,e:'',c1:c[0],c2:c[1],pkg:o.pkg,act:o.act,gk:ROLE_GLYPH[o.pkg]||null,img:null}});
+  const by=p=>NAPPS.find(a=>a.pkg===p);
+  const pick=(k,fb,label,gk)=>{let a=(roles[k]&&by(roles[k]))||fb.map(by).find(Boolean);if(!a)return null;return Object.assign(Object.create(a),{n:label,gk,__base:a})};
+  const dock=[pick('phone',['com.samsung.android.dialer','com.google.android.dialer'],'전화','phone'),pick('sms',['com.samsung.android.messaging','com.google.android.apps.messaging'],'메시지','message'),
+    pick('browser',['com.sec.android.app.sbrowser','com.android.chrome'],'인터넷','globe'),pick('contacts',['com.samsung.android.app.contacts','com.google.android.contacts','com.android.contacts'],'연락처','person')].filter(Boolean);
+  const inDock=new Set(dock.map(d=>d.__base.pkg));
+  const rest=NAPPS.filter(a=>!inDock.has(a.pkg)),favs=FAV.map(p=>rest.find(a=>a.pkg===p)).filter(Boolean);
+  const order=favs.concat(rest.filter(a=>!favs.includes(a)));
+  DOCK.length=0;dock.forEach(d=>DOCK.push(d));
+  PAGES[0].apps=order.slice(0,8);PAGES[1].apps=order.slice(8,32);PAGES[2].apps=order.slice(32,39);
+  if(!PAGES[1].apps.length)PAGES[1].apps=[];if(!PAGES[2].apps.length)PAGES[2].apps=[];
+  setTimeout(loadNativeIcons,0);
+}
+// 아이콘 그림은 조금씩 나눠 받아 화면이 멈추지 않게 하고, 다 받으면 한 번에 다시 그림
+let iconQ=[],iconT=0;
+function loadNativeIcons(){iconQ=NAPPS.filter(a=>!a.img);pumpIcons()}
+function pumpIcons(){const batch=iconQ.splice(0,6);if(!batch.length){relayoutSoon();return}
+  batch.forEach(a=>{const u=NVNative.getIcon(a.pkg,a.act,144);if(!u)return;const im=new Image();im.onload=()=>{a.img=im;tintFrom(a,im);relayoutSoon()};im.src=u});
+  setTimeout(pumpIcons,16)}
+function tintFrom(a,im){try{const c=document.createElement('canvas');c.width=c.height=16;const x=c.getContext('2d');x.drawImage(im,0,0,16,16);const d=x.getImageData(0,0,16,16).data;let r=0,g=0,b=0,n=0;
+  for(let i=0;i<d.length;i+=4){if(d[i+3]<128)continue;const mx=Math.max(d[i],d[i+1],d[i+2]),mn=Math.min(d[i],d[i+1],d[i+2]);const w=(mx-mn)/255+.08;r+=d[i]*w;g+=d[i+1]*w;b+=d[i+2]*w;n+=w}
+  if(n){r/=n;g/=n;b/=n;const h=v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0');a.c1=`#${h(r*1.1+12)}${h(g*1.1+12)}${h(b*1.1+12)}`;a.c2=`#${h(r*.6)}${h(g*.6)}${h(b*.6)}`}}catch(e){}}
+let rlT=0;function relayoutSoon(){clearTimeout(rlT);rlT=setTimeout(()=>{if(typeof ICACHE!=='undefined')ICACHE.clear();if(W)layout()},250)}
+if(NATIVE){document.documentElement.classList.add('native');nativeApps();
+  window.NV_onAppsChanged=()=>{nativeApps();relayoutSoon()};
+  window.NV_onHome=()=>{try{navAct('home')}catch(e){}};
+  window.NV_onBack=()=>{try{navAct('back')}catch(e){}};
+  window.NV_onResume=()=>{try{if(typeof updQP==='function')updQP()}catch(e){}}}
+function openApp(a){
+  if(!a)return;pushRecent(a.__base||a);
+  if(NATIVE&&a.pkg){if(!NVNative.launch(a.pkg,a.act))toast(`${a.full||a.n} 앱을 열 수 없어요`);return}
+  if(a.n==='설정'){toggleSheet(true);return}
+  toast(`${a.n} · 시제품이라 아직 열리지 않아요`)}
 
 // ---------- 레이아웃 ----------
 let W=0,H=0,DPR=1,GW=0,GH=0;
@@ -347,6 +406,7 @@ const GLY={
  ruler:'M3 15.5L15.5 3 21 8.5 8.5 21z M7 11.5l2 2 M10 8.5l2 2 M13 5.5l2 2',
  vcam:'M3.5 7h11v10h-11z M14.5 10.5l6-3.5v10l-6-3.5',
  timer:'M12 7a7 7 0 1 0 0 14a7 7 0 1 0 0-14z M12 10.5V14 M10 3h4 M12 3v4 M18 6.5l1.5-1.5',
+ none:'',
  star:'M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z',
  more:'M6 12h.01 M12 12h.01 M18 12h.01'
 };
@@ -356,7 +416,7 @@ const GMAP={전화:'phone',메시지:'message',인터넷:'globe',연락처:'pers
  은행:'gov',보험:'shield',카드:'card',가계부:'ledger',환전:'exchange',코인:'coin',중고거래:'tag',선물:'gift',장보기:'cart',패션:'shirt',뷰티:'sparkle',가구:'sofa',
  손전등:'flash',스캐너:'scan',나침반:'compass',자:'ruler',녹화:'vcam',타이머:'timer','더 보기':'more'};
 const GP={};const gpath=k=>GP[k]||(GP[k]=new Path2D(GLY[k]||GLY.star));
-const ICON_NAMES={glass:'유리 패널 (추천)',neon:'네온 라인',halo:'헤일로 링',auto:'UI 스타일에 맞추기',basic:'이전 기본',orb:'궤도 행성',pebble:'모래 조약돌',seal:'한지 도장'};
+const ICON_NAMES={glass:'유리 패널 (추천)',neon:'네온 라인',halo:'헤일로 링',auto:'UI 스타일에 맞추기',raw:'원래 아이콘 그대로',basic:'이전 기본',orb:'궤도 행성',pebble:'모래 조약돌',seal:'한지 도장'};
 function iconSet(){const v=S.icon||'auto';if(v!=='auto')return v;return {orbit:'orb',dune:'pebble',bojagi:'seal'}[S.ui]||'basic'}
 const hx=h=>{h=h.replace('#','');if(h.length===3)h=h.split('').map(x=>x+x).join('');return [0,2,4].map(i=>parseInt(h.substr(i,2),16))};
 const mixc=(a,b,t)=>{const A=hx(a),B=hx(b);return `rgb(${A.map((v,i)=>Math.round(v+(B[i]-v)*t)).join(',')})`};
@@ -364,8 +424,17 @@ const seedOf=s=>{let h=2166136261;for(const ch of s)h=Math.imul(h^ch.charCodeAt(
 function rngOf(n){let s=seedOf(n)%2147483646+1;return ()=>(s=(s*16807)%2147483647)/2147483647}
 // 글리프를 (cx,cy) 중심에 g 크기로 그림
 function glyph(c,k,cx,cy,g,lw){c.save();c.translate(cx-g/2,cy-g/2);c.scale(g/24,g/24);c.lineWidth=lw;c.lineCap='round';c.lineJoin='round';c.stroke(gpath(k));c.restore()}
+function drawIconImg(c,im,cx,cy,s,set){c.save();
+  if(set==='raw'){const d=s*.92;c.drawImage(im,cx-d/2,cy-d/2,d,d);c.restore();return}
+  if(set==='basic'){const d=s*.9;rr(c,cx-d/2,cy-d/2,d,d,d*.3);c.clip();c.drawImage(im,cx-d/2,cy-d/2,d,d);c.restore();return}
+  if(set==='glass'){const d=s*.6;rr(c,cx-d/2,cy-d/2,d,d,d*.3);c.clip();c.drawImage(im,cx-d/2,cy-d/2,d,d);c.restore();return}
+  if(set==='seal'){const d=s*.52;rr(c,cx-d/2,cy-d/2,d,d,d*.12);c.clip();c.drawImage(im,cx-d/2,cy-d/2,d,d);c.restore();return}
+  const d=s*(set==='halo'?.54:.6);c.beginPath();c.arc(cx,cy,d/2,0,7);c.clip();c.drawImage(im,cx-d/2,cy-d/2,d,d);c.restore()}
 function drawSetIcon(c,a,cx,cy,s,set){
-  const k=GMAP[a.n]||'star';
+  if(a.img&&(set==='raw'||set==='basic')){drawIconImg(c,a.img,cx,cy,s,set);return}
+  if(set==='raw'||set==='basic')set='glass';
+  if(a.img&&!a.gk){drawSetIcon(c,{n:a.n,c1:a.c1,c2:a.c2,gk:'none'},cx,cy,s,set);drawIconImg(c,a.img,cx,cy,s,set);return}
+  const k=a.gk||GMAP[a.n]||'star';
   if(set==='flat'){const r=s*.46;c.save();const g=c.createLinearGradient(cx-r,cy-r,cx+r,cy+r);g.addColorStop(0,a.c1);g.addColorStop(1,a.c2);c.fillStyle=g;c.beginPath();c.arc(cx,cy,r,0,7);c.fill();c.strokeStyle='#fff';glyph(c,k,cx,cy,s*.56,2);c.restore();return}
   if(set==='glass'){const h=s*.86,x=cx-h/2,y=cy-h/2,rad=h*.3;c.save();
     c.shadowColor='rgba(0,0,10,.32)';c.shadowBlur=s*.14;c.shadowOffsetY=s*.05;rr(c,x,y,h,h,rad);
@@ -429,8 +498,8 @@ function drawSetIcon(c,a,cx,cy,s,set){
     const ss=s*.2,sx=x+h-ss-s*.05,sy=y+h-ss-s*.05;c.save();c.translate(sx+ss/2,sy+ss/2);c.rotate(-.08);c.fillStyle='#b8433a';c.fillRect(-ss/2,-ss/2,ss,ss);
     c.strokeStyle='rgba(255,235,220,.85)';c.lineWidth=Math.max(.8,s*.016);c.strokeRect(-ss/2+ss*.18,-ss/2+ss*.18,ss*.64,ss*.64);c.restore();return}
 }
-function drawSetFolder(c,f,cx,cy,s,set){
-  c.save();
+function drawSetFolder(c,f,cx,cy,s,set0){
+  const set=(set0==='raw'||set0==='basic')?'glass':set0;c.save();
   if(set==='orb'){const r=s*.46;const g=c.createRadialGradient(cx-r*.3,cy-r*.4,0,cx,cy,r);g.addColorStop(0,'rgba(255,255,255,.3)');g.addColorStop(1,'rgba(160,150,255,.1)');c.fillStyle=g;c.beginPath();c.arc(cx,cy,r,0,7);c.fill();c.strokeStyle='rgba(255,255,255,.5)';c.lineWidth=1;c.stroke()}
   else if(set==='pebble'){c.fillStyle='rgba(245,222,180,.3)';c.beginPath();c.ellipse(cx,cy,s*.5,s*.44,-.06,0,7);c.fill();c.strokeStyle='rgba(255,235,200,.6)';c.lineWidth=1.2;c.stroke()}
   if(set==='glass'){const h=s*.86;rr(c,cx-h/2,cy-h/2,h,h,h*.3);const f=c.createLinearGradient(0,cy-h/2,0,cy+h/2);f.addColorStop(0,'rgba(255,255,255,.22)');f.addColorStop(1,'rgba(255,255,255,.06)');c.fillStyle=f;c.fill();c.strokeStyle='rgba(255,255,255,.45)';c.lineWidth=1;c.stroke()}
@@ -438,16 +507,16 @@ function drawSetFolder(c,f,cx,cy,s,set){
   else if(set==='halo'){c.beginPath();c.arc(cx,cy,s*.47,0,7);c.fillStyle='#09091d';c.fill();c.strokeStyle='rgba(255,255,255,.25)';c.lineWidth=1.2;c.stroke()}
   else{c.fillStyle='rgba(241,230,207,.92)';rr(c,cx-s*.46,cy-s*.46,s*.92,s*.92,s*.06);c.fill();c.strokeStyle='#b8433a';c.lineWidth=1.4;c.setLineDash([3,3]);rr(c,cx-s*.4,cy-s*.4,s*.8,s*.8,s*.04);c.stroke()}
   c.restore();
-  const ms=s*.36,o=s*.2;f.items.slice(0,4).forEach((b,i)=>drawSetIcon(c,b,cx+(i%2?o:-o),cy+(i<2?-o:o),ms,set));
+  const ms=s*.36,o=s*.2;f.items.slice(0,4).forEach((b,i)=>drawSetIcon(c,b,cx+(i%2?o:-o),cy+(i<2?-o:o),ms,set0));
 }
 // DOM(서랍·폴더·최근 앱)용 그림 주소
 const ICACHE=new Map();
-function iconURL(a,set,px){const key=set+'|'+a.n+'|'+px;if(ICACHE.has(key))return ICACHE.get(key);
+function iconURL(a,set,px){const key=set+'|'+(a.pkg||'')+a.n+'|'+px+(a.img?'i':'')+(a.gk||'');if(ICACHE.has(key))return ICACHE.get(key);
   const cv=document.createElement('canvas'),d=2;cv.width=cv.height=px*d;const c=cv.getContext('2d');c.scale(d,d);
   a.folder?drawSetFolder(c,a,px/2,px/2,px*.72,set):drawSetIcon(c,a,px/2,px/2,px*.72,set);const u=cv.toDataURL();ICACHE.set(key,u);return u}
-function iconHTML(a,px){const set=iconSet();if(set==='basic')return null;return `<img src="${iconURL(a,set,px)}" width="${px}" height="${px}" alt="" style="display:block;width:${px}px;height:${px}px">`}
+function iconHTML(a,px){const set=iconSet();if(set==='basic'&&!a.img)return null;return `<img src="${iconURL(a,set,px)}" width="${px}" height="${px}" alt="" style="display:block;width:${px}px;height:${px}px">`}
 // 캔버스 위 통합 진입점: 세트가 기본이 아니면 새 아이콘, 기본이면 false
-function setIconAt(c,a,cx,cy,s){const set=iconSet();if(set==='basic')return false;(a.folder?drawSetFolder:drawSetIcon)(c,a,cx,cy,s,set);return true}
+function setIconAt(c,a,cx,cy,s){const set=iconSet();if(set==='basic'&&!a.img&&!(a.folder&&NATIVE))return false;(a.folder?drawSetFolder:drawSetIcon)(c,a,cx,cy,s,set);return true}
 
 function drawIcon(c,a,x,y,s){
   if(setIconAt(c,a,x+s/2,y+s/2,s*1.08)){iconLabel(c,a.n,x+s/2,y+s+6,s);return}
@@ -538,16 +607,16 @@ function renderPage(pi){
   const top=gridTop(pi),nrow=Math.ceil(P.apps.length/cols),rowH=Math.min(s+40,(dockTop()-30-top)/Math.max(1,nrow));
   P.apps.forEach((a,i)=>{
     const col=i%cols,row=(i/cols)|0,x=pad+col*cw+(cw-s)/2,y=top+row*rowH;
-    (a.folder?drawFolder:drawIcon)(c,a,x,y,s);hitRects[pi].push({x,y,w:s,h:s+24,n:a.n,f:a.folder?a:null});
+    (a.folder?drawFolder:drawIcon)(c,a,x,y,s);hitRects[pi].push({x,y,w:s,h:s+24,n:a.n,f:a.folder?a:null,a});
   });
   const dc=dockCtx(pi);
   const dt=dockTop(),dx=14,dw=W-28,dh=88;
   dc.save();rr(dc,dx,dt,dw,dh,30);dc.fillStyle='rgba(255,255,255,.14)';dc.fill();dc.strokeStyle='rgba(255,255,255,.2)';dc.lineWidth=1;dc.stroke();dc.restore();
   const ds=54;DOCK.forEach((a,i)=>{const cx=dx+dw*(i+.5)/DOCK.length,x=cx-ds/2,y=dt+(dh-ds)/2;
-    if(setIconAt(dc,a,cx,y+ds/2,ds*1.1)){hitRects[pi].push({x,y,w:ds,h:ds,n:a.n});return}
+    if(setIconAt(dc,a,cx,y+ds/2,ds*1.1)){hitRects[pi].push({x,y,w:ds,h:ds,n:a.n,a});return}
     dc.save();dc.shadowColor='rgba(0,0,0,.3)';dc.shadowBlur=10;dc.shadowOffsetY=4;const g=dc.createLinearGradient(x,y,x+ds,y+ds);g.addColorStop(0,a.c1);g.addColorStop(1,a.c2);
     rr(dc,x,y,ds,ds,17);dc.fillStyle=g;dc.fill();dc.shadowColor='transparent';dc.textAlign='center';dc.textBaseline='middle';dc.font=`27px ${EFONT}`;dc.fillStyle='#fff';dc.fillText(a.e,x+ds/2,y+ds*.55);dc.restore();
-    hitRects[pi].push({x,y,w:ds,h:ds,n:a.n});});
+    hitRects[pi].push({x,y,w:ds,h:ds,n:a.n,a});});
   pageCanvases[pi]=cnv;return cnv;
 }
 // ---------- UI 스타일 (홈 화면 구성) ----------
@@ -564,7 +633,7 @@ function emo(c,e,x,y,s,col){c.save();c.textAlign='center';c.textBaseline='middle
   if(/^[A-Za-z]$/.test(e)){c.font=`900 ${s}px ${FONT}`;c.fillStyle=col||'#fff'}else{c.font=`${s}px ${EFONT}`;c.fillStyle='#fff'}
   c.fillText(e,x,y+s*.05);c.restore()}
 function hit(pi,x,y,w,h,n,extra){hitRects[pi].push(Object.assign({x,y,w,h,n},extra||{}))}
-function addItemHit(pi,a,x,y,w,h){hit(pi,x,y,w,h,a.n,a.folder?{f:a}:null)}
+function addItemHit(pi,a,x,y,w,h){hit(pi,x,y,w,h,a.n,a.folder?{f:a}:{a})}
 function navY(){return H-safeB()-64}
 const UIM={};
 
@@ -839,7 +908,7 @@ function findApp(n){for(const P of PAGES)for(const a of P.apps){if(a.n===n)retur
 function openRecents(){
   const el=$('recents'),list=RECENT.length?RECENT:['카카오톡','네이버','지도','카메라'].map(findApp).filter(Boolean);
   el.querySelector('.rlist').innerHTML='';
-  list.forEach(a=>{const d=document.createElement('div');d.className='rc';const ih=iconHTML(a,110);d.innerHTML=ih?`<i class="ns">${ih}</i><span>${a.n}</span>`:`<b style="background:linear-gradient(135deg,${a.c1},${a.c2})">${a.e}</b><span>${a.n}</span>`;d.onclick=e=>{e.stopPropagation();toast(`${a.n} · 시제품이라 아직 열리지 않아요`)};el.querySelector('.rlist').appendChild(d)});
+  list.forEach(a=>{const d=document.createElement('div');d.className='rc';const ih=iconHTML(a,110);d.innerHTML=ih?`<i class="ns">${ih}</i><span>${a.n}</span>`:`<b style="background:linear-gradient(135deg,${a.c1},${a.c2})">${a.e}</b><span>${a.n}</span>`;d.onclick=e=>{e.stopPropagation();closeRecents();openApp(a)};el.querySelector('.rlist').appendChild(d)});
   el.querySelector('.rhead').textContent=RECENT.length?'최근 사용한 앱':'최근 사용한 앱 (예시)';
   el.classList.add('open');
 }
@@ -1854,7 +1923,7 @@ function tap(e){
   const r=phone.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
   const h=(hitRects[cur]||[]).find(o=>x>=o.x&&x<=o.x+o.w&&y>=o.y&&y<=o.y+o.h);
   if(h&&h.act){if(anim)return;if(h.act==='home'){if(cur!==0)go(0,1);else toast('첫 화면이에요')}else if(h.act==='back'){if(cur>0)go(cur-1,1);else toast('더 돌아갈 화면이 없어요')}else toast('최근 사용한 앱 · 시제품이라 아직 비어 있어요');return}
-  if(h&&h.f)openFolder(h.f,{x:h.x,y:h.y,w:Math.min(h.w,h.h)});else if(h&&h.n==='설정'){pushRecent(findApp(h.n));toggleSheet(true)}else if(h){pushRecent(findApp(h.n));toast(`${h.n} · 시제품이라 아직 열리지 않아요`)}
+  if(h&&h.f)openFolder(h.f,{x:h.x,y:h.y,w:Math.min(h.w,h.h)});else if(h)openApp(h.a||findApp(h.n));
 }
 let tt=0;function toast(m){const el=$('toast');el.textContent=m;el.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('show'),1600)}
 
@@ -1920,7 +1989,7 @@ function fUp(e){
   if(!d.moved){
     if(!d.card){closeFolder();return}
     const i=fCards.indexOf(d.card);
-    if(i===Math.round(fPos)){pushRecent(fItems[i]);toast(`${fItems[i].n} · 시제품이라 아직 열리지 않아요`)}
+    if(i===Math.round(fPos)){closeFolder();openApp(fItems[i])}
     else{fTarget=i;fStep()}
     return;
   }
@@ -1977,10 +2046,17 @@ function openDR(){buildDrawer();setDR(1,true)}function closeDR(){$('dQ').blur();
 function updQP(){const d=new Date();$('qTime').textContent=d.toLocaleTimeString('ko-KR',{hour:'numeric',minute:'2-digit'});
   $('qDate').textContent=d.toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'long'})}
 const QN={wifi:'Wi-Fi',bt:'블루투스',flash:'손전등',air:'비행기 모드',dnd:'방해 금지',sound:'소리',rot:'자동 회전',loc:'위치',save:'절전',hot:'핫스팟'};
-QP.addEventListener('click',e=>{const b=e.target.closest('button[data-q]');if(!b)return;b.classList.toggle('on');const on=b.classList.contains('on');
+QP.addEventListener('click',e=>{const b=e.target.closest('button[data-q]');if(!b)return;
+  if(NATIVE){const q=b.dataset.q;if(q==='flash'){const on=!b.classList.contains('on');if(NVNative.torch(on)){b.classList.toggle('on',on);toast(`손전등 ${on?'켜짐':'꺼짐'}`)}else toast('이 폰에서는 손전등을 켤 수 없어요');return}
+    const SYS={wifi:'wifi',bt:'bt',air:'air',dnd:'dnd',loc:'loc',hot:'hot',save:'battery',sound:'sound',rot:'display'};if(SYS[q]){NVNative.openSettings(SYS[q]);return}}
+  b.classList.toggle('on');const on=b.classList.contains('on');
   if(b.classList.contains('pill'))b.querySelector('small').textContent=on?(b.dataset.q==='wifi'?'뉴니버스_5G':'켜짐'):'꺼짐';
   if(navigator.vibrate)navigator.vibrate(6);toast(`${QN[b.dataset.q]} ${on?'켜짐':'꺼짐'} · 시제품 표시`)});
-$('qBright').oninput=e=>{$('dim').style.opacity=((1-e.target.value)*.75).toFixed(3)};
+$('qBright').oninput=e=>{if(NATIVE){NVNative.brightness(+e.target.value);return}$('dim').style.opacity=((1-e.target.value)*.75).toFixed(3)};
+$('qVol').addEventListener('input',e=>{if(NATIVE)NVNative.volume(+e.target.value)});
+if(NATIVE){try{$('qVol').value=NVNative.getVolume()}catch(_){}
+  const sb=document.createElement('button');sb.className='qset';sb.id='qSys';sb.setAttribute('aria-label','폰 설정');sb.innerHTML='<span class="g">📱</span><span>폰 설정</span>';sb.style.marginRight='8px';sb.onclick=e=>{e.stopPropagation();NVNative.openSettings('')};
+  const qs=$('qSet');const wrap=document.createElement('div');wrap.style.display='flex';qs.parentNode.insertBefore(wrap,qs);wrap.appendChild(sb);wrap.appendChild(qs)}
 $('qSet').onclick=e=>{e.stopPropagation();toggleSheet(true)};
 QB.addEventListener('pointerdown',e=>{e.stopPropagation();closeQP()});
 // 패널 위에서 위로 밀면 닫힘
@@ -1990,14 +2066,14 @@ QP.addEventListener('pointermove',e=>{if(!qd||e.pointerId!==qd.id)return;const d
 QP.addEventListener('pointerup',e=>{if(!qd)return;const dy=e.clientY-qd.y,m=qd.m;qd=null;if(m){if(dy<-50)closeQP();else setQP(1,true)}});
 QP.addEventListener('pointercancel',()=>{qd=null;setQP(1,true)});
 // 전체 앱
-function allApps(){const m=new Map();const add=a=>{if(a.folder)a.items.forEach(add);else if(!m.has(a.n))m.set(a.n,a)};PAGES.forEach(P=>P.apps.forEach(add));DOCK.forEach(add);
+function allApps(){if(NATIVE)return NAPPS.slice();const m=new Map();const add=a=>{if(a.folder)a.items.forEach(add);else if(!m.has(a.n))m.set(a.n,a)};PAGES.forEach(P=>P.apps.forEach(add));DOCK.forEach(add);
   return [...m.values()].sort((a,b)=>a.n.localeCompare(b.n,'ko'))}
 function buildDrawer(){const q=$('dQ').value.trim(),g=$('dGrid');g.innerHTML='';
   const list=allApps().filter(a=>!q||a.n.includes(q));
   if(!list.length){g.innerHTML='<div style="grid-column:1/-1;text-align:center;opacity:.7;padding:40px 0">찾는 앱이 없어요</div>';return}
   list.forEach(a=>{const d=document.createElement('div');d.className='da';const txt=/^[A-Za-z]$/.test(a.e);
     const ih=iconHTML(a,76);d.innerHTML=ih?`<i class="ns">${ih}</i><span>${a.n}</span>`:`<b style="background:linear-gradient(135deg,${a.c1},${a.c2});color:${a.t||'#fff'};${txt?'font-weight:900;font-family:system-ui':''}">${a.e}</b><span>${a.n}</span>`;
-    d.onclick=()=>{pushRecent(a);if(a.n==='설정'){toggleSheet(true);return}toast(`${a.n} · 시제품이라 아직 열리지 않아요`)};g.appendChild(d)})}
+    d.onclick=()=>{if(NATIVE)closeDR();openApp(a)};g.appendChild(d)})}
 $('dQ').oninput=buildDrawer;
 let dd=null;
 DR.addEventListener('pointerdown',e=>{e.stopPropagation();if(e.target.closest('input')||e.pointerType==='touch')return;const g=$('dGrid');dd={y:e.clientY,id:e.pointerId,m:false,top:g.scrollTop<=0}});
@@ -2084,7 +2160,7 @@ function buildPage(id){
   switch(id){
    case 'conn':add(sCard(qpSync('wifi','Wi-Fi'),qpSync('bt','블루투스'),qpSync('air','비행기 모드'),qpSync('hot','모바일 핫스팟')));add(mk('div','note','빠른 설정(화면을 아래로 당긴 판)의 단추와 같이 움직여요. 실제 통신은 바뀌지 않아요 · 시제품'));break;
    case 'sound':{const v=$('qVol');add(sCard(slRow('소리 크기',0,1,.01,+v.value,FSF,x=>{v.value=x}),qpSync('sound','소리'),swRow('진동','소리와 함께 진동',true,false,on=>{if(on&&navigator.vibrate)navigator.vibrate(40);toast(`진동 ${on?'켜짐':'꺼짐'}`)}),infoRow('벨소리','은하수 · 시제품')));break}
-   case 'disp':{const b=$('qBright');add(sCard(slRow('밝기',.25,1,.01,+b.value,FSF,x=>{b.value=x;$('dim').style.opacity=((1-x)*.75).toFixed(3)})));
+   case 'disp':{const b=$('qBright');add(sCard(slRow('밝기',.25,1,.01,+b.value,FSF,x=>{b.value=x;b.dispatchEvent(new Event('input'))})));
      add(sCard(swRow('다크 모드','우주 배경에 맞춘 어두운 화면',true,true),infoRow('글자 크기',FSF(S.fs||1)+' · 접근성에서 바꾸기',()=>settingsPush('a11y')),swRow('화면 자동 꺼짐','30초',true,true)));
      add(sCard(infoRow('내비게이션 바',navSummary(),()=>settingsPush('navbar'))));break}
    case 'navbar':buildNavbarPage(add);break;
@@ -2098,7 +2174,9 @@ function buildPage(id){
      add(mk('div','note','모래 전환'));add(sCard(mk('div','ctl'))).firstChild.append(mvRow('styleSeg'),mvRow('sWind'),mvRow('sSize'),mvRow('sTurb'),mvRow('sGlow'),mvRow('sDur'),mvRow('reset'));break;
    case 'a11y':{const pv=mk('div','note','<span style="font-size:calc(17px*var(--fs));opacity:1">가나다라 · 이 정도 크기로 보여요</span>');
      add(sCard(slRow('글자 크기',.9,1.4,.05,S.fs||1,FSF,x=>{S.fs=x;applyFS();saveS()}),pv));add(sCard(swRow('고대비 글자','배경 위 글자를 더 또렷하게',false,true),swRow('돋보기','세 번 눌러 확대',false,true),swRow('소리 안내','화면 내용을 읽어줌',false,true)));break}
-   case 'about':add(sCard(infoRow('기기 이름','장지환의 뉴니버스폰'),infoRow('모델','뉴니버스 시제품 (웹)'),infoRow('뉴니버스 버전',VER),infoRow('화면',`${Math.round(W)}×${Math.round(H)} · 픽셀 ${DPR}배`),infoRow('만든 곳','Crazing Factory')));
+   case 'about':{let inf={};if(NATIVE)try{inf=JSON.parse(NVNative.info())}catch(_){}
+     if(NATIVE)add(sCard(infoRow('이 폰',inf.model+' · 안드로이드 '+inf.android),infoRow('기본 홈 앱',NVNative.isDefaultHome()?'뉴니버스 사용 중':'아직 원래 홈 · 눌러서 바꾸기',()=>NVNative.openSettings('home')),infoRow('설치된 앱',NAPPS.length+'개')))}
+     add(sCard(infoRow('기기 이름','장지환의 뉴니버스폰'),infoRow('모델','뉴니버스 시제품 (웹)'),infoRow('뉴니버스 버전',VER),infoRow('화면',`${Math.round(W)}×${Math.round(H)} · 픽셀 ${DPR}배`),infoRow('만든 곳','Crazing Factory')));
      add(sCard(mk('div','ctl'))).firstChild.append(mvRow('stats'));break;
    case 'upd':add(sCard(mk('div','big',VER),mk('div','note','최신 버전이에요. 새 버전이 올라오면 이 화면에서 알려드려요.')));const br=mk('div','btnrow','<button>업데이트 확인</button>');br.firstChild.onclick=()=>toast(`최신 버전 ${VER} 이에요`);add(br);break;
    case 'tips':add(sCard(infoRow('옆으로 밀기','앱이 모래처럼 흩어지고 다음 화면이 모래로 다시 만들어져요'),infoRow('아래로 당기기','와이파이·밝기 같은 빠른 설정'),infoRow('위로 밀기','모든 앱과 앱 찾기'),infoRow('뒤로 · 홈 · 최근 앱','맨 아래 단추. 뒤로는 한 단계씩 돌아가요'),infoRow('폴더','누르면 카드처럼 펼쳐지고 좌우로 넘겨요')));break;
@@ -2110,6 +2188,7 @@ function buildPage(id){
 function buildMain(){
   const pg=mk('div','pg'),sc=mk('div','scroll');pg.appendChild(sc);sc.appendChild(mk('h1',null,'설정'));
   const prof=mk('div','card prof','<div class="av">장</div><div><b>장지환</b><small>백업으로 데이터 보호</small></div>');prof.style.cursor='pointer';prof.onclick=()=>settingsPush('prof');sc.appendChild(prof);
+  if(NATIVE){const c=mk('div','card');const r1=infoRow('휴대전화 설정 열기','와이파이·소리·앱 등 안드로이드 설정',()=>NVNative.openSettings(''));const r2=infoRow('기본 홈 앱','홈 버튼을 누르면 뜰 앱 고르기 (뉴니버스 / 원래 홈)',()=>NVNative.openSettings('home'));c.append(r1,r2);sc.appendChild(c)}
   SETG.forEach(g=>{const c=mk('div','card');c.dataset.g=1;g.forEach(i=>{const r=mk('div','it',`<img alt="" src="${setImg(i)}"><div><b>${i.n}</b><small>${i.sub}</small></div>`);r.dataset.k=(i.n+' '+i.sub+' '+i.kw).toLowerCase();r.dataset.id=i.id;r.onclick=()=>settingsPush(i.id);c.appendChild(r)});sc.appendChild(c)});
   {const c=mk('div','card');c.dataset.g=1;const i={n:'내비게이션 바',sub:'디스플레이 › 내비게이션 바',key:'§disp',c1:'#48c774',c2:'#2a9550'};const r=mk('div','it',`<img alt="" src="${setImg(i)}"><div><b>${i.n}</b><small>${i.sub}</small></div>`);r.dataset.k='내비게이션 바 네비게이션 내비 navigation 버튼 제스처 뒤로 홈 최근 스와이프';r.dataset.id='disp';r.dataset.so=1;r.onclick=()=>{settingsPush('disp');setTimeout(()=>settingsPush('navbar'),60)};c.appendChild(r);c.style.display='none';sc.appendChild(c)}
   sc.appendChild(mk('div','empty','찾는 설정이 없어요'));sc.lastChild.style.display='none';
