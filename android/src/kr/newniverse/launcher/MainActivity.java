@@ -29,8 +29,13 @@ public class MainActivity extends Activity {
     Window w=getWindow();
     if(Build.VERSION.SDK_INT>=30) w.setDecorFitsSystemWindows(false);
     WebView.setWebContentsDebuggingEnabled(true);
+    // v22: 하드웨어 가속을 창에 확실히 켜고, 창 배경(웹뷰 밑에 한 번 더 칠해지는 층)을 없앰
+    w.addFlags(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED);
+    w.setBackgroundDrawable(null);
     web=new WebView(this);
     web.setBackgroundColor(Color.BLACK);
+    web.setLayerType(View.LAYER_TYPE_NONE,null);            // 웹뷰를 따로 한 장 더 그리는 화면 밖 층을 만들지 않음
+    web.setRendererPriorityPolicy(WebView.RENDERER_PRIORITY_IMPORTANT,false);  // 화면 그리는 엔진을 중요 우선순위로
     WebSettings s=web.getSettings();
     s.setJavaScriptEnabled(true); s.setDomStorageEnabled(true); s.setDatabaseEnabled(true);
     s.setAllowFileAccess(true); s.setAllowFileAccessFromFileURLs(true); s.setAllowUniversalAccessFromFileURLs(true);

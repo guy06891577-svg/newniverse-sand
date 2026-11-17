@@ -7,7 +7,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>뉴니버스 · 모래 전환 시제품 v21</title>
+<title>뉴니버스 · 모래 전환 시제품 v22</title>
 <style>
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
   html,body{height:100%;background:#05040d;overflow:hidden;font-family:system-ui,-apple-system,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#fff;overscroll-behavior:none}
@@ -342,7 +342,17 @@ let LITE=/[?&]lite=1/.test(QS)||S.lite==='on',LITE_WHY=LITE?'직접 켬':'';
 if(!LITE&&S.lite!=='off'&&!/[?&]lite=0/.test(QS)&&((navigator.deviceMemory||8)<=2||(navigator.hardwareConcurrency||8)<=2)){LITE=true;LITE_WHY='폰 성능에 맞춤'}
 function softGL(g){try{const e=g&&g.getExtension('WEBGL_debug_renderer_info');const r=e?String(g.getParameter(e.UNMASKED_RENDERER_WEBGL)):'';return /swiftshader|llvmpipe|softpipe|software|basic render/i.test(r)}catch(_){return false}}
 const LITE_CAP=22000;
-let CAP=LITE?LITE_CAP:weak?60000:130000;
+// ---------- v22 전환 품질 (적응형): 단계가 높을수록 가볍고 부드러움 ----------
+// cap=모래알 최대 수, dpr=화면 해상도 상한, bg=움직이는 배경 해상도, glow=알갱이 번짐(겹쳐 그리는 양), bgT=전환 중 배경을 몇 프레임마다 그릴지(0=멈춤)
+const QL=[{cap:130000,dpr:2,bg:1.5,glow:1,bgT:3},{cap:85000,dpr:2,bg:1.25,glow:.85,bgT:0},{cap:55000,dpr:1.75,bg:1,glow:.7,bgT:0},{cap:34000,dpr:1.5,bg:.85,glow:.55,bgT:0},{cap:20000,dpr:1.25,bg:.7,glow:.4,bgT:0}];
+let QST={};try{QST=JSON.parse(localStorage.getItem('nv_q22')||'{}')||{}}catch(_){QST={}}
+if(/[?&]q=\d/.test(QS)){QST.lvl=+QS.match(/[?&]q=(\d)/)[1];QST.fixed=1}
+function qMode(){return S.tq||'auto'}
+function qLvl(){if(qMode()==='quality')return 0;let l=QST.lvl!=null?QST.lvl:(weak?2:1);if(qMode()==='smooth')l=Math.max(l,3);return Math.max(0,Math.min(4,l))}
+function qSave(){try{localStorage.setItem('nv_q22',JSON.stringify(QST))}catch(_){}}
+function qCap(){return NOGL?4000:Math.min(QL[qLvl()].cap,LITE?LITE_CAP:1e9)}
+function qBg(){return LITE?1:QL[qLvl()].bg}
+let CAP=LITE?LITE_CAP:QL[(QST.lvl!=null?QST.lvl:(weak?2:1))].cap;
 
 // ---------- 앱 데이터 ----------
 const A=(n,e,c1,c2,t)=>({n,e,c1,c2,t});
@@ -416,7 +426,7 @@ function pumpIcons(){const batch=iconQ.splice(0,6);if(!batch.length){relayoutSoo
 function tintFrom(a,im){try{const c=document.createElement('canvas');c.width=c.height=16;const x=c.getContext('2d');x.drawImage(im,0,0,16,16);const d=x.getImageData(0,0,16,16).data;let r=0,g=0,b=0,n=0;
   for(let i=0;i<d.length;i+=4){if(d[i+3]<128)continue;const mx=Math.max(d[i],d[i+1],d[i+2]),mn=Math.min(d[i],d[i+1],d[i+2]);const w=(mx-mn)/255+.08;r+=d[i]*w;g+=d[i+1]*w;b+=d[i+2]*w;n+=w}
   if(n){r/=n;g/=n;b/=n;const h=v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0');a.c1=`#${h(r*1.1+12)}${h(g*1.1+12)}${h(b*1.1+12)}`;a.c2=`#${h(r*.6)}${h(g*.6)}${h(b*.6)}`}}catch(e){}}
-let rlT=0;function relayoutSoon(){clearTimeout(rlT);rlT=setTimeout(()=>{if(typeof ICACHE!=='undefined')ICACHE.clear();if(W)layout()},250)}
+let rlT=0;function relayoutSoon(){clearTimeout(rlT);rlT=setTimeout(()=>{if(typeof inTrans==='function'&&inTrans()){relayoutSoon();return}if(typeof ICACHE!=='undefined')ICACHE.clear();if(W)layout()},250)}
 if(NATIVE){document.documentElement.classList.add('native');nativeApps();
   // v21: 설치·삭제·업데이트 자동 반영 (여러 신호가 겹쳐 와도 한 번만 처리)
   let acT=0,acQ=[];
@@ -1205,7 +1215,7 @@ LIVE_SCENES.starfield=(g)=>{
   let pr=Math.min(DPR,1.5),cw=0,ch=0,a1y=0,a1x=0,a2y=0,a2x=0,last=0,t0=0,acc=0,cnt=0,downs=0,frame=0,tilt=[0,0],tiltT=[0,0];
   window.addEventListener('deviceorientation',e=>{if(e.gamma==null)return;tiltT=[Math.max(-1,Math.min(1,e.gamma/40)),Math.max(-1,Math.min(1,((e.beta||45)-45)/40))]});
   const bsArr=new Float32Array(40),bcArr=new Float32Array(30);
-  function resize(){cw=Math.round(W*pr);ch=Math.round(H*pr);scv.width=cw;scv.height=ch;mw.size(Math.max(64,cw>>2),Math.max(64,ch>>2));frame=0}
+  function resize(){pr=Math.min(pr,qBg());cw=Math.round(W*pr);ch=Math.round(H*pr);scv.width=cw;scv.height=ch;mw.size(Math.max(64,cw>>2),Math.max(64,ch>>2));frame=0}
   function render(ts){
     if(!t0)t0=ts;const dt=Math.min(.05,(ts-(last||ts))/1000);last=ts;
     if(dt>0){acc+=dt;cnt++;if(cnt>=90){const avg=acc/cnt;acc=0;cnt=0;if(avg>1/45&&downs<2&&pr>1){downs++;pr=Math.max(1,pr-0.25);resize()}}}
@@ -1332,7 +1342,7 @@ LIVE_SCENES.nebula=(g)=>{
   const fx=GLU.target(g);
   let pr=Math.min(DPR,LITE?1:1.5),cw=0,ch=0,last=0,t0=0,acc=0,cnt=0,downs=0,frame=0,fxs=LITE?0.18:0.3,tilt=[0,0],tiltT=[0,0],ay=0,ax=0;
   window.addEventListener('deviceorientation',e=>{if(e.gamma==null)return;tiltT=[Math.max(-1,Math.min(1,e.gamma/40)),Math.max(-1,Math.min(1,((e.beta||45)-45)/40))]});
-  function resize(){if(LITE){pr=1;fxs=Math.min(fxs,0.18)}cw=Math.round(W*pr);ch=Math.round(H*pr);scv.width=cw;scv.height=ch;fx.size(Math.max(48,Math.round(cw*fxs)),Math.max(48,Math.round(ch*fxs)));frame=0}
+  function resize(){if(LITE){pr=1;fxs=Math.min(fxs,0.18)}pr=Math.min(pr,qBg());cw=Math.round(W*pr);ch=Math.round(H*pr);scv.width=cw;scv.height=ch;fx.size(Math.max(48,Math.round(cw*fxs)),Math.max(48,Math.round(ch*fxs)));frame=0}
   function render(ts){
     if(!t0)t0=ts;const dt=Math.min(.05,(ts-(last||ts))/1000);last=ts;
     if(dt>0){acc+=dt;cnt++;if(cnt>=90){const avg=acc/cnt;acc=0;cnt=0;if(avg>1/45&&downs<3){downs++;if(fxs>0.2){fxs*=0.75}else pr=Math.max(1,pr-0.25);resize()}}}
@@ -1507,7 +1517,7 @@ LIVE_SCENES.space=(g)=>{
   return {resize,render};
 };
 let snapReq=null;
-let spW=0,spH=0,sceneName='',scene=null;const sceneCache={};
+let spW=0,spH=0,sceneName='',scene=null,bgSkip=0;const sceneCache={};
 function spaceFrame(ts){
   requestAnimationFrame(spaceFrame);
   const w=curWp();
@@ -1518,6 +1528,8 @@ function spaceFrame(ts){
     spW=0;
   }
   if(!scene)return;
+  // v22: 전환 중에는 배경을 멈추거나(대부분) 몇 프레임에 한 번만 그려서 모래알에 힘을 몰아줌
+  if(typeof inTrans==='function'&&inTrans()&&!snapReq){const bt=QL[qLvl()].bgT;if(!bt||(bgSkip++%bt))return}
   if(spW!==GW||spH!==GH){spW=GW;spH=GH;scene.resize()}
   scene.render(ts);
   if(snapReq){const f=snapReq;snapReq=null;f(scv)}   // v20 잠금화면용 정지 이미지: 그린 직후 같은 프레임에서 복사
@@ -1905,8 +1917,9 @@ function buildParticles(){
     const key=new Float32Array(n);for(let k=0;k<n;k++)key[k]=c[k*2+1]+c[k*2]*0.02+Math.random()*1.5;
     idx.sort((a,b)=>key[a]-key[b]);return idx});
   CS=cs;pairCounts={};
-  if(NP>1){ensurePair(cur,Math.min(NP-1,cur+1));if(cur>0)ensurePair(cur,cur-1)}
   updateStats();
+  // 쌍 버퍼는 '모이기(morph)' 스타일에서만 필요 — 쉴 때 미리 만들어 두어 전환 첫 프레임이 끊기지 않게
+  if(NP>1&&S.style==='morph')idle(()=>{ensurePair(cur,Math.min(NP-1,cur+1));if(cur>0)ensurePair(cur,cur-1)});
 }
 function ensurePair(a,b){
   const key=a+'-'+b;if(pairCounts[key]!=null||a===b||!CS[a]||!CS[b])return;
@@ -1924,11 +1937,11 @@ function ensurePair(a,b){
 
 // ---------- 상태 ----------
 let cur=0,target=-1,dir=-1,t=0,off=0,anim=null,dragging=false,startT=performance.now();
-let fpsAcc=0,fpsN=0,lastFps=60,needRebuild=false,PDIRTY=false;
+let fpsAcc=0,fpsN=0,lastFps=60,needRebuild=false,PDIRTY=false,PRECT=null,FT=[];
 
 function layout(){
-  const r=phone.getBoundingClientRect();W=r.width;H=r.height;DPR=Math.min(window.devicePixelRatio||1,2);
-  if(LITE)DPR=Math.min(DPR,1.5);GW=Math.round(W*DPR);GH=Math.round(H*DPR);cv.width=GW;cv.height=GH;
+  const r=phone.getBoundingClientRect();W=r.width;H=r.height;PRECT=r;DPR=Math.min(window.devicePixelRatio||1,2,QL[qLvl()].dpr);
+  if(LITE)DPR=Math.min(DPR,1.5);CAP=qCap();GW=Math.round(W*DPR);GH=Math.round(H*DPR);cv.width=GW;cv.height=GH;
   drawBg();normalizePages();for(let i=0;i<PAGES.length;i++){renderPage(i);upload(i)}
   if(cur>PAGES.length-1)cur=PAGES.length-1;
   buildParticles();buildDots();
@@ -1950,11 +1963,14 @@ function draw2d(){
 }
 function draw(){
   if(NOGL)return draw2d();
+  return drawGL(false);
+}
+function drawGL(offscreen){
   const now=performance.now(),time=(now-startT)/1000;
   gl.viewport(0,0,GW,GH);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
   gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);
   if(target<0||t<=0){quadDraw(tex[cur],1,1,off*2/W);return}
-  const glow=S.glow*(weak?.7:1);
+  const glow=S.glow*(weak?.8:1)*QL[qLvl()].glow;
   if(S.style==='morph'){
     const key=cur+'-'+target;ensurePair(cur,target);
     gl.useProgram(PM);gl.bindBuffer(gl.ARRAY_BUFFER,pairBufs[key]);
@@ -2009,7 +2025,7 @@ function dustOut(P,U,L,tt,glow,push){
 let raf=0,lastFrame=0;
 function loop(ts){
   raf=0;
-  if(lastFrame&&anim){const dt=ts-lastFrame;if(dt<100){fpsAcc+=dt;fpsN++}}
+  if(lastFrame&&(anim||(dragging&&target>=0))){const dt=ts-lastFrame;if(dt<250){FT.push(dt);if(dt<100){fpsAcc+=dt;fpsN++}}}
   lastFrame=ts;
   if(anim){
     const k=Math.min(1,(ts-anim.t0)/anim.d);
@@ -2025,20 +2041,72 @@ function req(){if(!raf)raf=requestAnimationFrame(loop)}
 const easeOut=k=>1-Math.pow(1-k,3);
 
 function finishTransition(){
-  if(fpsN>8){lastFps=1000/(fpsAcc/fpsN);if(lastFps<45&&CAP>12000){CAP=Math.round(CAP*.65);needRebuild=true}
-    if(lastFps<28&&!LITE&&S.lite!=='off'){setLite(true,'폰 속도에 맞춤');toast('화면이 버거워해서 가벼운 모드로 바꿨어요')}}
+  if(fpsN>8)lastFps=1000/(fpsAcc/fpsN);
+  qJudge(FT);FT=[];
   fpsAcc=0;fpsN=0;
   cur=target;target=-1;t=0;setDots();updateStats();
-  if(needRebuild){needRebuild=false;buildParticles()}
+  if(needRebuild){needRebuild=false;idle(buildParticles)}
 }
+// ---------- v22 적응형 전환 품질 ----------
+function idle(fn,ms){const run=()=>{if(inTrans()){setTimeout(run,250);return}fn()};
+  if(window.requestIdleCallback)requestIdleCallback(run,{timeout:ms||1200});else setTimeout(run,ms?Math.min(ms,300):120)}
+function inTrans(){return !!anim||(dragging&&target>=0)}
+let qGood=0,qApplyT=0;
+// 전환 한 번이 끝날 때마다 프레임 시간을 보고 단계를 조절 (자동/부드러움 우선일 때만)
+function qJudge(ft){
+  if(ft.length<12||NOGL)return;
+  const a=ft.slice(1).sort((x,y)=>x-y),mean=a.reduce((x,y)=>x+y,0)/a.length,p90=a[Math.floor(a.length*.9)];
+  QST.last={mean:+mean.toFixed(1),p90:+p90.toFixed(1),lvl:qLvl(),n:a.length};window.__nvq=QST.last;
+  if(qMode()==='quality'||QST.fixed)return;
+  const l=qLvl();
+  if((mean>19||p90>28)&&l<4){QST.bad=QST.bad||[0,0,0,0,0];QST.bad[l]=(QST.bad[l]||0)+1;QST.lvl=l+1;qGood=0;qSave();qApply();return}
+  if(l===4&&mean>34&&!LITE&&S.lite!=='off'){idle(()=>{setLite(true,'폰 속도에 맞춤');toast('화면이 버거워해서 가벼운 모드로 바꿨어요')});return}
+  if(p90<13.5&&mean<12.5){qGood++;const up=l-1;if(qGood>=5&&up>=0&&(qMode()!=='smooth'||up>=3)&&((QST.bad&&QST.bad[up])||0)<2){QST.lvl=up;qGood=0;qSave();qApply()}}else qGood=0;
+}
+// 단계가 바뀌면 쉬는 틈에 모래알·해상도를 다시 준비 (전환 중에는 절대 하지 않음)
+function qApply(){clearTimeout(qApplyT);qApplyT=setTimeout(()=>idle(()=>{spW=0;layout();qWarm()},800),400)}
+// 셰이더 예열: 모든 그리기 프로그램을 작은 화면 밖 버퍼에 한 번씩 그려 첫 전환의 끊김(드라이버 컴파일)을 없앰
+let qFbo=null;
+function qTarget(w,h){if(!qFbo){qFbo={f:gl.createFramebuffer(),t:gl.createTexture(),w:0,h:0}}
+  if(qFbo.w!==w||qFbo.h!==h){qFbo.w=w;qFbo.h=h;gl.bindTexture(gl.TEXTURE_2D,qFbo.t);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,w,h,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+    gl.bindFramebuffer(gl.FRAMEBUFFER,qFbo.f);gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,qFbo.t,0)}
+  gl.bindFramebuffer(gl.FRAMEBUFFER,qFbo.f)}
+function qOff(fn){ // 화면에는 아무것도 안 보이게, 화면 밖 버퍼에 지금 상태로 한 프레임 그림
+  const sv=[cur,target,dir,t,off];if(PAGES.length<2)return;
+  const to=cur+1<PAGES.length?cur+1:cur-1;target=to;dir=to>cur?-1:1;off=0;
+  gl.bindFramebuffer(gl.FRAMEBUFFER,qFbo.f);
+  try{fn()}finally{[cur,target,dir,t,off]=sv;gl.bindFramebuffer(gl.FRAMEBUFFER,null)}}
+function qFrame(tt){t=tt;drawGL(true)}
+function qWarm(){if(NOGL||!gl||PAGES.length<2)return;try{qTarget(GW,GH);const st=S.style;
+    [...new Set([st,'wind','dream'])].forEach(sty=>{S.style=sty;if(sty==='morph')ensurePair(cur,cur+1<PAGES.length?cur+1:cur-1);qOff(()=>{qFrame(.5);qFrame(.05)})});S.style=st;
+    const px=new Uint8Array(4);gl.bindFramebuffer(gl.FRAMEBUFFER,qFbo.f);gl.readPixels(0,0,1,1,gl.RGBA,gl.UNSIGNED_BYTE,px);gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+  }catch(e){console.warn('warm',e)}draw()}
+// 첫 실행 짧은 성능 재기: 전환 한가운데 장면을 화면 밖에 몇 번 그려 걸린 시간을 재고 알맞은 단계를 고름
+function qBench(){
+  if(NOGL||!gl||PAGES.length<2||QST.lvl!=null||qMode()!=='auto'){qWarm();return}
+  const step=()=>{ if(inTrans()){setTimeout(step,500);return}
+    const l=qLvl();let ms=0;
+    try{qTarget(GW,GH);const px=new Uint8Array(4),sync=()=>gl.readPixels(0,0,1,1,gl.RGBA,gl.UNSIGNED_BYTE,px);
+      qOff(()=>{qFrame(.45);sync()});
+      const T0=performance.now();const N=5;
+      for(let i=0;i<N;i++)qOff(()=>{qFrame(.3+i*.08);sync()});
+      ms=(performance.now()-T0)/N;
+    }catch(e){ms=0}
+    draw();
+    QST.bench=QST.bench||{};QST.bench[l]=+ms.toFixed(1);
+    if(ms>10&&l<4){QST.lvl=l+1;qSave();spW=0;layout();setTimeout(step,60);return}
+    QST.lvl=l;qSave();updateStats();qWarm()};
+  QST.lvl=QST.lvl!=null?QST.lvl:(weak?2:1);setTimeout(step,60)}
 function go(to,d){
-  if(to<0||to>PAGES.length-1)return;if(PDIRTY)buildParticles();ensurePair(cur,to);
+  if(to<0||to>PAGES.length-1)return;if(PDIRTY)buildParticles();if(S.style==='morph')ensurePair(cur,to);
   target=to;dir=d;
   const from=t;
   anim={t0:performance.now(),d:Math.max(250,S.dur*1000*(1-from)),from,to:1,done:()=>{finishTransition();draw()}};
   req();
 }
-function snapBack(){
+function snapBack(){FT=[];
   anim={t0:performance.now(),d:S.style==='morph'?650:S.style==='wind'?520:420,from:t,to:0,offFrom:off,ease:easeOut,done:()=>{target=-1;off=0;draw()}};req();
 }
 function setDots(){[...$('dots').children].forEach((d,i)=>d.classList.toggle('on',i===cur))}
@@ -2060,7 +2128,7 @@ phone.addEventListener('pointerdown',e=>{
 phone.addEventListener('pointermove',e=>{
   if(DRAG)return;
   if(!dragging||e.pointerId!==pid)return;
-  {const r=phone.getBoundingClientRect();if(lpMove(e,e.clientX-r.left,e.clientY-r.top))return}
+  {const r=PRECT||phone.getBoundingClientRect();if(lpMove(e,e.clientX-r.left,e.clientY-r.top))return}
   const dx=e.clientX-sx,dy=e.clientY-sy;if(Math.abs(dx)>8||Math.abs(dy)>8)moved=true;
   const dt=e.timeStamp-lt;if(dt>0){vx=.7*vx+.3*((e.clientX-lx)/dt);vy=.7*vy+.3*((e.clientY-ly)/dt)}lx=e.clientX;ly=e.clientY;lt=e.timeStamp;
   if(!axis&&moved)axis=Math.abs(dy)>Math.abs(dx)*1.15?(dy>0?'down':'up'):'h';
@@ -2068,7 +2136,7 @@ phone.addEventListener('pointermove',e=>{
   if(axis==='up'){target=-1;t=0;off=0;setDR(Math.max(0,-dy)/(H*.55));return}
   const d=dx<0?-1:1,to=cur-d;
   if(to<0||to>PAGES.length-1){target=-1;t=0;off=dx*.25/(1+Math.abs(dx)/300);return}
-  if(PDIRTY)buildParticles();ensurePair(cur,to);
+  if(PDIRTY)buildParticles();if(S.style==='morph')ensurePair(cur,to);
   off=0;target=to;dir=d;
   const frac=Math.abs(dx)/W;t=S.style==='morph'?Math.min(.32,frac*.45):S.style==='wind'?Math.min(.3,frac*.42):Math.min(.5,frac*.55);
   const over=frac>.2;if(over&&!crossed&&navigator.vibrate)navigator.vibrate(8);crossed=over;
@@ -2222,8 +2290,10 @@ for(const k in sl){$(sl[k][0]).addEventListener('input',e=>{S[k]=parseFloat(e.ta
   if(k==='size'){clearTimeout(sizeTimer);sizeTimer=setTimeout(()=>{buildParticles();draw()},150)}})}
 $('reset').onclick=()=>{S=Object.assign({},DEF);syncUI();applyWallpaper();try{localStorage.removeItem('nv_sand18')}catch(_){}layout()};
 $('demo').onclick=()=>{if(anim)return;const to=cur<PAGES.length-1?cur+1:cur-1;go(to,to>cur?-1:1)};
-function updateStats(){$('stats').textContent=`v21 · 모래알 ${counts[cur]?counts[cur].toLocaleString('ko-KR'):0}개 · 알갱이 ${cell}px · 최근 ${Math.round(lastFps)}fps${NOGL?' · 평면 모드':LITE?' · 가벼운 모드':weak?' · 절약 모드':''}`}
-function setLite(on,why){LITE=on;LITE_WHY=why||'';CAP=NOGL?4000:on?LITE_CAP:weak?60000:130000;try{spW=0}catch(_){}layout()}
+const QNAME=['최고','높음','보통','가벼움','아주 가벼움'];
+function qNote(){const l=qLvl(),L=QST.last;return (qMode()==='auto'?`자동 · 지금 ‘${QNAME[l]}’ 단계 · 넘길 때 속도를 보고 저절로 맞춰요`:qMode()==='smooth'?`부드러움 우선 · ‘${QNAME[l]}’ 단계 · 모래알·해상도를 낮춰 끊김을 줄여요`:'화질 우선 · 모래알을 가장 많이 써요 · 느린 폰에서는 끊길 수 있어요')+(L?` · 지난 전환 ${Math.round(1000/L.mean)}fps`:'')}
+function updateStats(){$('stats').textContent=`v22 · 품질 ${QNAME[qLvl()]} · 모래알 ${counts[cur]?counts[cur].toLocaleString('ko-KR'):0}개 · 알갱이 ${cell}px · 최근 ${Math.round(lastFps)}fps${NOGL?' · 평면 모드':LITE?' · 가벼운 모드':weak?' · 절약 모드':''}`}
+function setLite(on,why){LITE=on;LITE_WHY=why||'';CAP=qCap();try{spW=0}catch(_){}layout()}
 syncUI();
 window.__nv={pose:(to,d,tt)=>{target=to;dir=d;t=tt;draw()},cur:()=>cur,hits:()=>hitRects[cur].map(h=>({x:h.x,y:h.y,w:h.w,h:h.h,n:h.n,act:h.act,f:!!h.f}))};
 
@@ -2235,7 +2305,7 @@ function tick(){
 setInterval(tick,15000);
 let rz=0;window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(layout,200)});
 cv.addEventListener('webglcontextlost',e=>e.preventDefault());
-const start=()=>{layout();tick()};
+const start=()=>{layout();tick();setTimeout(()=>idle(qBench,2000),900)};
 (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(start);
 // ---------- 상태 표시창(빠른 설정) · 전체 앱 서랍 ----------
 const QP=$('qp'),QB=$('qpbd'),DR=$('drawer');
@@ -2295,7 +2365,7 @@ DR.addEventListener('touchcancel',()=>{if(td&&td.m)setDR(1,true);td=null});
 setQP(0);setDR(0);
 window.__nv.panel=()=>({qp:qpP,dr:drP});window.__nv.S=S;window.__nv.layout=layout;window.__nv.buildDrawer=buildDrawer;
 // ---------- 설정 화면 (삼성 설정 구성을 참고한 뉴니버스 설정) ----------
-const VER='v21';
+const VER='v22';
 Object.assign(GLY,{
  wifi:'M2.5 9a14 14 0 0 1 19 0 M5.5 12.3a9.5 9.5 0 0 1 13 0 M8.6 15.5a5 5 0 0 1 6.8 0 M12 19h.01',
  devices:'M3.5 5h12v9h-12z M2 17h15 M18 8h3.5v11H18z',
@@ -2320,7 +2390,7 @@ Object.assign(GLY,{
 const SETG=[
  [['conn','연결','Wi-Fi · 블루투스 · 비행기 모드','wifi','#4f8cff','#2a5bd7','와이파이 인터넷 데이터'],['devc','기기 간 연결','빠른 공유 · 화면 보내기','devices','#3fb6ff','#1f78c4','공유 TV']],
  [['sound','소리 및 진동','소리 크기 · 진동 · 벨소리','sound','#a46bff','#6a35d1','볼륨 음량 벨'],['noti','알림','앱 알림 · 방해 금지','bell','#ff7a59','#d9472a','알람']],
- [['disp','디스플레이','밝기 · 글자 크기 · 내비게이션 바','sun','#48c774','#2a9550','화면 밝기 내비게이션 네비게이션 내비 버튼 제스처 뒤로 홈 최근'],['batt','배터리','남은 전력 · 절전 모드','battery','#3ccf9a','#1d8f68','충전 전원']],
+ [['disp','디스플레이','밝기 · 전환 품질 · 내비게이션 바','sun','#48c774','#2a9550','화면 밝기 내비게이션 네비게이션 내비 버튼 제스처 뒤로 홈 최근 전환 품질 부드럽게 끊김 버벅 화질 성능'],['batt','배터리','남은 전력 · 절전 모드','battery','#3ccf9a','#1d8f68','충전 전원']],
  [['wall','배경화면 및 스타일','배경화면 · 내 사진 합성','brush','#ff6fa0','#d6336c','바탕화면 사진 합성 벚꽃 성운 별밭 잠금화면 적용 잠금화면 배경'],['theme','테마','UI 스타일 · 아이콘 모양','palette','#c06bff','#8a2fd0','아이콘 궤도 사구 조각보 디자인'],['home','홈 화면','홈 편집 · 우주 흐름 속도 · 모래 전환','home','#6c8cff','#3a55d8','모래 바람 전환 스와이프 제스처 속도 편집 폴더 배치 아이콘 이동 페이지 추가 삭제 새 앱'],['lock','잠금화면','잠금화면 미리보기 · 시계 스타일','lock','#5a7cff','#2c45c0','비밀번호 패턴 시계 알림 미리보기 잠금 해제 잠금화면']],
  [['sec','보안 및 개인정보 보호','생체 인식 · 앱 권한','shield','#3aa0ff','#1a62c4','지문 얼굴 권한'],['loc','위치','위치 요청 · 위치 서비스','pin','#2fc2a8','#168c78','GPS'],['sos','안전 및 긴급','긴급 연락처 · 긴급 SOS','alert','#ff5a5a','#c62828','응급 119']],
  [['acct','계정 및 백업','계정 관리 · 백업 및 복원','sync','#2fb4d9','#167a99','클라우드']],
@@ -2367,6 +2437,11 @@ function buildPage(id){
    case 'disp':{const b=$('qBright');add(sCard(slRow('밝기',.25,1,.01,+b.value,FSF,x=>{b.value=x;b.dispatchEvent(new Event('input'))})));
      add(sCard(swRow('다크 모드','우주 배경에 맞춘 어두운 화면',true,true),infoRow('글자 크기',FSF(S.fs||1)+' · 접근성에서 바꾸기',()=>settingsPush('a11y')),swRow('화면 자동 꺼짐','30초',true,true)));
      add(sCard(infoRow('내비게이션 바',navSummary(),()=>settingsPush('navbar'))));
+     {const r=mk('div','row','<label>전환 품질</label>');const g=mk('div','seg');[['auto','자동'],['smooth','부드러움 우선'],['quality','화질 우선']].forEach(([k,tx])=>{const b=mk('button',null,tx);b.dataset.v=k;g.appendChild(b)});
+      const note=mk('div','note','');const sync=()=>{[...g.children].forEach(b=>b.classList.toggle('on',b.dataset.v===qMode()));note.textContent=qNote()};sync();
+      g.onclick=e=>{const b=e.target.closest('button');if(!b)return;S.tq=b.dataset.v;saveS();delete QST.fixed;qGood=0;qSave();sync();qApply();if(navigator.vibrate)navigator.vibrate(6);
+        toast(S.tq==='auto'?'전환 품질: 자동 · 폰 속도에 맞춰 저절로 조절해요':S.tq==='smooth'?'전환 품질: 부드러움 우선 · 모래알을 줄여 매끄럽게':'전환 품질: 화질 우선 · 느린 폰에선 끊길 수 있어요')};
+      r.appendChild(g);const c=mk('div','ctl');c.appendChild(r);add(sCard(c));add(note)}
      add(sCard(swRow('가벼운 모드',(NOGL?'그래픽 가속을 못 써서 평면 화면으로 보여요':'모래알 수와 화면 해상도를 줄여 느린 폰에서도 부드럽게')+(LITE&&LITE_WHY?` · 지금 켜짐 (${LITE_WHY})`:''),LITE,false,on=>{S.lite=on?'on':'off';saveS();setLite(on||NOGL,on?'직접 켬':'');toast(on?'가벼운 모드 켜짐':'가벼운 모드 꺼짐')})));break}
    case 'navbar':buildNavbarPage(add);break;
    case 'lock':buildLockPage(add);break;
