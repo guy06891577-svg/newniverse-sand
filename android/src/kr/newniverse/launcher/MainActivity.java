@@ -54,12 +54,32 @@ public class MainActivity extends Activity {
     web.loadUrl("file:///android_asset/www/index.html?native=1");
     IntentFilter f=new IntentFilter(); f.addAction(Intent.ACTION_PACKAGE_ADDED); f.addAction(Intent.ACTION_PACKAGE_REMOVED); f.addAction(Intent.ACTION_PACKAGE_CHANGED); f.addDataScheme("package");
     registerReceiver(pkgRx,f);
+    regLauncherApps();
   }
   ValueCallback<Uri[]> fileCb;
   @Override protected void onActivityResult(int req,int res,Intent data){ if(req==77&&fileCb!=null){ fileCb.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(res,data)); fileCb=null; } else super.onActivityResult(req,res,data); }
 
-  final BroadcastReceiver pkgRx=new BroadcastReceiver(){ @Override public void onReceive(Context c,Intent i){ js("window.NV_onAppsChanged&&NV_onAppsChanged()"); } };
-  @Override protected void onDestroy(){ try{unregisterReceiver(pkgRx);}catch(Exception e){} super.onDestroy(); }
+  // v21: 앱 설치·삭제·업데이트를 바로 반영 (브로드캐스트 + LauncherApps 콜백, 같은 변화가 겹치면 JS 쪽에서 한 번만 처리)
+  final BroadcastReceiver pkgRx=new BroadcastReceiver(){ @Override public void onReceive(Context c,Intent i){
+    String pkg=i.getData()!=null?i.getData().getSchemeSpecificPart():""; String a=i.getAction(); boolean rep=i.getBooleanExtra(Intent.EXTRA_REPLACING,false);
+    String kind=Intent.ACTION_PACKAGE_ADDED.equals(a)?(rep?"update":"add"):Intent.ACTION_PACKAGE_REMOVED.equals(a)?(rep?"update":"remove"):"change";
+    appsChanged(pkg,kind); } };
+  void appsChanged(String pkg,String kind){ js("window.NV_onAppsChanged&&NV_onAppsChanged('"+(pkg==null?"":pkg.replace("'",""))+"','"+kind+"')"); }
+  android.content.pm.LauncherApps.Callback laCb;
+  void regLauncherApps(){
+    try{ android.content.pm.LauncherApps la=(android.content.pm.LauncherApps)getSystemService(Context.LAUNCHER_APPS_SERVICE);
+      laCb=new android.content.pm.LauncherApps.Callback(){
+        @Override public void onPackageRemoved(String p,android.os.UserHandle u){ appsChanged(p,"remove"); }
+        @Override public void onPackageAdded(String p,android.os.UserHandle u){ appsChanged(p,"add"); }
+        @Override public void onPackageChanged(String p,android.os.UserHandle u){ appsChanged(p,"update"); }
+        @Override public void onPackagesAvailable(String[] ps,android.os.UserHandle u,boolean r){ appsChanged("","change"); }
+        @Override public void onPackagesUnavailable(String[] ps,android.os.UserHandle u,boolean r){ appsChanged("","change"); }
+      };
+      la.registerCallback(laCb,ui);
+    }catch(Exception e){ android.util.Log.w("NVWeb","launcherapps",e); }
+  }
+  @Override protected void onDestroy(){ try{unregisterReceiver(pkgRx);}catch(Exception e){}
+    try{ if(laCb!=null) ((android.content.pm.LauncherApps)getSystemService(Context.LAUNCHER_APPS_SERVICE)).unregisterCallback(laCb);}catch(Exception e){} super.onDestroy(); }
 
   // 상태 표시줄(시계·배터리)은 폰 것을 그대로 보이고, 시스템 내비 바는 숨겨 뉴니버스 내비 바와 겹치지 않게 함.
   // 아래에서 쓸어 올리면 시스템 바가 잠깐 나타났다 사라짐.
@@ -182,6 +202,20 @@ public class MainActivity extends Activity {
       }).start();
     }
     @JavascriptInterface public int screenW(){ android.util.DisplayMetrics m=new android.util.DisplayMetrics(); getWindowManager().getDefaultDisplay().getRealMetrics(m); return m.widthPixels; }
+    /** v21: 배치·폴더·설정을 앱 전용 저장소(파일)에 영구 저장 — 재부팅·WebView 초기화에도 유지 */
+    @JavascriptInterface public boolean saveState(String json){
+      try{ java.io.File f=new java.io.File(getFilesDir(),"nv_state.json"), t=new java.io.File(getFilesDir(),"nv_state.tmp");
+        java.io.FileOutputStream o=new java.io.FileOutputStream(t); o.write(json.getBytes("UTF-8")); o.getFD().sync(); o.close(); return t.renameTo(f); }catch(Exception e){ return false; } }
+    @JavascriptInterface public String loadState(){
+      try{ java.io.File f=new java.io.File(getFilesDir(),"nv_state.json"); if(!f.exists()) return "";
+        byte[] b=new byte[(int)f.length()]; java.io.FileInputStream in=new java.io.FileInputStream(f); int n=0; while(n<b.length){int r=in.read(b,n,b.length-n); if(r<0)break; n+=r;} in.close(); return new String(b,0,n,"UTF-8"); }catch(Exception e){ return ""; } }
+    /** 삭제 요청: 시스템 삭제 확인 창을 띄움. 기본(시스템) 앱이면 "system" */
+    @JavascriptInterface public String uninstall(String pkg){
+      try{ ApplicationInfo ai=getPackageManager().getApplicationInfo(pkg,0);
+        if((ai.flags&ApplicationInfo.FLAG_SYSTEM)!=0&&(ai.flags&ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)==0) return "system";
+        Intent i=new Intent(Intent.ACTION_DELETE,Uri.parse("package:"+pkg)); i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(i); return "ok";
+      }catch(Exception e){ return "fail"; } }
+    @JavascriptInterface public boolean isSystem(String pkg){ try{ ApplicationInfo ai=getPackageManager().getApplicationInfo(pkg,0); return (ai.flags&ApplicationInfo.FLAG_SYSTEM)!=0; }catch(Exception e){ return false; } }
     @JavascriptInterface public boolean isDefaultHome(){ Intent i=new Intent(Intent.ACTION_MAIN); i.addCategory(Intent.CATEGORY_HOME); ResolveInfo r=getPackageManager().resolveActivity(i,PackageManager.MATCH_DEFAULT_ONLY); return r!=null&&r.activityInfo!=null&&getPackageName().equals(r.activityInfo.packageName); }
   }
 }
