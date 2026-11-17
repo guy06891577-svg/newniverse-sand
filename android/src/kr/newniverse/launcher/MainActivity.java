@@ -176,11 +176,14 @@ public class MainActivity extends Activity {
     @JavascriptInterface public String info(){ return "{\"model\":\""+Build.MANUFACTURER+" "+Build.MODEL+"\",\"android\":\""+Build.VERSION.RELEASE+"\",\"sdk\":"+Build.VERSION.SDK_INT+"}"; }
     /** 두 번 톡톡 화면 끄기: "ok"=꺼짐, "old"=안드로이드 9 미만, "need"=접근성 권한 필요 */
     @JavascriptInterface public String lockScreen(){
+      if(Flavor.BASIC) return "dim";   // 기본판: 접근성 서비스 없음 → 화면을 어둡게만
       if(Build.VERSION.SDK_INT<28) return "old";
-      if(LockService.lock()) return "ok";
+      try{ if((Boolean)Class.forName(getPackageName()+".LockService").getMethod("lock").invoke(null)) return "ok"; }catch(Throwable e){ return "dim"; }
       return lockEnabled()?"wait":"need";
     }
+    @JavascriptInterface public String flavor(){ return Flavor.BASIC?"basic":"plus"; }
     @JavascriptInterface public boolean lockEnabled(){
+      if(Flavor.BASIC) return false;
       try{ String v=Settings.Secure.getString(getContentResolver(),Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
         return v!=null&&v.toLowerCase().contains((getPackageName()+"/").toLowerCase())&&v.toLowerCase().contains("lockservice"); }catch(Exception e){ return false; }
     }
@@ -213,6 +216,8 @@ public class MainActivity extends Activity {
     @JavascriptInterface public String uninstall(String pkg){
       try{ ApplicationInfo ai=getPackageManager().getApplicationInfo(pkg,0);
         if((ai.flags&ApplicationInfo.FLAG_SYSTEM)!=0&&(ai.flags&ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)==0) return "system";
+        if(Flavor.BASIC){ // 기본판: 삭제 권한(REQUEST_DELETE_PACKAGES) 없이 앱 정보 화면에서 직접 삭제
+          Intent d=new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+pkg)); d.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(d); return "info"; }
         Intent i=new Intent(Intent.ACTION_DELETE,Uri.parse("package:"+pkg)); i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(i); return "ok";
       }catch(Exception e){ return "fail"; } }
     @JavascriptInterface public boolean isSystem(String pkg){ try{ ApplicationInfo ai=getPackageManager().getApplicationInfo(pkg,0); return (ai.flags&ApplicationInfo.FLAG_SYSTEM)!=0; }catch(Exception e){ return false; } }

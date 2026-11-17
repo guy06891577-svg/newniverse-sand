@@ -2106,11 +2106,17 @@ function emptyTap(x,y,e){
 function screenOff(){
   if(NATIVE&&NVNative.lockScreen){let r='';try{r=NVNative.lockScreen()}catch(_){}
     if(r==='ok')return;
+    if(r==='dim'){dimOff();return}
     if(r==='need'){showA11yGuide();return}
     if(r==='wait'){toast('화면 끄기 준비 중이에요. 잠시 후 다시 두 번 눌러 주세요');return}
     toast('안드로이드 9 이상에서만 진짜로 꺼져요 · 지금은 어둡게만')}
   const o=$('off');o.style.display='block';void o.offsetWidth;o.classList.add('on');if(navigator.vibrate)navigator.vibrate(12);
 }
+// 기본판(접근성 없음): 화면을 검게 어둡게만 — 진짜 끄기는 추가판에서
+let dimTold=false;
+function dimOff(){const o=$('off');const m=o.querySelector('.msg');if(m)m.textContent='어둡게만 했어요 · 화면을 누르면 다시 밝아져요';
+  o.style.display='block';void o.offsetWidth;o.classList.add('on');try{NVNative.vibrate(12)}catch(_){}
+  if(!dimTold){dimTold=true;try{if(!localStorage.getItem('nv_dimTold')){localStorage.setItem('nv_dimTold','1');setTimeout(()=>toast('기본판은 화면을 어둡게만 해요 · 진짜로 끄는 기능은 나중에 추가판에서 드려요'),600)}}catch(_){}}}
 function wakeUp(){const o=$('off');if(!o.classList.contains('on'))return;if(S.lockOnWake!==false&&typeof showLock==='function')showLock();o.classList.remove('on');setTimeout(()=>{if(!o.classList.contains('on'))o.style.display='none'},520)}
 $('off').addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();wakeUp()});
 function showA11yGuide(){const g=$('a11yG');g.style.display='flex';void g.offsetWidth;g.classList.add('on')}
@@ -2365,7 +2371,9 @@ function buildPage(id){
    case 'navbar':buildNavbarPage(add);break;
    case 'lock':buildLockPage(add);break;
    case 'adv':{add(sCard(swRow('두 번 눌러 화면 끄기','홈 화면 빈 곳을 톡톡 두 번 누르면 화면이 꺼져요',S.dt2off!==false,false,on=>{S.dt2off=on;saveS();toast(on?'두 번 톡톡 화면 끄기 켜짐':'두 번 톡톡 화면 끄기 꺼짐')})));
-     if(NATIVE&&NVNative.lockEnabled)add(sCard(infoRow('화면 끄기 권한 (접근성)',NVNative.lockEnabled()?'켜져 있어요 · 화면 끄기에만 사용':'꺼져 있어요 · 눌러서 켜기',()=>NVNative.openA11y())));
+     {const basic=NATIVE&&NVNative.flavor&&NVNative.flavor()==='basic';
+      if(basic)add(sCard(infoRow('지금은 기본판이에요','두 번 톡톡 하면 화면을 검게 어둡게만 해요 · 진짜로 끄는 기능은 나중에 추가판에서',()=>toast('추가판은 설치 안내 페이지 아래쪽에 있어요'))));
+      else if(NATIVE&&NVNative.lockEnabled)add(sCard(infoRow('화면 끄기 권한 (접근성)',NVNative.lockEnabled()?'켜져 있어요 · 화면 끄기에만 사용':'꺼져 있어요 · 눌러서 켜기',()=>NVNative.openA11y())));}
      add(mk('div','note',NATIVE?'아이콘·독·아래 단추가 없는 빈 곳을 두 번 눌러요. 처음 한 번은 안드로이드 접근성에서 ‘뉴니버스 화면 끄기’를 켜야 해요.':'아이콘·독·아래 단추가 없는 빈 곳을 두 번 눌러요. 웹 시제품에서는 검게 어두워지는 연출만 하고, 한 번 누르면 다시 켜져요.'));
      add(sCard((PROTO.adv||[]).map(([l,s2,on])=>swRow(l,s2,on,true))));break}
    case 'batt':{const big=mk('div','big','…');const sm=mk('div','note','배터리 정보를 읽는 중');add(sCard(big,sm,qpSync('save','절전 모드')));
@@ -2697,7 +2705,7 @@ NVM.addEventListener('pointerdown',e=>e.stopPropagation());
 // ---------- 앱 동작 (앱 정보 · 삭제) ----------
 function appInfo(a){a=a.__base||a;if(NATIVE&&a.pkg){NVNative.appInfo(a.pkg);return}toast(`시제품 · 폰 앱에서는 「${a.n}」 앱 정보 화면이 열려요`)}
 function uninstallApp(a){a=a.__base||a;if(NATIVE&&a.pkg){let r='fail';try{r=NVNative.uninstall(a.pkg)}catch(_){}
-    if(r==='system')toast('기본 앱이라 지울 수 없어요 · 앱 정보에서 ‘사용 중지’할 수 있어요');else if(r!=='ok')toast('삭제 화면을 열 수 없어요');return}
+    if(r==='system')toast('기본 앱이라 지울 수 없어요 · 앱 정보에서 ‘사용 중지’할 수 있어요');else if(r==='info')toast('앱 정보 화면에서 ‘삭제’를 눌러 주세요');else if(r!=='ok')toast('삭제 화면을 열 수 없어요');return}
   toast(`시제품 · 폰 앱에서는 「${a.n}」 삭제 확인 창이 떠요`)}
 // ---------- 배치 조작 ----------
 function locate(a){for(let pi=0;pi<PAGES.length;pi++){const L=PAGES[pi].apps;const i=L.indexOf(a);if(i>=0)return {kind:'page',pi,i}}const d=DOCK.indexOf(a);if(d>=0)return {kind:'dock',i:d};return null}
