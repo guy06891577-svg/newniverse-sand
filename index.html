@@ -7,7 +7,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>뉴니버스 · 모래 전환 시제품 v18</title>
+<title>뉴니버스 · 모래 전환 시제품 v19</title>
 <style>
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
   html,body{height:100%;background:#05040d;overflow:hidden;font-family:system-ui,-apple-system,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#fff;overscroll-behavior:none}
@@ -189,6 +189,22 @@
   #me.edit{pointer-events:auto;z-index:7;outline:1.5px dashed rgba(255,255,255,.75);outline-offset:6px;border-radius:12px;cursor:move}
   #meDone{position:absolute;left:50%;top:44px;transform:translateX(-50%);z-index:8;display:none;padding:10px 26px;border-radius:20px;border:none;font-size:15px;font-weight:700;background:linear-gradient(135deg,#e6b85c,#d9813b);color:#1a1205}
   #meProg{position:absolute;left:24px;right:24px;top:45%;z-index:9;display:none;text-align:center;padding:16px;border-radius:18px;background:rgba(18,15,34,.9);font-size:14px;line-height:1.5;border:1px solid rgba(255,255,255,.15)}
+  #off{position:absolute;inset:0;z-index:90;display:none;background:#000;opacity:0;transition:opacity .45s ease;touch-action:none}
+  #off.on{opacity:1}
+  #off .msg{position:absolute;left:0;right:0;bottom:22%;text-align:center;color:rgba(255,255,255,.55);font-size:15px;opacity:0}
+  #off.on .msg{animation:offmsg 2.6s ease .5s both}
+  @keyframes offmsg{0%{opacity:0}25%{opacity:1}70%{opacity:1}100%{opacity:0}}
+  #a11yG{position:absolute;inset:0;z-index:85;display:none;align-items:center;justify-content:center;padding:22px;background:rgba(5,4,16,.62);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);opacity:0;transition:opacity .25s}
+  #a11yG.on{opacity:1}
+  #a11yG .box{width:100%;max-width:360px;border-radius:28px;padding:22px 20px 16px;background:linear-gradient(160deg,rgba(60,48,120,.92),rgba(20,16,44,.95));border:1px solid rgba(255,255,255,.16);color:#fff;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+  #a11yG .moon{font-size:38px;text-align:center}
+  #a11yG h3{margin:6px 0 8px;font-size:21px;text-align:center}
+  #a11yG p{margin:0 0 8px;font-size:16px;line-height:1.55;opacity:.92}
+  #a11yG ol{margin:0 0 10px;padding-left:22px;font-size:15.5px;line-height:1.7}
+  #a11yG small{display:block;font-size:13px;opacity:.7;line-height:1.5;margin-bottom:12px}
+  #a11yG b{color:#ffd59a}
+  #a11yG button{display:block;width:100%;border:0;border-radius:18px;padding:14px;font-size:17px;font-weight:800;margin-top:8px;background:linear-gradient(135deg,#e6b85c,#d9813b);color:#1a1205}
+  #a11yG button.ghost{background:rgba(255,255,255,.1);color:#fff;font-weight:600}
   #nogl{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;padding:30px;z-index:20;background:#0b0820}
 </style>
 </head>
@@ -252,6 +268,12 @@
     <div class="btns"><button id="reset">기본값</button><button class="p" id="demo">미리보기 ▶</button></div>
     <div id="stats"></div>
   </div>
+  <div id="off"><div class="msg">화면을 누르면 다시 켜져요</div></div>
+  <div id="a11yG"><div class="box"><div class="moon">🌙</div><h3>두 번 눌러 화면 끄기</h3>
+    <p>홈 화면 빈 곳을 <b>톡톡 두 번</b> 누르면 화면이 꺼지게 하려면, 안드로이드 <b>접근성</b>에서 한 번만 켜 주세요.</p>
+    <ol><li>아래 <b>접근성 설정 열기</b>를 눌러요</li><li><b>설치된 앱</b> › <b>뉴니버스 화면 끄기</b></li><li>스위치를 켜고 <b>허용</b></li><li>뒤로 돌아와 빈 곳을 다시 톡톡!</li></ol>
+    <small>화면을 끄는 데에만 써요. 화면 내용이나 입력한 글자는 읽지도 저장하지도 않아요.</small>
+    <button id="a11yGo">접근성 설정 열기</button><button id="a11yNo" class="ghost">다음에 할게요</button></div></div>
   <div id="nogl">이 기기에서는 WebGL을 사용할 수 없어 효과를 보여드릴 수 없어요.</div>
 </div>
 <div id="hint-desktop">PC에서는 마우스로 화면을 끌어서 넘겨보세요 · 뉴니버스 시제품 by Crazing Factory</div>
@@ -267,7 +289,13 @@ const DEF={ui:'classic',icon:'glass',navMode:'btn',navOrder:'brh',navLook:'auto'
 let S=Object.assign({},DEF);
 try{Object.assign(S,JSON.parse(localStorage.getItem('nv_sand18')||'{}'))}catch(e){}
 const weak=(navigator.hardwareConcurrency||4)<=4||(navigator.deviceMemory||4)<=3;
-let CAP=weak?60000:130000;
+// v19 가벼운 모드: 폰이 약하거나 그래픽(WebGL)이 소프트웨어로만 돌 때 모래알 수·해상도를 자동으로 줄임
+const QS=location.search;
+let LITE=/[?&]lite=1/.test(QS)||S.lite==='on',LITE_WHY=LITE?'직접 켬':'';
+if(!LITE&&S.lite!=='off'&&!/[?&]lite=0/.test(QS)&&((navigator.deviceMemory||8)<=2||(navigator.hardwareConcurrency||8)<=2)){LITE=true;LITE_WHY='폰 성능에 맞춤'}
+function softGL(g){try{const e=g&&g.getExtension('WEBGL_debug_renderer_info');const r=e?String(g.getParameter(e.UNMASKED_RENDERER_WEBGL)):'';return /swiftshader|llvmpipe|softpipe|software|basic render/i.test(r)}catch(_){return false}}
+const LITE_CAP=22000;
+let CAP=LITE?LITE_CAP:weak?60000:130000;
 
 // ---------- 앱 데이터 ----------
 const A=(n,e,c1,c2,t)=>({n,e,c1,c2,t});
@@ -337,7 +365,7 @@ if(NATIVE){document.documentElement.classList.add('native');nativeApps();
   window.NV_onAppsChanged=()=>{nativeApps();relayoutSoon()};
   window.NV_onHome=()=>{try{navAct('home')}catch(e){}};
   window.NV_onBack=()=>{try{navAct('back')}catch(e){}};
-  window.NV_onResume=()=>{try{if(typeof updQP==='function')updQP()}catch(e){}}}
+  window.NV_onResume=()=>{try{if(typeof updQP==='function')updQP()}catch(e){}try{const g=document.getElementById('a11yG');if(g&&g.classList.contains('on')&&NVNative.lockEnabled&&NVNative.lockEnabled()){window.__nv_off.hide();window.__nv_toast&&window.__nv_toast('이제 빈 곳을 두 번 톡톡 누르면 화면이 꺼져요')}}catch(e){}}}
 function openApp(a){
   if(!a)return;pushRecent(a.__base||a);
   if(NATIVE&&a.pkg){if(!NVNative.launch(a.pkg,a.act))toast(`${a.full||a.n} 앱을 열 수 없어요`);return}
@@ -921,6 +949,7 @@ function navAct(k){
   const pq=qpOpen()||qpP>0,pd=drOpen()||drP>0;
   const open={fold:typeof fOpen!=='undefined'&&fOpen,sheet:$('settings').classList.contains('open'),rec:$('recents').classList.contains('open'),edit:typeof meEditing!=='undefined'&&meEditing};
   if(k==='back'){
+    if($('a11yG').classList.contains('on'))return hideA11yGuide();if($('off').classList.contains('on'))return wakeUp();
     if(open.rec)return closeRecents();if(open.fold)return closeFolder();if(open.sheet)return settingsBack();if(open.edit)return setMeEdit(false);if(pd)return closeDR();if(pq)return closeQP();
     if(anim)return;if(cur>0)go(cur-1,1);else toast('첫 화면이에요');return}
   if(k==='home'){closeRecents();if(pd)closeDR();if(pq)closeQP();if(open.fold)closeFolder();if(open.sheet)toggleSheet(false);if(open.edit)setMeEdit(false);if(!anim&&cur!==0)go(0,1);return}
@@ -979,7 +1008,8 @@ fetch('wallpapers/wallpapers.json',{cache:'no-store'}).then(r=>r.ok?r.json():[])
 }).catch(()=>{});
 
 // ---------- 3D 우주 실시간 배경 (성운·은하수·별, 아주 느린 전진) ----------
-const SG=scv.getContext('webgl',{alpha:false,antialias:false,premultipliedAlpha:true});
+const SG=/[?&]nogl=1/.test(QS)?null:scv.getContext('webgl',{alpha:false,antialias:false,premultipliedAlpha:true});
+if(!LITE&&S.lite!=='off'&&!/[?&]lite=0/.test(QS)&&(!SG||softGL(SG))){LITE=true;CAP=Math.min(CAP,LITE_CAP);LITE_WHY=SG?'그래픽 가속 없음':'WebGL 사용 불가'}
 // ---------- 실시간 배경 장면 레지스트리 ----------
 // 각 장면: LIVE_SCENES[이름]=(gl)=>({resize(), render(ts)}). WALLPAPERS 의 {type:'live',scene:'이름'} 으로 연결.
 // '별밭'(starfield)은 스타크의 우주멍 별 방식(절차적 구면 별 + 돔 회전)을 이식 — 다른 구현으로 교체하려면 LIVE_SCENES.starfield 만 바꾸면 돼요.
@@ -1135,89 +1165,118 @@ LIVE_SCENES.starfield=(g)=>{
 
 // ===== 성운 속 (컨셉 이미지 + 깊이 시차 + 앞으로 지나가는 구름 + 숨쉬는 빛줄기 + 선명한 별) =====
 LIVE_SCENES.nebula=(g)=>{
+  // v19: 성운이 살아 움직이게 — 사진 자체를 흐름장(domain warp)으로 천천히 소용돌이치게, 앞·뒤 2겹 시차, 별 반짝임, 빛 맥동
+  //      (앞으로 날아오는 연출 없음: 모든 움직임은 화면 평면 안에서 느리게 흐르고 도는 것)
   let img=null,iw=720,ih=1280;
   GLU.image(g,'wallpapers/scenes/nebula.jpg',(t,w,h)=>{img=t;iw=w;ih=h});
-  const FX=GLU.prog(g,GLU.FULL,`precision highp float;
-  uniform vec2 u_res;uniform float u_t,u_asp,u_fly;uniform vec2 u_sun,u_tilt;varying vec2 v_uv;
-  float hash(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
+  const NZ=`float hash(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
   float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);
     return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}
-  float fbm(vec2 p){float v=0.0,a=0.5;mat2 m=mat2(1.6,1.2,-1.2,1.6);for(int i=0;i<5;i++){v+=a*noise(p);p=m*p;a*=0.5;}return v;}
+  float fbm(vec2 p){float v=0.0,a=0.5;mat2 m=mat2(1.6,1.2,-1.2,1.6);for(int i=0;i<4;i++){v+=a*noise(p);p=m*p;a*=0.5;}return v;}`;
+  // 흐르는 가스 층(저해상도 버퍼): 두 겹이 서로 다른 방향·속도로 흐르며 말려 들어감
+  const FX=GLU.prog(g,GLU.FULL,`precision highp float;
+  uniform vec2 u_res;uniform float u_t,u_asp;uniform vec2 u_sun,u_tilt;varying vec2 v_uv;
+  ${NZ}
   void main(){
-    vec2 uv=v_uv; vec2 c=u_sun;
-    vec2 p=(uv-c)*vec2(u_asp,1.0);
+    vec2 p=(v_uv-u_sun)*vec2(u_asp,1.0);
+    float t=u_t;
     vec4 acc=vec4(0.0);
-    // 앞으로 지나가는 구름 2겹: 소실점(빛)에서 커지며 다가왔다가 화면 밖으로 흐려지며 지나감
-    for(int i=0;i<3;i++){
-      float ph=u_fly+float(i)/3.0; float f=fract(ph); float cyc=floor(ph);
-      float sc=mix(0.55,3.2,f*f);
-      vec2 q=p/sc + u_tilt*0.04*sc + vec2(cyc*3.7+float(i)*5.1, cyc*1.9);
-      float n=fbm(q*2.2+0.6*fbm(q*1.3+u_t*0.01));
-      float d=smoothstep(0.45,0.85,n);
-      float a=sin(3.14159*f); a*=a;
-      float tone=fbm(q*0.8+11.0);
-      vec3 col=mix(vec3(0.42,0.20,0.70),vec3(0.10,0.48,0.55),smoothstep(0.35,0.65,tone));
-      col=mix(col,vec3(0.95,0.62,0.30),smoothstep(0.55,0.0,length(p/sc))*0.5);
-      float al=d*a*mix(0.10,0.42,f);   // 가까울수록 진하지만 흐릿(초점 밖)
-      acc.rgb+=col*al*(1.0-acc.a); acc.a+=al*(1.0-acc.a);
+    for(int i=0;i<2;i++){
+      float fi=float(i);
+      // 빛(숨은 별) 주변을 아주 천천히 도는 소용돌이
+      float r=length(p),sw=(0.18+0.10*fi)*exp(-r*1.4)*sin(t*0.05+fi);
+      float cs=cos(sw),sn=sin(sw);vec2 pr=mat2(cs,-sn,sn,cs)*p;
+      vec2 drift=(fi<0.5?vec2(0.9,0.35):vec2(-0.7,0.45))*t*(0.018+0.02*fi);
+      vec2 q=pr*(1.5+0.9*fi)+u_tilt*(0.03+0.06*fi)+drift+fi*7.3;
+      vec2 w=vec2(fbm(q+vec2(0.0,t*0.06)),fbm(q+vec2(5.2,1.3)-vec2(t*0.05,0.0)));
+      vec2 w2=vec2(fbm(q+2.2*w+vec2(1.7,9.2)+t*0.02),fbm(q+2.2*w+vec2(8.3,2.8)-t*0.017));
+      float n=fbm(q+2.4*w2);
+      float d=smoothstep(0.42,0.86,n);
+      vec3 col=mix(vec3(0.46,0.20,0.78),vec3(0.10,0.52,0.62),smoothstep(0.3,0.7,w.x));
+      col=mix(col,vec3(1.0,0.62,0.32),smoothstep(0.55,0.0,r)*0.45);
+      float al=d*(fi<0.5?0.30:0.20)*(0.85+0.15*sin(t*0.21+fi*2.0));
+      acc.rgb+=col*al*(1.0-acc.a);acc.a+=al*(1.0-acc.a);
     }
-    // 숨겨진 별에서 퍼지는 따뜻한 빛줄기(천천히 숨쉬기)
-    float ang=atan(p.x,p.y); float r=length(p);
-    float rays=pow(noise(vec2(ang*7.0,u_t*0.05))*0.6+noise(vec2(ang*19.0,u_t*0.08+3.0))*0.4,2.2);
+    // 숨은 별에서 퍼지는 따뜻한 빛줄기 + 은은한 맥동
+    float ang=atan(p.x,p.y),r=length(p);
+    float rays=pow(noise(vec2(ang*7.0,t*0.06))*0.6+noise(vec2(ang*19.0,t*0.09+3.0))*0.4,2.2);
     float up=smoothstep(-0.1,0.6,p.y/(r+1e-3));
-    float breathe=0.75+0.25*sin(u_t*0.35)+0.08*sin(u_t*1.1);
-    vec3 ray=vec3(1.0,0.66,0.32)*rays*up*exp(-r*2.6)*0.30*breathe;
-    ray+=vec3(1.0,0.72,0.40)*exp(-r*r*50.0)*0.16*breathe;
-    acc.rgb+=ray;
+    float breathe=0.68+0.32*sin(t*0.42)+0.08*sin(t*1.3);
+    acc.rgb+=vec3(1.0,0.66,0.32)*rays*up*exp(-r*2.6)*0.34*breathe;
+    acc.rgb+=vec3(1.0,0.72,0.40)*exp(-r*r*40.0)*0.22*breathe;
     gl_FragColor=acc;
   }`);
   const CP=GLU.prog(g,GLU.FULL,`precision highp float;
-  uniform vec2 u_res,u_tilt;uniform float u_time,u_zoom,u_rot,u_pxr,u_seed,u_has;uniform vec2 u_scale,u_pan;uniform mat3 u_M;
+  uniform vec2 u_res,u_tilt,u_sun;uniform float u_time,u_zoom,u_rot,u_pxr,u_seed,u_has,u_lite,u_fxon;uniform vec2 u_scale,u_pan;uniform mat3 u_M;
   uniform sampler2D u_img,u_fx;varying vec2 v_uv;
   ${CAMV}
   ${GLU.STARS}
+  ${NZ}
   float gh(vec2 p){p=fract(p*vec2(443.897,441.423));p+=dot(p,p.yx+19.19);return fract((p.x+p.y)*p.x);}
   vec3 img(vec2 uv){vec2 q=(uv-0.5);float cs=cos(u_rot),sn=sin(u_rot);q=mat2(cs,-sn,sn,cs)*q;q=q*u_scale/u_zoom+0.5+u_pan;q.y=1.0-q.y;return texture2D(u_img,q).rgb;}
+  // 흐름장: 각도 노이즈로 방향을 정해 사진 픽셀을 살짝 끌고 감 → 구름이 흐르고 말리는 것처럼
+  vec2 flow(vec2 p,float t){
+    float a=noise(p*2.1+vec2(t*0.085,-t*0.06))*6.2832;
+    vec2 v=vec2(cos(a),sin(a))*0.016;
+    if(u_lite<0.5){float b=noise(p*4.6-vec2(t*0.07,t*0.09)+5.2)*6.2832;v+=vec2(cos(b),sin(b))*0.007;}
+    // 빛 주변은 천천히 도는 소용돌이
+    vec2 d=p-u_sun*vec2(u_res.x/u_res.y,1.0);float r=length(d);
+    v+=vec2(-d.y,d.x)*0.05*exp(-r*2.2)*sin(t*0.11);
+    return v;
+  }
   void main(){
-    vec2 uv=v_uv;
+    vec2 uv=v_uv;float t=u_time;
+    vec2 pa=uv*vec2(u_res.x/u_res.y,1.0);
     vec3 base=vec3(0.02,0.015,0.05);
     if(u_has>0.5){
-      // 밝은 구름일수록 가깝다고 보고 시차를 더 줌 → 평면 사진이 입체로 움직임
       vec3 c0=img(uv);float dep=dot(c0,vec3(0.3,0.5,0.2));
       vec2 par=u_tilt*(0.006+0.03*dep);
-      base=img(uv+par);
+      vec2 w=flow(pa,t);
+      base=img(uv+par+w*(0.6+1.4*dep));          // 밝은 구름일수록 더 크게 흐름
+      if(u_lite<0.5){
+        // 앞쪽 엷은 층: 같은 성운을 조금 크게, 반대쪽으로 흐르게 겹쳐서 깊이감
+        vec2 uv2=(uv-0.5)*0.9+0.5+par*2.2-w*1.8+vec2(sin(t*0.031),cos(t*0.026))*0.018;
+        vec3 l2=img(uv2);float k=smoothstep(0.18,0.62,dot(l2,vec3(0.33)));
+        base=base+(l2-base*0.5)*0.22*k;
+      }
     }
-    vec4 fx=texture2D(u_fx,uv);
-    vec3 col=base*(1.0-fx.a*0.55)+fx.rgb;
-    col+=starLayer(u_M*camRay(gl_FragCoord.xy,u_res),150.0,0.9962,0.0005,0.0011,0.9,0.62/u_pxr,1.0);
+    vec3 col=base;
+    if(u_fxon>0.5){vec4 fx=texture2D(u_fx,uv);col=base*(1.0-fx.a*0.45)+fx.rgb;}
+    col+=starLayer(u_M*camRay(gl_FragCoord.xy,u_res),150.0,0.9962,0.0005,0.0011,0.95,0.62/u_pxr,3.0);
+    // 따로 반짝이는 밝은 별 몇 개(느린 깜빡임)
+    vec2 sc=gl_FragCoord.xy/(26.0*max(1.0,u_res.y/1400.0));vec2 id=floor(sc);float h=gh(id+3.1);
+    if(h>0.93){vec2 o=fract(sc)-0.5-(vec2(gh(id+1.3),gh(id+2.7))-0.5)*0.6;float dd=length(o);
+      float tw=0.5+0.5*sin(t*(0.6+gh(id+9.0)*1.6)+h*50.0);tw=tw*tw*tw;
+      float I=exp(-dd*dd*260.0)+0.22*exp(-abs(o.x)*40.0)*exp(-abs(o.y)*6.0)*tw+0.22*exp(-abs(o.y)*40.0)*exp(-abs(o.x)*6.0)*tw;
+      col+=mix(vec3(0.8,0.86,1.0),vec3(1.0,0.9,0.78),gh(id+5.5))*I*tw*0.9;}
     col*=1.0-0.25*pow(length(uv-0.5)*1.25,2.0);
     float n=gh(gl_FragCoord.xy+u_seed)+gh(gl_FragCoord.xy*1.37-u_seed)-1.0;
     gl_FragColor=vec4(col+n*(1.5/255.0),1.0);
   }`);
   const fx=GLU.target(g);
-  let pr=Math.min(DPR,1.5),cw=0,ch=0,last=0,t0=0,acc=0,cnt=0,downs=0,frame=0,fly=0,fxs=0.3,tilt=[0,0],tiltT=[0,0],ay=0,ax=0;
+  let pr=Math.min(DPR,LITE?1:1.5),cw=0,ch=0,last=0,t0=0,acc=0,cnt=0,downs=0,frame=0,fxs=LITE?0.18:0.3,tilt=[0,0],tiltT=[0,0],ay=0,ax=0;
   window.addEventListener('deviceorientation',e=>{if(e.gamma==null)return;tiltT=[Math.max(-1,Math.min(1,e.gamma/40)),Math.max(-1,Math.min(1,((e.beta||45)-45)/40))]});
-  function resize(){cw=Math.round(W*pr);ch=Math.round(H*pr);scv.width=cw;scv.height=ch;fx.size(Math.max(64,Math.round(cw*fxs)),Math.max(64,Math.round(ch*fxs)));frame=0}
+  function resize(){if(LITE){pr=1;fxs=Math.min(fxs,0.18)}cw=Math.round(W*pr);ch=Math.round(H*pr);scv.width=cw;scv.height=ch;fx.size(Math.max(48,Math.round(cw*fxs)),Math.max(48,Math.round(ch*fxs)));frame=0}
   function render(ts){
     if(!t0)t0=ts;const dt=Math.min(.05,(ts-(last||ts))/1000);last=ts;
     if(dt>0){acc+=dt;cnt++;if(cnt>=90){const avg=acc/cnt;acc=0;cnt=0;if(avg>1/45&&downs<3){downs++;if(fxs>0.2){fxs*=0.75}else pr=Math.max(1,pr-0.25);resize()}}}
-    const t=(ts-t0)/1000,k=S.star/0.6;
-    fly+=dt*0.028*k;                         // 구름 사이로 아주 천천히 전진
-    ay+=dt*0.02*k;ax+=dt*0.006*k;
+    const k=Math.max(.35,S.star/0.6),t=(ts-t0)/1000*k+(window.__nvT||0);
+    ay+=dt*0.012*k;ax+=dt*0.004*k;
     tilt[0]+=(tiltT[0]-tilt[0])*Math.min(1,dt*2);tilt[1]+=(tiltT[1]-tilt[1])*Math.min(1,dt*2);
     const sway=[Math.sin(t*0.07)*0.6+tilt[0],Math.cos(t*0.053)*0.5+tilt[1]];
-    // 화면 비율에 맞춰 이미지 cover
     const ia=iw/ih,ca=cw/ch;const scale=ca>ia?[1,ia/ca]:[ca/ia,1];
-    const sun=[0.68,1.0-0.40];   // 이미지 속 숨은 별 위치(아래→위 좌표)
-    if((frame++&1)===0){g.bindFramebuffer(g.FRAMEBUFFER,fx.f);g.viewport(0,0,fx.w,fx.h);g.disable(g.BLEND);g.useProgram(FX);
-      g.uniform2f(FX.u.u_res,fx.w,fx.h);g.uniform1f(FX.u.u_t,t);g.uniform1f(FX.u.u_asp,ca);g.uniform1f(FX.u.u_fly,fly);
+    const sun=[0.68,1.0-0.40];
+    // 가벼운 모드: 가스 층은 4프레임마다 한 번만 갱신(흐름은 유지)
+    if((frame++%(LITE?4:2))===0){g.bindFramebuffer(g.FRAMEBUFFER,fx.f);g.viewport(0,0,fx.w,fx.h);g.disable(g.BLEND);g.useProgram(FX);
+      g.uniform2f(FX.u.u_res,fx.w,fx.h);g.uniform1f(FX.u.u_t,t);g.uniform1f(FX.u.u_asp,ca);
       g.uniform2f(FX.u.u_sun,sun[0],sun[1]);g.uniform2f(FX.u.u_tilt,sway[0],sway[1]);GLU.quad(g,FX);g.bindFramebuffer(g.FRAMEBUFFER,null)}
     g.viewport(0,0,cw,ch);g.disable(g.BLEND);g.useProgram(CP);
     g.activeTexture(g.TEXTURE0);g.bindTexture(g.TEXTURE_2D,img);g.uniform1i(CP.u.u_img,0);
     g.activeTexture(g.TEXTURE1);g.bindTexture(g.TEXTURE_2D,fx.t);g.uniform1i(CP.u.u_fx,1);g.activeTexture(g.TEXTURE0);
-    g.uniform1f(CP.u.u_has,img?1:0);g.uniform2f(CP.u.u_res,cw,ch);g.uniform2f(CP.u.u_tilt,sway[0],sway[1]);
-    g.uniform1f(CP.u.u_time,t);g.uniform1f(CP.u.u_zoom,1.08+0.05*Math.sin(t*0.021)+0.02*Math.sin(t*0.047));
-    g.uniform1f(CP.u.u_rot,Math.sin(t*0.017)*0.015);g.uniform2f(CP.u.u_scale,scale[0],scale[1]);
+    g.uniform1f(CP.u.u_has,img?1:0);g.uniform1f(CP.u.u_lite,LITE?1:0);g.uniform1f(CP.u.u_fxon,1);
+    g.uniform2f(CP.u.u_res,cw,ch);g.uniform2f(CP.u.u_tilt,sway[0],sway[1]);g.uniform2f(CP.u.u_sun,sun[0],sun[1]);
+    g.uniform1f(CP.u.u_time,t);g.uniform1f(CP.u.u_zoom,1.08+0.03*Math.sin(t*0.021)+0.015*Math.sin(t*0.047));
+    g.uniform1f(CP.u.u_rot,Math.sin(t*0.017)*0.012);g.uniform2f(CP.u.u_scale,scale[0],scale[1]);
     g.uniform2f(CP.u.u_pan,Math.sin(t*0.013)*0.012,Math.cos(t*0.011)*0.01);
     g.uniformMatrix3fv(CP.u.u_M,false,GLU.rotYX(ay+sway[0]*0.03,ax+sway[1]*0.02));
     g.uniform1f(CP.u.u_pxr,ch*0.5/Math.tan(27.5*Math.PI/180));g.uniform1f(CP.u.u_seed,(frame*7.13)%100);
@@ -1519,8 +1578,15 @@ window.__nv_me={set:(o)=>{ME=Object.assign(ME||{},o);applyMeStyle()},get:()=>ME,
 
 window.__meReady=true;updateTone();applyMeStyle();
 // ---------- WebGL ----------
-const gl=cv.getContext('webgl',{alpha:true,premultipliedAlpha:true,antialias:false,powerPreference:'high-performance'});
-if(!gl){$('nogl').style.display='flex';return}
+let gl=null;
+if(!/[?&]nogl=1/.test(QS)){try{gl=cv.getContext('webgl',{alpha:true,premultipliedAlpha:true,antialias:false,powerPreference:'high-performance'})||cv.getContext('experimental-webgl',{alpha:true,premultipliedAlpha:true,antialias:false})}catch(_){gl=null}}
+// WebGL을 못 쓰면 앱이 멈추지 않게: 모래 효과 없이 2D로 화면을 그리는 평면 모드
+const NOGL=!gl;let C2=null;
+if(NOGL){LITE=true;LITE_WHY='WebGL 사용 불가';CAP=4000;C2=cv.getContext('2d');
+  const R={getShaderParameter:()=>true,getProgramParameter:()=>true,getParameter:()=>[1,64],getAttribLocation:()=>0,getUniformLocation:()=>null,getExtension:()=>null,isContextLost:()=>false,getShaderInfoLog:()=>'',getProgramInfoLog:()=>''};
+  gl=new Proxy({},{get:(o,k)=>k in R?R[k]:(typeof k==='string'&&/^[A-Z0-9_]+$/.test(k))?0:()=>({})});
+  setTimeout(()=>toast('그래픽 가속을 못 써서 가벼운 화면으로 보여드려요'),900)}
+else if(!LITE&&S.lite!=='off'&&!/[?&]lite=0/.test(QS)&&softGL(gl)){LITE=true;CAP=Math.min(CAP,LITE_CAP);LITE_WHY='그래픽 가속 없음'}
 function sh(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw gl.getShaderInfoLog(s);return s}
 function prog(vs,fs){const p=gl.createProgram();gl.attachShader(p,sh(gl.VERTEX_SHADER,vs));gl.attachShader(p,sh(gl.FRAGMENT_SHADER,fs));gl.linkProgram(p);if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw gl.getProgramInfoLog(p);return p}
 const VS=`
@@ -1778,7 +1844,7 @@ let fpsAcc=0,fpsN=0,lastFps=60,needRebuild=false;
 
 function layout(){
   const r=phone.getBoundingClientRect();W=r.width;H=r.height;DPR=Math.min(window.devicePixelRatio||1,2);
-  GW=Math.round(W*DPR);GH=Math.round(H*DPR);cv.width=GW;cv.height=GH;
+  if(LITE)DPR=Math.min(DPR,1.5);GW=Math.round(W*DPR);GH=Math.round(H*DPR);cv.width=GW;cv.height=GH;
   drawBg();for(let i=0;i<3;i++){renderPage(i);upload(i)}
   buildParticles();
   if(window.__meReady)applyMeStyle();
@@ -1792,7 +1858,13 @@ function quadDraw(tx,alpha,scale,ox){
   gl.uniform1f(U2.u_a,alpha);gl.uniform1f(U2.u_s,scale);gl.uniform1f(U2.u_ox,ox);gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
   gl.disableVertexAttribArray(L2);
 }
+function draw2d(){
+  const c=C2;c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,GW,GH);const pc=pageCanvases;
+  if(target<0||t<=0){c.drawImage(pc[cur],off*DPR,0);return}
+  const e=Math.min(1,t);c.globalAlpha=1-e;c.drawImage(pc[cur],dir*e*GW*.25,0);c.globalAlpha=e;c.drawImage(pc[target],-dir*(1-e)*GW*.25,0);c.globalAlpha=1;
+}
 function draw(){
+  if(NOGL)return draw2d();
   const now=performance.now(),time=(now-startT)/1000;
   gl.viewport(0,0,GW,GH);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
   gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);
@@ -1868,7 +1940,8 @@ function req(){if(!raf)raf=requestAnimationFrame(loop)}
 const easeOut=k=>1-Math.pow(1-k,3);
 
 function finishTransition(){
-  if(fpsN>8){lastFps=1000/(fpsAcc/fpsN);if(lastFps<45&&CAP>12000){CAP=Math.round(CAP*.65);needRebuild=true}}
+  if(fpsN>8){lastFps=1000/(fpsAcc/fpsN);if(lastFps<45&&CAP>12000){CAP=Math.round(CAP*.65);needRebuild=true}
+    if(lastFps<28&&!LITE&&S.lite!=='off'){setLite(true,'폰 속도에 맞춤');toast('화면이 버거워해서 가벼운 모드로 바꿨어요')}}
   fpsAcc=0;fpsN=0;
   cur=target;target=-1;t=0;setDots();updateStats();
   if(needRebuild){needRebuild=false;buildParticles()}
@@ -1922,9 +1995,35 @@ phone.addEventListener('pointerup',up);phone.addEventListener('pointercancel',up
 function tap(e){
   const r=phone.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
   const h=(hitRects[cur]||[]).find(o=>x>=o.x&&x<=o.x+o.w&&y>=o.y&&y<=o.y+o.h);
+  if(!h){if(emptyTap(x,y,e))return}else lastTap=null;
   if(h&&h.act){if(anim)return;if(h.act==='home'){if(cur!==0)go(0,1);else toast('첫 화면이에요')}else if(h.act==='back'){if(cur>0)go(cur-1,1);else toast('더 돌아갈 화면이 없어요')}else toast('최근 사용한 앱 · 시제품이라 아직 비어 있어요');return}
   if(h&&h.f)openFolder(h.f,{x:h.x,y:h.y,w:Math.min(h.w,h.h)});else if(h)openApp(h.a||findApp(h.n));
 }
+// ---------- v19 두 번 톡톡 눌러 화면 끄기 ----------
+let lastTap=null;
+function emptyTap(x,y,e){
+  if(S.dt2off===false)return false;
+  if(y<40||y>=navY()-4||y>=dockTop()-8){lastTap=null;return false}   // 상태 표시줄·독·내비게이션 바 근처는 제외
+  const now=performance.now();
+  if(lastTap&&now-lastTap.t<380&&Math.hypot(x-lastTap.x,y-lastTap.y)<56){lastTap=null;screenOff();return true}
+  lastTap={t:now,x,y};return false;
+}
+function screenOff(){
+  if(NATIVE&&NVNative.lockScreen){let r='';try{r=NVNative.lockScreen()}catch(_){}
+    if(r==='ok')return;
+    if(r==='need'){showA11yGuide();return}
+    if(r==='wait'){toast('화면 끄기 준비 중이에요. 잠시 후 다시 두 번 눌러 주세요');return}
+    toast('안드로이드 9 이상에서만 진짜로 꺼져요 · 지금은 어둡게만')}
+  const o=$('off');o.style.display='block';void o.offsetWidth;o.classList.add('on');if(navigator.vibrate)navigator.vibrate(12);
+}
+function wakeUp(){const o=$('off');if(!o.classList.contains('on'))return;o.classList.remove('on');setTimeout(()=>{if(!o.classList.contains('on'))o.style.display='none'},520)}
+$('off').addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();wakeUp()});
+function showA11yGuide(){const g=$('a11yG');g.style.display='flex';void g.offsetWidth;g.classList.add('on')}
+function hideA11yGuide(){const g=$('a11yG');g.classList.remove('on');setTimeout(()=>{if(!g.classList.contains('on'))g.style.display='none'},300)}
+$('a11yG').addEventListener('pointerdown',e=>e.stopPropagation());
+$('a11yGo').onclick=()=>{if(NATIVE&&NVNative.openA11y)NVNative.openA11y();else toast('폰 앱에서는 접근성 설정이 열려요 · 웹 시제품');};
+$('a11yNo').onclick=hideA11yGuide;
+window.__nv_toast=m=>toast(m);window.__nv_off={off:screenOff,wake:wakeUp,guide:showA11yGuide,hide:hideA11yGuide};
 let tt=0;function toast(m){const el=$('toast');el.textContent=m;el.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('show'),1600)}
 
 // ---------- 폴더: 회전 캐러셀 ----------
@@ -2019,7 +2118,8 @@ for(const k in sl){$(sl[k][0]).addEventListener('input',e=>{S[k]=parseFloat(e.ta
   if(k==='size'){clearTimeout(sizeTimer);sizeTimer=setTimeout(()=>{buildParticles();draw()},150)}})}
 $('reset').onclick=()=>{S=Object.assign({},DEF);syncUI();applyWallpaper();try{localStorage.removeItem('nv_sand18')}catch(_){}layout()};
 $('demo').onclick=()=>{if(anim)return;const to=cur<2?cur+1:cur-1;go(to,to>cur?-1:1)};
-function updateStats(){$('stats').textContent=`v18 · 모래알 ${counts[cur]?counts[cur].toLocaleString('ko-KR'):0}개 · 알갱이 ${cell}px · 최근 ${Math.round(lastFps)}fps${weak?' · 절약 모드':''}`}
+function updateStats(){$('stats').textContent=`v19 · 모래알 ${counts[cur]?counts[cur].toLocaleString('ko-KR'):0}개 · 알갱이 ${cell}px · 최근 ${Math.round(lastFps)}fps${NOGL?' · 평면 모드':LITE?' · 가벼운 모드':weak?' · 절약 모드':''}`}
+function setLite(on,why){LITE=on;LITE_WHY=why||'';CAP=NOGL?4000:on?LITE_CAP:weak?60000:130000;try{spW=0}catch(_){}layout()}
 syncUI();
 window.__nv={pose:(to,d,tt)=>{target=to;dir=d;t=tt;draw()},cur:()=>cur,hits:()=>hitRects[cur].map(h=>({x:h.x,y:h.y,w:h.w,h:h.h,n:h.n,act:h.act,f:!!h.f}))};
 
@@ -2091,7 +2191,7 @@ DR.addEventListener('touchcancel',()=>{if(td&&td.m)setDR(1,true);td=null});
 setQP(0);setDR(0);
 window.__nv.panel=()=>({qp:qpP,dr:drP});window.__nv.S=S;window.__nv.layout=layout;window.__nv.buildDrawer=buildDrawer;
 // ---------- 설정 화면 (삼성 설정 구성을 참고한 뉴니버스 설정) ----------
-const VER='v18';
+const VER='v19';
 Object.assign(GLY,{
  wifi:'M2.5 9a14 14 0 0 1 19 0 M5.5 12.3a9.5 9.5 0 0 1 13 0 M8.6 15.5a5 5 0 0 1 6.8 0 M12 19h.01',
  devices:'M3.5 5h12v9h-12z M2 17h15 M18 8h3.5v11H18z',
@@ -2120,7 +2220,7 @@ const SETG=[
  [['wall','배경화면 및 스타일','배경화면 · 내 사진 합성','brush','#ff6fa0','#d6336c','바탕화면 사진 합성 벚꽃 성운 별밭'],['theme','테마','UI 스타일 · 아이콘 모양','palette','#c06bff','#8a2fd0','아이콘 궤도 사구 조각보 디자인'],['home','홈 화면','우주 흐름 속도 · 모래 전환 · 제스처','home','#6c8cff','#3a55d8','모래 바람 전환 스와이프 제스처 속도'],['lock','잠금화면','화면 잠금 방식 · 시계 스타일','lock','#5a7cff','#2c45c0','비밀번호 패턴']],
  [['sec','보안 및 개인정보 보호','생체 인식 · 앱 권한','shield','#3aa0ff','#1a62c4','지문 얼굴 권한'],['loc','위치','위치 요청 · 위치 서비스','pin','#2fc2a8','#168c78','GPS'],['sos','안전 및 긴급','긴급 연락처 · 긴급 SOS','alert','#ff5a5a','#c62828','응급 119']],
  [['acct','계정 및 백업','계정 관리 · 백업 및 복원','sync','#2fb4d9','#167a99','클라우드']],
- [['adv','유용한 기능','한 손 모드 · 모션 및 제스처','sparkle','#ffb340','#e07b00','편의'],['well','디지털 웰빙','사용 시간 · 자녀 보호','leaf','#4cc46a','#258a3f','시간 수면'],['apps','애플리케이션','기본 앱 · 앱 설정','grid','#6f7dff','#3d48cc','앱 어플']],
+ [['adv','유용한 기능','두 번 눌러 화면 끄기 · 한 손 모드','sparkle','#ffb340','#e07b00','편의 화면 끄기 더블탭 톡톡 두번 두 번 잠금 끄기'],['well','디지털 웰빙','사용 시간 · 자녀 보호','leaf','#4cc46a','#258a3f','시간 수면'],['apps','애플리케이션','기본 앱 · 앱 설정','grid','#6f7dff','#3d48cc','앱 어플']],
  [['gen','일반','언어 · 날짜 및 시간 · 키보드','sliders','#8e9aaf','#5b667a','한국어 키보드 시간'],['a11y','접근성','글자 크기 · 시각 보조','access','#3fa3ff','#1d63c9','글씨 크게 돋보기 시력']],
  [['upd','소프트웨어 업데이트','다운로드 및 설치','update','#7c6bff','#4b3bd0','버전 새 기능'],['tips','팁과 사용 설명서','제스처 안내 · 도움말','bulb','#ffc940','#e09a00','사용법 도움'],['about','폰 정보','뉴니버스 '+VER+' · 상태','info','#9aa3b5','#626b80','버전 모델 정보']]
 ].map(g=>g.map(([id,n,sub,gl,c1,c2,kw])=>{GMAP['§'+id]=gl;return {id,n,sub,gl,c1,c2,kw,key:'§'+id}}));
@@ -2146,7 +2246,7 @@ const PROTO={
  sec:[['생체 인식','지문 · 얼굴',false],['앱 권한 알림','민감한 권한 사용 시 알림',true],['찾아줘','잃어버린 폰 위치 찾기',true]],
  loc:[['위치 사용','지도·날씨 앱이 위치 사용',true],['정확도 높이기','Wi-Fi 위치 같이 사용',true]],
  sos:[['긴급 SOS','측면 버튼 5번 누르면 긴급 전화',true],['긴급 연락처','가족 2명',null],['긴급 위치 공유','긴급 전화 때 위치 보내기',true]],
- adv:[['한 손 모드','화면을 아래로 내려 한 손으로',false],['들어서 깨우기','폰을 들면 화면 켜기',true],['두 번 눌러 켜기','화면 두 번 톡톡',true]],
+ adv:[['한 손 모드','화면을 아래로 내려 한 손으로',false],['들어서 깨우기','폰을 들면 화면 켜기',true],['꺼진 화면 두 번 눌러 켜기','꺼진 화면을 톡톡 두 번',true]],
  well:[['오늘 사용 시간','2시간 14분',null],['취침 모드','밤 11시 흑백 화면',false],['자녀 보호','가족 연결',false]],
  apps:[['기본 앱','전화 · 메시지 · 인터넷',null],['앱 자동 업데이트','Wi-Fi에서만',true]],
  gen:[['언어','한국어',null],['날짜 및 시간','자동 설정',true],['키보드','뉴니버스 한글 자판',null]],
@@ -2162,8 +2262,13 @@ function buildPage(id){
    case 'sound':{const v=$('qVol');add(sCard(slRow('소리 크기',0,1,.01,+v.value,FSF,x=>{v.value=x}),qpSync('sound','소리'),swRow('진동','소리와 함께 진동',true,false,on=>{if(on&&navigator.vibrate)navigator.vibrate(40);toast(`진동 ${on?'켜짐':'꺼짐'}`)}),infoRow('벨소리','은하수 · 시제품')));break}
    case 'disp':{const b=$('qBright');add(sCard(slRow('밝기',.25,1,.01,+b.value,FSF,x=>{b.value=x;b.dispatchEvent(new Event('input'))})));
      add(sCard(swRow('다크 모드','우주 배경에 맞춘 어두운 화면',true,true),infoRow('글자 크기',FSF(S.fs||1)+' · 접근성에서 바꾸기',()=>settingsPush('a11y')),swRow('화면 자동 꺼짐','30초',true,true)));
-     add(sCard(infoRow('내비게이션 바',navSummary(),()=>settingsPush('navbar'))));break}
+     add(sCard(infoRow('내비게이션 바',navSummary(),()=>settingsPush('navbar'))));
+     add(sCard(swRow('가벼운 모드',(NOGL?'그래픽 가속을 못 써서 평면 화면으로 보여요':'모래알 수와 화면 해상도를 줄여 느린 폰에서도 부드럽게')+(LITE&&LITE_WHY?` · 지금 켜짐 (${LITE_WHY})`:''),LITE,false,on=>{S.lite=on?'on':'off';saveS();setLite(on||NOGL,on?'직접 켬':'');toast(on?'가벼운 모드 켜짐':'가벼운 모드 꺼짐')})));break}
    case 'navbar':buildNavbarPage(add);break;
+   case 'adv':{add(sCard(swRow('두 번 눌러 화면 끄기','홈 화면 빈 곳을 톡톡 두 번 누르면 화면이 꺼져요',S.dt2off!==false,false,on=>{S.dt2off=on;saveS();toast(on?'두 번 톡톡 화면 끄기 켜짐':'두 번 톡톡 화면 끄기 꺼짐')})));
+     if(NATIVE&&NVNative.lockEnabled)add(sCard(infoRow('화면 끄기 권한 (접근성)',NVNative.lockEnabled()?'켜져 있어요 · 화면 끄기에만 사용':'꺼져 있어요 · 눌러서 켜기',()=>NVNative.openA11y())));
+     add(mk('div','note',NATIVE?'아이콘·독·아래 단추가 없는 빈 곳을 두 번 눌러요. 처음 한 번은 안드로이드 접근성에서 ‘뉴니버스 화면 끄기’를 켜야 해요.':'아이콘·독·아래 단추가 없는 빈 곳을 두 번 눌러요. 웹 시제품에서는 검게 어두워지는 연출만 하고, 한 번 누르면 다시 켜져요.'));
+     add(sCard((PROTO.adv||[]).map(([l,s2,on])=>swRow(l,s2,on,true))));break}
    case 'batt':{const big=mk('div','big','…');const sm=mk('div','note','배터리 정보를 읽는 중');add(sCard(big,sm,qpSync('save','절전 모드')));
      if(navigator.getBattery)navigator.getBattery().then(B=>{big.textContent=Math.round(B.level*100)+'%';sm.textContent=(B.charging?'충전 중':'배터리 사용 중')+' · 이 폰의 실제 값'}).catch(()=>{big.textContent='—';sm.textContent='이 브라우저에서는 배터리 값을 읽을 수 없어요'});
      else{big.textContent='—';sm.textContent='이 브라우저에서는 배터리 값을 읽을 수 없어요'}break}
@@ -2190,7 +2295,10 @@ function buildMain(){
   const prof=mk('div','card prof','<div class="av">장</div><div><b>장지환</b><small>백업으로 데이터 보호</small></div>');prof.style.cursor='pointer';prof.onclick=()=>settingsPush('prof');sc.appendChild(prof);
   if(NATIVE){const c=mk('div','card');const r1=infoRow('휴대전화 설정 열기','와이파이·소리·앱 등 안드로이드 설정',()=>NVNative.openSettings(''));const r2=infoRow('기본 홈 앱','홈 버튼을 누르면 뜰 앱 고르기 (뉴니버스 / 원래 홈)',()=>NVNative.openSettings('home'));c.append(r1,r2);sc.appendChild(c)}
   SETG.forEach(g=>{const c=mk('div','card');c.dataset.g=1;g.forEach(i=>{const r=mk('div','it',`<img alt="" src="${setImg(i)}"><div><b>${i.n}</b><small>${i.sub}</small></div>`);r.dataset.k=(i.n+' '+i.sub+' '+i.kw).toLowerCase();r.dataset.id=i.id;r.onclick=()=>settingsPush(i.id);c.appendChild(r)});sc.appendChild(c)});
-  {const c=mk('div','card');c.dataset.g=1;const i={n:'내비게이션 바',sub:'디스플레이 › 내비게이션 바',key:'§disp',c1:'#48c774',c2:'#2a9550'};const r=mk('div','it',`<img alt="" src="${setImg(i)}"><div><b>${i.n}</b><small>${i.sub}</small></div>`);r.dataset.k='내비게이션 바 네비게이션 내비 navigation 버튼 제스처 뒤로 홈 최근 스와이프';r.dataset.id='disp';r.dataset.so=1;r.onclick=()=>{settingsPush('disp');setTimeout(()=>settingsPush('navbar'),60)};c.appendChild(r);c.style.display='none';sc.appendChild(c)}
+  {const c=mk('div','card');c.dataset.g=1;const i={n:'내비게이션 바',sub:'디스플레이 › 내비게이션 바',key:'§disp',c1:'#48c774',c2:'#2a9550'};const r=mk('div','it',`<img alt="" src="${setImg(i)}"><div><b>${i.n}</b><small>${i.sub}</small></div>`);r.dataset.k='내비게이션 바 네비게이션 내비 navigation 버튼 제스처 뒤로 홈 최근 스와이프';r.dataset.id='disp';r.dataset.so=1;r.onclick=()=>{settingsPush('disp');setTimeout(()=>settingsPush('navbar'),60)};c.appendChild(r);
+   const i2={n:'두 번 눌러 화면 끄기',sub:'유용한 기능 › 두 번 눌러 화면 끄기',key:'§adv',c1:'#ffb340',c2:'#e07b00'};const r2=mk('div','it',`<img alt="" src="${setImg(i2)}"><div><b>${i2.n}</b><small>${i2.sub}</small></div>`);r2.dataset.k='두 번 눌러 화면 끄기 화면 끄기 더블탭 톡톡 두번 잠금';r2.dataset.id='adv';r2.dataset.so=1;r2.onclick=()=>settingsPush('adv');c.appendChild(r2);
+   const i3={n:'가벼운 모드',sub:'디스플레이 › 가벼운 모드',key:'§disp',c1:'#48c774',c2:'#2a9550'};const r3=mk('div','it',`<img alt="" src="${setImg(i3)}"><div><b>${i3.n}</b><small>${i3.sub}</small></div>`);r3.dataset.k='가벼운 모드 절전 성능 느림 버벅 모래알';r3.dataset.id='disp';r3.dataset.so=1;r3.onclick=()=>settingsPush('disp');c.appendChild(r3);
+   c.style.display='none';sc.appendChild(c)}
   sc.appendChild(mk('div','empty','찾는 설정이 없어요'));sc.lastChild.style.display='none';
   const sb=mk('div','search','<span>🔍</span><input type="search" placeholder="설정 검색 (예: 밝기, 글자)" aria-label="설정 검색">');pg.appendChild(sb);
   const q=sb.querySelector('input');q.oninput=()=>{const v=q.value.trim().toLowerCase();let any=false;

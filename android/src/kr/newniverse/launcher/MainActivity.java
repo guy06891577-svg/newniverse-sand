@@ -153,6 +153,17 @@ public class MainActivity extends Activity {
     @JavascriptInterface public void expandNotifications(){
       try{ Object sb=getSystemService("statusbar"); Class.forName("android.app.StatusBarManager").getMethod("expandNotificationsPanel").invoke(sb);}catch(Exception e){} }
     @JavascriptInterface public String info(){ return "{\"model\":\""+Build.MANUFACTURER+" "+Build.MODEL+"\",\"android\":\""+Build.VERSION.RELEASE+"\",\"sdk\":"+Build.VERSION.SDK_INT+"}"; }
+    /** 두 번 톡톡 화면 끄기: "ok"=꺼짐, "old"=안드로이드 9 미만, "need"=접근성 권한 필요 */
+    @JavascriptInterface public String lockScreen(){
+      if(Build.VERSION.SDK_INT<28) return "old";
+      if(LockService.lock()) return "ok";
+      return lockEnabled()?"wait":"need";
+    }
+    @JavascriptInterface public boolean lockEnabled(){
+      try{ String v=Settings.Secure.getString(getContentResolver(),Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+        return v!=null&&v.toLowerCase().contains((getPackageName()+"/").toLowerCase())&&v.toLowerCase().contains("lockservice"); }catch(Exception e){ return false; }
+    }
+    @JavascriptInterface public void openA11y(){ try{ Intent i=new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS); i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(i);}catch(Exception e){} }
     @JavascriptInterface public boolean isDefaultHome(){ Intent i=new Intent(Intent.ACTION_MAIN); i.addCategory(Intent.CATEGORY_HOME); ResolveInfo r=getPackageManager().resolveActivity(i,PackageManager.MATCH_DEFAULT_ONLY); return r!=null&&r.activityInfo!=null&&getPackageName().equals(r.activityInfo.packageName); }
   }
 }

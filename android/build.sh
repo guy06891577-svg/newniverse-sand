@@ -13,7 +13,7 @@ cp -r $WEB/wallpapers assets/www/
 cp -r $WEB/models assets/www/
 # 2) 리소스 컴파일/링크
 $BT/aapt2 compile --dir res -o build/res.zip
-$BT/aapt2 link -o build/base.apk -I $JAR --manifest AndroidManifest.xml -A assets --java build/gen build/res.zip --auto-add-overlay --min-sdk-version 26 --target-sdk-version 34 --version-code 18 --version-name 0.18-test
+$BT/aapt2 link -o build/base.apk -I $JAR --manifest AndroidManifest.xml -A assets --java build/gen build/res.zip --auto-add-overlay --min-sdk-version 26 --target-sdk-version 34 --version-code 19 --version-name 0.19-test
 # 3) 자바 → dex
 javac -source 17 -target 17 -encoding UTF-8 -classpath $JAR -d build/classes $(find src build/gen -name '*.java') 2>&1 | grep -v "^Note:" || true
 $BT/d8 --release --min-api 26 --lib $JAR --output build/dex $(find build/classes -name '*.class')
