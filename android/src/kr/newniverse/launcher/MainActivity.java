@@ -1,6 +1,7 @@
 package kr.newniverse.launcher;
 
 import android.app.Activity;
+import android.app.WallpaperManager;
 import android.content.*;
 import android.content.pm.*;
 import android.graphics.*;
@@ -164,6 +165,23 @@ public class MainActivity extends Activity {
         return v!=null&&v.toLowerCase().contains((getPackageName()+"/").toLowerCase())&&v.toLowerCase().contains("lockservice"); }catch(Exception e){ return false; }
     }
     @JavascriptInterface public void openA11y(){ try{ Intent i=new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS); i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(i);}catch(Exception e){} }
+    /** v20: 웹에서 그린 정지 이미지(data URL)를 폰 잠금화면 배경으로 지정. 결과는 JS NV_onLockWp(ok,msg) */
+    @JavascriptInterface public void setLockWallpaper(final String dataUrl){
+      new Thread(()->{ boolean ok=false; String msg="";
+        try{
+          String b64=dataUrl.substring(dataUrl.indexOf(',')+1);
+          byte[] bytes=android.util.Base64.decode(b64,android.util.Base64.DEFAULT);
+          Bitmap bmp=BitmapFactory.decodeByteArray(bytes,0,bytes.length);
+          if(bmp==null) throw new IllegalArgumentException("image");
+          WallpaperManager wm=WallpaperManager.getInstance(MainActivity.this);
+          int r=wm.setBitmap(bmp,null,true,WallpaperManager.FLAG_LOCK);
+          ok=r!=0; if(!ok) msg="거부됨";
+        }catch(Throwable e){ msg=e.getClass().getSimpleName(); android.util.Log.w("NVWeb","lock wp fail",e); }
+        final boolean fok=ok; final String fm=msg.replace("'","");
+        ui.post(()->{ if(web!=null) web.evaluateJavascript("window.NV_onLockWp&&NV_onLockWp("+fok+",'"+fm+"')",null); });
+      }).start();
+    }
+    @JavascriptInterface public int screenW(){ android.util.DisplayMetrics m=new android.util.DisplayMetrics(); getWindowManager().getDefaultDisplay().getRealMetrics(m); return m.widthPixels; }
     @JavascriptInterface public boolean isDefaultHome(){ Intent i=new Intent(Intent.ACTION_MAIN); i.addCategory(Intent.CATEGORY_HOME); ResolveInfo r=getPackageManager().resolveActivity(i,PackageManager.MATCH_DEFAULT_ONLY); return r!=null&&r.activityInfo!=null&&getPackageName().equals(r.activityInfo.packageName); }
   }
 }

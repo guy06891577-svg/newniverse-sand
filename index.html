@@ -7,7 +7,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>뉴니버스 · 모래 전환 시제품 v19</title>
+<title>뉴니버스 · 모래 전환 시제품 v20</title>
 <style>
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
   html,body{height:100%;background:#05040d;overflow:hidden;font-family:system-ui,-apple-system,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#fff;overscroll-behavior:none}
@@ -189,6 +189,27 @@
   #me.edit{pointer-events:auto;z-index:7;outline:1.5px dashed rgba(255,255,255,.75);outline-offset:6px;border-radius:12px;cursor:move}
   #meDone{position:absolute;left:50%;top:44px;transform:translateX(-50%);z-index:8;display:none;padding:10px 26px;border-radius:20px;border:none;font-size:15px;font-weight:700;background:linear-gradient(135deg,#e6b85c,#d9813b);color:#1a1205}
   #meProg{position:absolute;left:24px;right:24px;top:45%;z-index:9;display:none;text-align:center;padding:16px;border-radius:18px;background:rgba(18,15,34,.9);font-size:14px;line-height:1.5;border:1px solid rgba(255,255,255,.15)}
+  #lock{position:absolute;inset:0;z-index:13;display:none;touch-action:none}
+  #lock canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  #lockfx{display:none;pointer-events:none}
+  #lockhint{position:absolute;left:0;right:0;bottom:70px;text-align:center;font-size:14px;color:rgba(255,255,255,.82);pointer-events:none;text-shadow:0 1px 6px rgba(0,0,0,.6);transition:opacity .2s}
+  #lockhint i{display:block;font-style:normal;font-size:22px;line-height:1;margin-bottom:2px;animation:lkup 1.8s ease-in-out infinite}
+  @keyframes lkup{0%,100%{transform:translateY(4px);opacity:.45}50%{transform:translateY(-6px);opacity:1}}
+  #phone.locked #status{z-index:15}
+  #phone.locked :is(#gl,#fixed,#navcv,#navbtns,#navgest,#dots,#hint,#gtip){opacity:0!important;pointer-events:none!important}
+  #phone.unlocking :is(#gl,#fixed,#navcv,#navbtns,#dots){transition:opacity 1.1s ease .35s}
+  #lwp{position:absolute;inset:0;z-index:30;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(5,4,16,.6);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);opacity:0;transition:opacity .25s}
+  #lwp.on{opacity:1}
+  #lwp .box{width:100%;max-width:360px;border-radius:28px;padding:18px 18px 14px;background:linear-gradient(160deg,rgba(60,48,120,.94),rgba(20,16,44,.96));border:1px solid rgba(255,255,255,.16);color:#fff}
+  #lwp h3{margin:0 0 10px;text-align:center;font-size:19px}
+  #lwp .pv{position:relative;width:62%;margin:0 auto;aspect-ratio:9/19.5;border-radius:22px;overflow:hidden;background:#0b0a1c;border:2px solid rgba(255,255,255,.25)}
+  #lwp .pv .img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  #lwp .pv .ld{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;opacity:.7}
+  #lwp .pv .tag{position:absolute;left:0;right:0;bottom:10px;text-align:center;font-size:11px;opacity:.8}
+  #lwp .nt{font-size:14.5px;line-height:1.55;margin:12px 2px 6px;opacity:.92}
+  #lwp .nt b{color:#ffd59a}
+  #lwp button{display:block;width:100%;border:0;border-radius:18px;padding:13px;font-size:16.5px;font-weight:800;margin-top:8px;background:linear-gradient(135deg,#e6b85c,#d9813b);color:#1a1205}
+  #lwp button.ghost{background:rgba(255,255,255,.1);color:#fff;font-weight:600}
   #off{position:absolute;inset:0;z-index:90;display:none;background:#000;opacity:0;transition:opacity .45s ease;touch-action:none}
   #off.on{opacity:1}
   #off .msg{position:absolute;left:0;right:0;bottom:22%;text-align:center;color:rgba(255,255,255,.55);font-size:15px;opacity:0}
@@ -268,6 +289,8 @@
     <div class="btns"><button id="reset">기본값</button><button class="p" id="demo">미리보기 ▶</button></div>
     <div id="stats"></div>
   </div>
+  <div id="lock"><canvas id="lockcv"></canvas><canvas id="lockfx"></canvas><div id="lockhint"><i>︿</i>위로 쓸어 올려 잠금 해제</div></div>
+  <div id="lwp"><div class="box"><h3>잠금화면에도 적용</h3><div class="pv"></div><p class="nt"></p><button class="go">잠금화면에 적용</button><button class="no ghost">닫기</button></div></div>
   <div id="off"><div class="msg">화면을 누르면 다시 켜져요</div></div>
   <div id="a11yG"><div class="box"><div class="moon">🌙</div><h3>두 번 눌러 화면 끄기</h3>
     <p>홈 화면 빈 곳을 <b>톡톡 두 번</b> 누르면 화면이 꺼지게 하려면, 안드로이드 <b>접근성</b>에서 한 번만 켜 주세요.</p>
@@ -948,6 +971,7 @@ function navAct(k){
   if(navigator.vibrate)navigator.vibrate(6);
   const pq=qpOpen()||qpP>0,pd=drOpen()||drP>0;
   const open={fold:typeof fOpen!=='undefined'&&fOpen,sheet:$('settings').classList.contains('open'),rec:$('recents').classList.contains('open'),edit:typeof meEditing!=='undefined'&&meEditing};
+  if(typeof lockOn!=='undefined'&&lockOn){if(k==='back')toast('위로 쓸어 올리면 잠금이 풀려요');return}
   if(k==='back'){
     if($('a11yG').classList.contains('on'))return hideA11yGuide();if($('off').classList.contains('on'))return wakeUp();
     if(open.rec)return closeRecents();if(open.fold)return closeFolder();if(open.sheet)return settingsBack();if(open.edit)return setMeEdit(false);if(pd)return closeDR();if(pq)return closeQP();
@@ -1430,6 +1454,7 @@ LIVE_SCENES.space=(g)=>{
   }
   return {resize,render};
 };
+let snapReq=null;
 let spW=0,spH=0,sceneName='',scene=null;const sceneCache={};
 function spaceFrame(ts){
   requestAnimationFrame(spaceFrame);
@@ -1443,6 +1468,7 @@ function spaceFrame(ts){
   if(!scene)return;
   if(spW!==GW||spH!==GH){spW=GW;spH=GH;scene.resize()}
   scene.render(ts);
+  if(snapReq){const f=snapReq;snapReq=null;f(scv)}   // v20 잠금화면용 정지 이미지: 그린 직후 같은 프레임에서 복사
 }
 requestAnimationFrame(spaceFrame);
 
@@ -2016,7 +2042,7 @@ function screenOff(){
     toast('안드로이드 9 이상에서만 진짜로 꺼져요 · 지금은 어둡게만')}
   const o=$('off');o.style.display='block';void o.offsetWidth;o.classList.add('on');if(navigator.vibrate)navigator.vibrate(12);
 }
-function wakeUp(){const o=$('off');if(!o.classList.contains('on'))return;o.classList.remove('on');setTimeout(()=>{if(!o.classList.contains('on'))o.style.display='none'},520)}
+function wakeUp(){const o=$('off');if(!o.classList.contains('on'))return;if(S.lockOnWake!==false&&typeof showLock==='function')showLock();o.classList.remove('on');setTimeout(()=>{if(!o.classList.contains('on'))o.style.display='none'},520)}
 $('off').addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();wakeUp()});
 function showA11yGuide(){const g=$('a11yG');g.style.display='flex';void g.offsetWidth;g.classList.add('on')}
 function hideA11yGuide(){const g=$('a11yG');g.classList.remove('on');setTimeout(()=>{if(!g.classList.contains('on'))g.style.display='none'},300)}
@@ -2118,7 +2144,7 @@ for(const k in sl){$(sl[k][0]).addEventListener('input',e=>{S[k]=parseFloat(e.ta
   if(k==='size'){clearTimeout(sizeTimer);sizeTimer=setTimeout(()=>{buildParticles();draw()},150)}})}
 $('reset').onclick=()=>{S=Object.assign({},DEF);syncUI();applyWallpaper();try{localStorage.removeItem('nv_sand18')}catch(_){}layout()};
 $('demo').onclick=()=>{if(anim)return;const to=cur<2?cur+1:cur-1;go(to,to>cur?-1:1)};
-function updateStats(){$('stats').textContent=`v19 · 모래알 ${counts[cur]?counts[cur].toLocaleString('ko-KR'):0}개 · 알갱이 ${cell}px · 최근 ${Math.round(lastFps)}fps${NOGL?' · 평면 모드':LITE?' · 가벼운 모드':weak?' · 절약 모드':''}`}
+function updateStats(){$('stats').textContent=`v20 · 모래알 ${counts[cur]?counts[cur].toLocaleString('ko-KR'):0}개 · 알갱이 ${cell}px · 최근 ${Math.round(lastFps)}fps${NOGL?' · 평면 모드':LITE?' · 가벼운 모드':weak?' · 절약 모드':''}`}
 function setLite(on,why){LITE=on;LITE_WHY=why||'';CAP=NOGL?4000:on?LITE_CAP:weak?60000:130000;try{spW=0}catch(_){}layout()}
 syncUI();
 window.__nv={pose:(to,d,tt)=>{target=to;dir=d;t=tt;draw()},cur:()=>cur,hits:()=>hitRects[cur].map(h=>({x:h.x,y:h.y,w:h.w,h:h.h,n:h.n,act:h.act,f:!!h.f}))};
@@ -2191,7 +2217,7 @@ DR.addEventListener('touchcancel',()=>{if(td&&td.m)setDR(1,true);td=null});
 setQP(0);setDR(0);
 window.__nv.panel=()=>({qp:qpP,dr:drP});window.__nv.S=S;window.__nv.layout=layout;window.__nv.buildDrawer=buildDrawer;
 // ---------- 설정 화면 (삼성 설정 구성을 참고한 뉴니버스 설정) ----------
-const VER='v19';
+const VER='v20';
 Object.assign(GLY,{
  wifi:'M2.5 9a14 14 0 0 1 19 0 M5.5 12.3a9.5 9.5 0 0 1 13 0 M8.6 15.5a5 5 0 0 1 6.8 0 M12 19h.01',
  devices:'M3.5 5h12v9h-12z M2 17h15 M18 8h3.5v11H18z',
@@ -2217,7 +2243,7 @@ const SETG=[
  [['conn','연결','Wi-Fi · 블루투스 · 비행기 모드','wifi','#4f8cff','#2a5bd7','와이파이 인터넷 데이터'],['devc','기기 간 연결','빠른 공유 · 화면 보내기','devices','#3fb6ff','#1f78c4','공유 TV']],
  [['sound','소리 및 진동','소리 크기 · 진동 · 벨소리','sound','#a46bff','#6a35d1','볼륨 음량 벨'],['noti','알림','앱 알림 · 방해 금지','bell','#ff7a59','#d9472a','알람']],
  [['disp','디스플레이','밝기 · 글자 크기 · 내비게이션 바','sun','#48c774','#2a9550','화면 밝기 내비게이션 네비게이션 내비 버튼 제스처 뒤로 홈 최근'],['batt','배터리','남은 전력 · 절전 모드','battery','#3ccf9a','#1d8f68','충전 전원']],
- [['wall','배경화면 및 스타일','배경화면 · 내 사진 합성','brush','#ff6fa0','#d6336c','바탕화면 사진 합성 벚꽃 성운 별밭'],['theme','테마','UI 스타일 · 아이콘 모양','palette','#c06bff','#8a2fd0','아이콘 궤도 사구 조각보 디자인'],['home','홈 화면','우주 흐름 속도 · 모래 전환 · 제스처','home','#6c8cff','#3a55d8','모래 바람 전환 스와이프 제스처 속도'],['lock','잠금화면','화면 잠금 방식 · 시계 스타일','lock','#5a7cff','#2c45c0','비밀번호 패턴']],
+ [['wall','배경화면 및 스타일','배경화면 · 내 사진 합성','brush','#ff6fa0','#d6336c','바탕화면 사진 합성 벚꽃 성운 별밭 잠금화면 적용 잠금화면 배경'],['theme','테마','UI 스타일 · 아이콘 모양','palette','#c06bff','#8a2fd0','아이콘 궤도 사구 조각보 디자인'],['home','홈 화면','우주 흐름 속도 · 모래 전환 · 제스처','home','#6c8cff','#3a55d8','모래 바람 전환 스와이프 제스처 속도'],['lock','잠금화면','잠금화면 미리보기 · 시계 스타일','lock','#5a7cff','#2c45c0','비밀번호 패턴 시계 알림 미리보기 잠금 해제 잠금화면']],
  [['sec','보안 및 개인정보 보호','생체 인식 · 앱 권한','shield','#3aa0ff','#1a62c4','지문 얼굴 권한'],['loc','위치','위치 요청 · 위치 서비스','pin','#2fc2a8','#168c78','GPS'],['sos','안전 및 긴급','긴급 연락처 · 긴급 SOS','alert','#ff5a5a','#c62828','응급 119']],
  [['acct','계정 및 백업','계정 관리 · 백업 및 복원','sync','#2fb4d9','#167a99','클라우드']],
  [['adv','유용한 기능','두 번 눌러 화면 끄기 · 한 손 모드','sparkle','#ffb340','#e07b00','편의 화면 끄기 더블탭 톡톡 두번 두 번 잠금 끄기'],['well','디지털 웰빙','사용 시간 · 자녀 보호','leaf','#4cc46a','#258a3f','시간 수면'],['apps','애플리케이션','기본 앱 · 앱 설정','grid','#6f7dff','#3d48cc','앱 어플']],
@@ -2265,6 +2291,7 @@ function buildPage(id){
      add(sCard(infoRow('내비게이션 바',navSummary(),()=>settingsPush('navbar'))));
      add(sCard(swRow('가벼운 모드',(NOGL?'그래픽 가속을 못 써서 평면 화면으로 보여요':'모래알 수와 화면 해상도를 줄여 느린 폰에서도 부드럽게')+(LITE&&LITE_WHY?` · 지금 켜짐 (${LITE_WHY})`:''),LITE,false,on=>{S.lite=on?'on':'off';saveS();setLite(on||NOGL,on?'직접 켬':'');toast(on?'가벼운 모드 켜짐':'가벼운 모드 꺼짐')})));break}
    case 'navbar':buildNavbarPage(add);break;
+   case 'lock':buildLockPage(add);break;
    case 'adv':{add(sCard(swRow('두 번 눌러 화면 끄기','홈 화면 빈 곳을 톡톡 두 번 누르면 화면이 꺼져요',S.dt2off!==false,false,on=>{S.dt2off=on;saveS();toast(on?'두 번 톡톡 화면 끄기 켜짐':'두 번 톡톡 화면 끄기 꺼짐')})));
      if(NATIVE&&NVNative.lockEnabled)add(sCard(infoRow('화면 끄기 권한 (접근성)',NVNative.lockEnabled()?'켜져 있어요 · 화면 끄기에만 사용':'꺼져 있어요 · 눌러서 켜기',()=>NVNative.openA11y())));
      add(mk('div','note',NATIVE?'아이콘·독·아래 단추가 없는 빈 곳을 두 번 눌러요. 처음 한 번은 안드로이드 접근성에서 ‘뉴니버스 화면 끄기’를 켜야 해요.':'아이콘·독·아래 단추가 없는 빈 곳을 두 번 눌러요. 웹 시제품에서는 검게 어두워지는 연출만 하고, 한 번 누르면 다시 켜져요.'));
@@ -2272,7 +2299,9 @@ function buildPage(id){
    case 'batt':{const big=mk('div','big','…');const sm=mk('div','note','배터리 정보를 읽는 중');add(sCard(big,sm,qpSync('save','절전 모드')));
      if(navigator.getBattery)navigator.getBattery().then(B=>{big.textContent=Math.round(B.level*100)+'%';sm.textContent=(B.charging?'충전 중':'배터리 사용 중')+' · 이 폰의 실제 값'}).catch(()=>{big.textContent='—';sm.textContent='이 브라우저에서는 배터리 값을 읽을 수 없어요'});
      else{big.textContent='—';sm.textContent='이 브라우저에서는 배터리 값을 읽을 수 없어요'}break}
-   case 'wall':add(sCard(mk('div','ctl'))).firstChild.append(mvRow('wpSeg'),mvRow('mePick'));break;
+   case 'wall':{add(sCard(mk('div','ctl'))).firstChild.append(mvRow('wpSeg'),mvRow('mePick'));
+     const br=mk('div','btnrow','<button>🔒 잠금화면에도 적용</button>');br.firstChild.onclick=()=>openLockWp();add(br);
+     add(mk('div','note',NATIVE?'지금 고른 배경(내 사진 합성 포함)을 멈춘 그림으로 만들어 폰 잠금화면 배경으로 넣어요. 홈 화면은 그대로예요.':'시제품: 실제 폰 앱에서 적용돼요. 누르면 잠금화면에 들어갈 모습을 미리 볼 수 있어요.'));break}
    case 'theme':add(sCard(mk('div','ctl'))).firstChild.append(mvRow('uiSeg'),mvRow('icSeg'));add(mk('div','note','UI 스타일은 홈 화면 배치, 아이콘 모양은 앱 그림을 바꿔요. ‘UI 스타일에 맞추기’면 스타일마다 어울리는 아이콘이 자동으로 골라져요.'));break;
    case 'home':add(sCard(mk('div','ctl'))).firstChild.append(mvRow('sStar'));
      add(sCard(infoRow('← 옆으로 밀기','다음 화면 (모래바람 전환)'),infoRow('↓ 위에서 아래로','빠른 설정 판'),infoRow('↑ 아래에서 위로','전체 앱'),swRow('밀어서 넘기기 진동','넘어갈 때 톡 하고 알려줌',true,true)));
@@ -2298,6 +2327,8 @@ function buildMain(){
   {const c=mk('div','card');c.dataset.g=1;const i={n:'내비게이션 바',sub:'디스플레이 › 내비게이션 바',key:'§disp',c1:'#48c774',c2:'#2a9550'};const r=mk('div','it',`<img alt="" src="${setImg(i)}"><div><b>${i.n}</b><small>${i.sub}</small></div>`);r.dataset.k='내비게이션 바 네비게이션 내비 navigation 버튼 제스처 뒤로 홈 최근 스와이프';r.dataset.id='disp';r.dataset.so=1;r.onclick=()=>{settingsPush('disp');setTimeout(()=>settingsPush('navbar'),60)};c.appendChild(r);
    const i2={n:'두 번 눌러 화면 끄기',sub:'유용한 기능 › 두 번 눌러 화면 끄기',key:'§adv',c1:'#ffb340',c2:'#e07b00'};const r2=mk('div','it',`<img alt="" src="${setImg(i2)}"><div><b>${i2.n}</b><small>${i2.sub}</small></div>`);r2.dataset.k='두 번 눌러 화면 끄기 화면 끄기 더블탭 톡톡 두번 잠금';r2.dataset.id='adv';r2.dataset.so=1;r2.onclick=()=>settingsPush('adv');c.appendChild(r2);
    const i3={n:'가벼운 모드',sub:'디스플레이 › 가벼운 모드',key:'§disp',c1:'#48c774',c2:'#2a9550'};const r3=mk('div','it',`<img alt="" src="${setImg(i3)}"><div><b>${i3.n}</b><small>${i3.sub}</small></div>`);r3.dataset.k='가벼운 모드 절전 성능 느림 버벅 모래알';r3.dataset.id='disp';r3.dataset.so=1;r3.onclick=()=>settingsPush('disp');c.appendChild(r3);
+   const i4={n:'잠금화면에도 적용',sub:'배경화면 및 스타일 › 잠금화면에도 적용',key:'§wall',c1:'#ff6fa0',c2:'#d6336c'};const r4=mk('div','it',`<img alt="" src="${setImg(i4)}"><div><b>${i4.n}</b><small>${i4.sub}</small></div>`);r4.dataset.k='잠금화면에도 적용 잠금화면 배경 배경화면 적용';r4.dataset.id='wall';r4.dataset.so=1;r4.onclick=()=>settingsPush('wall');c.appendChild(r4);
+   const i5={n:'잠금화면 미리보기',sub:'잠금화면 › 잠금화면 미리보기',key:'§lock',c1:'#5a7cff',c2:'#2c45c0'};const r5=mk('div','it',`<img alt="" src="${setImg(i5)}"><div><b>${i5.n}</b><small>${i5.sub}</small></div>`);r5.dataset.k='잠금화면 미리보기 시계 스타일 잠금 해제';r5.dataset.id='lock';r5.dataset.so=1;r5.onclick=()=>settingsPush('lock');c.appendChild(r5);
    c.style.display='none';sc.appendChild(c)}
   sc.appendChild(mk('div','empty','찾는 설정이 없어요'));sc.lastChild.style.display='none';
   const sb=mk('div','search','<span>🔍</span><input type="search" placeholder="설정 검색 (예: 밝기, 글자)" aria-label="설정 검색">');pg.appendChild(sb);
@@ -2333,6 +2364,198 @@ SETEL.addEventListener('pointerdown',e=>e.stopPropagation());
 // 입력창에 글자를 넣을 때 폰 화면 전체가 위로 밀려 올라가지 않도록 고정
 [phone,document.scrollingElement||document.documentElement].forEach(n=>n.addEventListener('scroll',()=>{if(n.scrollTop||n.scrollLeft){n.scrollTop=0;n.scrollLeft=0}},{passive:true}));
 if(S.fs&&S.fs!==1){SETEL.style.setProperty('--fs',S.fs);phone.style.setProperty('--fs',S.fs)}
+// ===================== v20 뉴니버스 잠금화면 (시제품) =====================
+const LOCK_STYLES={glass:'얇은 유리',stack:'세로 쌓기',orbit:'궤도 링'};
+const LK=$('lock'),LCV=$('lockcv'),LFX=$('lockfx'),LHINT=$('lockhint');
+let lockOn=false,lockBusy=false,lockTimer=0,lockHits=[],lockLastMin=-1;
+const LNOTI=[['카카오톡','엄마','저녁 먹고 들어와~ 🍚','2분 전'],['캘린더','오늘 오후 3:00','뉴니버스 디자인 리뷰','1시간 전'],['날씨','서울 · 맑음 12°','미세먼지 좋음 · 산책하기 좋은 날','오전 8:00']];
+function lockOpen(){return lockOn}
+function rr(c,x,y,w,h,r){c.beginPath();c.roundRect?c.roundRect(x,y,w,h,r):c.rect(x,y,w,h)}
+function lockIcon(c,name,cx,cy,s){const a=findApp(name);if(a&&setIconAt(c,a,cx,cy,s))return;if(a){c.save();drawIcon(c,a,cx-s/2,cy-s/2,s);c.restore()}}
+function drawLock(c,w,h,st,opt={}){
+  const np=nowParts(),n=new Date(),hh=String(n.getHours()).padStart(2,'0'),mm=String(n.getMinutes()).padStart(2,'0');
+  const glow=(col,b)=>{c.shadowColor=col;c.shadowBlur=b};
+  lockHits=[];let ny;
+  c.save();
+  if(st==='stack'){
+    txt(c,np.date,w/2,86,{size:19,w:600,sb:8});
+    const g=c.createLinearGradient(0,108,0,108+290);g.addColorStop(0,'#ffffff');g.addColorStop(1,'#c9b8ff');
+    c.font=`800 150px ${FONT}`;c.textAlign='center';c.textBaseline='top';glow('rgba(150,120,255,.55)',26);c.fillStyle=g;
+    c.fillText(hh,w/2,104);c.fillText(mm,w/2,104+136);c.shadowBlur=0;
+    ny=410;
+  }else if(st==='orbit'){
+    const cx=w/2,cy=220,R=Math.min(118,w*.31),sec=n.getSeconds()+n.getMilliseconds()/1000;
+    c.lineWidth=1.5;c.strokeStyle='rgba(255,255,255,.28)';c.beginPath();c.arc(cx,cy,R,0,Math.PI*2);c.stroke();
+    c.lineWidth=1;c.strokeStyle='rgba(255,255,255,.12)';c.beginPath();c.arc(cx,cy,R+14,0,Math.PI*2);c.stroke();
+    const a0=-Math.PI/2,a1=a0+Math.PI*2*(sec/60);const ag=c.createLinearGradient(cx-R,cy-R,cx+R,cy+R);ag.addColorStop(0,'#8f7bff');ag.addColorStop(1,'#4fc3f7');
+    c.lineWidth=3;c.lineCap='round';c.strokeStyle=ag;glow('rgba(120,160,255,.8)',12);c.beginPath();c.arc(cx,cy,R,a0,a1);c.stroke();
+    c.fillStyle='#fff';c.beginPath();c.arc(cx+Math.cos(a1)*R,cy+Math.sin(a1)*R,5,0,Math.PI*2);c.fill();
+    const mAng=a0+Math.PI*2*(n.getMinutes()/60);c.fillStyle='rgba(255,213,154,.95)';glow('rgba(255,190,120,.9)',10);c.beginPath();c.arc(cx+Math.cos(mAng)*(R+14),cy+Math.sin(mAng)*(R+14),3.5,0,Math.PI*2);c.fill();c.shadowBlur=0;
+    txt(c,`${hh}:${mm}`,cx,cy-38,{size:72,w:250,sb:10});
+    txt(c,np.date,cx,cy+R+30,{size:18,w:600,sb:8});
+    ny=cy+R+74;
+  }else{
+    txt(c,np.date,w/2,92,{size:19,w:600,sb:8});
+    c.font=`200 112px ${FONT}`;c.textAlign='center';c.textBaseline='top';glow('rgba(140,170,255,.45)',22);c.fillStyle='#fff';c.fillText(`${hh}:${mm}`,w/2,112);c.shadowBlur=0;
+    txt(c,'☀ 서울 12° · 맑음',w/2,252,{size:15,w:500,color:'rgba(255,255,255,.85)'});
+    ny=300;
+  }
+  // 알림 미리보기 (예시)
+  if(S.lockNoti!==false&&!opt.noNoti){
+    const cw=w-36,chh=66,x=18;
+    LNOTI.forEach(([app,t1,t2,tm],i)=>{const y=ny+i*(chh+10);if(y+chh>h-150)return;
+      c.save();rr(c,x,y,cw,chh,22);c.fillStyle='rgba(18,14,40,.42)';c.fill();c.lineWidth=1;c.strokeStyle='rgba(255,255,255,.16)';c.stroke();
+      const sh=c.createLinearGradient(0,y,0,y+chh);sh.addColorStop(0,'rgba(255,255,255,.10)');sh.addColorStop(1,'rgba(255,255,255,0)');c.fillStyle=sh;rr(c,x,y,cw,chh,22);c.fill();c.restore();
+      lockIcon(c,app,x+30,y+chh/2,34);
+      txt(c,app+' · '+t1,x+56,y+13,{size:13,w:700,align:'left',shadow:false,color:'rgba(255,255,255,.95)'});
+      txt(c,tm,x+cw-14,y+13,{size:12,w:500,align:'right',shadow:false,color:'rgba(255,255,255,.6)'});
+      txt(c,t2,x+56,y+35,{size:14,w:500,align:'left',shadow:false,color:'rgba(255,255,255,.85)'});
+      lockHits.push({x,y,w:cw,h:chh,k:'noti',app});});
+  }
+  // 아래 바로가기: 전화 · 카메라
+  const by=h-84;[['전화',52],['카메라',w-52]].forEach(([nm,bx])=>{
+    c.save();c.beginPath();c.arc(bx,by,29,0,Math.PI*2);c.fillStyle='rgba(255,255,255,.12)';c.fill();c.lineWidth=1;c.strokeStyle='rgba(255,255,255,.25)';c.stroke();c.restore();
+    lockIcon(c,nm,bx,by,40);lockHits.push({x:bx-32,y:by-32,w:64,h:64,k:'app',app:nm});});
+  c.restore();
+}
+function lockSize(){const d=Math.min(DPR,2);if(LCV.width!==Math.round(W*d)||LCV.height!==Math.round(H*d)){LCV.width=Math.round(W*d);LCV.height=Math.round(H*d)}return d}
+function renderLock(){const d=lockSize(),c=LCV.getContext('2d');c.setTransform(d,0,0,d,0,0);c.clearRect(0,0,W,H);
+  // 글자가 배경 위에서 잘 보이도록 위·아래 은은한 그늘
+  const g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,'rgba(5,4,16,.38)');g.addColorStop(.45,'rgba(5,4,16,.05)');g.addColorStop(.8,'rgba(5,4,16,.08)');g.addColorStop(1,'rgba(5,4,16,.45)');c.fillStyle=g;c.fillRect(0,0,W,H);
+  drawLock(c,W,H,S.lockStyle||'glass')}
+function lockTick(){if(!lockOn||lockBusy)return;const n=new Date();if((S.lockStyle||'glass')==='orbit'||n.getMinutes()!==lockLastMin){lockLastMin=n.getMinutes();renderLock()}}
+function showLock(){
+  if(lockOn)return;
+  try{if(qpOpen()||qpP>0)closeQP()}catch(_){}try{if(drOpen())closeDR()}catch(_){}try{closeFolder()}catch(_){}try{closeRecents()}catch(_){}
+  if($('settings').classList.contains('open'))closeSettings();
+  lockOn=true;lockBusy=false;lockLastMin=-1;
+  LCV.style.transition='none';LCV.style.transform='';LCV.style.opacity=1;LCV.style.filter='';LFX.style.display='none';LHINT.style.opacity='';
+  renderLock();LK.style.display='block';phone.classList.remove('unlocking');phone.classList.add('locked');
+  clearInterval(lockTimer);lockTimer=setInterval(lockTick,(S.lockStyle||'glass')==='orbit'?250:1000);
+}
+function finishUnlock(){lockOn=false;lockBusy=false;clearInterval(lockTimer);LK.style.display='none';LFX.style.display='none';setTimeout(()=>phone.classList.remove('unlocking'),900)}
+// 잠금 해제: 잠금화면 그림을 모래알로 쪼개 위로 흩날리며 홈이 드러남(약 1.7초)
+let LG=null,LGP=null,LGB=null;
+function lockGL(){if(LG!==null)return LG;try{const g=LFX.getContext('webgl',{alpha:true,premultipliedAlpha:true,antialias:false});if(!g){LG=false;return LG}
+  const vs=`attribute vec2 a_p;attribute vec4 a_c;attribute vec3 a_r;uniform vec2 u_res;uniform float u_t,u_ps,u_dy;varying vec4 v_c;
+  void main(){vec2 p=a_p+vec2(0.0,u_dy);float yn=p.y/u_res.y;
+    float delay=(1.0-yn)*0.32+a_r.x*0.16;float k=clamp((u_t*1.06-delay)/0.56,0.0,1.0);float e=k*k*(3.0-2.0*k);
+    float sw=sin(a_r.z*6.2832+yn*9.0+u_t*4.0);
+    vec2 off=vec2((a_r.y-0.4)*u_res.x*0.32*e+sw*0.05*u_res.x*e,-u_res.y*(0.16+0.34*a_r.y)*e*e-0.04*u_res.y*e);
+    vec2 q=p+off;gl_Position=vec4(q.x/u_res.x*2.0-1.0,1.0-q.y/u_res.y*2.0,0.0,1.0);
+    gl_PointSize=u_ps*(1.0+0.9*e*a_r.z);
+    vec3 sand=vec3(1.0,0.84,0.62)*(0.55+0.5*dot(a_c.rgb,vec3(0.33)));
+    float al=a_c.a*(1.0-e)*(1.0-0.3*e);v_c=vec4(mix(a_c.rgb,sand,0.6*smoothstep(0.0,0.5,e))*al,al);}`;
+  const fs=`precision mediump float;varying vec4 v_c;void main(){vec2 d=gl_PointCoord-0.5;float r=dot(d,d);if(r>0.25)discard;float s=1.0-smoothstep(0.10,0.25,r);gl_FragColor=v_c*s;}`;
+  const sh=(t,src)=>{const s=g.createShader(t);g.shaderSource(s,src);g.compileShader(s);if(!g.getShaderParameter(s,g.COMPILE_STATUS))throw g.getShaderInfoLog(s);return s};
+  const p=g.createProgram();g.attachShader(p,sh(g.VERTEX_SHADER,vs));g.attachShader(p,sh(g.FRAGMENT_SHADER,fs));g.linkProgram(p);if(!g.getProgramParameter(p,g.LINK_STATUS))throw g.getProgramInfoLog(p);
+  LGP=p;LGB=g.createBuffer();LG=g}catch(e){console.warn('lockgl',e);LG=false}return LG}
+let lockAnim=null;
+function unlockSand(dy0){
+  if(!lockOn||lockBusy)return;lockBusy=true;clearInterval(lockTimer);
+  phone.classList.add('unlocking');phone.classList.remove('locked');
+  LHINT.style.opacity=0;
+  const g=NOGL?false:lockGL();
+  if(!g){LCV.style.transition='transform .9s cubic-bezier(.3,.6,.3,1),opacity .9s,filter .9s';LCV.style.transform='translateY(-28%)';LCV.style.opacity=0;LCV.style.filter='blur(6px)';setTimeout(finishUnlock,950);return}
+  const d=LCV.width/W,cw=LCV.width,chh=LCV.height,data=LCV.getContext('2d').getImageData(0,0,cw,chh).data;
+  const cap=LITE?9000:26000;let step=Math.max(2,Math.round(2*d)),n=0;
+  for(;;){n=0;for(let y=step>>1;y<chh;y+=step)for(let x=step>>1;x<cw;x+=step)if(data[(y*cw+x)*4+3]>60&&(data[(y*cw+x)*4]+data[(y*cw+x)*4+1]+data[(y*cw+x)*4+2])>90)n++;if(n<=cap||step>=14)break;step++}
+  const arr=new Float32Array(Math.min(n,cap+50)*9);let k=0;
+  for(let y=step>>1;y<chh&&k<arr.length;y+=step)for(let x=step>>1;x<cw&&k<arr.length;x+=step){const o=(y*cw+x)*4;if(data[o+3]>60&&(data[o]+data[o+1]+data[o+2])>90){
+    arr[k++]=x;arr[k++]=y;arr[k++]=data[o]/255;arr[k++]=data[o+1]/255;arr[k++]=data[o+2]/255;arr[k++]=data[o+3]/255;arr[k++]=Math.random();arr[k++]=Math.random();arr[k++]=Math.random()}}
+  const N=k/9;
+  LFX.width=cw;LFX.height=chh;LFX.style.display='block';LCV.style.transition='none';LCV.style.opacity=0;
+  g.bindBuffer(g.ARRAY_BUFFER,LGB);g.bufferData(g.ARRAY_BUFFER,arr.subarray(0,k),g.STATIC_DRAW);
+  const L=(nm)=>g.getAttribLocation(LGP,nm),U=(nm)=>g.getUniformLocation(LGP,nm);
+  const t0=performance.now(),D=1700,dy=(dy0||0)*d;
+  const frame=()=>{const t=Math.min(1,(performance.now()-t0)/D);
+    g.viewport(0,0,cw,chh);g.clearColor(0,0,0,0);g.clear(g.COLOR_BUFFER_BIT);g.enable(g.BLEND);g.blendFunc(g.ONE,g.ONE_MINUS_SRC_ALPHA);g.useProgram(LGP);
+    g.bindBuffer(g.ARRAY_BUFFER,LGB);const a=L('a_p'),b=L('a_c'),r=L('a_r');g.enableVertexAttribArray(a);g.enableVertexAttribArray(b);g.enableVertexAttribArray(r);
+    g.vertexAttribPointer(a,2,g.FLOAT,false,36,0);g.vertexAttribPointer(b,4,g.FLOAT,false,36,8);g.vertexAttribPointer(r,3,g.FLOAT,false,36,24);
+    g.uniform2f(U('u_res'),cw,chh);g.uniform1f(U('u_t'),t);g.uniform1f(U('u_ps'),step*1.2);g.uniform1f(U('u_dy'),dy*(1-t));
+    g.drawArrays(g.POINTS,0,N);
+    if(t<1){lockAnim=requestAnimationFrame(frame)}else{lockAnim=null;finishUnlock()}};
+  window.__lockN=N;frame();
+}
+// 잠금화면 손가락 처리: 위로 쓸면 따라 올라가다 놓으면 해제, 짧게 누르면 바로가기·알림
+let ld=null;
+LK.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();if(lockBusy)return;LK.setPointerCapture(e.pointerId);ld={id:e.pointerId,y:e.clientY,x:e.clientX,t:e.timeStamp,vy:0,ly:e.clientY,lt:e.timeStamp,m:false};LCV.style.transition='none'});
+LK.addEventListener('pointermove',e=>{if(!ld||e.pointerId!==ld.id)return;const dy=e.clientY-ld.y;if(Math.abs(dy)>8||Math.abs(e.clientX-ld.x)>8)ld.m=true;
+  const dt=e.timeStamp-ld.lt;if(dt>0){ld.vy=.7*ld.vy+.3*((e.clientY-ld.ly)/dt)}ld.ly=e.clientY;ld.lt=e.timeStamp;
+  const up=Math.min(0,dy)*.55;LCV.style.transform=`translateY(${up}px)`;LCV.style.opacity=1-Math.min(.35,-up/500);LHINT.style.opacity=Math.max(0,1+up/80)});
+function lkUp(e){if(!ld||e.pointerId!==ld.id)return;const dy=e.clientY-ld.y,m=ld.m,vy=ld.vy;ld=null;
+  if(!m){const r=phone.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;const h=lockHits.find(o=>x>=o.x&&x<=o.x+o.w&&y>=o.y&&y<=o.y+o.h);
+    if(h&&h.k==='app'){if(NATIVE){lockOn=false;finishUnlock();phone.classList.remove('locked');openApp(findApp(h.app))}else toast(`시제품 · 잠금화면에서 ${h.app} 앱이 바로 열려요`)}
+    else if(h&&h.k==='noti')toast(`${h.app} 알림 · 잠금을 풀면 볼 수 있어요 (예시)`);
+    else toast('위로 쓸어 올리면 잠금이 풀려요');return}
+  if(dy<-90||(vy<-.5&&dy<-30))unlockSand(Math.min(0,dy)*.55);
+  else{LCV.style.transition='transform .3s,opacity .3s';LCV.style.transform='';LCV.style.opacity=1;LHINT.style.opacity=''}}
+LK.addEventListener('pointerup',lkUp);LK.addEventListener('pointercancel',lkUp);
+// 빠른 설정에 잠금 단추
+{const lb=document.createElement('button');lb.className='qset';lb.id='qLock';lb.setAttribute('aria-label','잠금화면');lb.innerHTML='<span class="g">🔒</span><span>잠금</span>';lb.style.marginRight='8px';
+  lb.onclick=e=>{e.stopPropagation();closeQP();setTimeout(showLock,180)};
+  const qs=$('qSet');let wrap=qs.parentNode;if(wrap.classList.contains('qtop')){wrap=document.createElement('div');wrap.style.display='flex';qs.parentNode.insertBefore(wrap,qs);wrap.appendChild(qs)}
+  wrap.insertBefore(lb,wrap.firstChild)}
+// ---------- 지금 배경을 정지 이미지로 (잠금화면 배경용) ----------
+function loadImg(src){return new Promise(res=>{const im=new Image();im.onload=()=>res(im);im.onerror=()=>res(null);im.src=src})}
+function coverDraw(x,im,ow,oh,iw,ih){if(!im)return;iw=iw||im.naturalWidth||im.width;ih=ih||im.naturalHeight||im.height;if(!iw||!ih)return;const s=Math.max(ow/iw,oh/ih),w=iw*s,h=ih*s;x.drawImage(im,(ow-w)/2,(oh-h)/2,w,h)}
+function cssGrad(x,css,ow,oh){const m=css.match(/linear-gradient\(\s*([\d.]+)deg\s*,(.*)\)\s*$/i);const cols=(css.match(/#[0-9a-f]{3,8}(\s+[\d.]+%)?/gi)||[]);
+  const a=((m?+m[1]:180)-90)*Math.PI/180,L=Math.abs(ow*Math.cos(a))+Math.abs(oh*Math.sin(a));const cx=ow/2,cy=oh/2,dx=Math.cos(a)*L/2,dy=Math.sin(a)*L/2;
+  const g=x.createLinearGradient(cx-dx,cy-dy,cx+dx,cy+dy);cols.forEach((s,i)=>{const p=s.match(/([\d.]+)%/);g.addColorStop(p?Math.min(1,+p[1]/100):i/Math.max(1,cols.length-1),s.split(/\s+/)[0])});x.fillStyle=cols.length?g:'#1a1238';x.fillRect(0,0,ow,oh)}
+async function renderStill(ow){
+  const oh=Math.round(ow*H/W),cv2=document.createElement('canvas');cv2.width=ow;cv2.height=oh;const x=cv2.getContext('2d');
+  x.fillStyle='#0b0a1c';x.fillRect(0,0,ow,oh);const w=curWp();
+  if(w.type==='live'){const ok=await new Promise(res=>{snapReq=src=>{try{x.drawImage(src,0,0,ow,oh)}catch(_){}res(true)};setTimeout(()=>{if(snapReq){snapReq=null;res(false)}},1500)});
+    if(!ok)try{x.drawImage($('bg'),0,0,ow,oh)}catch(_){}
+    if(w.scene==='space'&&dunecv.style.display!=='none')try{x.drawImage(dunecv,0,0,ow,oh)}catch(_){}}
+  else if(w.type==='css')cssGrad(x,w.css,ow,oh);
+  else if(w.type==='image')coverDraw(x,await loadImg(w.src),ow,oh);
+  else if(w.type==='video'){if(wpVideo&&wpVideo.readyState>=2)coverDraw(x,wpVideo,ow,oh,wpVideo.videoWidth,wpVideo.videoHeight);else if(w.poster)coverDraw(x,await loadImg(w.poster),ow,oh)}
+  if(ME&&meImg.complete&&meImg.naturalWidth){const sc=ow/W,mw=ME.s*W*sc,mh=mw/ME.ar,mx=ME.x*W*sc-mw/2,my=ME.y*H*sc-mh/2;
+    const gr=x.createRadialGradient(mx+mw/2,my+mh*.98,1,mx+mw/2,my+mh*.98,mw*.45);gr.addColorStop(0,tone.sh);gr.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=gr;x.fillRect(mx,my+mh*.9,mw,mh*.16);
+    x.save();x.filter=`brightness(${tone.b}) saturate(${tone.sat})`;x.drawImage(meImg,mx,my,mw,mh);x.restore();
+    const t=document.createElement('canvas');t.width=Math.max(1,Math.round(mw));t.height=Math.max(1,Math.round(mh));const tx=t.getContext('2d');tx.drawImage(meImg,0,0,t.width,t.height);tx.globalCompositeOperation='source-in';tx.fillStyle=tone.c;tx.fillRect(0,0,t.width,t.height);
+    x.save();x.globalAlpha=tone.k;x.globalCompositeOperation='soft-light';x.drawImage(t,mx,my,mw,mh);x.restore()}
+  return cv2;
+}
+// 잠금화면에도 적용: 미리보기 창
+const LWP=$('lwp');
+async function openLockWp(){
+  LWP.style.display='flex';void LWP.offsetWidth;LWP.classList.add('on');
+  const box=LWP.querySelector('.pv');box.innerHTML='<div class="ld">배경을 그리는 중…</div>';
+  LWP.querySelector('.nt').innerHTML=NATIVE?'지금 고른 배경 <b>「'+curWp().name+'」</b>'+(ME?' + 내 사진':'')+'을 멈춘 그림으로 만들어 <b>폰 잠금화면</b>에 넣어요. 홈 화면 배경은 그대로예요.':'<b>시제품: 실제 폰 앱에서 적용돼요.</b><br>지금 고른 배경 「'+curWp().name+'」'+(ME?' + 내 사진':'')+'이 잠금화면에 이렇게 들어가요.';
+  const cv2=await renderStill(360);cv2.className='img';const ov=document.createElement('canvas');ov.className='img';ov.width=360;ov.height=cv2.height;
+  {const c=ov.getContext('2d'),s=360/W;c.scale(s,s);const n=new Date();c.font=`300 74px ${FONT}`;c.textAlign='center';c.textBaseline='top';c.fillStyle='rgba(255,255,255,.92)';c.shadowColor='rgba(0,0,0,.5)';c.shadowBlur=10;c.fillText(`${n.getHours()}:${String(n.getMinutes()).padStart(2,'0')}`,W/2,120);c.font=`600 18px ${FONT}`;c.fillText(nowParts().date,W/2,96)}
+  box.innerHTML='';box.append(cv2,ov);const tag=document.createElement('div');tag.className='tag';tag.textContent='잠금화면 미리보기';box.appendChild(tag);
+}
+function closeLockWp(){LWP.classList.remove('on');setTimeout(()=>{if(!LWP.classList.contains('on'))LWP.style.display='none'},250)}
+LWP.addEventListener('pointerdown',e=>e.stopPropagation());
+LWP.querySelector('.no').onclick=closeLockWp;
+LWP.querySelector('.go').onclick=async()=>{
+  if(!NATIVE||!NVNative.setLockWallpaper){toast('시제품이에요 · 실제 폰 앱에서 잠금화면에 적용돼요');return}
+  toast('잠금화면 배경을 만드는 중이에요…');
+  try{let ow=1080;try{ow=Math.min(1440,Math.max(720,NVNative.screenW()))}catch(_){}
+    const cv2=await renderStill(ow);NVNative.setLockWallpaper(cv2.toDataURL('image/jpeg',.92))}catch(e){toast('잠금화면 배경을 만들지 못했어요')}};
+window.NV_onLockWp=(ok,msg)=>{if(ok){closeLockWp();toast('잠금화면 배경을 바꿨어요! 화면을 껐다 켜 보세요')}else toast('잠금화면 배경을 바꾸지 못했어요'+(msg?` (${msg})`:''))};
+// 잠금화면 설정 화면
+function buildLockPage(add){
+  add(sCard(infoRow('잠금화면 미리보기','뉴니버스 잠금화면 시안 보기 · 위로 쓸어 올려 풀기',()=>showLock())));
+  add(mk('div','note','시계 스타일'));
+  const row=mk('div','card');row.style.cssText+='display:flex;gap:10px;padding:12px;justify-content:space-between';
+  Object.entries(LOCK_STYLES).forEach(([k,nm])=>{const b=mk('button','lst');b.dataset.v=k;b.style.cssText='flex:1;background:none;border:0;padding:0;color:inherit;font:inherit';
+    const cv2=document.createElement('canvas');const tw=96,th=Math.round(tw*H/W);cv2.width=tw*2;cv2.height=th*2;cv2.style.cssText=`width:100%;aspect-ratio:${W}/${H};border-radius:14px;display:block;background:radial-gradient(120% 90% at 60% 20%,#5b3aa8,#1a1238 60%,#0b0a1c);border:2px solid transparent`;
+    const c=cv2.getContext('2d');c.scale(tw*2/W,tw*2/W);drawLock(c,W,H,k,{noNoti:false});
+    b.appendChild(cv2);b.appendChild(mk('div',null,`<small style="display:block;margin-top:6px;font-size:13px;text-align:center">${nm}</small>`));
+    b.onclick=()=>{S.lockStyle=k;saveS();sync();toast(`시계 스타일: ${nm}`)};row.appendChild(b)});
+  const sync=()=>[...row.children].forEach(b=>{b.querySelector('canvas').style.borderColor=b.dataset.v===(S.lockStyle||'glass')?'#ffd59a':'transparent'});sync();
+  add(row);
+  add(sCard(swRow('알림 미리보기','잠금화면에 알림 몇 개 보여주기 (예시)',S.lockNoti!==false,false,on=>{S.lockNoti=on;saveS();toast(on?'알림 미리보기 켜짐':'알림 미리보기 꺼짐')}),
+    swRow('화면 켤 때 뉴니버스 잠금화면',NATIVE?'폰 앱에서는 안드로이드 잠금화면이 먼저 나와요 (시제품)':'두 번 톡톡으로 끈 화면을 다시 켜면 잠금화면부터',S.lockOnWake!==false,false,on=>{S.lockOnWake=on;saveS();toast(on?'켜짐':'꺼짐')}),
+    infoRow('잠금화면 배경','배경화면 및 스타일 › 잠금화면에도 적용',()=>settingsPush('wall'))));
+  add(sCard((PROTO.lock||[]).filter(x=>x[0]!=='잠금화면 시계').map(([l,s2,on])=>on==null?infoRow(l,s2+' · 시제품'):swRow(l,s2,on,true))));
+}
+window.__nv.lock={show:showLock,unlock:unlockSand,open:lockOpen,still:renderStill,lockWp:openLockWp,closeLockWp,hits:()=>lockHits,style:v=>{S.lockStyle=v;if(lockOn)renderLock()}};
+
 window.__nv.settings={open:openSettings,push:settingsPush,back:settingsBack,depth:()=>sStack.length};
 window.__nv.iconSheet=(names,sets0,T0)=>{const sets=sets0||['basic','orb','pebble','seal'],T=T0||['기본','궤도 행성','모래 조약돌','한지 도장'],apps=names.map(findApp).filter(Boolean),cs=92,lw=150;
   const cv=document.createElement('canvas'),d=2,Wd=lw+apps.length*cs,Hd=60+sets.length*(cs+20);cv.width=Wd*d;cv.height=Hd*d;const c=cv.getContext('2d');c.scale(d,d);
