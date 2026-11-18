@@ -106,6 +106,10 @@ public class MainActivity extends Activity {
   }
   @Override public void onWindowFocusChanged(boolean h){ super.onWindowFocusChanged(h); if(h) applyBars(); }
   @Override protected void onResume(){ super.onResume(); applyBars(); js("window.NV_onResume&&NV_onResume()"); }
+  @Override protected void onPause(){ super.onPause(); js("window.NV_onPause&&NV_onPause()"); }
+  static final int REQ_LOC=7301;
+  @Override public void onRequestPermissionsResult(int req,String[] p,int[] g){ super.onRequestPermissionsResult(req,p,g);
+    if(req==REQ_LOC) js("window.NV_onBusPerm&&NV_onBusPerm('"+BusInfo.perm(this)+"')"); }
 
   @Override protected void onNewIntent(Intent i){ super.onNewIntent(i);
     if(Intent.ACTION_MAIN.equals(i.getAction())&&i.hasCategory(Intent.CATEGORY_HOME)) js("window.NV_onHome&&NV_onHome()"); }
@@ -185,6 +189,13 @@ public class MainActivity extends Activity {
     }catch(Throwable e){}
   }
   class Bridge {
+    // v28 가까운 정류장 버스 도착
+    @JavascriptInterface public String busPerm(){ return BusInfo.perm(MainActivity.this); }
+    @JavascriptInterface public void busAskPerm(){ ui.post(()->{ try{ requestPermissions(new String[]{BusInfo.FINE,BusInfo.COARSE},REQ_LOC);}catch(Exception e){ js("window.NV_onBusPerm&&NV_onBusPerm('none')"); } }); }
+    @JavascriptInterface public String busKeyInfo(){ return BusInfo.keyInfo(MainActivity.this); }
+    @JavascriptInterface public void busKeySet(String k){ BusInfo.setKey(MainActivity.this,k); }
+    @JavascriptInterface public void busLocate(final String id){ final String sid=id.replaceAll("[^A-Za-z0-9]",""); ui.post(()->BusInfo.locate(MainActivity.this,ui,r->js("window.NV_onBusLoc&&NV_onBusLoc('"+sid+"',"+r+")"))); }
+    @JavascriptInterface public void busFetch(final String id,String op,String a,String b){ final String sid=id.replaceAll("[^A-Za-z0-9]",""); BusInfo.fetch(MainActivity.this,op,a,b,r->js("window.NV_onBusData&&NV_onBusData('"+sid+"',"+r+")")); }
     // ---------- v23 위젯 ----------
     @JavascriptInterface public String widgetProviders(){
       JSONArray arr=new JSONArray(); PackageManager pm=getPackageManager(); float d=getResources().getDisplayMetrics().density;
