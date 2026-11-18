@@ -7,7 +7,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>뉴니버스 · 모래 전환 시제품 v25</title>
+<title>뉴니버스 · 모래 전환 시제품 v26</title>
 <style>
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
   html,body{height:100%;background:#05040d;overflow:hidden;font-family:system-ui,-apple-system,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#fff;overscroll-behavior:none}
@@ -372,6 +372,8 @@
   #dkp.on{opacity:1;transform:scale(1);transition:opacity .08s ease,transform .12s ease}
   #dkp.up{opacity:0;transform:scale(1.25)}
   #phone.locked #dkp{display:none}
+  /* v26: 페이지 표시 점 없앰 */
+  #dots{display:none!important}
 </style>
 </head>
 <body>
@@ -844,7 +846,7 @@ function glass(c,x,y,w,h,r){
   c.save();rr(c,x,y,w,h,r);c.fillStyle='rgba(255,255,255,.13)';c.fill();
   c.strokeStyle='rgba(255,255,255,.22)';c.lineWidth=1;c.stroke();c.restore();
 }
-function dockTop(){return navY()-10-88}
+function dockTop(){return navY()-70}   // v26: 독을 내비게이션 바 바로 위로 (높이 64 + 간격 6)
 function safeB(){return parseFloat(getComputedStyle($('safe')).paddingBottom)||0}
 function widgetRect(){return {x:18,y:70,w:W-36,h:Math.min(190,H*.23)}}
 function gridTop(pi){
@@ -906,7 +908,7 @@ function renderPage(pi){
     (a.folder?drawFolder:drawIcon)(c,a,x,y,s);hitRects[pi].push({x,y,w:s,h:s+24,n:a.n,f:a.folder?a:null,a,slot:i,src:'page'});
   });
   const dc=dockCtx(pi);
-  const dt=dockTop(),dx=14,dw=W-28,dh=88;
+  const dt=dockTop(),dx=14,dw=W-28,dh=64;
   // v25: 독 판(가로 바)과 아이콘 틀을 없애고, 선 그림만 배경 위에 띄움
   const ds=54,DK=dockItems();DK.forEach((a,i)=>{const cx=dx+dw*(i+.5)/DK.length,x=cx-ds/2,y=dt+(dh-ds)/2;
     if(!a.ph&&!a.folder&&drawDockBare(dc,a,cx,y+ds/2,ds)){hitRects[pi].push({x,y,w:ds,h:ds,n:a.n,a,src:'dock',slot:i});return}
@@ -2133,7 +2135,7 @@ function layout(){
   buildParticles();buildDots();
   if(window.__meReady)applyMeStyle();
   renderNav();phone.dataset.ui=S.ui||'classic';
-  const dT=dockTop();const dY=uiDots!=null?uiDots:dT-22;$('dots').style.top=dY+'px';$('hint').style.top=(dY-46)+'px';
+  const dT=dockTop();const dY=uiDots!=null?uiDots:dT-22;$('dots').style.top=dY+'px';$('hint').style.top=(uiDots!=null?dY-46:dT-40)+'px';
   draw();if(typeof wPlace==='function')wPlace();
 }
 function quadDraw(tx,alpha,scale,ox){
@@ -2488,7 +2490,7 @@ $('reset').onclick=()=>{S=Object.assign({},DEF);syncUI();applyWallpaper();try{lo
 $('demo').onclick=()=>{if(anim)return;const to=cur<PAGES.length-1?cur+1:cur-1;go(to,to>cur?-1:1)};
 const QNAME=['최고','높음','보통','가벼움','아주 가벼움'];
 function qNote(){const l=qLvl(),L=QST.last;return (qMode()==='auto'?`자동 · 지금 ‘${QNAME[l]}’ 단계 · 넘길 때 속도를 보고 저절로 맞춰요`:qMode()==='smooth'?`부드러움 우선 · ‘${QNAME[l]}’ 단계 · 모래알·해상도를 낮춰 끊김을 줄여요`:'화질 우선 · 모래알을 가장 많이 써요 · 느린 폰에서는 끊길 수 있어요')+(L?` · 지난 전환 ${Math.round(1000/L.mean)}fps`:'')}
-function updateStats(){$('stats').textContent=`v25 · 품질 ${QNAME[qLvl()]} · 모래알 ${counts[cur]?counts[cur].toLocaleString('ko-KR'):0}개 · 알갱이 ${cell}px · 최근 ${Math.round(lastFps)}fps${NOGL?' · 평면 모드':LITE?' · 가벼운 모드':weak?' · 절약 모드':''}`}
+function updateStats(){$('stats').textContent=`v26 · 품질 ${QNAME[qLvl()]} · 모래알 ${counts[cur]?counts[cur].toLocaleString('ko-KR'):0}개 · 알갱이 ${cell}px · 최근 ${Math.round(lastFps)}fps${NOGL?' · 평면 모드':LITE?' · 가벼운 모드':weak?' · 절약 모드':''}`}
 function setLite(on,why){LITE=on;LITE_WHY=why||'';CAP=qCap();try{spW=0}catch(_){}layout()}
 syncUI();
 window.__nv={pose:(to,d,tt)=>{target=to;dir=d;t=tt;draw()},cur:()=>cur,hits:()=>hitRects[cur].map(h=>({x:h.x,y:h.y,w:h.w,h:h.h,n:h.n,act:h.act,f:!!h.f}))};
@@ -2561,7 +2563,7 @@ DR.addEventListener('touchcancel',()=>{if(td&&td.m)setDR(1,true);td=null});
 setQP(0);setDR(0);
 window.__nv.panel=()=>({qp:qpP,dr:drP});window.__nv.S=S;window.__nv.layout=layout;window.__nv.buildDrawer=buildDrawer;
 // ---------- 설정 화면 (삼성 설정 구성을 참고한 뉴니버스 설정) ----------
-const VER='v25';
+const VER='v26';
 Object.assign(GLY,{
  wifi:'M2.5 9a14 14 0 0 1 19 0 M5.5 12.3a9.5 9.5 0 0 1 13 0 M8.6 15.5a5 5 0 0 1 6.8 0 M12 19h.01',
  devices:'M3.5 5h12v9h-12z M2 17h15 M18 8h3.5v11H18z',
@@ -3039,7 +3041,7 @@ function startDrag(a,from,px,py){closeMenu();dragging=false;target=-1;t=0;off=0;
 let GOFF=[51,60];function moveGhost(x,y){GH0.style.transform=`translate(${x-GOFF[0]}px,${y-GOFF[1]}px) scale(1.06)`}
 function renderAll(){for(let i=0;i<PAGES.length;i++){renderPage(i);upload(i)}PDIRTY=true;draw()}
 function hoverAt(x,y){
-  const dt=dockTop();if(!DRAG.a.wg&&y>=dt-6&&y<=dt+94){const n=DOCK.length+1;const idx=Math.max(0,Math.min(DOCK.length,Math.floor((x-14)/((W-28)/n))));return {kind:'dock',idx}}
+  const dt=dockTop();if(!DRAG.a.wg&&y>=dt-6&&y<=dt+70){const n=DOCK.length+1;const idx=Math.max(0,Math.min(DOCK.length,Math.floor((x-14)/((W-28)/n))));return {kind:'dock',idx}}
   const G=gridGeom(cur),L=PAGES[cur].apps,PS=pack(cur,L);
   if(!DRAG.a.folder&&!DRAG.a.wg)for(let i=0;i<L.length;i++){const p=PS[i];if(!p||L[i].wg)continue;const r=cellRect(G,p),cx=r.x+G.s/2,cy=r.y+G.s/2;if(Math.abs(x-cx)<G.s*.34&&Math.abs(y-cy)<G.s*.34)return {kind:'on',pi:cur,on:i}}
   if(y<G.top-20)return {kind:'slot',pi:cur,idx:L.length};

@@ -6,7 +6,7 @@
 set -e
 cd "$(dirname "$0")"
 FLAVOR=${1:-basic}
-VC=26; VN=0.25b-$FLAVOR
+VC=27; VN=0.26b-$FLAVOR
 export JAVA_HOME=${JAVA_HOME:-$HOME/jdk}; export PATH=$JAVA_HOME/bin:$PATH
 SDK=${ANDROID_HOME:-$HOME/android-sdk}; BT=$SDK/build-tools/34.0.0; JAR=$SDK/platforms/android-34/android.jar
 KEYDIR=${NV_KEYDIR:-$HOME/.nv-release}
