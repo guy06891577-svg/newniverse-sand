@@ -16,6 +16,7 @@ import android.provider.Telephony;
 import android.util.Base64;
 import android.view.*;
 import android.webkit.*;
+import android.widget.FrameLayout;
 import org.json.*;
 import java.io.ByteArrayOutputStream;
 import java.util.*;
@@ -54,7 +55,10 @@ public class MainActivity extends Activity {
       @Override public boolean onRenderProcessGone(WebView v, RenderProcessGoneDetail d){ android.util.Log.w("NVWeb","renderer gone crash="+d.didCrash()); ui.post(()->recreate()); return true; }
       @Override public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest r){ Uri u=r.getUrl(); if("file".equals(u.getScheme()))return false; try{startActivity(new Intent(Intent.ACTION_VIEW,u));}catch(Exception e){} return true; }
     });
-    setContentView(web);
+    initWidgets();
+    root=new FrameLayout(this); root.addView(web,new FrameLayout.LayoutParams(-1,-1));
+    wlayer=new FrameLayout(this); root.addView(wlayer,new FrameLayout.LayoutParams(-1,-1));
+    setContentView(root);
     applyBars();
     web.loadUrl("file:///android_asset/www/index.html?native=1");
     IntentFilter f=new IntentFilter(); f.addAction(Intent.ACTION_PACKAGE_ADDED); f.addAction(Intent.ACTION_PACKAGE_REMOVED); f.addAction(Intent.ACTION_PACKAGE_CHANGED); f.addDataScheme("package");
@@ -62,7 +66,7 @@ public class MainActivity extends Activity {
     regLauncherApps();
   }
   ValueCallback<Uri[]> fileCb;
-  @Override protected void onActivityResult(int req,int res,Intent data){ if(req==77&&fileCb!=null){ fileCb.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(res,data)); fileCb=null; } else super.onActivityResult(req,res,data); }
+  @Override protected void onActivityResult(int req,int res,Intent data){ if(widgetResult(req,res)) return; if(req==77&&fileCb!=null){ fileCb.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(res,data)); fileCb=null; } else super.onActivityResult(req,res,data); }
 
   // v21: 앱 설치·삭제·업데이트를 바로 반영 (브로드캐스트 + LauncherApps 콜백, 같은 변화가 겹치면 JS 쪽에서 한 번만 처리)
   final BroadcastReceiver pkgRx=new BroadcastReceiver(){ @Override public void onReceive(Context c,Intent i){
@@ -108,7 +112,133 @@ public class MainActivity extends Activity {
 
   String pkgOf(Intent i){ try{ ResolveInfo r=getPackageManager().resolveActivity(i,PackageManager.MATCH_DEFAULT_ONLY); if(r!=null&&r.activityInfo!=null&&!"android".equals(r.activityInfo.packageName)) return r.activityInfo.packageName; }catch(Exception e){} return ""; }
 
+  // ===================== v23 안드로이드 앱 위젯 호스팅 =====================
+  // 웹 홈(WebView) 위에 투명한 층(wlayer)을 겹치고, 그 위에 진짜 위젯 뷰를 웹이 알려 준 칸 좌표에 맞춰 놓음.
+  // 위젯이 없는 곳을 누르면 터치는 아래 WebView로 그대로 내려감. 모래 전환 중에는 웹이 스냅샷 그림으로 대신 그리고 진짜 뷰는 숨김.
+  static final int HOST_ID=0x4E56, REQ_BIND=101, REQ_CONF=102, REQ_RECONF=103;
+  android.appwidget.AppWidgetHost whost; android.appwidget.AppWidgetManager wmgr;
+  FrameLayout root, wlayer; final Map<Integer,NVHostView> wviews=new HashMap<>(); final Map<Integer,Integer> wpage=new HashMap<>();
+  float wdpr=1f; int wvis=-1; String pendReq=null; int pendId=-1; android.appwidget.AppWidgetProviderInfo pendInfo=null;
+  void initWidgets(){
+    wmgr=android.appwidget.AppWidgetManager.getInstance(this);
+    whost=new android.appwidget.AppWidgetHost(this,HOST_ID){
+      @Override protected android.appwidget.AppWidgetHostView onCreateView(Context c,int id,android.appwidget.AppWidgetProviderInfo i){ return new NVHostView(c); } };
+  }
+  @Override protected void onStart(){ super.onStart(); try{ if(whost!=null) whost.startListening(); }catch(Exception e){ android.util.Log.w("NVWeb","widget listen",e); } }
+  @Override protected void onStop(){ super.onStop(); try{ if(whost!=null) whost.stopListening(); }catch(Exception e){} }
+  android.appwidget.AppWidgetProviderInfo provInfo(String flat){ ComponentName cn=ComponentName.unflattenFromString(flat); if(cn==null) return null;
+    for(android.appwidget.AppWidgetProviderInfo i:wmgr.getInstalledProviders()) if(cn.equals(i.provider)) return i; return null; }
+  boolean needsConfig(android.appwidget.AppWidgetProviderInfo i){ if(i==null||i.configure==null) return false;
+    if(Build.VERSION.SDK_INT>=28&&(i.widgetFeatures&android.appwidget.AppWidgetProviderInfo.WIDGET_FEATURE_CONFIGURATION_OPTIONAL)!=0) return false; return true; }
+  void widgetAfterBind(int id){
+    if(needsConfig(pendInfo)){ try{ whost.startAppWidgetConfigureActivityForResult(this,id,0,REQ_CONF,null); return; }catch(Exception e){ android.util.Log.w("NVWeb","widget conf",e); } }
+    widgetDone(id);
+  }
+  void widgetDone(int id){ String r=pendReq; pendReq=null; pendId=-1; js("window.NV_onWidgetAdded&&NV_onWidgetAdded('"+r+"',1,"+id+",'')"); }
+  void widgetFail(String why){ if(pendId>=0){ try{ whost.deleteAppWidgetId(pendId);}catch(Exception e){} } String r=pendReq; pendReq=null; pendId=-1;
+    js("window.NV_onWidgetAdded&&NV_onWidgetAdded('"+r+"',0,-1,'"+why+"')"); }
+  boolean widgetResult(int req,int res){
+    if(req==REQ_BIND){ if(res==RESULT_OK&&pendId>=0) widgetAfterBind(pendId); else widgetFail("denied"); return true; }
+    if(req==REQ_CONF){ if(res==RESULT_OK&&pendId>=0) widgetDone(pendId); else widgetFail("cancel"); return true; }
+    if(req==REQ_RECONF){ return true; }
+    return false;
+  }
+  void applyWidgetVis(){ for(Map.Entry<Integer,NVHostView> e:wviews.entrySet()){ Integer p=wpage.get(e.getKey()); e.getValue().setVisibility(wvis>=0&&p!=null&&p==wvis?View.VISIBLE:View.INVISIBLE); } }
+  /** 위젯 칸: 길게 누르면 웹 메뉴, 옆으로 밀면 그 터치를 WebView로 넘겨 화면 넘기기(모래 전환) */
+  class NVHostView extends android.appwidget.AppWidgetHostView {
+    float dx,dy; boolean lpFired=false, fwd=false; final int slop; final Runnable lpR;
+    NVHostView(Context c){ super(c); slop=ViewConfiguration.get(c).getScaledTouchSlop();
+      lpR=()->{ lpFired=true; performHapticFeedback(HapticFeedbackConstants.LONG_PRESS); js("window.NV_onWidgetLP&&NV_onWidgetLP("+getAppWidgetId()+")"); }; }
+    void toWeb(MotionEvent src,int action,float x,float y){ MotionEvent m=MotionEvent.obtain(src.getDownTime(),src.getEventTime(),action,x+getLeft(),y+getTop(),0); m.setSource(InputDevice.SOURCE_TOUCHSCREEN); if(web!=null) web.dispatchTouchEvent(m); m.recycle(); }
+    @Override public boolean onInterceptTouchEvent(MotionEvent e){
+      switch(e.getActionMasked()){
+        case MotionEvent.ACTION_DOWN: dx=e.getX(); dy=e.getY(); lpFired=false; fwd=false; removeCallbacks(lpR); postDelayed(lpR,ViewConfiguration.getLongPressTimeout()); break;
+        case MotionEvent.ACTION_MOVE:{ float mx=e.getX()-dx, my=e.getY()-dy;
+          if(Math.abs(mx)>slop||Math.abs(my)>slop) removeCallbacks(lpR);
+          if(!lpFired&&Math.abs(mx)>slop*1.5f&&Math.abs(mx)>Math.abs(my)*1.2f){ fwd=true; toWeb(e,MotionEvent.ACTION_DOWN,dx,dy); toWeb(e,MotionEvent.ACTION_MOVE,e.getX(),e.getY()); return true; }
+          break; }
+        case MotionEvent.ACTION_UP: case MotionEvent.ACTION_CANCEL: removeCallbacks(lpR); break;
+      }
+      return lpFired;
+    }
+    @Override public boolean onTouchEvent(MotionEvent e){
+      int a=e.getActionMasked(); boolean end=a==MotionEvent.ACTION_UP||a==MotionEvent.ACTION_CANCEL;
+      if(fwd){ toWeb(e,a==MotionEvent.ACTION_CANCEL?MotionEvent.ACTION_CANCEL:a==MotionEvent.ACTION_UP?MotionEvent.ACTION_UP:MotionEvent.ACTION_MOVE,e.getX(),e.getY()); if(end) fwd=false; return true; }
+      if(lpFired){ if(end) lpFired=false; return true; }
+      return super.onTouchEvent(e);
+    }
+  }
+
   class Bridge {
+    // ---------- v23 위젯 ----------
+    @JavascriptInterface public String widgetProviders(){
+      JSONArray arr=new JSONArray(); PackageManager pm=getPackageManager(); float d=getResources().getDisplayMetrics().density;
+      try{ for(android.appwidget.AppWidgetProviderInfo i:wmgr.getInstalledProviders()){
+          if((i.widgetCategory&android.appwidget.AppWidgetProviderInfo.WIDGET_CATEGORY_HOME_SCREEN)==0) continue;
+          try{ JSONObject o=new JSONObject(); String pkg=i.provider.getPackageName(); o.put("prov",i.provider.flattenToString()); o.put("label",String.valueOf(i.loadLabel(pm)));
+            String app=pkg; try{ app=String.valueOf(pm.getApplicationLabel(pm.getApplicationInfo(pkg,0))); }catch(Exception e){}
+            o.put("app",app); o.put("minW",Math.round(i.minWidth/d)); o.put("minH",Math.round(i.minHeight/d));
+            if(Build.VERSION.SDK_INT>=31){ o.put("tcw",i.targetCellWidth); o.put("tch",i.targetCellHeight); }
+            o.put("rz",i.resizeMode); o.put("cfg",i.configure!=null); arr.put(o); }catch(Exception e){} } }catch(Exception e){ android.util.Log.w("NVWeb","providers",e); }
+      return arr.toString();
+    }
+    @JavascriptInterface public String widgetPreview(String prov,int px){
+      try{ android.appwidget.AppWidgetProviderInfo i=provInfo(prov); if(i==null) return ""; int dpi=getResources().getDisplayMetrics().densityDpi;
+        Drawable dr=i.loadPreviewImage(MainActivity.this,dpi); if(dr==null) dr=i.loadIcon(MainActivity.this,dpi); if(dr==null) return "";
+        int w=Math.max(1,dr.getIntrinsicWidth()), h=Math.max(1,dr.getIntrinsicHeight()); float k=Math.min(1f,px/(float)Math.max(w,h)); int bw=Math.max(1,Math.round(w*k)), bh=Math.max(1,Math.round(h*k));
+        Bitmap bm=Bitmap.createBitmap(bw,bh,Bitmap.Config.ARGB_8888); Canvas c=new Canvas(bm); dr.setBounds(0,0,bw,bh); dr.draw(c);
+        ByteArrayOutputStream bo=new ByteArrayOutputStream(); bm.compress(Bitmap.CompressFormat.PNG,100,bo); return "data:image/png;base64,"+Base64.encodeToString(bo.toByteArray(),Base64.NO_WRAP);
+      }catch(Throwable e){ return ""; }
+    }
+    /** 위젯 추가: 허락(바인딩) → 설정 화면 → 결과는 JS NV_onWidgetAdded(req, ok, id, why) */
+    @JavascriptInterface public String widgetAdd(final String prov,final String req){
+      final android.appwidget.AppWidgetProviderInfo i=provInfo(prov); if(i==null) return "fail";
+      ui.post(()->{ try{ pendReq=req; pendInfo=i; pendId=whost.allocateAppWidgetId();
+          boolean ok=wmgr.bindAppWidgetIdIfAllowed(pendId,i.getProfile(),i.provider,null);
+          if(ok) widgetAfterBind(pendId);
+          else{ Intent b=new Intent(android.appwidget.AppWidgetManager.ACTION_APPWIDGET_BIND);
+            b.putExtra(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_ID,pendId); b.putExtra(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_PROVIDER,i.provider);
+            b.putExtra(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_PROVIDER_PROFILE,i.getProfile()); startActivityForResult(b,REQ_BIND); }
+        }catch(Exception e){ android.util.Log.w("NVWeb","widget add",e); widgetFail("fail"); } });
+      return "ok";
+    }
+    @JavascriptInterface public void widgetConfigure(final int id){ ui.post(()->{ try{ whost.startAppWidgetConfigureActivityForResult(MainActivity.this,id,0,REQ_RECONF,null);}catch(Exception e){} }); }
+    /** 웹 칸 좌표(CSS px)에 맞춰 위젯 뷰를 놓음: {dpr, list:[{id,p,x,y,w,h}]} */
+    @JavascriptInterface public void widgetPlace(final String json){
+      ui.post(()->{ try{ JSONObject o=new JSONObject(json); wdpr=(float)o.optDouble("dpr",1); JSONArray l=o.getJSONArray("list"); Set<Integer> keep=new HashSet<>();
+          float dens=getResources().getDisplayMetrics().density;
+          for(int k=0;k<l.length();k++){ JSONObject w=l.getJSONObject(k); int id=w.getInt("id"); keep.add(id); wpage.put(id,w.getInt("p"));
+            NVHostView v=wviews.get(id);
+            if(v==null){ android.appwidget.AppWidgetProviderInfo info=wmgr.getAppWidgetInfo(id); if(info==null) continue;
+              v=(NVHostView)whost.createView(MainActivity.this,id,info); v.setVisibility(View.INVISIBLE); wlayer.addView(v); wviews.put(id,v); }
+            int pw=Math.round((float)w.getDouble("w")*wdpr), ph=Math.round((float)w.getDouble("h")*wdpr);
+            FrameLayout.LayoutParams lp=new FrameLayout.LayoutParams(pw,ph); lp.leftMargin=Math.round((float)w.getDouble("x")*wdpr); lp.topMargin=Math.round((float)w.getDouble("y")*wdpr); v.setLayoutParams(lp);
+            int wd=Math.round(pw/dens), hd=Math.round(ph/dens);
+            try{ v.updateAppWidgetSize(null,wd,hd,wd,hd); }catch(Exception e){} }
+          for(Integer id:new ArrayList<>(wviews.keySet())) if(!keep.contains(id)){ wlayer.removeView(wviews.get(id)); wviews.remove(id); wpage.remove(id); }
+          applyWidgetVis();
+        }catch(Exception e){ android.util.Log.w("NVWeb","widget place",e); } });
+    }
+    /** 보일 페이지(-1이면 모두 숨김). 화면에 반영된 뒤 JS NV_onWidgetVis(page) */
+    @JavascriptInterface public void widgetVis(final int page){ ui.post(()->{ wvis=page; applyWidgetVis(); wlayer.postOnAnimation(()->js("window.NV_onWidgetVis&&NV_onWidgetVis("+page+")")); }); }
+    /** 위젯 모습을 그림으로: 결과는 JS NV_onWidgetSnap(id, dataUrl) — 전환 때 모래알로 흩어질 그림 */
+    @JavascriptInterface public void widgetSnap(final String ids,final float scale){
+      ui.post(()->{ try{ JSONArray a=new JSONArray(ids);
+          for(int k=0;k<a.length();k++){ final int id=a.getInt(k); NVHostView v=wviews.get(id); if(v==null||v.getWidth()<=0||v.getHeight()<=0) continue;
+            float s=Math.min(1f,scale/Math.max(.5f,wdpr)); int bw=Math.max(1,Math.round(v.getWidth()*s)), bh=Math.max(1,Math.round(v.getHeight()*s));
+            final Bitmap bm; try{ bm=Bitmap.createBitmap(bw,bh,Bitmap.Config.ARGB_8888); Canvas c=new Canvas(bm); c.scale(s,s); v.draw(c); }catch(Throwable e){ continue; }
+            new Thread(()->{ try{ ByteArrayOutputStream bo=new ByteArrayOutputStream(); bm.compress(Bitmap.CompressFormat.PNG,100,bo); bm.recycle();
+                js("window.NV_onWidgetSnap&&NV_onWidgetSnap("+id+",'data:image/png;base64,"+Base64.encodeToString(bo.toByteArray(),Base64.NO_WRAP)+"')"); }catch(Throwable e){} }).start(); }
+        }catch(Exception e){} });
+    }
+    @JavascriptInterface public void widgetRemove(final int id){ ui.post(()->{ NVHostView v=wviews.remove(id); if(v!=null) wlayer.removeView(v); wpage.remove(id); try{ whost.deleteAppWidgetId(id);}catch(Exception e){} }); }
+    @JavascriptInterface public String widgetInfo(int id){ try{ android.appwidget.AppWidgetProviderInfo i=wmgr.getAppWidgetInfo(id); return i==null?"":i.provider.flattenToString(); }catch(Exception e){ return ""; } }
+    /** 저장된 배치에 없는(주인 없는) 위젯 번호 정리 */
+    @JavascriptInterface public void widgetGc(String json){ try{ JSONArray a=new JSONArray(json); Set<Integer> keep=new HashSet<>(); for(int k=0;k<a.length();k++) keep.add(a.getInt(k));
+        for(int id:whost.getAppWidgetIds()) if(!keep.contains(id)&&id!=pendId) whost.deleteAppWidgetId(id); }catch(Exception e){} }
+    @JavascriptInterface public String battery(){ try{ BatteryManager bm=(BatteryManager)getSystemService(BATTERY_SERVICE); int lv=bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
+        return "{\"level\":"+lv+",\"charging\":"+bm.isCharging()+"}"; }catch(Exception e){ return ""; } }
+    @JavascriptInterface public String storage(){ try{ StatFs st=new StatFs(Environment.getDataDirectory().getPath()); return "{\"total\":"+st.getTotalBytes()+",\"free\":"+st.getAvailableBytes()+"}"; }catch(Exception e){ return ""; } }
     @JavascriptInterface public String getApps(){
       JSONArray arr=new JSONArray(); PackageManager pm=getPackageManager();
       Intent q=new Intent(Intent.ACTION_MAIN); q.addCategory(Intent.CATEGORY_LAUNCHER);
@@ -166,6 +296,8 @@ public class MainActivity extends Activity {
       else if("battery".equals(which)) a=Intent.ACTION_POWER_USAGE_SUMMARY;
       else if("access".equals(which)) a=Settings.ACTION_ACCESSIBILITY_SETTINGS;
       else if("apps".equals(which)) a=Settings.ACTION_APPLICATION_SETTINGS;
+      else if("storage".equals(which)) a=Settings.ACTION_INTERNAL_STORAGE_SETTINGS;
+      else if("clock".equals(which)) a=android.provider.AlarmClock.ACTION_SHOW_ALARMS;
       try{ Intent i=new Intent(a); i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(i);}catch(Exception e){ try{ Intent i=new Intent(Settings.ACTION_SETTINGS); i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(i);}catch(Exception e2){} }
     }
     @JavascriptInterface public void appInfo(String pkg){ try{ Intent i=new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+pkg)); i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(i);}catch(Exception e){} }
