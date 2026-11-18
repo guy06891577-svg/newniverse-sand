@@ -7,7 +7,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>뉴니버스 · 모래 전환 시제품 v26</title>
+<title>뉴니버스 · 모래 전환 시제품 v27</title>
 <style>
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
   html,body{height:100%;background:#05040d;overflow:hidden;font-family:system-ui,-apple-system,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#fff;overscroll-behavior:none}
@@ -22,7 +22,7 @@
   #navcv{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:11;pointer-events:none}
   #navgest{position:absolute;inset:0;z-index:12;pointer-events:none;display:none}
   #navgest .gz{position:absolute;pointer-events:auto;touch-action:none}
-  #gtip{position:absolute;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:14;background:rgba(20,18,40,.85);color:#fff;padding:8px 16px;border-radius:18px;font-size:14px;font-weight:700;opacity:0;transition:opacity .2s;pointer-events:none}
+  #gtip{position:absolute;left:50%;bottom:calc(var(--navh,64px) + 20px);transform:translateX(-50%);z-index:14;background:rgba(20,18,40,.85);color:#fff;padding:8px 16px;border-radius:18px;font-size:14px;font-weight:700;opacity:0;transition:opacity .2s;pointer-events:none}
   #gtip.show{opacity:1}
   #navcv{transition:transform .2s}
   #navbtns{position:absolute;inset:0;z-index:12;pointer-events:none}
@@ -70,7 +70,7 @@
   #phone[data-ui=bojagi] #qp .qgrid button.on,#phone[data-ui=bojagi] #qp .pill.on{color:#fff4ea}
   #phone[data-ui=bojagi] #qp .qslider input{accent-color:#b8433a}#phone[data-ui=dune] #qp .qslider input{accent-color:#f3c27a}#phone[data-ui=orbit] #qp .qslider input{accent-color:#ffd27a}
   #phone[data-ui=bojagi] #qp .qgrip{background:#b8433a}
-  #drawer{position:absolute;left:0;right:0;top:0;bottom:calc(64px + env(safe-area-inset-bottom));z-index:9;display:flex;flex-direction:column;background:rgba(10,8,26,.72);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);transform:translateY(100%);opacity:0;pointer-events:none}
+  #drawer{position:absolute;left:0;right:0;top:0;bottom:var(--navh,calc(64px + env(safe-area-inset-bottom)));z-index:9;display:flex;flex-direction:column;background:rgba(10,8,26,.72);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);transform:translateY(100%);opacity:0;pointer-events:none}
   #drawer.open{pointer-events:auto}
   #drawer .dhead{padding:calc(44px + env(safe-area-inset-top)) 22px 8px;font-size:22px;font-weight:700}
   #drawer .dgrid{flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(4,1fr);gap:18px 6px;padding:10px 12px 20px;align-content:start;touch-action:pan-y;overscroll-behavior:contain}
@@ -83,7 +83,7 @@
   #phone[data-ui=dune] #drawer{background:rgba(70,44,26,.72)}
   #phone[data-ui=bojagi] #drawer{background:rgba(240,230,210,.92);color:#2e2218}
   #phone[data-ui=bojagi] #drawer .da{color:#2e2218}#phone[data-ui=bojagi] #drawer .dsearch{background:rgba(120,90,60,.12);border-color:#b8433a}#phone[data-ui=bojagi] #drawer .dsearch input{color:#2e2218}#phone[data-ui=bojagi] #drawer .dsearch input::placeholder{color:#6b5844}
-  #settings{--fs:1;position:absolute;left:0;right:0;top:0;bottom:calc(64px + env(safe-area-inset-bottom));z-index:10;overflow:hidden;color:#fff;
+  #settings{--fs:1;position:absolute;left:0;right:0;top:0;bottom:var(--navh,calc(64px + env(safe-area-inset-bottom)));z-index:10;overflow:hidden;color:#fff;
     background:radial-gradient(120% 70% at 20% 0%,rgba(70,50,140,.55),rgba(10,8,26,.92) 60%),rgba(10,8,26,.9);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);
     opacity:0;pointer-events:none;transform:translateY(24px);transition:opacity .25s,transform .3s cubic-bezier(.2,.9,.3,1)}
   #settings.open{opacity:1;pointer-events:auto;transform:none}
@@ -149,7 +149,7 @@
   .dk b{width:54px;height:54px;border-radius:17px;display:flex;align-items:center;justify-content:center;font-size:27px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
   #toast{position:absolute;left:50%;bottom:190px;transform:translateX(-50%) translateY(20px);background:rgba(20,18,35,.85);padding:10px 18px;border-radius:20px;font-size:13px;opacity:0;transition:all .3s;z-index:14;pointer-events:none;white-space:nowrap;border:1px solid rgba(255,255,255,.15)}
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-  #sheet{position:absolute;left:0;right:0;bottom:calc(64px + env(safe-area-inset-bottom));z-index:10;max-height:76%;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;background:rgba(18,15,34,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:26px 26px 0 0;padding:18px 22px calc(22px + env(safe-area-inset-bottom));transform:translateY(calc(100% + 160px));visibility:hidden;transition:transform .35s cubic-bezier(.2,.9,.3,1),visibility 0s .35s;border-top:1px solid rgba(255,255,255,.15)}
+  #sheet{position:absolute;left:0;right:0;bottom:var(--navh,calc(64px + env(safe-area-inset-bottom)));z-index:10;max-height:76%;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;background:rgba(18,15,34,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:26px 26px 0 0;padding:18px 22px calc(22px + env(safe-area-inset-bottom));transform:translateY(calc(100% + 160px));visibility:hidden;transition:transform .35s cubic-bezier(.2,.9,.3,1),visibility 0s .35s;border-top:1px solid rgba(255,255,255,.15)}
   #sheet.open{transform:none;visibility:visible;transition:transform .35s cubic-bezier(.2,.9,.3,1),visibility 0s}
   #sheet h3{font-size:17px;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center}
   #sheet h3 button{background:none;border:none;color:#aaa;font-size:22px;cursor:pointer}
@@ -530,7 +530,7 @@ function nativeApps(){
   const pick=(k,fb,label,gk)=>{let a=(roles[k]&&by(roles[k]))||fb.map(by).find(Boolean);if(!a)return null;return Object.assign(Object.create(a),{n:label,gk,__base:a})};
   const dock=[pick('phone',['com.samsung.android.dialer','com.google.android.dialer'],'전화','phone'),pick('sms',['com.samsung.android.messaging','com.google.android.apps.messaging'],'메시지','message'),
     pick('browser',['com.sec.android.app.sbrowser','com.android.chrome'],'인터넷','globe'),pick('contacts',['com.samsung.android.app.contacts','com.google.android.contacts','com.android.contacts'],'연락처','person')].filter(Boolean);
-  if(!NINIT){NINIT=true;setTimeout(()=>{try{wRestoreCheck();wPlace()}catch(e){console.warn(e)}},0);
+  if(!NINIT){NINIT=true;setTimeout(()=>{try{NV_onInsets()}catch(e){}},0);setTimeout(()=>{try{wRestoreCheck();wPlace()}catch(e){console.warn(e)}},0);
     const o=nvLoadState();
     if(!(o&&deserLayout(o))){
       const inDock=new Set(dock.map(d=>d.__base.pkg));
@@ -934,7 +934,11 @@ function emo(c,e,x,y,s,col){c.save();c.textAlign='center';c.textBaseline='middle
   c.fillText(e,x,y+s*.05);c.restore()}
 function hit(pi,x,y,w,h,n,extra){hitRects[pi].push(Object.assign({x,y,w,h,n},extra||{}))}
 function addItemHit(pi,a,x,y,w,h){hit(pi,x,y,w,h,a.n,a.folder?{f:a}:{a})}
-function navY(){return H-safeB()-64}
+// v27: 아래 띠 높이 — 버튼 모드 64, 제스처 모드는 얇은 손잡이만(폰의 시스템 제스처 영역보다 조금 크게)
+let SYSNAV=null;
+function sysNavRead(){if(!NATIVE||!window.NVNative||!NVNative.sysNav)return null;try{const o=JSON.parse(NVNative.sysNav()||'null');if(o)SYSNAV=o}catch(_){}return SYSNAV}
+function navBand(){if((S.navMode||'btn')!=='gest')return 64;const m=SYSNAV?Math.max(+SYSNAV.mand||0,+SYSNAV.gest||0):0;return Math.round(Math.max(30,Math.min(56,m+8)))}
+function navY(){return H-safeB()-navBand()}
 const UIM={};
 
 // ===== 궤도: 해(시계) 둘레를 앱 행성이 돈다 · 아래는 초승달 모양 필수 앱 · 별 모양 내비 =====
@@ -1166,7 +1170,7 @@ function drawNavBar(c,w,ny,h,st,mode){
   else if(mode!=='gest'){rr(c,14,ny,w-28,58,29);c.fillStyle='rgba(20,18,40,.45)';c.fill();c.strokeStyle='rgba(255,255,255,.18)';c.stroke()}
   c.restore();
   if(mode==='gest'){ // 얇은 손잡이 바
-    const hy=ny+40,hw=Math.min(140,w*.36);c.save();c.lineCap='round';
+    const hy=Math.min(ny+40,ny+(h-ny)*.5),hw=Math.min(140,w*.36);c.save();c.lineCap='round';
     if(st==='orbit'){c.strokeStyle='rgba(200,215,255,.85)';c.shadowColor='rgba(170,190,255,.9)';c.shadowBlur=10;c.lineWidth=3;c.setLineDash([1,7]);c.beginPath();c.moveTo(w/2-hw/2,hy);c.lineTo(w/2+hw/2,hy);c.stroke();c.setLineDash([]);
       c.fillStyle='#fff';c.beginPath();c.arc(w/2,hy,3.5,0,7);c.fill()}
     else if(st==='dune'){c.strokeStyle='rgba(255,230,190,.95)';c.lineWidth=4;c.beginPath();for(let i=0;i<=24;i++){const x=w/2-hw/2+hw*i/24,y=hy+Math.sin(i/24*Math.PI*2)*2.5;i?c.lineTo(x,y):c.moveTo(x,y)}c.stroke()}
@@ -1185,7 +1189,7 @@ function setupGest(){
   const box=$('navgest');box.innerHTML='';const on=(S.navMode||'btn')==='gest';box.style.display=on?'block':'none';if(!on)return;
   const NY=navY();
   const zone=(x,y,w,h,kind)=>{const z=document.createElement('div');z.className='gz';z.dataset.g=kind;Object.assign(z.style,{left:x+'px',top:y+'px',width:w+'px',height:h+'px'});box.appendChild(z);return z};
-  zone(0,NY+10,W,H-NY-10,'bottom');zone(0,70,16,NY-70,'left');zone(W-16,70,16,NY-70,'right');
+  zone(0,NY-4,W,H-NY+4,'bottom');zone(0,70,16,NY-70,'left');zone(W-16,70,16,NY-70,'right');
 }
 let gs=null;
 $('navgest').addEventListener('pointerdown',e=>{const z=e.target.closest('.gz');if(!z)return;e.stopPropagation();e.preventDefault();z.setPointerCapture(e.pointerId);
@@ -2136,6 +2140,7 @@ function layout(){
   if(window.__meReady)applyMeStyle();
   renderNav();phone.dataset.ui=S.ui||'classic';
   const dT=dockTop();const dY=uiDots!=null?uiDots:dT-22;$('dots').style.top=dY+'px';$('hint').style.top=(uiDots!=null?dY-46:dT-40)+'px';
+  phone.style.setProperty('--navh',(navBand()+safeB())+'px');
   draw();if(typeof wPlace==='function')wPlace();
 }
 function quadDraw(tx,alpha,scale,ox){
@@ -2490,7 +2495,7 @@ $('reset').onclick=()=>{S=Object.assign({},DEF);syncUI();applyWallpaper();try{lo
 $('demo').onclick=()=>{if(anim)return;const to=cur<PAGES.length-1?cur+1:cur-1;go(to,to>cur?-1:1)};
 const QNAME=['최고','높음','보통','가벼움','아주 가벼움'];
 function qNote(){const l=qLvl(),L=QST.last;return (qMode()==='auto'?`자동 · 지금 ‘${QNAME[l]}’ 단계 · 넘길 때 속도를 보고 저절로 맞춰요`:qMode()==='smooth'?`부드러움 우선 · ‘${QNAME[l]}’ 단계 · 모래알·해상도를 낮춰 끊김을 줄여요`:'화질 우선 · 모래알을 가장 많이 써요 · 느린 폰에서는 끊길 수 있어요')+(L?` · 지난 전환 ${Math.round(1000/L.mean)}fps`:'')}
-function updateStats(){$('stats').textContent=`v26 · 품질 ${QNAME[qLvl()]} · 모래알 ${counts[cur]?counts[cur].toLocaleString('ko-KR'):0}개 · 알갱이 ${cell}px · 최근 ${Math.round(lastFps)}fps${NOGL?' · 평면 모드':LITE?' · 가벼운 모드':weak?' · 절약 모드':''}`}
+function updateStats(){$('stats').textContent=`v27 · 품질 ${QNAME[qLvl()]} · 모래알 ${counts[cur]?counts[cur].toLocaleString('ko-KR'):0}개 · 알갱이 ${cell}px · 최근 ${Math.round(lastFps)}fps${NOGL?' · 평면 모드':LITE?' · 가벼운 모드':weak?' · 절약 모드':''}`}
 function setLite(on,why){LITE=on;LITE_WHY=why||'';CAP=qCap();try{spW=0}catch(_){}layout()}
 syncUI();
 window.__nv={pose:(to,d,tt)=>{target=to;dir=d;t=tt;draw()},cur:()=>cur,hits:()=>hitRects[cur].map(h=>({x:h.x,y:h.y,w:h.w,h:h.h,n:h.n,act:h.act,f:!!h.f}))};
@@ -2563,7 +2568,7 @@ DR.addEventListener('touchcancel',()=>{if(td&&td.m)setDR(1,true);td=null});
 setQP(0);setDR(0);
 window.__nv.panel=()=>({qp:qpP,dr:drP});window.__nv.S=S;window.__nv.layout=layout;window.__nv.buildDrawer=buildDrawer;
 // ---------- 설정 화면 (삼성 설정 구성을 참고한 뉴니버스 설정) ----------
-const VER='v26';
+const VER='v27';
 Object.assign(GLY,{
  wifi:'M2.5 9a14 14 0 0 1 19 0 M5.5 12.3a9.5 9.5 0 0 1 13 0 M8.6 15.5a5 5 0 0 1 6.8 0 M12 19h.01',
  devices:'M3.5 5h12v9h-12z M2 17h15 M18 8h3.5v11H18z',
@@ -2703,7 +2708,7 @@ function buildNavbarPage(add){
   const seg=(label,opts,key,def)=>{const r=mk('div','row',`<label>${label}</label>`);const g=mk('div','seg');g.style.flexWrap='wrap';
     Object.entries(opts).forEach(([k,t])=>{const b=mk('button',null,t);b.dataset.v=k;if(Object.keys(opts).length>3)b.style.flexBasis=k==='auto'?'100%':'45%';g.appendChild(b)});
     const sync=()=>[...g.children].forEach(b=>b.classList.toggle('on',b.dataset.v===(S[key]||def)));sync();
-    g.onclick=e=>{const b=e.target.closest('button');if(!b)return;S[key]=b.dataset.v;sync();saveS();renderNav();draw();upd();if(navigator.vibrate)navigator.vibrate(6)};r.appendChild(g);return r};
+    g.onclick=e=>{const b=e.target.closest('button');if(!b)return;const od=key==='navMode'?dockTop():0;S[key]=b.dataset.v;if(key==='navMode'){S.navUser=1;dockMoveFrom(od)}sync();saveS();renderNav();draw();upd();if(navigator.vibrate)navigator.vibrate(6)};r.appendChild(g);return r};
   const ctl=mk('div','ctl');ctl.append(seg('방식',{btn:'버튼',gest:'스와이프 제스처'},'navMode','btn'),seg('버튼 순서',{brh:'뒤로 · 홈 · 최근',rhb:'최근 · 홈 · 뒤로'},'navOrder','brh'),seg('버튼 모양',NAV_LOOKS,'navLook','auto'));
   add(sCard(ctl));
   const help=mk('div','note');add(help);
@@ -2715,7 +2720,17 @@ function rangeAll(root){(root||document).querySelectorAll('input[type=range]').f
 document.addEventListener('input',e=>{if(e.target&&e.target.type==='range')rangeFill(e.target)},true);
 setTimeout(()=>rangeAll(document),0);
 function openSettings(){park(SETEL);SETEL.innerHTML='';sStack=[buildMain()];SETEL.appendChild(sStack[0]);SETEL.classList.add('open');rangeAll(SETEL)}
-function closeSettings(){SETEL.classList.remove('open');sStack=[]}
+function closeSettings(){SETEL.classList.remove('open');sStack=[];if(DOCKANIM!=null)setTimeout(dockAnimRun,60)}
+// v27: 독 위치가 바뀌면(내비 방식) 예전 자리에서 새 자리로 미끄러지듯 이동
+let DOCKANIM=null;
+function dockMoveFrom(oldTop){if(DOCKANIM==null)DOCKANIM=oldTop;layout();if(!SETEL.classList.contains('open'))dockAnimRun()}
+function dockAnimRun(){if(DOCKANIM==null)return;const d=DOCKANIM-dockTop();DOCKANIM=null;if(Math.abs(d)<1)return;const f=$('fixed');
+  f.style.transition='none';f.style.transform=`translateY(${d}px)`;void f.offsetWidth;f.style.transition='transform .45s cubic-bezier(.2,.9,.3,1)';f.style.transform='';
+  setTimeout(()=>{f.style.transition=''},500)}
+// APK: 폰의 시스템 내비 방식(제스처/3버튼)과 아래 제스처 영역을 읽어 반영
+window.NV_onInsets=()=>{const o=JSON.stringify(SYSNAV);sysNavRead();let ch=JSON.stringify(SYSNAV)!==o;
+  if(SYSNAV&&!S.navUser){const want=SYSNAV.mode===2?'gest':'btn';if(S.navMode!==want){const od=dockTop();S.navMode=want;saveS();dockMoveFrom(od);return}}
+  if(ch)layout()};
 function settingsPush(id){const pg=buildPage(id);SETEL.appendChild(pg);const prev=sStack[sStack.length-1];sStack.push(pg);void pg.offsetWidth;rangeAll(pg);pg.classList.remove('off');prev&&prev.classList.add('under')}
 function settingsBack(){if(sStack.length<=1)return closeSettings();const pg=sStack.pop();pg.classList.add('off');sStack[sStack.length-1].classList.remove('under');if(sStack.length===1)sStack[0].querySelectorAll('.it').forEach(r=>{if(!r.dataset.so)r.querySelector('img').src=setImg(SITEM[r.dataset.id])});setTimeout(()=>{park(pg);pg.remove()},320)}
 function applyFS(){const v=S.fs||1;SETEL.style.setProperty('--fs',v);phone.style.setProperty('--fs',v);layout()}

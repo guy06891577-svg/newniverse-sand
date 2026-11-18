@@ -59,6 +59,10 @@ public class MainActivity extends Activity {
     root=new FrameLayout(this); root.addView(web,new FrameLayout.LayoutParams(-1,-1));
     wlayer=new FrameLayout(this); root.addView(wlayer,new FrameLayout.LayoutParams(-1,-1));
     setContentView(root);
+    // v27: 아래 시스템 제스처/내비 영역을 읽어 두고, 바뀌면 웹에 알림(독이 그 위로 오게)
+    root.setOnApplyWindowInsetsListener((v,ins)->{ readInsets(ins); return v.onApplyWindowInsets(ins); });
+    try{ getContentResolver().registerContentObserver(Settings.Secure.getUriFor("navigation_mode"),false,new android.database.ContentObserver(ui){
+      @Override public void onChange(boolean self){ js("window.NV_onInsets&&NV_onInsets()"); } }); }catch(Exception e){}
     applyBars();
     web.loadUrl("file:///android_asset/www/index.html?native=1");
     IntentFilter f=new IntentFilter(); f.addAction(Intent.ACTION_PACKAGE_ADDED); f.addAction(Intent.ACTION_PACKAGE_REMOVED); f.addAction(Intent.ACTION_PACKAGE_CHANGED); f.addDataScheme("package");
@@ -169,6 +173,17 @@ public class MainActivity extends Activity {
     }
   }
 
+  volatile int insNav=0, insGest=0, insMand=0;
+  void readInsets(WindowInsets ins){
+    try{ float d=getResources().getDisplayMetrics().density; int n,g,m;
+      if(Build.VERSION.SDK_INT>=30){ n=ins.getInsetsIgnoringVisibility(WindowInsets.Type.navigationBars()).bottom;
+        g=ins.getInsets(WindowInsets.Type.systemGestures()).bottom; m=ins.getInsets(WindowInsets.Type.mandatorySystemGestures()).bottom; }
+      else if(Build.VERSION.SDK_INT>=29){ n=ins.getStableInsetBottom(); g=ins.getSystemGestureInsets().bottom; m=ins.getMandatorySystemGestureInsets().bottom; }
+      else { n=ins.getStableInsetBottom(); g=0; m=0; }
+      int a=Math.round(n/d), b=Math.round(g/d), c=Math.round(m/d);
+      if(a!=insNav||b!=insGest||c!=insMand){ insNav=a; insGest=b; insMand=c; js("window.NV_onInsets&&NV_onInsets()"); }
+    }catch(Throwable e){}
+  }
   class Bridge {
     // ---------- v23 위젯 ----------
     @JavascriptInterface public String widgetProviders(){
@@ -236,6 +251,9 @@ public class MainActivity extends Activity {
     /** 저장된 배치에 없는(주인 없는) 위젯 번호 정리 */
     @JavascriptInterface public void widgetGc(String json){ try{ JSONArray a=new JSONArray(json); Set<Integer> keep=new HashSet<>(); for(int k=0;k<a.length();k++) keep.add(a.getInt(k));
         for(int id:whost.getAppWidgetIds()) if(!keep.contains(id)&&id!=pendId) whost.deleteAppWidgetId(id); }catch(Exception e){} }
+    /** 시스템 내비 방식(0=3버튼 1=2버튼 2=제스처)과 아래 인셋(dp = 웹 CSS px) */
+    @JavascriptInterface public String sysNav(){ int mode=-1; try{ mode=Settings.Secure.getInt(getContentResolver(),"navigation_mode",-1); }catch(Exception e){}
+      return "{\"mode\":"+mode+",\"nav\":"+insNav+",\"gest\":"+insGest+",\"mand\":"+insMand+"}"; }
     @JavascriptInterface public String battery(){ try{ BatteryManager bm=(BatteryManager)getSystemService(BATTERY_SERVICE); int lv=bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
         return "{\"level\":"+lv+",\"charging\":"+bm.isCharging()+"}"; }catch(Exception e){ return ""; } }
     @JavascriptInterface public String storage(){ try{ StatFs st=new StatFs(Environment.getDataDirectory().getPath()); return "{\"total\":"+st.getTotalBytes()+",\"free\":"+st.getAvailableBytes()+"}"; }catch(Exception e){ return ""; } }
