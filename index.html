@@ -7,7 +7,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>뉴니버스 · 모래 전환 시제품 v24</title>
+<title>뉴니버스 · 모래 전환 시제품 v25</title>
 <style>
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
   html,body{height:100%;background:#05040d;overflow:hidden;font-family:system-ui,-apple-system,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#fff;overscroll-behavior:none}
@@ -366,6 +366,12 @@
   /* 다른 UI 스타일은 각자의 색을 지킴 */
   #phone[data-ui=bojagi] .seg button.on{background:#b8433a;color:#fff4ea;border-color:transparent;box-shadow:none}
   #phone[data-ui=dune] .seg button.on{background:linear-gradient(135deg,#f3c27a,#c9783a);color:#2a1606;border-color:transparent}
+  /* v25 독 누름 반응 */
+  #dkp{position:absolute;z-index:4;width:76px;height:76px;margin:-38px 0 0 -38px;border-radius:50%;pointer-events:none;opacity:0;transform:scale(.6);
+    background:radial-gradient(circle,rgba(190,240,255,.42) 0%,rgba(150,140,255,.18) 45%,rgba(150,140,255,0) 70%);box-shadow:inset 0 0 0 1px rgba(200,240,255,.22);transition:opacity .35s ease,transform .35s ease}
+  #dkp.on{opacity:1;transform:scale(1);transition:opacity .08s ease,transform .12s ease}
+  #dkp.up{opacity:0;transform:scale(1.25)}
+  #phone.locked #dkp{display:none}
 </style>
 </head>
 <body>
@@ -390,6 +396,7 @@
   <div id="dots"><i class="on"></i><i></i><i></i></div>
   <div id="safe" style="position:absolute;visibility:hidden;padding-bottom:env(safe-area-inset-bottom)"></div>
   <div id="fold"><div class="bd"></div><div class="wrap"><h2></h2><div class="stage"></div><div class="lbl"></div><div class="fdots"></div><div class="tip">좌우로 휙 돌려보세요 · 아래로 내리거나 바깥을 누르면 닫혀요</div></div></div>
+  <div id="dkp"></div>
   <div id="toast"></div>
   <div id="dim"></div>
   <div id="qpbd"></div>
@@ -789,6 +796,16 @@ function iconURL(a,set,px){const key=set+'|'+(a.pkg||'')+a.n+'|'+px+(a.img?'i':'
   a.folder?drawSetFolder(c,a,px/2,px/2,px*.72,set):drawSetIcon(c,a,px/2,px/2,px*.72,set);const u=cv.toDataURL();ICACHE.set(key,u);return u}
 function iconHTML(a,px){const set=iconSet();if(set==='basic'&&!a.img)return null;return `<img src="${iconURL(a,set,px)}" width="${px}" height="${px}" alt="" style="display:block;width:${px}px;height:${px}px">`}
 // 캔버스 위 통합 진입점: 세트가 기본이 아니면 새 아이콘, 기본이면 false
+// 독 전용: 틀 없는 아이콘. 선 그림(전화·문자·인터넷·주소록 등) = 그림자 + 앱 색 빛 + 흰 선. 실제 설치 앱(선 그림 없음)은 원래 아이콘 그대로
+function drawDockBare(c,a,cx,cy,s){
+  const k=a.gk&&a.gk!=='none'?a.gk:(!a.img&&GMAP[a.n]&&GMAP[a.n]!=='none'?GMAP[a.n]:null);
+  if(k){const g=s*.66;c.save();
+    c.shadowColor='rgba(0,0,0,.8)';c.shadowBlur=12;c.shadowOffsetY=1.5;c.strokeStyle='rgba(8,8,24,.55)';glyph(c,k,cx,cy,g,4.6);
+    c.shadowBlur=4;c.shadowOffsetY=0;c.shadowColor='rgba(0,0,0,.6)';glyph(c,k,cx,cy,g,4);
+    c.shadowColor=a.c1||'#7fe7ff';c.shadowBlur=14;c.strokeStyle='rgba(255,255,255,.95)';glyph(c,k,cx,cy,g,2.5);
+    c.shadowBlur=0;c.shadowColor='transparent';c.strokeStyle='#fff';glyph(c,k,cx,cy,g,2.3);c.restore();return true}
+  if(a.img){const d=s*.92;c.save();c.shadowColor='rgba(0,0,0,.45)';c.shadowBlur=10;c.shadowOffsetY=2;c.drawImage(a.img,cx-d/2,cy-d/2,d,d);c.restore();return true}
+  return false}
 function setIconAt(c,a,cx,cy,s){const set=iconSet();if(set==='basic'&&!a.img&&!(a.folder&&NATIVE))return false;(a.folder?drawSetFolder:drawSetIcon)(c,a,cx,cy,s,set);return true}
 
 function drawIcon(c,a,x,y,s){
@@ -890,8 +907,9 @@ function renderPage(pi){
   });
   const dc=dockCtx(pi);
   const dt=dockTop(),dx=14,dw=W-28,dh=88;
-  dc.save();rr(dc,dx,dt,dw,dh,30);dc.fillStyle='rgba(255,255,255,.14)';dc.fill();dc.strokeStyle='rgba(255,255,255,.2)';dc.lineWidth=1;dc.stroke();dc.restore();
+  // v25: 독 판(가로 바)과 아이콘 틀을 없애고, 선 그림만 배경 위에 띄움
   const ds=54,DK=dockItems();DK.forEach((a,i)=>{const cx=dx+dw*(i+.5)/DK.length,x=cx-ds/2,y=dt+(dh-ds)/2;
+    if(!a.ph&&!a.folder&&drawDockBare(dc,a,cx,y+ds/2,ds)){hitRects[pi].push({x,y,w:ds,h:ds,n:a.n,a,src:'dock',slot:i});return}
     if(a.ph){dc.save();rr(dc,x-4,y-4,ds+8,ds+8,20);dc.fillStyle='rgba(255,213,154,.16)';dc.fill();dc.lineWidth=2;dc.strokeStyle='rgba(255,213,154,.85)';dc.stroke();dc.restore();return}
     if(setIconAt(dc,a,cx,y+ds/2,ds*1.1)){hitRects[pi].push({x,y,w:ds,h:ds,n:a.n,a,src:'dock',slot:i});return}
     dc.save();dc.shadowColor='rgba(0,0,0,.3)';dc.shadowBlur=10;dc.shadowOffsetY=4;const g=dc.createLinearGradient(x,y,x+ds,y+ds);g.addColorStop(0,a.c1);g.addColorStop(1,a.c2);
@@ -2282,6 +2300,7 @@ function buildDots(){const D=$('dots');if(D.children.length!==PAGES.length){D.in
 
 // ---------- 입력 ----------
 let sx=0,sy=0,lx=0,lt=0,vx=0,vy=0,ly=0,moved=false,crossed=false,pid=null,axis=null;
+phone.addEventListener('pointerdown',e=>{dockPress(e)},true);
 phone.addEventListener('pointerdown',e=>{
   if(e.target.closest('#sheet,#settings,#gear,#fold,#meDone,#me.edit,#qp,#qpbd,#drawer,#recents'))return;
   if($('settings').classList.contains('open')){toggleSheet(false);return}
@@ -2322,6 +2341,14 @@ function up(e){
 }
 phone.addEventListener('pointerup',up);phone.addEventListener('pointercancel',up);
 
+// v25: 독 아이콘 누를 때 은은한 빛 + 눌림
+function dockPress(e){const el=$('dkp');if(!el||EDIT||(S.ui&&S.ui!=='classic')||phone.classList.contains('locked'))return;
+  if(e.target.closest('#settings,#qp,#qpbd,#drawer,#recents,#fold,#lpm,#nvm,#wpk,#navbtns,#navgest'))return;
+  const r=phone.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
+  const h=(hitRects[cur]||[]).find(o=>o.src==='dock'&&x>=o.x-6&&x<=o.x+o.w+6&&y>=o.y-8&&y<=o.y+o.h+8);if(!h)return;
+  el.style.left=(h.x+h.w/2)+'px';el.style.top=(h.y+h.h/2)+'px';el.classList.remove('up');void el.offsetWidth;el.classList.add('on');
+  const off=()=>{el.classList.add('up');el.classList.remove('on');window.removeEventListener('pointerup',off,true);window.removeEventListener('pointercancel',off,true)};
+  window.addEventListener('pointerup',off,true);window.addEventListener('pointercancel',off,true)}
 function tap(e){
   const r=phone.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
   const h=(hitRects[cur]||[]).find(o=>x>=o.x&&x<=o.x+o.w&&y>=o.y&&y<=o.y+o.h);
@@ -2461,7 +2488,7 @@ $('reset').onclick=()=>{S=Object.assign({},DEF);syncUI();applyWallpaper();try{lo
 $('demo').onclick=()=>{if(anim)return;const to=cur<PAGES.length-1?cur+1:cur-1;go(to,to>cur?-1:1)};
 const QNAME=['최고','높음','보통','가벼움','아주 가벼움'];
 function qNote(){const l=qLvl(),L=QST.last;return (qMode()==='auto'?`자동 · 지금 ‘${QNAME[l]}’ 단계 · 넘길 때 속도를 보고 저절로 맞춰요`:qMode()==='smooth'?`부드러움 우선 · ‘${QNAME[l]}’ 단계 · 모래알·해상도를 낮춰 끊김을 줄여요`:'화질 우선 · 모래알을 가장 많이 써요 · 느린 폰에서는 끊길 수 있어요')+(L?` · 지난 전환 ${Math.round(1000/L.mean)}fps`:'')}
-function updateStats(){$('stats').textContent=`v24 · 품질 ${QNAME[qLvl()]} · 모래알 ${counts[cur]?counts[cur].toLocaleString('ko-KR'):0}개 · 알갱이 ${cell}px · 최근 ${Math.round(lastFps)}fps${NOGL?' · 평면 모드':LITE?' · 가벼운 모드':weak?' · 절약 모드':''}`}
+function updateStats(){$('stats').textContent=`v25 · 품질 ${QNAME[qLvl()]} · 모래알 ${counts[cur]?counts[cur].toLocaleString('ko-KR'):0}개 · 알갱이 ${cell}px · 최근 ${Math.round(lastFps)}fps${NOGL?' · 평면 모드':LITE?' · 가벼운 모드':weak?' · 절약 모드':''}`}
 function setLite(on,why){LITE=on;LITE_WHY=why||'';CAP=qCap();try{spW=0}catch(_){}layout()}
 syncUI();
 window.__nv={pose:(to,d,tt)=>{target=to;dir=d;t=tt;draw()},cur:()=>cur,hits:()=>hitRects[cur].map(h=>({x:h.x,y:h.y,w:h.w,h:h.h,n:h.n,act:h.act,f:!!h.f}))};
@@ -2534,7 +2561,7 @@ DR.addEventListener('touchcancel',()=>{if(td&&td.m)setDR(1,true);td=null});
 setQP(0);setDR(0);
 window.__nv.panel=()=>({qp:qpP,dr:drP});window.__nv.S=S;window.__nv.layout=layout;window.__nv.buildDrawer=buildDrawer;
 // ---------- 설정 화면 (삼성 설정 구성을 참고한 뉴니버스 설정) ----------
-const VER='v24';
+const VER='v25';
 Object.assign(GLY,{
  wifi:'M2.5 9a14 14 0 0 1 19 0 M5.5 12.3a9.5 9.5 0 0 1 13 0 M8.6 15.5a5 5 0 0 1 6.8 0 M12 19h.01',
  devices:'M3.5 5h12v9h-12z M2 17h15 M18 8h3.5v11H18z',
