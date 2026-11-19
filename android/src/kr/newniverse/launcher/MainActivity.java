@@ -68,9 +68,12 @@ public class MainActivity extends Activity {
     IntentFilter f=new IntentFilter(); f.addAction(Intent.ACTION_PACKAGE_ADDED); f.addAction(Intent.ACTION_PACKAGE_REMOVED); f.addAction(Intent.ACTION_PACKAGE_CHANGED); f.addDataScheme("package");
     registerReceiver(pkgRx,f);
     regLauncherApps();
+    regTorch();
+    NotifService.onChange=()->{ ui.removeCallbacks(notifPing); ui.postDelayed(notifPing,250); };
   }
+  final Runnable notifPing=()->js("window.NV_onNotif&&NV_onNotif()");
   ValueCallback<Uri[]> fileCb;
-  @Override protected void onActivityResult(int req,int res,Intent data){ if(widgetResult(req,res)) return; if(req==77&&fileCb!=null){ fileCb.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(res,data)); fileCb=null; } else super.onActivityResult(req,res,data); }
+  @Override protected void onActivityResult(int req,int res,Intent data){ if(widgetResult(req,res)) return; if(req==REQ_EXP||req==REQ_IMP){ bakResult(req,res,data); return; } if(req==77&&fileCb!=null){ fileCb.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(res,data)); fileCb=null; } else super.onActivityResult(req,res,data); }
 
   // v21: 앱 설치·삭제·업데이트를 바로 반영 (브로드캐스트 + LauncherApps 콜백, 같은 변화가 겹치면 JS 쪽에서 한 번만 처리)
   final BroadcastReceiver pkgRx=new BroadcastReceiver(){ @Override public void onReceive(Context c,Intent i){
@@ -108,8 +111,47 @@ public class MainActivity extends Activity {
   @Override protected void onResume(){ super.onResume(); applyBars(); js("window.NV_onResume&&NV_onResume()"); }
   @Override protected void onPause(){ super.onPause(); js("window.NV_onPause&&NV_onPause()"); }
   static final int REQ_LOC=7301;
+  static final int REQ_EXP=7302, REQ_IMP=7303, REQ_CON=7304;
+  String pendExport=null;
+  // v29 홈 배치 백업: 저장소 접근 권한 없이 안드로이드 파일 고르기(SAF) 창으로 내보내기/가져오기
+  void bakResult(int req,int res,Intent data){
+    if(res!=RESULT_OK||data==null||data.getData()==null){ js("window.NV_onBak&&NV_onBak('"+(req==REQ_EXP?"exp":"imp")+"',0,'')"); pendExport=null; return; }
+    final Uri u=data.getData();
+    new Thread(()->{ boolean ok=false; String body="";
+      try{ if(req==REQ_EXP){ java.io.OutputStream o=getContentResolver().openOutputStream(u,"wt"); o.write((pendExport==null?"":pendExport).getBytes("UTF-8")); o.close(); ok=true; }
+        else{ java.io.InputStream in=getContentResolver().openInputStream(u); ByteArrayOutputStream bo=new ByteArrayOutputStream(); byte[] b=new byte[8192]; int n,t=0; while((n=in.read(b))>0&&t<4000000){ bo.write(b,0,n); t+=n; } in.close(); body=bo.toString("UTF-8"); ok=true; } }catch(Exception e){ ok=false; }
+      pendExport=null; final String q=org.json.JSONObject.quote(body); final boolean fok=ok;
+      js("window.NV_onBak&&NV_onBak('"+(req==REQ_EXP?"exp":"imp")+"',"+(fok?1:0)+","+q+")"); }).start();
+  }
+  // v29 빠른 설정: 실제 상태 읽기
+  boolean torchState=false;
+  void regTorch(){ try{ CameraManager cm=(CameraManager)getSystemService(CAMERA_SERVICE); cm.registerTorchCallback(new CameraManager.TorchCallback(){ @Override public void onTorchModeChanged(String id,boolean en){ torchState=en; torchOn=en; js("window.NV_onQS&&NV_onQS()"); } },ui); }catch(Exception e){} }
+  String qsJson(){ JSONObject o=new JSONObject(); ContentResolver cr=getContentResolver();
+    try{ android.net.wifi.WifiManager wm=(android.net.wifi.WifiManager)getApplicationContext().getSystemService(WIFI_SERVICE); o.put("wifi",wm!=null&&wm.isWifiEnabled()); }catch(Exception e){ try{ o.put("wifi",Settings.Global.getInt(cr,"wifi_on",0)>0);}catch(Exception e2){} }
+    try{ o.put("bt",Settings.Global.getInt(cr,"bluetooth_on",0)!=0); }catch(Exception e){}
+    try{ o.put("air",Settings.Global.getInt(cr,Settings.Global.AIRPLANE_MODE_ON,0)!=0); }catch(Exception e){}
+    try{ o.put("data",Settings.Global.getInt(cr,"mobile_data",0)!=0); }catch(Exception e){}
+    try{ android.location.LocationManager lm=(android.location.LocationManager)getSystemService(LOCATION_SERVICE); o.put("loc",Build.VERSION.SDK_INT>=28?lm.isLocationEnabled():Settings.Secure.getInt(cr,Settings.Secure.LOCATION_MODE,0)!=0); }catch(Exception e){}
+    try{ o.put("save",((PowerManager)getSystemService(POWER_SERVICE)).isPowerSaveMode()); }catch(Exception e){}
+    try{ o.put("rot",Settings.System.getInt(cr,Settings.System.ACCELEROMETER_ROTATION,0)!=0); }catch(Exception e){}
+    try{ AudioManager am=(AudioManager)getSystemService(AUDIO_SERVICE); o.put("ring",am.getRingerMode()); o.put("sound",am.getRingerMode()==AudioManager.RINGER_MODE_NORMAL); }catch(Exception e){}
+    try{ android.app.NotificationManager nm=(android.app.NotificationManager)getSystemService(NOTIFICATION_SERVICE); o.put("dndAccess",nm.isNotificationPolicyAccessGranted()); o.put("dnd",nm.getCurrentInterruptionFilter()>android.app.NotificationManager.INTERRUPTION_FILTER_ALL); }catch(Exception e){}
+    try{ o.put("writeSettings",Settings.System.canWrite(this)); }catch(Exception e){}
+    try{ o.put("flash",torchState); o.put("bright",Settings.System.getInt(cr,Settings.System.SCREEN_BRIGHTNESS,128)/255.0); o.put("autoBright",Settings.System.getInt(cr,Settings.System.SCREEN_BRIGHTNESS_MODE,0)==1); }catch(Exception e){}
+    return o.toString(); }
+  void startI(Intent i){ try{ i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(i);}catch(Exception e){ try{ Intent j=new Intent(Settings.ACTION_SETTINGS); j.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(j);}catch(Exception e2){} } }
+  boolean notifGranted(){ try{ ComponentName cn=new ComponentName(this,NotifService.class);
+      if(Build.VERSION.SDK_INT>=27) return ((android.app.NotificationManager)getSystemService(NOTIFICATION_SERVICE)).isNotificationListenerAccessGranted(cn);
+      String v=Settings.Secure.getString(getContentResolver(),"enabled_notification_listeners"); return v!=null&&v.contains(cn.flattenToString()); }catch(Exception e){ return false; } }
+  // 연락처 (켤 때만 권한 요청) · 이름·번호만 읽어 웹 화면 메모리에서 검색, 저장·전송 없음
+  String contactsJson(){ JSONArray a=new JSONArray(); if(checkSelfPermission(android.Manifest.permission.READ_CONTACTS)!=PackageManager.PERMISSION_GRANTED) return "null";
+    android.database.Cursor c=null; try{ c=getContentResolver().query(android.provider.ContactsContract.CommonDataKinds.Phone.CONTENT_URI,new String[]{android.provider.ContactsContract.CommonDataKinds.Phone.CONTACT_ID,android.provider.ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,android.provider.ContactsContract.CommonDataKinds.Phone.NUMBER},null,null,android.provider.ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME+" ASC");
+      Set<String> seen=new HashSet<>(); while(c!=null&&c.moveToNext()&&a.length()<5000){ String id=c.getString(0),n=c.getString(1),num=c.getString(2); if(n==null||num==null) continue; String k=id+"|"+num.replaceAll("[^0-9+]",""); if(!seen.add(k)) continue;
+        JSONObject o=new JSONObject(); o.put("id",id); o.put("n",n); o.put("p",num); a.put(o); } }catch(Exception e){} finally{ if(c!=null) c.close(); }
+    return a.toString(); }
   @Override public void onRequestPermissionsResult(int req,String[] p,int[] g){ super.onRequestPermissionsResult(req,p,g);
-    if(req==REQ_LOC) js("window.NV_onBusPerm&&NV_onBusPerm('"+BusInfo.perm(this)+"')"); }
+    if(req==REQ_LOC) js("window.NV_onBusPerm&&NV_onBusPerm('"+BusInfo.perm(this)+"')");
+    if(req==REQ_CON) js("window.NV_onConPerm&&NV_onConPerm('"+(checkSelfPermission(android.Manifest.permission.READ_CONTACTS)==PackageManager.PERMISSION_GRANTED?"yes":"no")+"')"); }
 
   @Override protected void onNewIntent(Intent i){ super.onNewIntent(i);
     if(Intent.ACTION_MAIN.equals(i.getAction())&&i.hasCategory(Intent.CATEGORY_HOME)) js("window.NV_onHome&&NV_onHome()"); }
@@ -189,6 +231,61 @@ public class MainActivity extends Activity {
     }catch(Throwable e){}
   }
   class Bridge {
+    // v29 알림 배지·미리보기
+    @JavascriptInterface public boolean notifAccess(){ return notifGranted(); }
+    @JavascriptInterface public boolean notifConnected(){ return NotifService.inst!=null; }
+    @JavascriptInterface public void notifOpenAccess(){ ui.post(()->{ Intent i;
+      if(Build.VERSION.SDK_INT>=30){ i=new Intent(Settings.ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS); i.putExtra(Settings.EXTRA_NOTIFICATION_LISTENER_COMPONENT_NAME,new ComponentName(MainActivity.this,NotifService.class).flattenToString()); }
+      else i=new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS);
+      try{ i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(i);}catch(Exception e){ startI(new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)); } }); }
+    @JavascriptInterface public String notifSummary(){ return NotifService.summary(); }
+    @JavascriptInterface public String notifList(String pkg){ return NotifService.list(pkg); }
+    @JavascriptInterface public boolean notifOpen(String key){
+      android.service.notification.StatusBarNotification s=NotifService.byKey(key); if(s==null) return false;
+      android.app.PendingIntent pi=s.getNotification().contentIntent;
+      if(pi!=null){ try{ Bundle opt=null; if(Build.VERSION.SDK_INT>=34){ android.app.ActivityOptions ao=android.app.ActivityOptions.makeBasic(); ao.setPendingIntentBackgroundActivityStartMode(android.app.ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED); opt=ao.toBundle(); }
+          pi.send(MainActivity.this,0,null,null,null,null,opt);
+          if((s.getNotification().flags&android.app.Notification.FLAG_AUTO_CANCEL)!=0){ try{ NotifService.inst.cancelNotification(key);}catch(Exception e){} } return true; }catch(Exception e){} }
+      try{ Intent i=getPackageManager().getLaunchIntentForPackage(s.getPackageName()); if(i!=null){ i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(i); return true; } }catch(Exception e){} return false; }
+    // v29 빠른 설정
+    @JavascriptInterface public String qsState(){ return qsJson(); }
+    @JavascriptInterface public String qsAct(String k){
+      if("wifi".equals(k)){ startI(new Intent(Build.VERSION.SDK_INT>=29?Settings.Panel.ACTION_WIFI:Settings.ACTION_WIFI_SETTINGS)); return "panel"; }
+      if("data".equals(k)){ startI(new Intent(Build.VERSION.SDK_INT>=29?Settings.Panel.ACTION_INTERNET_CONNECTIVITY:Settings.ACTION_DATA_ROAMING_SETTINGS)); return "panel"; }
+      if("bt".equals(k)){ startI(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS)); return "settings"; }
+      if("air".equals(k)){ startI(new Intent(Build.VERSION.SDK_INT>=29?Settings.Panel.ACTION_INTERNET_CONNECTIVITY:Settings.ACTION_AIRPLANE_MODE_SETTINGS)); return "panel"; }
+      if("loc".equals(k)){ startI(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)); return "settings"; }
+      if("save".equals(k)){ startI(new Intent(Build.VERSION.SDK_INT>=22?Settings.ACTION_BATTERY_SAVER_SETTINGS:Intent.ACTION_POWER_USAGE_SUMMARY)); return "settings"; }
+      if("hot".equals(k)){ startI(new Intent(Settings.ACTION_WIRELESS_SETTINGS)); return "settings"; }
+      if("sound".equals(k)){ try{ AudioManager am=(AudioManager)getSystemService(AUDIO_SERVICE); am.setRingerMode(am.getRingerMode()==AudioManager.RINGER_MODE_NORMAL?AudioManager.RINGER_MODE_VIBRATE:AudioManager.RINGER_MODE_NORMAL); return "ok"; }catch(Exception e){ startI(new Intent(Settings.ACTION_SOUND_SETTINGS)); return "settings"; } }
+      if("rot".equals(k)){ if(!Settings.System.canWrite(MainActivity.this)) return "needWrite";
+        try{ ContentResolver cr=getContentResolver(); int v=Settings.System.getInt(cr,Settings.System.ACCELEROMETER_ROTATION,0); Settings.System.putInt(cr,Settings.System.ACCELEROMETER_ROTATION,v!=0?0:1); return "ok"; }catch(Exception e){ return "fail"; } }
+      if("dnd".equals(k)){ android.app.NotificationManager nm=(android.app.NotificationManager)getSystemService(NOTIFICATION_SERVICE); if(!nm.isNotificationPolicyAccessGranted()) return "needDnd";
+        try{ boolean on=nm.getCurrentInterruptionFilter()>android.app.NotificationManager.INTERRUPTION_FILTER_ALL; nm.setInterruptionFilter(on?android.app.NotificationManager.INTERRUPTION_FILTER_ALL:android.app.NotificationManager.INTERRUPTION_FILTER_PRIORITY); return "ok"; }catch(Exception e){ return "fail"; } }
+      return "no"; }
+    @JavascriptInterface public void qsGrant(String which){ ui.post(()->{ if("write".equals(which)){ startI(new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS,Uri.parse("package:"+getPackageName()))); }
+      else if("dnd".equals(which)) startI(new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)); }); }
+    /** 화면 밝기: 시스템 설정 쓰기 허용이면 폰 전체 밝기, 아니면 이 화면만 */
+    @JavascriptInterface public String sysBright(final float v){ if(Settings.System.canWrite(MainActivity.this)){ try{ ContentResolver cr=getContentResolver(); Settings.System.putInt(cr,Settings.System.SCREEN_BRIGHTNESS_MODE,0); Settings.System.putInt(cr,Settings.System.SCREEN_BRIGHTNESS,Math.max(3,Math.min(255,Math.round(v*255))));
+        ui.post(()->{ WindowManager.LayoutParams lp=getWindow().getAttributes(); lp.screenBrightness=-1f; getWindow().setAttributes(lp); }); return "sys"; }catch(Exception e){} }
+      brightness(v); return "win"; }
+    // v29 홈 배치 백업·복원 (SAF)
+    @JavascriptInterface public void bakExport(final String name,final String json){ pendExport=json; ui.post(()->{ try{ Intent i=new Intent(Intent.ACTION_CREATE_DOCUMENT); i.addCategory(Intent.CATEGORY_OPENABLE); i.setType("application/json"); i.putExtra(Intent.EXTRA_TITLE,name); startActivityForResult(i,REQ_EXP);}catch(Exception e){ pendExport=null; js("window.NV_onBak&&NV_onBak('exp',0,'')"); } }); }
+    @JavascriptInterface public void bakImport(){ ui.post(()->{ try{ Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT); i.addCategory(Intent.CATEGORY_OPENABLE); i.setType("*/*"); i.putExtra(Intent.EXTRA_MIME_TYPES,new String[]{"application/json","text/plain","application/octet-stream"}); startActivityForResult(i,REQ_IMP);}catch(Exception e){ js("window.NV_onBak&&NV_onBak('imp',0,'')"); } }); }
+    @JavascriptInterface public boolean autoBakSave(String json){ try{ java.io.FileOutputStream o=openFileOutput("autobackup.json",MODE_PRIVATE); o.write(json.getBytes("UTF-8")); o.close(); return true; }catch(Exception e){ return false; } }
+    @JavascriptInterface public String autoBakLoad(){ try{ java.io.FileInputStream in=openFileInput("autobackup.json"); ByteArrayOutputStream bo=new ByteArrayOutputStream(); byte[] b=new byte[8192]; int n; while((n=in.read(b))>0) bo.write(b,0,n); in.close(); return bo.toString("UTF-8"); }catch(Exception e){ return ""; } }
+    // v29 연락처 검색
+    @JavascriptInterface public String contactsPerm(){ return checkSelfPermission(android.Manifest.permission.READ_CONTACTS)==PackageManager.PERMISSION_GRANTED?"yes":"no"; }
+    @JavascriptInterface public void contactsAsk(){ ui.post(()->{ try{ requestPermissions(new String[]{android.Manifest.permission.READ_CONTACTS},REQ_CON);}catch(Exception e){ js("window.NV_onConPerm&&NV_onConPerm('no')"); } }); }
+    @JavascriptInterface public String contactsAll(){ return contactsJson(); }
+    @JavascriptInterface public void dial(String num){ String n=num==null?"":num.replaceAll("[^0-9+*#]",""); startI(new Intent(Intent.ACTION_DIAL,Uri.parse("tel:"+n))); }
+    @JavascriptInterface public void sms(String num){ String n=num==null?"":num.replaceAll("[^0-9+]",""); startI(new Intent(Intent.ACTION_SENDTO,Uri.parse("smsto:"+n))); }
+    @JavascriptInterface public void openContact(String id){ try{ startI(new Intent(Intent.ACTION_VIEW,Uri.withAppendedPath(android.provider.ContactsContract.Contacts.CONTENT_URI,id.replaceAll("[^0-9]","")))); }catch(Exception e){} }
+    /** 안드로이드 설정 화면 바로가기 (액션 이름으로) */
+    @JavascriptInterface public void openAction(String act){ if(act==null||!act.startsWith("android.settings.")) return; startI(new Intent(act)); }
+    // v29 최근 앱: 추가판에서 접근성이 켜져 있으면 폰의 진짜 최근 앱 화면을 열 수 있음
+    @JavascriptInterface public boolean sysRecents(){ if(Flavor.BASIC) return false;
+      try{ return (Boolean)Class.forName(getPackageName()+".LockService").getMethod("recents").invoke(null); }catch(Throwable e){ return false; } }
     // v28 가까운 정류장 버스 도착
     @JavascriptInterface public String busPerm(){ return BusInfo.perm(MainActivity.this); }
     @JavascriptInterface public void busAskPerm(){ ui.post(()->{ try{ requestPermissions(new String[]{BusInfo.FINE,BusInfo.COARSE},REQ_LOC);}catch(Exception e){ js("window.NV_onBusPerm&&NV_onBusPerm('none')"); } }); }

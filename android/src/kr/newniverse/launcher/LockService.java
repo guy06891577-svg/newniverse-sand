@@ -11,6 +11,7 @@ public class LockService extends AccessibilityService {
   @Override public void onDestroy(){ inst=null; super.onDestroy(); }
   @Override public void onAccessibilityEvent(AccessibilityEvent e){}
   @Override public void onInterrupt(){}
+  static boolean recents(){ if(inst==null) return false; return inst.performGlobalAction(GLOBAL_ACTION_RECENTS); }
   static boolean lock(){
     if(inst==null||android.os.Build.VERSION.SDK_INT<28) return false;
     return inst.performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN);

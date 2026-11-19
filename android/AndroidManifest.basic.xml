@@ -8,6 +8,14 @@
   <!-- v28: 가까운 정류장 버스 도착 (기능을 켤 때만 물어봄) -->
   <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
   <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+  <!-- v29: 빠른 설정 실제 상태 읽기(일반 권한, 자동 허용) -->
+  <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+  <!-- v29: 방해 금지 켜고 끄기 · 자동 회전/폰 밝기 바꾸기 (사용자가 설정에서 직접 허용해야 동작) -->
+  <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY"/>
+  <uses-permission android:name="android.permission.WRITE_SETTINGS"/>
+  <!-- v29: 통합 검색에서 연락처 찾기 (기능을 켤 때만 물어봄) -->
+  <uses-permission android:name="android.permission.READ_CONTACTS"/>
   <queries>
     <intent><action android:name="android.appwidget.action.APPWIDGET_UPDATE"/></intent>
     <intent><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent>
@@ -32,5 +40,10 @@
         <category android:name="android.intent.category.LAUNCHER"/>
       </intent-filter>
     </activity>
+    <!-- v29: 알림 배지·미리보기 (사용자가 '알림 접근'을 허용해야 동작) -->
+    <service android:name=".NotifService" android:exported="true" android:label="뉴니버스 알림 배지"
+        android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+      <intent-filter><action android:name="android.service.notification.NotificationListenerService"/></intent-filter>
+    </service>
   </application>
 </manifest>

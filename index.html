@@ -414,6 +414,47 @@
   #settings .bkey{display:flex;gap:8px;padding:10px 14px 12px}
   #settings .bkey input{flex:1;min-width:0;background:var(--nv-glass);border:1px solid var(--nv-line);border-radius:var(--nv-r-s);color:#fff;padding:10px 12px;font-size:14px;font-family:var(--nv-font)}
   #settings .bkey button{flex:none;border:1px solid var(--nv-onl);background:var(--nv-on);color:#fff;border-radius:var(--nv-r-s);padding:0 14px;font-size:14px;font-weight:600}
+  /* v29: 알림 배지 미리보기 · 통합 검색 결과 · 최근 쓴 앱 · 조각보 설정 상자 */
+  #lpm .nfl{display:flex;flex-direction:column;gap:6px;margin:2px 0 6px}
+  #lpm .nf{padding:9px 10px;border-radius:14px;background:var(--nv-glass2);border:1px solid var(--nv-line);cursor:pointer}
+  #lpm .nf:active{background:rgba(255,255,255,.18)}
+  #lpm .nf b{display:flex;justify-content:space-between;gap:8px;font-size:13.5px;font-weight:700}
+  #lpm .nf b em{font-style:normal;font-weight:500;font-size:11px;color:var(--nv-sub);flex:none}
+  #lpm .nf small{display:block;font-size:12.5px;color:rgba(255,255,255,.75);line-height:1.35;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  #lpm .nfh{font-size:11.5px;color:var(--nv-sub);padding:0 10px 2px;display:flex;justify-content:space-between}
+  #lpm .nfh .tag{color:#ffd48a}
+  #drawer .dsec{grid-column:1/-1;margin-top:6px;font-size:13px;color:var(--nv-sub);padding:0 4px}
+  #drawer .drow{grid-column:1/-1;display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:var(--nv-r-m);background:var(--nv-glass);border:1px solid var(--nv-line);color:#fff;cursor:pointer}
+  #drawer .drow .gi{width:36px;height:36px;flex:none;border-radius:12px;display:grid;place-items:center;background:var(--nv-on);border:1px solid var(--nv-onl)}
+  #drawer .drow .gi .ni{width:20px;height:20px}
+  #drawer .drow .tx{flex:1;min-width:0}
+  #drawer .drow .tx b{display:block;font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #drawer .drow .tx small{display:block;font-size:12px;color:var(--nv-sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #drawer .drow .ac{flex:none;width:40px;height:40px;border-radius:50%;border:1px solid var(--nv-line2);background:var(--nv-glass2);color:#fff;display:grid;place-items:center;padding:0}
+  #drawer .drow .ac .ni{width:19px;height:19px}
+  #drawer .drow .pt{font-size:10.5px;color:#ffd48a;margin-left:6px;font-weight:600}
+  #recents .rempty{text-align:center;color:var(--nv-sub);font-size:14px;line-height:1.6;padding:30px 24px}
+  #recents .rbtns{display:flex;gap:10px;justify-content:center;margin:4px 0 10px}
+  #recents .rbtns button{border:1px solid var(--nv-line2);background:var(--nv-glass2);color:#fff;border-radius:999px;padding:9px 16px;font-size:13.5px;font-family:var(--nv-font)}
+  #recents .rbtns button.p{background:var(--nv-on);border-color:var(--nv-onl)}
+  #recents .rtip{padding:0 24px;line-height:1.5}
+  /* 조각보: 설정 안의 조절 상자(.ctl)가 어둡게 나오던 문제 → 한지 밝은 판으로 */
+  #phone[data-ui=bojagi] #settings .ctl{background:rgba(255,252,244,.8);color:#2e2218;border-color:rgba(184,67,58,.35)}
+  #phone[data-ui=bojagi] #settings .ctl .row label{color:#2e2218}
+  #phone[data-ui=bojagi] #settings .row label span,#phone[data-ui=bojagi] #settings .sl .v{color:#b8433a}
+  #phone[data-ui=bojagi] #settings .seg{background:rgba(120,90,60,.1);border-color:rgba(120,90,60,.22)}
+  #phone[data-ui=bojagi] #settings .seg button{color:#5a4026}
+  #phone[data-ui=bojagi] #settings .seg button.on{color:#fff4ea}
+  #phone[data-ui=bojagi] #settings input[type=range]::-webkit-slider-runnable-track{background:linear-gradient(90deg,#d9813b,#b8433a) 0/var(--p) 100% no-repeat,rgba(120,90,60,.2)}
+  #phone[data-ui=bojagi] #settings input[type=range]::-webkit-slider-thumb{box-shadow:0 0 0 4px rgba(184,67,58,.2),0 2px 6px rgba(60,30,10,.35)}
+  #phone[data-ui=bojagi] #settings .btns button{background:rgba(120,90,60,.14);color:#2e2218;border-color:rgba(120,90,60,.25)}
+  #phone[data-ui=bojagi] #settings .btns button.p{background:#b8433a;color:#fff4ea}
+  #phone[data-ui=bojagi] #settings #stats{color:#7a6650}
+  #phone[data-ui=bojagi] #settings .bkey input{background:rgba(120,90,60,.08);color:#2e2218;border-color:rgba(120,90,60,.3)}
+  #bus.cp{padding:8px 10px}
+  #bus.cp .bh{gap:7px}
+  #bus.cp .cr{flex:none;display:flex;gap:5px}
+  #bus.cp .cr span{font-size:12.5px;font-weight:700;padding:3px 7px;border-radius:8px;background:var(--nv-glass2);border:1px solid var(--nv-line);white-space:nowrap}
 </style>
 </head>
 <body>
@@ -2535,7 +2576,7 @@ $('reset').onclick=()=>{S=Object.assign({},DEF);syncUI();applyWallpaper();try{lo
 $('demo').onclick=()=>{if(anim)return;const to=cur<PAGES.length-1?cur+1:cur-1;go(to,to>cur?-1:1)};
 const QNAME=['최고','높음','보통','가벼움','아주 가벼움'];
 function qNote(){const l=qLvl(),L=QST.last;return (qMode()==='auto'?`자동 · 지금 ‘${QNAME[l]}’ 단계 · 넘길 때 속도를 보고 저절로 맞춰요`:qMode()==='smooth'?`부드러움 우선 · ‘${QNAME[l]}’ 단계 · 모래알·해상도를 낮춰 끊김을 줄여요`:'화질 우선 · 모래알을 가장 많이 써요 · 느린 폰에서는 끊길 수 있어요')+(L?` · 지난 전환 ${Math.round(1000/L.mean)}fps`:'')}
-function updateStats(){$('stats').textContent=`v27 · 품질 ${QNAME[qLvl()]} · 모래알 ${counts[cur]?counts[cur].toLocaleString('ko-KR'):0}개 · 알갱이 ${cell}px · 최근 ${Math.round(lastFps)}fps${NOGL?' · 평면 모드':LITE?' · 가벼운 모드':weak?' · 절약 모드':''}`}
+function updateStats(){$('stats').textContent=`${VER} · 품질 ${QNAME[qLvl()]} · 모래알 ${counts[cur]?counts[cur].toLocaleString('ko-KR'):0}개 · 알갱이 ${cell}px · 최근 ${Math.round(lastFps)}fps${NOGL?' · 평면 모드':LITE?' · 가벼운 모드':weak?' · 절약 모드':''}`}
 function setLite(on,why){LITE=on;LITE_WHY=why||'';CAP=qCap();try{spW=0}catch(_){}layout()}
 syncUI();
 window.__nv={pose:(to,d,tt)=>{target=to;dir=d;t=tt;draw()},cur:()=>cur,hits:()=>hitRects[cur].map(h=>({x:h.x,y:h.y,w:h.w,h:h.h,n:h.n,act:h.act,f:!!h.f}))};
@@ -2608,7 +2649,7 @@ DR.addEventListener('touchcancel',()=>{if(td&&td.m)setDR(1,true);td=null});
 setQP(0);setDR(0);
 window.__nv.panel=()=>({qp:qpP,dr:drP});window.__nv.S=S;window.__nv.layout=layout;window.__nv.buildDrawer=buildDrawer;
 // ---------- 설정 화면 (삼성 설정 구성을 참고한 뉴니버스 설정) ----------
-const VER='v28';
+const VER='v29';
 Object.assign(GLY,{
  wifi:'M2.5 9a14 14 0 0 1 19 0 M5.5 12.3a9.5 9.5 0 0 1 13 0 M8.6 15.5a5 5 0 0 1 6.8 0 M12 19h.01',
  devices:'M3.5 5h12v9h-12z M2 17h15 M18 8h3.5v11H18z',
@@ -2704,7 +2745,7 @@ function buildPage(id){
    case 'theme':add(sCard(mk('div','ctl'))).firstChild.append(mvRow('uiSeg'),mvRow('icSeg'));add(mk('div','note','UI 스타일은 홈 화면 배치, 아이콘 모양은 앱 그림을 바꿔요. ‘UI 스타일에 맞추기’면 스타일마다 어울리는 아이콘이 자동으로 골라져요.'));break;
    case 'home':add(sCard(infoRow('홈 화면 편집','아이콘 옮기기 · 폴더 · 화면 추가/삭제',()=>{closeSettings();setTimeout(()=>setEdit(true),200)}),
        swRow('새 앱을 홈 화면에 추가','앱을 설치하면 빈자리에 아이콘을 놓아요',S.addNew!==false,false,on=>{S.addNew=on;saveS()}),
-       infoRow('홈 배치 처음으로','아이콘 배치를 설치했을 때처럼 되돌려요',async()=>{const ok=await ask('홈 배치 처음으로','폴더와 옮긴 아이콘이 모두 처음 상태로 돌아가요. 앱은 지워지지 않아요.',{ok:'되돌리기'});if(!ok)return;try{localStorage.removeItem('nv_layout21')}catch(_){}if(NATIVE&&NVNative.saveState)NVNative.saveState('');location.reload()})));
+       infoRow('홈 배치 처음으로','아이콘 배치를 설치했을 때처럼 되돌려요',async()=>{const ok=await ask('홈 배치 처음으로','폴더와 옮긴 아이콘이 모두 처음 상태로 돌아가요. 앱은 지워지지 않아요.',{ok:'되돌리기'});if(!ok)return;autoBak(true);try{localStorage.removeItem('nv_layout21')}catch(_){}if(NATIVE&&NVNative.saveState)NVNative.saveState('');location.reload()})));
      add(sCard(mk('div','ctl'))).firstChild.append(mvRow('sStar'));
      add(sCard(infoRow(ico('arrowL')+'옆으로 밀기','다음 화면 (모래바람 전환)'),infoRow(ico('arrowD')+'위에서 아래로','빠른 설정 판'),infoRow(ico('arrowU')+'아래에서 위로','전체 앱'),swRow('밀어서 넘기기 진동','넘어갈 때 톡 하고 알려줌',true,true)));
      add(mk('div','note','모래 전환'));add(sCard(mk('div','ctl'))).firstChild.append(mvRow('styleSeg'),mvRow('sWind'),mvRow('sSize'),mvRow('sTurb'),mvRow('sGlow'),mvRow('sDur'),mvRow('reset'));break;
@@ -3322,7 +3363,7 @@ const BFX=document.createElement('canvas');BFX.id='busfx';
 phone.insertBefore(BFX,$('dkp'));phone.insertBefore(BEL,$('dkp'));
 ['pointerdown','touchstart','mousedown'].forEach(ev=>BEL.addEventListener(ev,e=>e.stopPropagation(),{passive:true}));
 BEL.addEventListener('click',e=>{e.stopPropagation();if(e.target.closest('.x')){BUS.dismiss=BUS.stop&&BUS.stop.nodeid;busHide(false);toast('이 정류장을 벗어나면 다시 알려드려요');return}
-  BUS.expand=!BUS.expand;busRender();busPlace()});
+  BUS.expand=!BUS.expand;BUS.plk='';BUS.html='';busRender();busPlace()});
 function busDist(a1,o1,a2,o2){const R=6371000,r=Math.PI/180,dA=(a2-a1)*r,dO=(o2-o1)*r;const h=Math.sin(dA/2)**2+Math.cos(a1*r)*Math.cos(a2*r)*Math.sin(dO/2)**2;return 2*R*Math.asin(Math.min(1,Math.sqrt(h)))}
 // ---- 예시 데이터 (실제 도착 정보 아님) ----
 const BUS_DEMO_STOP={nodenm:'시청 앞',nodeid:'DEMO',citycode:'',d:120};
@@ -3375,6 +3416,10 @@ function busSetNear(s){if(!s){BUS.stop=null;BUS.dismiss=null;return}
 function busEta(x){const s=x.arrtime-(Date.now()-BUS.at)/1000;return s<=60?'곧 도착':Math.round(s/60)+'분'}
 function busTp(tp){tp=String(tp||'');return /마을/.test(tp)?'t1':/좌석|급행|광역/.test(tp)?'t2':/농어촌/.test(tp)?'t3':''}
 function busRender(){const s=BUS.stop;if(!s)return;const demo=BUS.mode==='demo',ago=Math.max(0,Math.round((Date.now()-BUS.at)/1000));
+  BEL.classList.toggle('cp',!!BUS.cp&&!BUS.expand);
+  if(BUS.cp&&!BUS.expand){const L=(BUS.arr||[]).slice().sort((p,q)=>busSec(p)-busSec(q)).slice(0,2);
+    const html=`<div class="bh"><span class="bi">${ico('bus')}</span><div class="tt"><b>${esc(s.nodenm||'정류장')}</b><small>${demo?'예시 데이터':'실시간'} · ${s.d}m</small></div><div class="cr">${L.length?L.map(x=>`<span>${esc(x.routeno)} ${busEta(x)}</span>`).join(''):'<span>정보 없음</span>'}</div><button class="x" aria-label="이 정류장 알림 닫기">${ico('x')}</button></div>`;
+    if(html!==BUS.html){BUS.html=html;BEL.innerHTML=html}return}
   const L=(BUS.arr||[]).slice().sort((p,q)=>busSec(p)-busSec(q)),stn=x=>(x.arrprevstationcnt?x.arrprevstationcnt+'정류장 전':'')+(x.vehicletp&&/저상/.test(x.vehicletp)?' · 저상':'');
   const rows=BUS.expand?L.slice(0,6).map(x=>{const e=busEta(x);return `<div class="r"><span class="no ${busTp(x.routetp)}">${esc(x.routeno)}</span><span class="eta${e==='곧 도착'?' soon':''}">${e}</span><span class="st">${stn(x)}</span></div>`}).join('')
     :L.slice(0,3).map(x=>{const e=busEta(x);return `<div class="c"><div class="l1"><span class="no ${busTp(x.routetp)}">${esc(x.routeno)}</span><span class="eta${e==='곧 도착'?' soon':''}">${e}</span></div><small>${stn(x)||'&nbsp;'}</small></div>`}).join('');
@@ -3384,7 +3429,14 @@ function busRender(){const s=BUS.stop;if(!s)return;const demo=BUS.mode==='demo',
 ${BUS.expand?`<div class="ft"><span>${demo?'예시 데이터 · 실제 도착 정보가 아니에요':'정보: 국토교통부 TAGO'+(BUS.perm==='coarse'?' · 대략 위치':'')}</span><span>눌러서 접기</span></div>`:''}`;if(html!==BUS.html){BUS.html=html;BEL.innerHTML=html}}
 function busSec(x){return x.arrtime-(Date.now()-BUS.at)/1000}
 function esc(v){return String(v==null?'':v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c])}
-function busPlace(){BEL.style.bottom=Math.round(H-dockTop()+2)+'px'}
+function busGaps(){const lo=38,hi=dockTop()-2,iv=(hitRects[cur]||[]).filter(h=>h.src!=='dock'&&h.h<H*.6).map(h=>[h.y-2,h.y+h.h+2]).sort((a,b)=>a[0]-b[0]);
+  const g=[];let y=lo;iv.forEach(([a,b])=>{if(a>y)g.push([y,Math.min(a,hi)]);y=Math.max(y,b)});if(hi>y)g.push([y,hi]);return g.filter(x=>x[1]>x[0])}
+function busFit(h){const g=busGaps().filter(x=>x[1]-x[0]>=h);return g.length?g[g.length-1][1]-h:null}
+function busPlace(){BEL.style.bottom='';if(BUS.expand){BEL.style.top=Math.max(38,Math.round(dockTop()-2-BEL.offsetHeight))+'px';return}
+  const k=cur+'|'+Math.round(dockTop())+'|'+(S.ui||'');let t=busFit(BEL.offsetHeight||100);
+  if(k===BUS.plk){BEL.style.top=Math.round(t==null?38:t)+'px';return}BUS.plk=k;BUS.cp=false;BUS.html='';busRender();t=busFit(BEL.offsetHeight||100);
+  if(t==null&&!BUS.cp){BUS.cp=true;BUS.html='';busRender();t=busFit(BEL.offsetHeight||50)}
+  BEL.style.top=Math.round(t==null?38:t)+'px'}
 function busRect(){const r=BEL.getBoundingClientRect(),p=phone.getBoundingClientRect();return {x:r.left-p.left,y:r.top-p.top,w:r.width,h:r.height}}
 // ---- 모래 모이기 / 흩어지기 ----
 let bfxP=[],bfxRaf=0,bfxT=0;
@@ -3400,7 +3452,7 @@ function bfxFrame(now){const d=bfxSize(),c=BFX.getContext('2d');c.setTransform(d
     else{const dt=now-p.t0;x=p.x+p.vx*dt+Math.sin(dt*.004+p.sw)*4;y=p.y+p.vy*dt-dt*dt*.00002;a=1-k}
     c.fillStyle=`rgba(${p.c},${(a*.95).toFixed(3)})`;c.fillRect(x,y,p.sz,p.sz);return true});
   if(bfxP.length)bfxRaf=requestAnimationFrame(bfxFrame);else{bfxRaf=0;c.clearRect(0,0,W,H)}}
-function busShow(){if(BUS.shown)return;BUS.shown=true;busRender();busPlace();BEL.classList.remove('on','out');BEL.style.display='block';
+function busShow(){if(BUS.shown)return;BUS.shown=true;BUS.plk='';busRender();BEL.style.display='block';busPlace();BEL.classList.remove('on','out');BEL.style.display='block';
   const R=busRect();bfxBurst(R,true);clearTimeout(BUS.hT);BUS.hT=setTimeout(()=>BEL.classList.add('on'),380);$('hint').style.opacity=0;
   try{if(NATIVE&&NVNative.vibrate)NVNative.vibrate(8)}catch(_){}}
 function busHide(quick){if(!BUS.shown)return;BUS.shown=false;clearTimeout(BUS.hT);
@@ -3449,6 +3501,175 @@ function buildBusPage(add){
 }
 if(busOn())setTimeout(()=>{if(busReal()){let p='none';try{p=NVNative.busPerm()}catch(_){}if(p==='none'){S.bus=false;saveS();return}}busStart()},1500);
 window.__nv.bus={st:()=>({mode:BUS.mode,st:BUS.st,shown:BUS.shown,stop:BUS.stop&&BUS.stop.nodenm,arr:BUS.arr.map(x=>x.routeno+':'+busEta(x)),err:BUS.err}),enable:busEnable,cycle:busCycle,demoFar:v=>{S.busDemoFar=v;busCycle()}};
+// ===================== v29 꼭 필요한 기본 기능 =====================
+const OWNPKG='kr.newniverse.launcher';
+Object.assign(GLY,{data:'M8 19V5 M4.5 8.5L8 5l3.5 3.5 M16 5v14 M12.5 15.5L16 19l3.5-3.5',contact:'M6 3.5h12v17H6z M12 8a2.3 2.3 0 1 0 0 4.6a2.3 2.3 0 1 0 0-4.6z M8.5 16.5c.6-1.7 2-2.6 3.5-2.6s2.9.9 3.5 2.6 M4 7.5h2 M4 12h2 M4 16.5h2',
+  backup:'M12 3.5v11 M8 10.5l4 4 4-4 M5 15.5v4h14v-4',restore:'M12 14.5v-11 M8 7.5l4-4 4 4 M5 15.5v4h14v-4',clock2:'M12 3.5a8.5 8.5 0 1 0 0 17a8.5 8.5 0 1 0 0-17z M12 7.5V12l3 2'});
+const nat=f=>NATIVE&&window.NVNative&&typeof NVNative[f]==='function';
+function agoTxt(t){const m=Math.round((Date.now()-t)/60000);return m<1?'방금':m<60?m+'분 전':m<1440?Math.round(m/60)+'시간 전':Math.round(m/1440)+'일 전'}
+
+// ---------- 1. 알림 배지 · 미리보기 ----------
+let NOTIF={},NOTIFJ='';
+const NOTIF_DEMO={'카카오톡':3,'메시지':1,'네이버':12};
+const NLIST_DEMO={'카카오톡':[{key:'d1',t:'엄마',x:'저녁 먹고 들어오니? 반찬 해 놨어',at:Date.now()-4*60000},{key:'d2',t:'뉴니버스 팀',x:'내일 회의 10시로 바꿀게요',at:Date.now()-35*60000},{key:'d3',t:'동생',x:'사진 보냄',at:Date.now()-3*3600000}],
+  '메시지':[{key:'d4',t:'택배',x:'고객님의 상품이 오늘 도착 예정입니다',at:Date.now()-50*60000}],'네이버':[{key:'d5',t:'네이버',x:'오늘의 뉴스 브리핑이 도착했어요',at:Date.now()-2*3600000}]};
+const badgeOn=()=>S.badge==='num'||S.badge==='dot';
+const notifKey=a=>{a=a&&(a.__base||a);return a?(NATIVE?a.pkg:a.n):null};
+function notifRead(){let m={};if(badgeOn()){if(NATIVE){if(nat('notifSummary'))try{m=JSON.parse(NVNative.notifSummary()||'{}')}catch(_){m={}}}else m=Object.assign({},NOTIF_DEMO)}
+  const j=JSON.stringify(m);if(j===NOTIFJ)return false;NOTIF=m;NOTIFJ=j;return true}
+function badgeCount(a){if(!a||a.wg||a.ph)return 0;if(a.folder)return a.items.reduce((n,x)=>n+badgeCount(x),0);const k=notifKey(a);return k?(+NOTIF[k]||0):0}
+function drawBadge(c,x,y,n){c.save();const dot=S.badge==='dot',t=n>99?'99+':String(n);c.font=`800 11px ${FONT}`;
+  const r=dot?5.5:9,w=dot?r*2:Math.max(r*2,c.measureText(t).width+10);c.shadowColor='rgba(0,0,0,.45)';c.shadowBlur=6;
+  const g=c.createLinearGradient(x-w/2,y-r,x+w/2,y+r);g.addColorStop(0,'#ff7a8a');g.addColorStop(1,'#ff4d6d');rr(c,x-w/2,y-r,w,r*2,r);c.fillStyle=g;c.fill();c.shadowColor='transparent';
+  c.lineWidth=1.5;c.strokeStyle='rgba(12,10,32,.85)';c.stroke();if(!dot){c.fillStyle='#fff';c.textAlign='center';c.textBaseline='middle';c.fillText(t,x,y+.5)}c.restore()}
+function badgesFor(pi){if(!badgeOn()||EDIT)return;const H0=hitRects[pi]||[];const pc=pageCanvases[pi];if(!pc)return;const c=pc.getContext('2d');c.setTransform(DPR,0,0,DPR,0,0);
+  let fc=null;H0.forEach(h=>{const a=h.f||h.a;if(!a)return;const n=badgeCount(a);if(!n)return;const sz=Math.min(h.w,h.h);
+    if(h.src==='dock'){if(pi!==0)return;if(!fc){fc=$('fixed').getContext('2d');fc.setTransform(DPR,0,0,DPR,0,0)}drawBadge(fc,h.x+h.w-6,h.y+6,n)}
+    else drawBadge(c,h.x+Math.min(h.w,sz)-5,h.y+5,n)})}
+{const _rp=renderPage;renderPage=function(pi){const r=_rp(pi);try{badgesFor(pi)}catch(_){}return r}}
+let notifT=0;function notifRefresh(){clearTimeout(notifT);notifT=setTimeout(()=>{if(!notifRead())return;if(!GW||anim||dragging){notifRefresh();return}
+  for(let i=0;i<PAGES.length;i++){renderPage(i);upload(i)}draw()},120)}
+window.NV_onNotif=notifRefresh;
+function notifList(a){a=a&&(a.__base||a);if(!badgeOn()||!a||a.folder)return [];
+  if(NATIVE){if(!a.pkg||!nat('notifList'))return [];try{return JSON.parse(NVNative.notifList(a.pkg)||'[]')}catch(_){return []}}return NLIST_DEMO[a.n]||[]}
+function notifPre(a){const L=notifList(a);if(!L.length)return '';
+  return `<div class="nfh"><span>알림 ${L.length}개</span>${NATIVE?'':'<span class="tag">예시</span>'}</div><div class="nfl">${L.slice(0,3).map(n=>`<div class="nf" data-k="${esc(n.key)}"><b><span>${esc(n.t||a.n)}</span><em>${agoTxt(n.at)}</em></b>${n.x?`<small>${esc(n.x)}</small>`:''}</div>`).join('')}</div>`}
+LPM.addEventListener('click',e=>{const el=e.target.closest('.nf');if(!el)return;e.stopPropagation();const k=el.dataset.k;closeMenu();
+  if(NATIVE){let ok=false;try{ok=NVNative.notifOpen(k)}catch(_){}if(!ok)toast('이 알림은 이미 사라졌어요');else setTimeout(notifRefresh,800)}else toast('시제품 · 폰에서는 이 알림을 눌러 바로 열려요')});
+{const _sm=showMenu;showMenu=function(items,r,title,pre){_sm(items,r,title);if(pre){LPM.insertAdjacentHTML(title?'afterbegin':'afterbegin',pre);if(title){const mt=LPM.querySelector('.mt');if(mt)LPM.prepend(mt)}
+  const mw=232,mh=LPM.offsetHeight;let x=Math.max(10,Math.min(W-mw-10,r.x+r.w/2-mw/2)),y=r.y-mh-12;if(y<44)y=Math.min(H-mh-80,r.y+r.h+28);y=Math.max(40,y);LPM.style.left=x+'px';LPM.style.top=y+'px'}}}
+{const _hm=homeMenu;homeMenu=function(h){const a=h.a||h.f;if(a&&!a.wg&&!a.folder&&badgeOn()){const pre=notifPre(a);if(pre){PENDPRE=pre}}_hm(h);PENDPRE=''}}
+let PENDPRE='';{const _sm2=showMenu;showMenu=function(items,r,title,pre){_sm2(items,r,title,pre||PENDPRE||'')}}
+function buildNotiPage(add){
+  const acc=()=>NATIVE?(nat('notifAccess')&&NVNative.notifAccess()):true;
+  const r=mk('div','row','<label>앱 아이콘 배지</label>');const g=mk('div','seg');[['off','끄기'],['num','숫자'],['dot','점']].forEach(([k,t])=>{const b=mk('button',null,t);b.dataset.v=k;g.appendChild(b)});r.appendChild(g);
+  const st=infoRow('알림 접근',''),note=mk('div','note','');
+  const sync=()=>{[...g.children].forEach(b=>b.classList.toggle('on',b.dataset.v===(S.badge||'off')));
+    st.querySelector('small').textContent=!NATIVE?'웹 시제품 · 예시 숫자로 보여요':acc()?'허용됨 · 배지와 미리보기가 동작해요':'아직 허용 안 됨 · 눌러서 허용하기'};
+  g.onclick=async e=>{const b=e.target.closest('button');if(!b)return;const v=b.dataset.v;S.badge=v;saveS();sync();
+    if(v!=='off'&&NATIVE&&!acc()){const ok=await ask('알림 접근 허용','배지 숫자와 길게 눌러 보는 알림 미리보기를 쓰려면 안드로이드 <b>알림 접근</b>에서 ‘뉴니버스 알림 배지’를 켜 주세요.<br>· 알림 내용은 이 폰 화면에만 보여 주고, 저장하거나 밖으로 보내지 않아요<br>· ‘제한된 설정’이라고 막히면 아래 안내를 따라 주세요',{ok:'허용하러 가기'});if(ok)NVNative.notifOpenAccess()}
+    NOTIFJ='';notifRefresh();toast(v==='off'?'알림 배지 꺼짐':v==='num'?'알림 배지: 숫자':'알림 배지: 점')};
+  st.style.cursor='pointer';st.onclick=()=>{if(NATIVE&&nat('notifOpenAccess'))NVNative.notifOpenAccess();else toast('폰 앱에서는 알림 접근 설정이 열려요')};
+  const c=mk('div','ctl');c.appendChild(r);add(sCard(c,st));
+  if(NATIVE){add(mk('div','note','<b>‘제한된 설정’ 때문에 켜지지 않으면</b> (안드로이드 13 이상, 직접 설치한 앱)<br>1. 아래 ‘뉴니버스 앱 정보’를 눌러요<br>2. 오른쪽 위 <b>⋮</b> › <b>제한된 설정 허용</b><br>3. 다시 ‘알림 접근’에서 ‘뉴니버스 알림 배지’를 켜요'));
+    add(sCard(infoRow('뉴니버스 앱 정보','제한된 설정 허용은 여기 오른쪽 위 ⋮ 메뉴에 있어요',()=>NVNative.appInfo(OWNPKG)),infoRow('안드로이드 알림 설정','앱별 알림 켜기·끄기',()=>NVNative.openAction('android.settings.NOTIFICATION_SETTINGS'))))}
+  add(mk('div','note','앱 아이콘을 길게 누르면 그 앱의 최근 알림이 위에 보이고, 누르면 그 알림이 열려요. 알림 내용은 폰 밖으로 내보내지 않아요.'+(NATIVE?'':' 웹 시제품은 예시 알림이에요.')));
+  sync();window.__notiSync=sync}
+
+// ---------- 2. 빠른 설정 (실제 상태) ----------
+{const hb=QP.querySelector('button[data-q="hot"]');if(hb){hb.dataset.q='data';hb.innerHTML=`<i>${ico('data')}</i><span>모바일 데이터</span>`}}
+QN.data='모바일 데이터';
+let QSS={};
+function qsSync(){if(!nat('qsState'))return;try{QSS=JSON.parse(NVNative.qsState()||'{}')}catch(_){return}
+  QP.querySelectorAll('button[data-q]').forEach(b=>{const q=b.dataset.q;if(!(q in QSS))return;b.classList.toggle('on',!!QSS[q]);
+    const sm=b.querySelector('small');if(sm)sm.textContent=QSS[q]?'켜짐':'꺼짐'});
+  if(typeof QSS.bright==='number'&&QSS.writeSettings){const r=$('qBright');r.value=Math.max(.25,Math.min(1,QSS.bright));rangeFill&&rangeFill(r)}}
+window.NV_onQS=qsSync;
+if(NATIVE){
+  QP.addEventListener('click',async e=>{const b=e.target.closest('button[data-q]');if(!b||!nat('qsAct'))return;const q=b.dataset.q;if(q==='flash')return;e.stopImmediatePropagation();
+    const r=NVNative.qsAct(q);
+    if(r==='ok'){setTimeout(qsSync,250);setTimeout(qsSync,900);const nm=QN[q]||q;setTimeout(()=>toast(q==='sound'?(QSS.sound?'소리 켜짐':'진동으로 바꿨어요'):`${nm} ${QSS[q]?'켜짐':'꺼짐'}`),300)}
+    else if(r==='needWrite'){const ok=await ask('시스템 설정 변경 허용','자동 회전과 폰 전체 밝기를 바꾸려면 ‘시스템 설정 변경’을 한 번 허용해야 해요.',{ok:'허용하러 가기'});if(ok)NVNative.qsGrant('write')}
+    else if(r==='needDnd'){const ok=await ask('방해 금지 접근 허용','여기서 바로 방해 금지를 켜고 끄려면 ‘방해 금지 접근’에서 뉴니버스를 허용해 주세요.',{ok:'허용하러 가기'});if(ok)NVNative.qsGrant('dnd')}
+    else if(r==='fail')toast('이 폰에서는 바꿀 수 없어요')},true);
+  {const qb=$('qBright');qb.oninput=e=>{const v=+e.target.value;let r='win';try{r=nat('sysBright')?NVNative.sysBright(v):(NVNative.brightness(v),'win')}catch(_){}
+    if(r==='win'&&!S.brAsked){S.brAsked=1;saveS();toast('지금은 뉴니버스 화면만 밝기가 바뀌어요 · 폰 전체는 ‘시스템 설정 변경’ 허용 필요')}}}
+  {const _u=updQP;updQP=function(){_u();qsSync()}}
+}
+function buildConnPage(add){
+  const row=(k,n,sub)=>{const r=infoRow(n,(QSS[k]?'켜짐':'꺼짐')+' · '+sub,()=>NVNative.qsAct(k));r.dataset.k=k;return r};qsSync();
+  add(sCard(row('wifi','Wi-Fi','누르면 와이파이 창'),row('bt','블루투스','누르면 블루투스 설정'),row('data','모바일 데이터','누르면 인터넷 창'),row('air','비행기 모드','누르면 인터넷 창')));
+  add(mk('div','note','안드로이드는 다른 앱이 와이파이·블루투스·데이터를 직접 켜고 끄지 못하게 막아 두어서, 폰의 설정 창을 바로 띄워요. 지금 켜짐/꺼짐은 폰의 실제 상태예요.'))}
+
+// ---------- 3. 홈 배치 백업 · 복원 ----------
+function bakObj(){return {app:'newniverse',kind:'home-backup',v:29,ver:VER,t:Date.now(),layout:serLayout(),S:JSON.parse(JSON.stringify(S))}}
+function bakName(){const d=new Date(),p=n=>String(n).padStart(2,'0');return `newniverse-home-${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.json`}
+function autoBak(force){try{const last=+localStorage.getItem('nv_autobak_t')||0;if(!force&&Date.now()-last<6*3600000)return;const j=JSON.stringify(bakObj());localStorage.setItem('nv_autobak',j);localStorage.setItem('nv_autobak_t',String(Date.now()));if(nat('autoBakSave'))NVNative.autoBakSave(j)}catch(_){}}
+function autoBakGet(){let j='';try{j=localStorage.getItem('nv_autobak')||''}catch(_){}if(!j&&nat('autoBakLoad'))try{j=NVNative.autoBakLoad()||''}catch(_){}try{return j?JSON.parse(j):null}catch(_){return null}}
+function bakValid(o){return o&&o.app==='newniverse'&&o.layout&&Array.isArray(o.layout.pages)&&o.layout.pages.length}
+async function bakApply(o,from){if(!bakValid(o)){toast('뉴니버스 백업 파일이 아니에요');return}
+  const n=o.layout.pages.reduce((k,p)=>k+(p.a||[]).length,0);
+  const ok=await ask('이 배치로 바꿀까요?',`${from} · ${new Date(o.t).toLocaleString('ko-KR',{month:'long',day:'numeric',hour:'numeric',minute:'2-digit'})} 저장<br>화면 ${o.layout.pages.length}개 · 아이콘·폴더·위젯 ${n}개 · 설정 포함<br>지금 배치는 자동 백업에 남겨 둬요. 이 폰에 없는 앱은 빠져요.`,{ok:'바꾸기'});if(!ok)return;
+  autoBak(true);const lj=JSON.stringify(o.layout),sj=JSON.stringify(Object.assign({},o.S||{},{navUser:S.navUser}));
+  try{localStorage.setItem('nv_layout21',lj);localStorage.setItem('nv_sand18',sj)}catch(_){}
+  if(nat('saveState'))try{NVNative.saveState(JSON.stringify({v:21,layout:lj,S:sj,t:Date.now()}))}catch(_){}
+  toast('배치를 불러왔어요 · 다시 그려요');setTimeout(()=>location.reload(),500)}
+window.NV_onBak=(kind,ok,body)=>{if(kind==='exp'){toast(ok?'백업 파일을 저장했어요':'저장을 취소했어요');return}if(!ok){return}
+  let o=null;try{o=JSON.parse(body)}catch(_){}bakApply(o,'파일')};
+function bakExport(){const j=JSON.stringify(bakObj(),null,1);
+  if(nat('bakExport')){NVNative.bakExport(bakName(),j);return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([j],{type:'application/json'}));a.download=bakName();document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);toast('백업 파일을 내려받았어요')}
+function bakImport(){if(nat('bakImport')){NVNative.bakImport();return}
+  const i=document.createElement('input');i.type='file';i.accept='.json,application/json';i.onchange=()=>{const f=i.files&&i.files[0];if(!f)return;f.text().then(t=>{let o=null;try{o=JSON.parse(t)}catch(_){}bakApply(o,'파일')})};i.click()}
+function buildBackupPage(add){const ab=autoBakGet();
+  add(sCard(infoRow(ico('backup')+' 파일로 내보내기','홈 배치·폴더·위젯 자리·뉴니버스 설정을 파일 하나로 저장',bakExport),infoRow(ico('restore')+' 파일에서 가져오기','저장해 둔 백업 파일을 골라 그대로 되돌려요',bakImport)));
+  add(sCard(infoRow(ico('clock2')+' 자동 백업에서 되돌리기',ab?`${agoTxt(ab.t)} 저장 · 6시간마다 한 개만 새로 고쳐 둬요`:'아직 없어요 · 곧 자동으로 만들어져요',ab?()=>bakApply(ab,'자동 백업'):null),
+    infoRow('지금 자동 백업하기','지금 배치를 자동 백업 자리에 저장',()=>{autoBak(true);toast('자동 백업을 새로 저장했어요');settingsBack();setTimeout(()=>settingsPush('acct'),280)})));
+  add(mk('div','note',NATIVE?'파일은 안드로이드 파일 고르기 창으로 저장·열어요(내 파일·드라이브 등). 저장소 권한은 쓰지 않아요. 진짜 앱 위젯은 다른 폰이나 다시 설치한 뒤에는 위젯을 다시 놓아야 할 수 있어요. 버스 도착 정보 키는 백업에 넣지 않아요.':'웹 시제품: 파일로 내려받고, 파일을 골라 불러올 수 있어요.'))}
+{const _sn=saveNow;saveNow=function(){_sn();autoBak(false)}}
+setTimeout(()=>autoBak(false),8000);
+
+// ---------- 4. 통합 검색 (앱 + 설정 + 연락처) ----------
+const SXTRA=[['내비게이션 바','디스플레이 › 내비게이션 바','navbar','내비 네비게이션 버튼 제스처 뒤로 홈 최근'],['두 번 눌러 화면 끄기','유용한 기능','adv','톡톡 더블탭 화면 끄기'],['가벼운 모드','디스플레이','disp','절전 성능 느림 버벅'],['잠금화면','잠금화면 미리보기','lock','잠금 시계'],
+  ['가까운 정류장 버스 알림','위치','loc','버스 정류장 도착 교통'],['알림 배지','알림','noti','배지 숫자 알림 미리보기'],['홈 배치 백업·복원','계정 및 백업','acct','백업 복원 내보내기 가져오기 파일'],['홈 화면 편집','홈 화면','home','편집 아이콘 옮기기 폴더'],['배경화면','배경화면 및 스타일','wall','바탕화면 사진 벚꽃 성운'],['글자 크기','접근성','a11y','글씨 크게 돋보기']];
+const ASET=[['Wi-Fi 설정','android.settings.WIFI_SETTINGS','와이파이 무선 인터넷'],['블루투스','android.settings.BLUETOOTH_SETTINGS','이어폰 연결'],['모바일 네트워크','android.settings.DATA_ROAMING_SETTINGS','데이터 로밍 통신사'],['네트워크 · 핫스팟','android.settings.WIRELESS_SETTINGS','테더링 핫스팟'],['비행기 모드','android.settings.AIRPLANE_MODE_SETTINGS','비행'],
+  ['디스플레이','android.settings.DISPLAY_SETTINGS','화면 밝기 글꼴'],['소리 및 진동','android.settings.SOUND_SETTINGS','벨소리 볼륨 진동'],['방해 금지','android.settings.ZEN_MODE_PRIORITY_SETTINGS','무음 알림'],['배터리','android.intent.action.POWER_USAGE_SUMMARY','전원 충전 절전'],['저장공간','android.settings.INTERNAL_STORAGE_SETTINGS','용량 메모리'],
+  ['애플리케이션','android.settings.APPLICATION_SETTINGS','앱 어플 삭제'],['기본 앱','android.settings.MANAGE_DEFAULT_APPS_SETTINGS','기본 브라우저 전화 문자'],['홈 화면 앱 고르기','android.settings.HOME_SETTINGS','런처 기본 홈'],['위치','android.settings.LOCATION_SOURCE_SETTINGS','GPS'],['보안','android.settings.SECURITY_SETTINGS','지문 잠금 비밀번호'],
+  ['개인정보 보호','android.settings.PRIVACY_SETTINGS','권한 개인정보'],['접근성','android.settings.ACCESSIBILITY_SETTINGS','톡백 시각 청각'],['언어','android.settings.LOCALE_SETTINGS','한국어 영어'],['키보드','android.settings.INPUT_METHOD_SETTINGS','자판 입력'],['날짜 및 시간','android.settings.DATE_SETTINGS','시계 시간대'],
+  ['계정','android.settings.SYNC_SETTINGS','구글 동기화'],['NFC','android.settings.NFC_SETTINGS','결제 태그'],['VPN','android.settings.VPN_SETTINGS','가상사설망'],['휴대전화 정보','android.settings.DEVICE_INFO_SETTINGS','모델 버전'],['개발자 옵션','android.settings.APPLICATION_DEVELOPMENT_SETTINGS','개발자 usb 디버깅']];
+const CON_DEMO=[{id:'0',n:'엄마',p:'010-0000-0001'},{id:'0',n:'김민수',p:'010-0000-0002'},{id:'0',n:'뉴니버스 사무실',p:'054-000-0000'}];
+let CONTACTS=null;
+function conLoad(){if(!S.conSearch)return null;if(!NATIVE)return CON_DEMO;if(CONTACTS)return CONTACTS;if(!nat('contactsAll'))return null;try{CONTACTS=JSON.parse(NVNative.contactsAll()||'null')}catch(_){CONTACTS=null}return CONTACTS}
+window.NV_onConPerm=p=>{if(p!=='yes'){S.conSearch=false;saveS();toast('연락처 허락이 없어 연락처 찾기를 껐어요')}else{CONTACTS=null;toast('이제 검색에서 연락처도 찾아요')}if(window.__conSync)__conSync();buildDrawer()};
+async function conEnable(on){if(!on){S.conSearch=false;CONTACTS=null;saveS();toast('검색에서 연락처 찾기 꺼짐');return}
+  if(NATIVE&&nat('contactsPerm')&&NVNative.contactsPerm()!=='yes'){const ok=await ask('연락처 찾기','검색창에서 이름(초성 포함)이나 번호로 연락처를 찾고 바로 전화·문자할 수 있어요.<br>· 이름과 번호만 이 폰 화면에서 찾는 데 써요<br>· 저장하거나 밖으로 보내지 않아요',{ok:'연락처 허락하기'});
+    if(!ok){S.conSearch=false;if(window.__conSync)__conSync();return}S.conSearch=true;saveS();NVNative.contactsAsk();return}
+  S.conSearch=true;saveS();CONTACTS=null;toast(NATIVE?'이제 검색에서 연락처도 찾아요':'켜짐 · 웹 시제품은 예시 연락처예요')}
+const kwHit=(q,...t)=>{const qq=q.toLowerCase().replace(/\s+/g,'');return t.some(x=>x&&(appMatch({n:x},q)||String(x).toLowerCase().replace(/\s+/g,'').includes(qq)))};
+function srow(gl,b,sm,fn,acts){const d=document.createElement('div');d.className='drow';d.innerHTML=`<span class="gi">${ico(gl)}</span><div class="tx"><b>${b}</b><small>${sm||''}</small></div>`+(acts||[]).map((a,i)=>`<button class="ac" data-i="${i}" aria-label="${a.l}">${ico(a.g)}</button>`).join('');
+  d.onclick=e=>{const ab=e.target.closest('.ac');if(ab){e.stopPropagation();acts[+ab.dataset.i].fn();return}fn&&fn()};return d}
+function searchExtras(q,g){if(!q)return 0;let n=0;const sec=t=>{const h=document.createElement('div');h.className='dsec';h.textContent=t;g.appendChild(h)};
+  const go=id=>{closeDR();setTimeout(()=>{openSettings();setTimeout(()=>settingsPush(id),60)},120)};
+  const nv=[];SETG.flat().forEach(i=>{if(kwHit(q,i.n,i.sub,i.kw))nv.push([i.n,i.sub,i.id])});SXTRA.forEach(([a,b,id,kw])=>{if(kwHit(q,a,kw)&&!nv.some(x=>x[0]===a))nv.push([a,b,id])});
+  const an=ASET.filter(([a,,kw])=>kwHit(q,a,kw));
+  const cl=conLoad(),dq=q.replace(/[^0-9]/g,'');const cs=cl?cl.filter(c=>kwHit(q,c.n)||(dq.length>=3&&String(c.p).replace(/[^0-9]/g,'').includes(dq))).slice(0,8):[];
+  if(cs.length){sec(`연락처 ${cs.length}명${NATIVE?'':' · 예시'}`);cs.forEach(c=>g.appendChild(srow('contact',esc(c.n),esc(c.p),()=>{if(NATIVE&&c.id&&c.id!=='0')NVNative.openContact(c.id);else toast('시제품 · 폰에서는 연락처가 열려요')},
+    [{g:'phone',l:'전화',fn:()=>{if(NATIVE)NVNative.dial(c.p);else toast('시제품 · 폰에서는 전화 앱이 열려요')}},{g:'message',l:'문자',fn:()=>{if(NATIVE)NVNative.sms(c.p);else toast('시제품 · 폰에서는 문자 앱이 열려요')}}])));n+=cs.length}
+  if(nv.length){sec('뉴니버스 설정');nv.slice(0,6).forEach(([a,b,id])=>g.appendChild(srow('gear',esc(a),esc(b),()=>go(id))));n+=nv.length}
+  if(an.length){sec('안드로이드 설정');an.slice(0,6).forEach(([a,act])=>g.appendChild(srow('device',esc(a),'폰 설정 화면 바로 열기',()=>{if(NATIVE){if(act.startsWith('android.settings.'))NVNative.openAction(act);else NVNative.openSettings('battery')}else toast('시제품 · 폰에서는 안드로이드 설정이 열려요')})));n+=an.length}
+  if(!S.conSearch){g.appendChild(srow('contact','연락처도 찾기','켜면 이름·초성·번호로 연락처를 찾아요',()=>{conEnable(true).then(()=>buildDrawer())}))}
+  return n}
+{const _bd=buildDrawer;buildDrawer=function(){_bd();const q=$('dQ').value.trim();if(!q)return;const g=$('dGrid');const emp=g.querySelector('.nv-empty');
+  const frag=document.createElement('div');const n=searchExtras(q,frag);if(emp&&n){emp.remove();const hd=document.createElement('div');hd.className='dhd';hd.style.gridColumn='1/-1';hd.textContent=`「${q}」 앱은 없고, 다른 결과 ${n}개`;g.appendChild(hd)}
+  [...frag.children].forEach(x=>g.appendChild(x))};$('dQ').oninput=buildDrawer}
+
+// ---------- 5. 최근 쓴 앱 ----------
+let RK=[];try{RK=JSON.parse(localStorage.getItem('nv_recent29')||'[]')||[]}catch(_){RK=[]}
+{const _pr=pushRecent;pushRecent=function(a){_pr(a);try{const k=akey(a.__base||a);RK=[k].concat(RK.filter(x=>x!==k)).slice(0,12);localStorage.setItem('nv_recent29',JSON.stringify(RK))}catch(_){}}}
+openRecents=function(){const el=$('recents'),L=RK.map(k=>{try{return byKey(k)}catch(_){return null}}).filter(Boolean);const ls=el.querySelector('.rlist');ls.innerHTML='';
+  el.querySelector('.rhead').textContent='최근 쓴 앱';
+  if(!L.length)ls.innerHTML='<div class="rempty">아직 뉴니버스에서 연 앱이 없어요.<br>앱을 열면 여기에 순서대로 모여요.</div>';
+  L.forEach(a=>{const d=document.createElement('div');d.className='rc';const ih=iconHTML(a,110);d.innerHTML=ih?`<i class="ns">${ih}</i><span>${esc(a.n)}</span>`:`<b style="background:linear-gradient(135deg,${a.c1},${a.c2})">${a.e}</b><span>${esc(a.n)}</span>`;d.onclick=e=>{e.stopPropagation();closeRecents();openApp(a)};ls.appendChild(d)});
+  let bt=el.querySelector('.rbtns');if(!bt){bt=document.createElement('div');bt.className='rbtns';el.insertBefore(bt,el.querySelector('.rtip'))}
+  const plus=NATIVE&&nat('flavor')&&NVNative.flavor()==='plus';
+  bt.innerHTML=(plus?'<button class="p" data-a="sys">폰의 최근 앱 화면</button>':'')+(L.length?'<button data-a="clr">기록 지우기</button>':'');
+  bt.onclick=e=>{const b=e.target.closest('button');if(!b)return;e.stopPropagation();if(b.dataset.a==='clr'){RK=[];try{localStorage.removeItem('nv_recent29')}catch(_){}RECENT.length=0;openRecents();return}
+    if(b.dataset.a==='sys'){let ok=false;try{ok=NVNative.sysRecents()}catch(_){}if(ok)closeRecents();else{toast('접근성에서 ‘뉴니버스 화면 끄기’를 켜면 열 수 있어요');try{NVNative.openA11y()}catch(_){}}}};
+  el.querySelector('.rtip').innerHTML='뉴니버스에서 연 순서예요. 폰 전체의 진짜 최근 앱 목록은 안드로이드가 홈 앱에 주지 않아요.<br>'+(NATIVE?'폰의 최근 앱 화면: 맨 아래에서 한 번 쓸어 올려 폰 내비 바를 꺼낸 뒤 ‘최근 앱’':'빈 곳을 누르거나 ‘뒤로’를 누르면 닫혀요');
+  el.classList.add('open')};
+
+// ---------- 설정 화면 연결 ----------
+{const _bp=buildPage;buildPage=function(id){if(id==='noti'||id==='acct'||(id==='conn'&&NATIVE)){const pg=mk('div','pg off'),sc=mk('div','scroll');pg.appendChild(sc);const it=SITEM[id];
+    const hd=mk('div','ph',`<button aria-label="뒤로">${ico('chevL')}</button><h2>${it.n}</h2>`);hd.querySelector('button').onclick=()=>settingsBack();sc.appendChild(hd);const add=x=>sc.appendChild(x);
+    if(id==='noti')buildNotiPage(add);else if(id==='acct')buildBackupPage(add);else buildConnPage(add);return pg}
+  const pg=_bp(id);if(id==='home'){const sc=pg.querySelector('.scroll');const sw=swRow('검색에서 연락처도 찾기','이름·초성·번호로 찾고 바로 전화·문자'+(NATIVE?' · 켤 때 연락처 허락을 물어봐요':' · 웹은 예시'),!!S.conSearch,false,on=>conEnable(on));
+    window.__conSync=()=>{const b=sw.querySelector('.sw');if(b)b.classList.toggle('on',!!S.conSearch)};const c=sCard(sw);const first=sc.querySelector('.card');if(first&&first.nextSibling)sc.insertBefore(c,first.nextSibling);else sc.appendChild(c)}
+  return pg}}
+SITEM.noti.sub='앱 아이콘 배지 · 알림 미리보기';SITEM.acct.sub='홈 배치 백업 · 복원';SITEM.acct.kw+=' 백업 복원 내보내기 가져오기 파일 배치';SITEM.noti.kw+=' 배지 숫자 미리보기';
+if(NATIVE)SITEM.conn.sub='Wi-Fi · 블루투스 · 모바일 데이터 (실제 상태)';
+{const _r=window.NV_onResume;window.NV_onResume=()=>{try{_r&&_r()}catch(_){}NOTIFJ='';notifRefresh();qsSync();try{window.__notiSync&&window.__notiSync()}catch(_){}}}
+if(NATIVE)setTimeout(()=>{NOTIFJ='';notifRefresh();qsSync()},2500);else if(badgeOn())setTimeout(notifRefresh,1500);
+window.__nv.v29={recentsOpen:()=>openRecents(),notif:()=>NOTIF,badge:v=>{S.badge=v;NOTIFJ='';notifRefresh()},recents:()=>RK.slice(),bak:bakObj,autoBak:()=>autoBakGet(),qs:()=>QSS,search:q=>{$('dQ').value=q;buildDrawer();return [...$('dGrid').querySelectorAll('.dsec,.drow b,.da span')].map(x=>x.textContent)}};
 window.__nv.iconSheet=(names,sets0,T0)=>{const sets=sets0||['basic','orb','pebble','seal'],T=T0||['기본','궤도 행성','모래 조약돌','한지 도장'],apps=names.map(findApp).filter(Boolean),cs=92,lw=150;
   const cv=document.createElement('canvas'),d=2,Wd=lw+apps.length*cs,Hd=60+sets.length*(cs+20);cv.width=Wd*d;cv.height=Hd*d;const c=cv.getContext('2d');c.scale(d,d);
   const bg=c.createLinearGradient(0,0,Wd,Hd);bg.addColorStop(0,'#1a1238');bg.addColorStop(1,'#0b0a1c');c.fillStyle=bg;c.fillRect(0,0,Wd,Hd);
