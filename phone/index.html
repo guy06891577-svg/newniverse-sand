@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex"><link rel="icon" href="data:,">
+<title>뉴니버스 전화 · 디자인 시안 v1</title>
+<style>
+:root{--a1:#6fd3ff;--a2:#8f6bff;--acc:linear-gradient(135deg,var(--a1),var(--a2));--red:#ff4d6d;--fg:#f3f1ff;--sub:rgba(226,222,255,.62);--dim:rgba(226,222,255,.38);
+ --glass:rgba(255,255,255,.075);--glass2:rgba(255,255,255,.12);--line:rgba(255,255,255,.14);--r:22px;
+ --font:"Pretendard","Noto Sans KR","Apple SD Gothic Neo",system-ui,-apple-system,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:#04030c;color:var(--fg);font-family:var(--font);overflow:hidden}
+button,input{font-family:inherit;color:inherit}
+button{background:none;border:none;cursor:pointer}
+svg{display:block}
+#stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#app{position:relative;width:100%;height:100%;overflow:hidden;background:#05040f}
+@media (min-width:560px){#app{width:390px;height:min(844px,calc(100% - 40px));border-radius:44px;border:1px solid rgba(255,255,255,.12);box-shadow:0 30px 90px rgba(80,60,200,.25),0 0 0 10px #0b0a18,0 0 0 11px rgba(255,255,255,.08)}
+ #cap{display:block!important}}
+#cap{display:none;position:fixed;left:0;right:0;bottom:6px;text-align:center;font-size:12px;color:var(--dim)}
+#neb{position:absolute;inset:0;width:100%;height:100%}
+.view{position:absolute;inset:0;display:flex;flex-direction:column;padding-top:calc(env(safe-area-inset-top) + 10px)}
+.view[hidden]{display:none}
+.sbar{display:flex;justify-content:space-between;align-items:center;padding:4px 24px 0;font-size:13px;font-weight:600;color:var(--sub);height:22px}
+.mock{margin:8px 16px 0;padding:6px 12px;border-radius:12px;font-size:11.5px;color:var(--sub);background:rgba(143,107,255,.12);border:1px solid rgba(143,107,255,.25);display:flex;gap:6px;align-items:center}
+.mock b{color:var(--a1);font-weight:700}
+h1{font-size:26px;font-weight:800;letter-spacing:-.5px;padding:14px 22px 6px;display:flex;align-items:baseline;gap:8px}
+h1 small{font-size:13px;font-weight:600;color:var(--sub)}
+.glass{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(18px) saturate(1.2);-webkit-backdrop-filter:blur(18px) saturate(1.2)}
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 14px 110px;scrollbar-width:none}
+.scroll::-webkit-scrollbar{display:none}
+/* tab bar */
+#tabs{position:absolute;left:14px;right:14px;bottom:calc(env(safe-area-inset-bottom) + 14px);height:64px;border-radius:24px;display:flex;z-index:5;padding:6px}
+#tabs button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;font-weight:600;color:var(--dim);border-radius:18px;position:relative}
+#tabs button svg{width:22px;height:22px}
+#tabs button.on{color:var(--fg);background:rgba(255,255,255,.08)}
+#tabs button.on svg{stroke:url(#gacc)}
+#tabs .badge{position:absolute;top:8px;left:calc(50% + 6px);width:7px;height:7px;border-radius:50%;background:var(--red)}
+/* keypad */
+#kpTop{flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding:0 18px 6px;min-height:0}
+#matches{display:flex;flex-direction:column;gap:6px;overflow:hidden}
+.mrow{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:18px}
+.mrow .nm{font-size:16px;font-weight:700}
+.mrow .nm em,.srow em{font-style:normal;background:var(--acc);-webkit-background-clip:text;background-clip:text;color:transparent}
+.mrow .no{font-size:12.5px;color:var(--sub);margin-top:2px}
+.mrow .no em{font-style:normal;color:var(--a1);font-weight:700}
+.mrow .grow{flex:1;min-width:0}
+.mmore{font-size:12px;color:var(--sub);text-align:center;padding:2px}
+.hint{font-size:12.5px;color:var(--dim);text-align:center;padding:8px 0;line-height:1.5}
+#num{font-size:36px;font-weight:300;letter-spacing:1.5px;text-align:center;min-height:52px;padding-top:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#num .ph{color:var(--dim);font-size:16px;letter-spacing:0}
+#keys{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 18px;padding:6px 34px 0}
+.key{height:62px;border-radius:31px;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:background .12s}
+.key:active,.key.pr{background:rgba(255,255,255,.16)}
+.key b{font-size:27px;font-weight:400;line-height:1}
+.key i{font-style:normal;font-size:11px;color:var(--sub);letter-spacing:2px;margin-top:3px;height:13px}
+#kpAct{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;padding:12px 34px calc(env(safe-area-inset-bottom) + 92px);align-items:center;justify-items:center}
+.callbtn{width:66px;height:66px;border-radius:50%;background:var(--acc);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 30px rgba(111,160,255,.45)}
+.callbtn svg{width:28px;height:28px;stroke:#0a0820}
+.icb{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--sub)}
+.icb svg{width:24px;height:24px}
+/* avatar */
+.av{width:42px;height:42px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:#fff;background:rgba(255,255,255,.08);border:1px solid rgba(160,190,255,.35);position:relative}
+.av.unk{color:var(--sub)}
+.av svg{width:20px;height:20px}
+.dot{position:absolute;top:-1px;right:-1px;width:11px;height:11px;border-radius:50%;background:var(--red);border:2px solid #0b0a1c}
+/* recents */
+.stat{font-size:12px;color:var(--sub);padding:0 22px 8px;display:flex;gap:6px;align-items:center}
+.stat b{color:var(--fg)}
+.seg{display:flex;gap:6px;padding:0 18px 10px}
+.seg button{padding:7px 14px;border-radius:16px;font-size:13px;font-weight:600;color:var(--sub);border:1px solid var(--line)}
+.seg button.on{color:#0a0820;background:var(--acc);border-color:transparent}
+.day{font-size:12.5px;font-weight:700;color:var(--sub);padding:14px 8px 6px;display:flex;justify-content:space-between}
+.day span{font-weight:500;color:var(--dim)}
+.card{border-radius:var(--r);overflow:hidden}
+.grp{position:relative;border-bottom:1px solid rgba(255,255,255,.06)}
+.grp:last-child{border-bottom:none}
+.rowc{position:relative;overflow:hidden}
+.under{position:absolute;inset:0;display:flex;justify-content:flex-end}
+.under button{width:78px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:11.5px;font-weight:700}
+.under .ucall{background:linear-gradient(135deg,rgba(111,211,255,.9),rgba(143,107,255,.9));color:#0a0820}
+.under .udel{background:var(--red);color:#fff}
+.under svg{width:22px;height:22px}
+.front{position:relative;display:flex;align-items:center;gap:12px;padding:12px 10px 12px 14px;background:#100e24;touch-action:pan-y;transition:transform .22s ease;user-select:none}
+.front .grow{flex:1;min-width:0}
+.front .nm{font-size:16px;font-weight:700;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.front .nm.miss{color:#ff8da0}
+.front .meta{font-size:12.5px;color:var(--sub);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.front .meta .m{color:#ff8da0;font-weight:600}
+.cnt{font-size:11px;font-weight:700;padding:1px 7px;border-radius:9px;background:rgba(255,255,255,.1);color:var(--fg)}
+.qcall{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);color:var(--a1)}
+.qcall svg{width:20px;height:20px}
+.chev{color:var(--dim);transition:transform .2s}
+.chev svg{width:18px;height:18px}
+.grp.open .chev{transform:rotate(180deg)}
+.det{display:none;background:rgba(0,0,0,.25);padding:6px 14px 12px 68px}
+.grp.open .det{display:block}
+.tl{position:relative;padding-left:16px}
+.tl:before{content:"";position:absolute;left:4px;top:10px;bottom:10px;width:1px;background:linear-gradient(var(--a1),var(--a2));opacity:.5}
+.ci{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:13.5px;position:relative}
+.ci:before{content:"";position:absolute;left:-15px;width:7px;height:7px;border-radius:50%;background:var(--a1)}
+.ci.miss:before,.ci.rej:before{background:var(--red)}
+.ci svg{width:16px;height:16px;color:var(--sub)}
+.ci.miss svg,.ci.miss .ty{color:#ff8da0}
+.ci .tm{width:74px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.ci .ty{flex:1;color:var(--sub)}
+.ci .du{color:var(--dim);font-variant-numeric:tabular-nums;font-size:12.5px}
+.dact{display:flex;gap:8px;margin-top:8px}
+.dact button{flex:1;height:38px;border-radius:14px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600}
+.dact button svg{width:16px;height:16px}
+.dact .pri{background:var(--acc);color:#0a0820;border:none}
+.dact .del{color:#ff8da0}
+.more{width:100%;margin:14px 0 4px;height:46px;border-radius:16px;font-size:13.5px;font-weight:600;color:var(--sub)}
+.swhint{font-size:11.5px;color:var(--dim);text-align:center;padding:10px 0 0}
+/* search */
+.sbox{margin:4px 16px 8px;height:50px;border-radius:25px;display:flex;align-items:center;gap:10px;padding:0 18px}
+.sbox svg{width:20px;height:20px;color:var(--sub)}
+.sbox input{flex:1;background:none;border:none;outline:none;font-size:16px}
+.sbox input::placeholder{color:var(--dim)}
+.sec{display:flex;align-items:baseline;gap:6px;padding:14px 8px 8px;font-size:15px;font-weight:800}
+.sec small{font-size:12.5px;font-weight:600;color:var(--a1)}
+.sec .r{margin-left:auto;font-size:12px;font-weight:500;color:var(--dim)}
+.srow{display:flex;align-items:center;gap:12px;padding:11px 12px;border-bottom:1px solid rgba(255,255,255,.06)}
+.srow:last-child{border-bottom:none}
+.srow .nm{font-size:16px;font-weight:700;display:flex;align-items:center;gap:7px}
+.srow .no{font-size:12.5px;color:var(--sub);margin-top:2px}
+.srow .grow{flex:1;min-width:0}
+.n15{font-size:11.5px;font-weight:800;min-width:24px;text-align:center;padding:1px 7px;border-radius:10px;color:#0a0820;background:var(--acc)}
+.bar{height:3px;border-radius:2px;background:var(--acc);margin-top:6px;opacity:.75}
+/* call screens */
+.full{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;padding:calc(env(safe-area-inset-top) + 40px) 24px calc(env(safe-area-inset-bottom) + 36px);background:radial-gradient(120% 70% at 50% 25%,rgba(70,60,170,.35),rgba(5,4,15,.55))}
+.full[hidden]{display:none}
+.clabel{font-size:13px;font-weight:600;color:var(--a1);letter-spacing:.5px;display:flex;align-items:center;gap:6px}
+.clabel svg{width:15px;height:15px}
+.bigav{width:118px;height:118px;border-radius:50%;margin:34px 0 20px;display:flex;align-items:center;justify-content:center;font-size:44px;font-weight:700;position:relative;background:rgba(255,255,255,.06);border:1.5px solid rgba(160,190,255,.5)}
+.ring{position:absolute;inset:-2px;border-radius:50%;border:1.5px solid var(--a1);animation:ring 2.4s ease-out infinite;opacity:0}
+.ring.b{animation-delay:.8s;border-color:var(--a2)}.ring.c{animation-delay:1.6s}
+@keyframes ring{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.9);opacity:0}}
+.cname{font-size:30px;font-weight:800;letter-spacing:-.5px}
+.cnum{font-size:15px;color:var(--sub);margin-top:6px}
+.cctx{margin-top:16px;font-size:12.5px;color:var(--sub);padding:7px 14px;border-radius:14px}
+.cctx b{color:var(--fg)}
+.spacer{flex:1}
+.qr{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:26px}
+.qr button{padding:9px 14px;border-radius:16px;font-size:13px;font-weight:600;border:1px solid var(--line);background:var(--glass)}
+.ansrow{display:flex;justify-content:space-between;width:100%;padding:0 22px;align-items:flex-end}
+.ab{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--sub)}
+.ab .c{width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.ab .c svg{width:30px;height:30px}
+.ab .dec{background:var(--red)}
+.ab .dec svg{stroke:#fff;transform:rotate(135deg)}
+.ab .ans{background:var(--acc);box-shadow:0 0 0 0 rgba(111,211,255,.5);animation:pulse 1.8s infinite}
+.ab .ans svg{stroke:#0a0820}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(111,211,255,.55)}100%{box-shadow:0 0 0 22px rgba(111,211,255,0)}}
+.swipeup{font-size:12px;color:var(--dim);margin-top:18px;display:flex;align-items:center;gap:6px}
+.swipeup svg{width:14px;height:14px}
+#tmr{font-size:16px;color:var(--a1);margin-top:8px;font-variant-numeric:tabular-nums;font-weight:600}
+.rec{display:none;margin-top:12px;font-size:12.5px;font-weight:700;color:#ff8da0;padding:5px 12px;border-radius:12px;background:rgba(255,77,109,.12);border:1px solid rgba(255,77,109,.35);align-items:center;gap:6px}
+.rec.on{display:flex}
+.rec i{width:8px;height:8px;border-radius:50%;background:var(--red);animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.2}}
+#ctl{display:grid;grid-template-columns:repeat(3,1fr);gap:16px 14px;width:100%;padding:0 6px;margin-bottom:28px}
+.cb{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--sub)}
+.cb .c{width:68px;height:68px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--glass2);border:1px solid var(--line);transition:all .15s}
+.cb .c svg{width:26px;height:26px;stroke:var(--fg)}
+.cb.on .c{background:var(--acc);border-color:transparent}
+.cb.on .c svg{stroke:#0a0820}
+.cb.on{color:var(--fg)}
+.cb.recon .c{background:rgba(255,77,109,.2);border-color:var(--red)}
+.cb.recon .c svg{stroke:#ff8da0}
+.endc{width:74px;height:74px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 30px rgba(255,77,109,.4)}
+.endc svg{width:30px;height:30px;stroke:#fff;transform:rotate(135deg)}
+#dtmf{display:none;width:100%;margin-bottom:16px}
+#dtmf.on{display:block}
+#dtmfNum{text-align:center;font-size:26px;letter-spacing:3px;min-height:34px;color:var(--fg)}
+#dtmf .kg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 22px;padding:6px 30px}
+#dtmf .key{height:56px}
+#dtmf .hide{display:block;margin:6px auto 0;font-size:13px;color:var(--a1);font-weight:600}
+#sheet{position:absolute;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 14px);border-radius:26px;padding:18px;z-index:30;transform:translateY(130%);transition:transform .25s}
+#sheet.on{transform:none}
+#sheet h3{font-size:16px;margin-bottom:10px}
+#sheet .opt{display:flex;align-items:center;gap:12px;width:100%;padding:12px 6px;font-size:15px;font-weight:600;border-bottom:1px solid rgba(255,255,255,.07);text-align:left}
+#sheet .opt svg{width:20px;height:20px;color:var(--a1)}
+#sheet .opt:last-child{border-bottom:none}
+#toast{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 92px);transform:translateX(-50%) translateY(20px);opacity:0;z-index:40;padding:10px 16px;border-radius:18px;font-size:13.5px;font-weight:600;display:flex;gap:14px;align-items:center;white-space:nowrap;transition:all .2s;pointer-events:none;background:rgba(24,20,52,.92);border:1px solid var(--line)}
+#toast.on{opacity:1;transform:translateX(-50%);pointer-events:auto}
+#toast button{color:var(--a1);font-weight:700;font-size:13.5px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs><linearGradient id="gacc" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6fd3ff"/><stop offset="1" stop-color="#8f6bff"/></linearGradient></defs></svg>
+<div id="stage"><div id="app">
+<canvas id="neb"></canvas>
+
+<!-- 키패드 -->
+<section class="view" id="v-keypad" hidden>
+ <div class="sbar"><span class="clk"></span><span>뉴니버스 전화 · 시안</span></div>
+ <div class="mock"><b>시안</b> 이름·번호는 모두 가짜 예시예요 (010-0000-xxxx)</div>
+ <div id="kpTop"><div id="matches"></div></div>
+ <div id="num"></div>
+ <div id="keys"></div>
+ <div id="kpAct"><span></span><button class="callbtn" id="kpCall" aria-label="전화"></button><button class="icb" id="kpDel" aria-label="지우기"></button></div>
+</section>
+
+<!-- 최근 통화 -->
+<section class="view" id="v-recent" hidden>
+ <div class="sbar"><span class="clk"></span><span>뉴니버스 전화 · 시안</span></div>
+ <h1>최근 통화</h1>
+ <div class="stat" id="rStat"></div>
+ <div class="seg" id="rSeg"><button data-f="all" class="on">전체</button><button data-f="miss">부재중</button></div>
+ <div class="scroll" id="rList"></div>
+</section>
+
+<!-- 검색 -->
+<section class="view" id="v-search" hidden>
+ <div class="sbar"><span class="clk"></span><span>뉴니버스 전화 · 시안</span></div>
+ <h1>검색</h1>
+ <div class="sbox glass"><span data-i="search"></span><input id="sIn" placeholder="이름, 초성(ㄱㅅㅈ), 번호" autocomplete="off"></div>
+ <div class="scroll" id="sList"></div>
+</section>
+
+<!-- 걸려오는 전화 -->
+<section class="full" id="v-incoming" hidden>
+ <div class="clabel"><span data-i="in"></span>걸려오는 전화 · 휴대전화</div>
+ <div class="bigav" id="inAv"><i class="ring"></i><i class="ring b"></i><i class="ring c"></i><span></span></div>
+ <div class="cname" id="inName"></div>
+ <div class="cnum" id="inNum"></div>
+ <div class="cctx glass" id="inCtx"></div>
+ <div class="spacer"></div>
+ <div class="qr"><button data-qr="지금 통화가 어려워요. 곧 연락드릴게요.">곧 연락드릴게요</button><button data-qr="회의 중이에요.">회의 중이에요</button><button data-qr="운전 중이에요.">운전 중</button></div>
+ <div class="ansrow">
+  <button class="ab" id="inDec"><span class="c dec" data-i="phone"></span>거절</button>
+  <button class="ab" id="inMsg"><span class="c glass" data-i="msg" style="width:56px;height:56px"></span>문자로 거절</button>
+  <button class="ab" id="inAns"><span class="c ans" data-i="phone"></span>받기</button>
+ </div>
+ <div class="swipeup"><span data-i="up"></span>받기 버튼을 위로 밀어도 받아요</div>
+</section>
+
+<!-- 통화 중 -->
+<section class="full" id="v-incall" hidden>
+ <div class="clabel"><span data-i="hd"></span>통화 중 · HD 음성</div>
+ <div class="bigav" id="icAv" style="width:96px;height:96px;font-size:36px;margin:26px 0 16px"><span></span></div>
+ <div class="cname" id="icName"></div>
+ <div id="tmr">00:00</div>
+ <div class="rec" id="recChip"><i></i><span>녹음 중 00:00 · 시안</span></div>
+ <div class="spacer"></div>
+ <div id="dtmf"><div id="dtmfNum"></div><div class="kg"></div><button class="hide" id="dtmfHide">키패드 숨기기</button></div>
+ <div id="ctl">
+  <button class="cb" data-c="mute"><span class="c" data-i="mute"></span>음소거</button>
+  <button class="cb" data-c="spk"><span class="c" data-i="spk"></span>스피커</button>
+  <button class="cb" data-c="kp"><span class="c" data-i="grid"></span>키패드</button>
+  <button class="cb" data-c="rec"><span class="c" data-i="rec"></span>녹음</button>
+  <button class="cb" data-c="add"><span class="c" data-i="plus"></span>통화 추가</button>
+  <button class="cb" data-c="hold"><span class="c" data-i="pause"></span>대기</button>
+ </div>
+ <button class="endc" id="icEnd" aria-label="종료" data-i="phone"></button>
+ <div style="font-size:12.5px;color:var(--sub);margin-top:8px">종료</div>
+</section>
+
+<nav id="tabs" class="glass">
+ <button data-v="keypad"><span data-i="grid"></span>키패드</button>
+ <button data-v="recent"><span data-i="clock"></span><i class="badge"></i>최근 통화</button>
+ <button data-v="search"><span data-i="search"></span>검색</button>
+ <button data-v="demo"><span data-i="spark"></span>통화 화면</button>
+</nav>
+
+<div id="sheet" class="glass" style="background:rgba(20,17,44,.92)">
+ <h3>통화 화면 시안 보기</h3>
+ <button class="opt" data-go="incoming"><span data-i="in"></span>걸려오는 전화</button>
+ <button class="opt" data-go="incall"><span data-i="phone"></span>통화 중</button>
+ <button class="opt" data-go="close"><span data-i="x"></span>닫기</button>
+</div>
+<div id="toast"><span></span><button></button></div>
+</div></div>
+<div id="cap">뉴니버스 전화 · 디자인 시안 v1 · 실제 전화 기능 없음 · 데이터는 모두 가짜</div>
+
+<script>
+(()=>{
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+/* ---------- line icons ---------- */
+const P={
+ phone:'<path d="M5 4h3.2l1.6 4-2 1.3a11 11 0 0 0 5 5l1.3-2 4 1.6V17a2 2 0 0 1-2 2A15 15 0 0 1 3 6a2 2 0 0 1 2-2z"/>',
+ grid:'<circle cx="6" cy="5" r="1.3"/><circle cx="12" cy="5" r="1.3"/><circle cx="18" cy="5" r="1.3"/><circle cx="6" cy="11" r="1.3"/><circle cx="12" cy="11" r="1.3"/><circle cx="18" cy="11" r="1.3"/><circle cx="6" cy="17" r="1.3"/><circle cx="12" cy="17" r="1.3"/><circle cx="18" cy="17" r="1.3"/>',
+ clock:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+ search:'<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
+ spark:'<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M6 18l2.5-2.5M15.5 8.5L18 6"/>',
+ back:'<path d="M9 6h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-5-6z"/><path d="M12 10l4 4M16 10l-4 4"/>',
+ in:'<path d="M17 4L10 11M10 6v5h5"/><path d="M4 15.5l3-1 2 3"/>',
+ out:'<path d="M10 11l7-7M12 4h5v5"/>',
+ miss:'<path d="M4 7l6 6 4-4 6 6"/><path d="M15 15h5v-5"/>',
+ rej:'<circle cx="12" cy="12" r="8"/><path d="M6.5 17.5l11-11"/>',
+ trash:'<path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v5M14 11v5"/>',
+ chev:'<path d="M6 9l6 6 6-6"/>',
+ user:'<circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/>',
+ msg:'<path d="M4 5h16v11H9l-5 4z"/>',
+ up:'<path d="M12 19V5M6 11l6-6 6 6"/>',
+ hd:'<path d="M4 9v6M9 9v6M4 12h5M13 9v6h2.5a3 3 0 0 0 0-6z"/>',
+ mute:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M4 4l16 16"/>',
+ spk:'<path d="M4 9.5h3.5L12 5v14l-4.5-4.5H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/>',
+ rec:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.2"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>',
+ pause:'<path d="M9 6v12M15 6v12"/>',
+ x:'<path d="M6 6l12 12M18 6L6 18"/>'
+};
+const ic=(n,sw=1.7)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${P[n]}</svg>`;
+const paintIcons=(root=document)=>root.querySelectorAll('[data-i]').forEach(e=>{if(!e.dataset.done){e.insertAdjacentHTML('afterbegin',ic(e.dataset.i));e.dataset.done=1}});
+paintIcons();
+$('#kpCall').innerHTML=ic('phone',2);$('#kpDel').innerHTML=ic('back');
+
+/* ---------- nebula ---------- */
+function nebula(){const c=$('#neb'),r=c.getBoundingClientRect(),d=Math.min(2,devicePixelRatio||1);c.width=r.width*d;c.height=r.height*d;const x=c.getContext('2d');x.scale(d,d);const W=r.width,H=r.height;
+ x.fillStyle='#05040f';x.fillRect(0,0,W,H);
+ let s=7;const rnd=()=>(s=(s*16807)%2147483647)/2147483647;
+ const blob=(cx,cy,rr,col)=>{const g=x.createRadialGradient(cx,cy,0,cx,cy,rr);g.addColorStop(0,col);g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(0,0,W,H)};
+ blob(W*.15,H*.12,W*.9,'rgba(60,120,220,.30)');blob(W*.95,H*.35,W*.85,'rgba(130,80,230,.30)');blob(W*.3,H*.8,W*.9,'rgba(90,60,200,.22)');blob(W*.7,H*.95,W*.6,'rgba(60,170,240,.14)');
+ for(let i=0;i<14;i++)blob(W*rnd(),H*rnd(),W*(.1+rnd()*.25),`rgba(${110+rnd()*60|0},${110+rnd()*60|0},255,.07)`);
+ for(let i=0;i<170;i++){const a=rnd()*.7+.1,rr=rnd()*1.1+.2;x.fillStyle=`rgba(230,235,255,${a})`;x.beginPath();x.arc(W*rnd(),H*rnd(),rr,0,7);x.fill()}
+ x.fillStyle='rgba(5,4,15,.25)';x.fillRect(0,0,W,H)}
+nebula();addEventListener('resize',nebula);
+
+/* ---------- fake data ---------- */
+const PEOPLE=[ // n: 최근 15일 통화 수 (가짜)
+ ['홍길동',90],['김사장',41],['이영희',33],['박민수',22],['장지환',15],['최가상',12],['정예시',9],['한데모',7],['오시안',5],['윤테스트',4],['강샘플',3],['서목업',2],['임가짜',1],
+ ['(저장 안 된 번호)',6,'1588-0000'],['(저장 안 된 번호)',3,'02-000-0123']];
+const people=PEOPLE.map((p,i)=>({id:i,name:p[0],n15:p[1],num:p[2]||('010-0000-'+String(1001+i)),unk:!!p[2]}));
+people.forEach(p=>{if(p.unk)p.name=p.num});
+let seed=20261119;const rnd=()=>(seed=(seed*48271)%2147483647)/2147483647;
+const today=new Date();today.setHours(0,0,0,0);
+const DAY=864e5;
+let calls=[];
+function mk(pid,dayOff,min,type){const t=new Date(today.getTime()-dayOff*DAY+min*6e4);const dur=type==='miss'||type==='rej'?0:(20+rnd()*600|0);calls.push({pid,t,type,dur,id:calls.length})}
+// 김사장: 오늘 7통, 마지막 15:20 부재중 (사용자 예시 그대로)
+[[9*60+5,'out'],[10*60+12,'in'],[11*60+40,'miss'],[11*60+44,'out'],[13*60+30,'in'],[14*60+58,'out'],[15*60+20,'miss']].forEach(([m,t])=>mk(1,0,m,t));
+people.forEach(p=>{let left=p.n15-(p.id===1?7:0);while(left-->0){let d=Math.min(14,Math.floor(Math.pow(rnd(),1.6)*15));if(p.id===1&&d===0)d=1;
+ const m=d===0?(8*60+rnd()*(7*60+10)):(7*60+30+rnd()*(15*60));const r=rnd();const ty=r<.14?'miss':r<.18?'rej':r<.58?'in':'out';mk(p.id,d,m|0,ty)}});
+calls.sort((a,b)=>b.t-a.t);
+const TOTAL=calls.length;
+
+/* ---------- 초성 ---------- */
+const CHO='ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ'.split('');
+const NORM={ㄲ:'ㄱ',ㄸ:'ㄷ',ㅃ:'ㅂ',ㅆ:'ㅅ',ㅉ:'ㅈ'};
+const cho=s=>[...s].map(ch=>{const c=ch.charCodeAt(0)-0xAC00;if(c<0||c>11171)return ch;const k=CHO[Math.floor(c/588)];return NORM[k]||k}).join('');
+const KEY={'1':'ㄱㅋ','2':'ㄴㄹ','3':'ㄷㅌ','4':'ㅂㅍ','5':'ㅅㅎ','6':'ㅈㅊ','7':'ㅇㅁ','8':'','9':'','0':'','*':'','#':''};
+const K2D={};Object.entries(KEY).forEach(([d,s])=>[...s].forEach(c=>K2D[c]=d));
+const choDigits=name=>[...cho(name)].map(c=>K2D[c]||'·').join('');
+function digitMatch(p,q){ // returns {nameIdx:[start,len]|null,numIdx:[start,len]|null}
+ const res={};if(!p.unk){const cd=choDigits(p.name),i=cd.indexOf(q);if(i>=0)res.name=[i,q.length]}
+ const nd=p.num.replace(/\D/g,''),j=nd.indexOf(q);if(j>=0&&q.length>=2){let k=0,st=-1,en=-1;for(let x=0;x<p.num.length;x++){if(/\d/.test(p.num[x])){if(k===j)st=x;if(k===j+q.length-1){en=x;break}k++}}res.num=[st,en-st+1]}
+ return res}
+const hl=(s,r)=>r?s.slice(0,r[0])+'<em>'+s.slice(r[0],r[0]+r[1])+'</em>'+s.slice(r[0]+r[1]):s;
+const avHtml=(p,dot)=>`<div class="av${p.unk?' unk':''}">${p.unk?ic('user'):p.name[0]}${dot?'<i class="dot"></i>':''}</div>`;
+
+/* ---------- time fmt ---------- */
+const hm=t=>{let h=t.getHours(),m=String(t.getMinutes()).padStart(2,'0');return (h<12?'오전 ':'오후 ')+((h%12)||12)+':'+m};
+const WD='일월화수목금토';
+const dayLabel=off=>{if(off===0)return '오늘';if(off===1)return '어제';const d=new Date(today.getTime()-off*DAY);return `${d.getMonth()+1}월 ${d.getDate()}일 (${WD[d.getDay()]})`};
+const TY={in:'수신',out:'발신',miss:'부재중',rej:'거절'};
+const dur=s=>s?(s>=60?Math.floor(s/60)+'분 '+(s%60)+'초':s+'초'):'';
+function clk(){const n=new Date();$$('.clk').forEach(e=>e.textContent=n.getHours()+':'+String(n.getMinutes()).padStart(2,'0'))}clk();setInterval(clk,15000);
+
+/* ---------- toast ---------- */
+let tT;function toast(msg,btn,fn){const t=$('#toast');t.firstElementChild.textContent=msg;const b=t.lastElementChild;b.textContent=btn||'';b.style.display=btn?'':'none';b.onclick=()=>{t.classList.remove('on');fn&&fn()};t.classList.add('on');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('on'),3200)}
+
+/* ---------- keypad ---------- */
+let num='';
+$('#keys').innerHTML=['1','2','3','4','5','6','7','8','9','*','0','#'].map(d=>`<button class="key" data-k="${d}"><b>${d}</b><i>${KEY[d]||(d==='0'?'+':'')}</i></button>`).join('');
+$('#dtmf .kg').innerHTML=['1','2','3','4','5','6','7','8','9','*','0','#'].map(d=>`<button class="key" data-d="${d}"><b>${d}</b></button>`).join('');
+function fmtNum(s){if(/^010\d{0,8}$/.test(s)){if(s.length>7)return s.slice(0,3)+'-'+s.slice(3,7)+'-'+s.slice(7);if(s.length>3)return s.slice(0,3)+'-'+s.slice(3)}return s}
+function renderKp(){
+ $('#num').innerHTML=num?fmtNum(num):'<span class="ph">번호를 누르거나, 자음으로 이름을 찾아요</span>';
+ const m=$('#matches');
+ if(!num){m.innerHTML=`<div class="hint">초성 검색 · 1=ㄱㅋ 2=ㄴㄹ 3=ㄷㅌ 4=ㅂㅍ<br>5=ㅅㅎ 6=ㅈㅊ 7=ㅇㅁ &nbsp;예) 156 → 김사장</div>`;return}
+ const q=num.replace(/\D/g,'');const hits=[];
+ if(q)people.forEach(p=>{const r=digitMatch(p,q);if(r.name||r.num)hits.push({p,r,sc:(r.name?(r.name[0]===0?0:1):2)*1000-p.n15})});
+ hits.sort((a,b)=>a.sc-b.sc);
+ const show=hits.slice(0,3);
+ m.innerHTML=(hits.length>3?`<div class="mmore">${hits.length-3}명 더 · 위로 밀어 보기</div>`:'')+show.reverse().map(({p,r})=>`<div class="mrow glass" data-call="${p.id}">${avHtml(p)}<div class="grow"><div class="nm">${p.unk?p.name:hl(p.name,r.name)}</div><div class="no">${hl(p.num,r.num)}${r.name&&!p.unk?' · 초성 '+cho(p.name):''}</div></div><span class="qcall">${ic('phone')}</span></div>`).join('')||'<div class="hint">일치하는 연락처가 없어요</div>';
+}
+$('#keys').addEventListener('click',e=>{const k=e.target.closest('.key');if(!k)return;num+=k.dataset.k;renderKp()});
+$('#kpDel').onclick=()=>{num=num.slice(0,-1);renderKp()};
+let lp;$('#kpDel').onpointerdown=()=>lp=setTimeout(()=>{num='';renderKp()},600);$('#kpDel').onpointerup=()=>clearTimeout(lp);
+$('#kpCall').onclick=()=>{const q=num.replace(/\D/g,'');const hit=q&&people.find(p=>digitMatch(p,q).name&&digitMatch(p,q).name[0]===0);if(hit)startCall(hit);else if(num)startCall({name:fmtNum(num),num:fmtNum(num),unk:true,n15:0});else toast('번호를 먼저 눌러 주세요')};
+$('#matches').addEventListener('click',e=>{const r=e.target.closest('[data-call]');if(r)startCall(people[+r.dataset.call])});
+
+/* ---------- recents (사람별 · 하루 단위로 묶음) ---------- */
+let deleted=new Set(),rFilter='all',daysShown=3;const open=new Set();
+function groups(){const map=new Map();
+ calls.forEach(c=>{if(deleted.has(c.id))return;const off=Math.round((new Date(c.t).setHours(0,0,0,0)-today)/-DAY);const k=off+'|'+c.pid;if(!map.has(k))map.set(k,{k,off,p:people[c.pid],calls:[]});map.get(k).calls.push(c)});
+ const days=new Map();[...map.values()].forEach(g=>{g.last=g.calls[0];g.miss=g.calls.filter(c=>c.type==='miss').length;if(rFilter==='miss'&&!g.miss)return;if(!days.has(g.off))days.set(g.off,[]);days.get(g.off).push(g)});
+ return [...days.entries()].sort((a,b)=>a[0]-b[0]).map(([off,gs])=>({off,gs:gs.sort((a,b)=>b.last.t-a.last.t)}))}
+function renderRecent(){
+ const ds=groups();const rows=ds.reduce((s,d)=>s+d.gs.length,0);const live=calls.filter(c=>!deleted.has(c.id)).length;
+ $('#rStat').innerHTML=`최근 15일 <b>${live}통</b> → <b>${rows}줄</b>로 묶음 · 한 사람당 하루 한 줄 · 가짜 예시`;
+ const missAny=calls.some(c=>!deleted.has(c.id)&&c.type==='miss'&&Math.round((new Date(c.t).setHours(0,0,0,0)-today)/-DAY)===0);$('#tabs .badge').style.display=missAny?'':'none';
+ let h='';ds.slice(0,daysShown).forEach(d=>{
+  const n=d.gs.reduce((s,g)=>s+g.calls.length,0);
+  h+=`<div class="day">${dayLabel(d.off)}<span>${d.gs.length}명 · ${n}통</span></div><div class="card glass">`;
+  d.gs.forEach(g=>{const L=g.last,cnt=g.calls.length,p=g.p;
+   const meta=`${d.off<2?dayLabel(d.off)+' ':''}${cnt}통 · 마지막 ${hm(L.t)} ${L.type==='miss'?'<span class="m">부재중</span>':TY[L.type]}`;
+   const asc=[...g.calls].reverse();
+   h+=`<div class="grp${open.has(g.k)?' open':''}" data-k="${g.k}">
+    <div class="rowc"><div class="under"><button class="ucall" data-act="call">${ic('phone')}전화</button><button class="udel" data-act="del">${ic('trash')}삭제</button></div>
+    <div class="front">${avHtml(p,g.miss>0)}<div class="grow"><div class="nm${L.type==='miss'?' miss':''}">${p.name}${cnt>1?`<span class="cnt">${cnt}</span>`:''}</div><div class="meta">${meta}${g.miss&&L.type!=='miss'?` · <span class="m">부재중 ${g.miss}</span>`:''}</div></div>
+     <button class="qcall" data-act="call" aria-label="다시 걸기">${ic('phone')}</button><span class="chev">${ic('chev')}</span></div></div>
+    <div class="det"><div class="tl">${asc.map(c=>`<div class="ci ${c.type}">${ic(c.type)}<span class="tm">${hm(c.t)}</span><span class="ty">${TY[c.type]}</span><span class="du">${dur(c.dur)}</span></div>`).join('')}</div>
+     <div class="dact"><button class="pri" data-act="call">${ic('phone')}다시 걸기</button><button data-act="msg">${ic('msg')}문자</button><button class="del" data-act="del">${ic('trash')}삭제</button></div></div>
+   </div>`});
+  h+='</div>'});
+ if(ds.length>daysShown)h+=`<button class="more glass" id="rMore">이전 기록 더 보기 · ${ds.length-daysShown}일 남음</button>`;
+ if(!ds.length)h='<div class="hint">기록이 없어요</div>';
+ h+='<div class="swhint">줄을 왼쪽으로 밀면 전화 · 삭제 · 누르면 그날 통화가 시간순으로 펼쳐져요</div>';
+ $('#rList').innerHTML=h;
+}
+$('#rSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;rFilter=b.dataset.f;$$('#rSeg button').forEach(x=>x.classList.toggle('on',x===b));renderRecent()};
+function grpOf(el){const k=el.closest('.grp').dataset.k;return groups().flatMap(d=>d.gs).find(g=>g.k===k)}
+$('#rList').addEventListener('click',e=>{
+ if(e.target.id==='rMore'){daysShown+=3;renderRecent();return}
+ const a=e.target.closest('[data-act]'),gEl=e.target.closest('.grp');if(!gEl)return;
+ if(gEl.dataset.sw&&!a){closeSwipe();return}
+ const g=grpOf(gEl);
+ if(a){e.stopPropagation();if(a.dataset.act==='call')startCall(g.p);
+  else if(a.dataset.act==='msg')toast('문자는 다음 단계 시안이에요');
+  else if(a.dataset.act==='del'){const ids=g.calls.map(c=>c.id);ids.forEach(i=>deleted.add(i));renderRecent();toast(`${g.p.name} · ${dayLabel(g.off)} ${ids.length}통 삭제`,'되돌리기',()=>{ids.forEach(i=>deleted.delete(i));renderRecent()})}
+  return}
+ open.has(g.k)?open.delete(g.k):open.add(g.k);gEl.classList.toggle('open')});
+// swipe
+let sw=null,swOpen=null;
+function closeSwipe(){if(swOpen){swOpen.querySelector('.front').style.transform='';delete swOpen.dataset.sw;swOpen=null}}
+$('#rList').addEventListener('pointerdown',e=>{const f=e.target.closest('.front');if(!f||e.target.closest('[data-act]'))return;sw={f,x:e.clientX,y:e.clientY,dx:0,on:false}});
+addEventListener('pointermove',e=>{if(!sw)return;const dx=e.clientX-sw.x,dy=e.clientY-sw.y;if(!sw.on){if(Math.abs(dx)>10&&Math.abs(dx)>Math.abs(dy)){sw.on=true;sw.f.style.transition='none';if(swOpen&&swOpen!==sw.f.closest('.grp'))closeSwipe()}else if(Math.abs(dy)>10){sw=null;return}else return}
+ sw.dx=Math.max(-156,Math.min(0,dx+(sw.f.closest('.grp').dataset.sw?-156:0)));sw.f.style.transform=`translateX(${sw.dx}px)`});
+addEventListener('pointerup',()=>{if(!sw)return;const {f,on,dx}=sw;sw=null;if(!on)return;f.style.transition='';const g=f.closest('.grp');
+ if(dx<-70){f.style.transform='translateX(-156px)';g.dataset.sw=1;swOpen=g;g.addEventListener('click',ev=>ev.stopPropagation(),{once:true,capture:true})}else{f.style.transform='';delete g.dataset.sw;if(swOpen===g)swOpen=null}});
+
+/* ---------- search ---------- */
+const RECENT_SEARCH=[4,0,2,7,9,13,5,11]; // 최근에 검색한 사람 (가짜)
+const c15=p=>calls.filter(c=>c.pid===p.id&&!deleted.has(c.id)&&c.t>=today.getTime()-14*DAY).length;
+function renderSearch(){const q=$('#sIn').value.trim();let h='';
+ if(!q){const list=RECENT_SEARCH.map(i=>people[i]).map(p=>({p,n:c15(p)})).sort((a,b)=>b.n-a.n);const mx=list[0]?.n||1;
+  h+=`<div class="sec">최근 검색 <small>(최근 15일)</small><span class="r">숫자 = 15일 통화 수 · 많은 순</span></div><div class="card glass">`+
+   list.map(({p,n})=>`<div class="srow" data-call="${p.id}">${avHtml(p)}<div class="grow"><div class="nm">${p.name}<span class="n15">${n}</span></div><div class="no">${p.num}</div><div class="bar" style="width:${Math.max(6,n/mx*100)}%"></div></div><span class="qcall">${ic('phone')}</span></div>`).join('')+'</div>';
+  h+=`<div class="hint" style="padding-top:14px">초성(ㄱㅅㅈ), 이름 일부, 번호 끝자리로 찾을 수 있어요</div>`}
+ else{const qc=cho(q),qd=q.replace(/\D/g,'');const res=people.filter(p=>!p.unk&&(p.name.includes(q)||cho(p.name).includes(qc))||(qd.length>=2&&p.num.replace(/\D/g,'').includes(qd))).map(p=>({p,n:c15(p)})).sort((a,b)=>b.n-a.n);
+  h+=`<div class="sec">검색 결과 <small>${res.length}명</small><span class="r">15일 통화 수 많은 순</span></div><div class="card glass">`+(res.map(({p,n})=>{let nm=p.name;const i=p.name.indexOf(q);if(i>=0)nm=hl(p.name,[i,q.length]);else{const j=cho(p.name).indexOf(qc);if(j>=0)nm=hl(p.name,[j,qc.length])}
+   return `<div class="srow" data-call="${p.id}">${avHtml(p)}<div class="grow"><div class="nm">${nm}<span class="n15">${n}</span></div><div class="no">${p.num}</div></div><span class="qcall">${ic('phone')}</span></div>`}).join('')||'<div class="hint">결과가 없어요</div>')+'</div>'}
+ $('#sList').innerHTML=h}
+$('#sIn').oninput=renderSearch;
+$('#sList').addEventListener('click',e=>{const r=e.target.closest('[data-call]');if(r)startCall(people[+r.dataset.call])});
+
+/* ---------- call screens ---------- */
+let curView='recent',caller=people[1],tmr=null,t0=0,recT0=0,recOn=false;
+function fillCaller(p,pre){const av=$(pre+'Av span:last-child')||$(pre+'Av span');av.innerHTML=p.unk?ic('user'):p.name[0];
+ $(pre+'Name').textContent=p.unk?'저장 안 된 번호':p.name+' (예시)';}
+function showIncoming(p=people[1]){caller=p;fillCaller(p,'#in');$('#inNum').textContent='휴대전화 '+p.num;
+ const last=calls.find(c=>c.pid===p.id&&!deleted.has(c.id));
+ $('#inCtx').innerHTML=`최근 15일 <b>${c15(p)}통</b>${last?` · 마지막 ${dayLabel(Math.round((new Date(last.t).setHours(0,0,0,0)-today)/-DAY))} ${hm(last.t)} ${TY[last.type]}`:''}`;
+ show('incoming')}
+function startCall(p){caller=p;fillCaller(p,'#ic');$$('#ctl .cb').forEach(b=>b.classList.remove('on','recon'));recOn=false;$('#recChip').classList.remove('on');$('#dtmf').classList.remove('on');$('#ctl').style.display='';$('#dtmfNum').textContent='';
+ t0=Date.now();clearInterval(tmr);const tick=()=>{const s=(Date.now()-t0)/1000|0;$('#tmr').textContent=String(s/60|0).padStart(2,'0')+':'+String(s%60).padStart(2,'0');if(recOn){const r=(Date.now()-recT0)/1000|0;$('#recChip span').textContent=`녹음 중 ${String(r/60|0).padStart(2,'0')}:${String(r%60).padStart(2,'0')} · 시안`}};tick();tmr=setInterval(tick,500);show('incall')}
+$('#inAns').onclick=()=>startCall(caller);
+$('#inDec').onclick=()=>{show('recent');toast('거절했어요 · 시안')};
+$('#inMsg').onclick=()=>{show('recent');toast('"지금 통화가 어려워요" 문자로 거절 · 시안')};
+$$('.qr button').forEach(b=>b.onclick=()=>{show('recent');toast(`"${b.dataset.qr}" 보냄 · 시안`)});
+// swipe up to answer
+(()=>{const a=$('#inAns');let y0=null;a.addEventListener('pointerdown',e=>{y0=e.clientY;a.setPointerCapture(e.pointerId)});a.addEventListener('pointermove',e=>{if(y0===null)return;const dy=Math.min(0,e.clientY-y0);a.style.transform=`translateY(${dy}px)`;if(dy<-90){y0=null;a.style.transform='';startCall(caller)}});a.addEventListener('pointerup',()=>{y0=null;a.style.transform=''})})();
+$('#ctl').addEventListener('click',e=>{const b=e.target.closest('.cb');if(!b)return;const c=b.dataset.c;
+ if(c==='kp'){$('#dtmf').classList.add('on');$('#ctl').style.display='none';return}
+ if(c==='add'){toast('통화 추가 · 연락처 고르기 (시안)');return}
+ if(c==='rec'){recOn=!recOn;b.classList.toggle('recon',recOn);recT0=Date.now();$('#recChip').classList.toggle('on',recOn);if(recOn)toast('녹음 시작 · 실제 앱에선 제약 있음(설명 참고)');return}
+ b.classList.toggle('on')});
+$('#dtmfHide').onclick=()=>{$('#dtmf').classList.remove('on');$('#ctl').style.display=''};
+$('#dtmf .kg').addEventListener('click',e=>{const k=e.target.closest('.key');if(k)$('#dtmfNum').textContent+=k.dataset.d});
+$('#icEnd').onclick=()=>{clearInterval(tmr);const s=$('#tmr').textContent;show('recent');toast(`통화 종료 · ${s}`)};
+
+/* ---------- nav ---------- */
+function show(v){curView=v;['keypad','recent','search','incoming','incall'].forEach(x=>$('#v-'+x).hidden=x!==v);
+ const full=v==='incoming'||v==='incall';$('#tabs').style.display=full?'none':'';$('#sheet').classList.remove('on');
+ $$('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+ if(v==='keypad')renderKp();if(v==='recent')renderRecent();if(v==='search')renderSearch();
+ if(!full&&location.hash!=='#'+v)history.replaceState(null,'','#'+v)}
+$('#tabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.v==='demo'){$('#sheet').classList.toggle('on');return}show(b.dataset.v)};
+$('#sheet').onclick=e=>{const b=e.target.closest('[data-go]');if(!b)return;const g=b.dataset.go;if(g==='close')$('#sheet').classList.remove('on');else if(g==='incoming')showIncoming(people[1]);else startCall(people[1])};
+const h=location.hash.slice(1);
+if(h==='incoming')showIncoming(people[1]);else if(h==='incall')startCall(people[1]);else show(['keypad','recent','search'].includes(h)?h:'recent');
+window.__ph={show,showIncoming,startCall,people,setNum:v=>{num=v;renderKp()},total:TOTAL,groups};
+})();
+</script>
+</body>
+</html>
