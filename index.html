@@ -451,6 +451,15 @@
   #phone[data-ui=bojagi] #settings .btns button.p{background:#b8433a;color:#fff4ea}
   #phone[data-ui=bojagi] #settings #stats{color:#7a6650}
   #phone[data-ui=bojagi] #settings .bkey input{background:rgba(120,90,60,.08);color:#2e2218;border-color:rgba(120,90,60,.3)}
+  #bus .fv{flex:none;height:26px;padding:0 9px;border-radius:999px;border:1px solid var(--nv-line);background:var(--nv-glass2);color:#fff;font:700 11px var(--nv-font);white-space:nowrap}
+  #bus .fv.all{background:rgba(255,255,255,.08);color:var(--nv-sub)}
+  #bus .c.fn,#bus .r.fn{border-color:rgba(160,240,200,.6);box-shadow:0 0 0 1px rgba(160,240,200,.25),0 0 14px rgba(120,230,180,.22)}
+  #bus .eta.nd{font-size:12.5px;font-weight:600;color:var(--nv-sub)}
+  #bus .c .eta.nd{font-size:11.5px}
+  #bus .nd2{margin-top:6px;font-size:10.5px;color:rgba(255,255,255,.55);line-height:1.4}
+  #busnote{position:absolute;left:50%;top:44px;transform:translate(-50%,-8px);z-index:7;max-width:86%;padding:9px 14px;border-radius:999px;background:rgba(20,30,40,.55);backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);border:1px solid rgba(160,240,200,.45);color:#eafff5;font:600 13px var(--nv-font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:0;pointer-events:none;transition:opacity .5s ease,transform .5s ease}
+  #busnote.on{opacity:1;transform:translate(-50%,0)}
+  .bfav{display:flex;gap:8px;margin-top:8px}.bfav input{flex:1;min-width:0}
   #bus.cp{padding:8px 10px}
   #bus.cp .bh{gap:7px}
   #bus.cp .cr{flex:none;display:flex;gap:5px}
@@ -2649,7 +2658,7 @@ DR.addEventListener('touchcancel',()=>{if(td&&td.m)setDR(1,true);td=null});
 setQP(0);setDR(0);
 window.__nv.panel=()=>({qp:qpP,dr:drP});window.__nv.S=S;window.__nv.layout=layout;window.__nv.buildDrawer=buildDrawer;
 // ---------- 설정 화면 (삼성 설정 구성을 참고한 뉴니버스 설정) ----------
-const VER='v29';
+const VER='v30';
 Object.assign(GLY,{
  wifi:'M2.5 9a14 14 0 0 1 19 0 M5.5 12.3a9.5 9.5 0 0 1 13 0 M8.6 15.5a5 5 0 0 1 6.8 0 M12 19h.01',
  devices:'M3.5 5h12v9h-12z M2 17h15 M18 8h3.5v11H18z',
@@ -2676,7 +2685,7 @@ const SETG=[
  [['sound','소리 및 진동','소리 크기 · 진동 · 벨소리','sound','#a46bff','#6a35d1','볼륨 음량 벨'],['noti','알림','앱 알림 · 방해 금지','bell','#ff7a59','#d9472a','알람']],
  [['disp','디스플레이','밝기 · 전환 품질 · 내비게이션 바','sun','#48c774','#2a9550','화면 밝기 내비게이션 네비게이션 내비 버튼 제스처 뒤로 홈 최근 전환 품질 부드럽게 끊김 버벅 화질 성능'],['batt','배터리','남은 전력 · 절전 모드','battery','#3ccf9a','#1d8f68','충전 전원']],
  [['wall','배경화면 및 스타일','배경화면 · 내 사진 합성','brush','#ff6fa0','#d6336c','바탕화면 사진 합성 벚꽃 성운 별밭 잠금화면 적용 잠금화면 배경'],['theme','테마','UI 스타일 · 아이콘 모양','palette','#c06bff','#8a2fd0','아이콘 궤도 사구 조각보 디자인'],['home','홈 화면','홈 편집 · 우주 흐름 속도 · 모래 전환','home','#6c8cff','#3a55d8','모래 바람 전환 스와이프 제스처 속도 편집 폴더 배치 아이콘 이동 페이지 추가 삭제 새 앱'],['lock','잠금화면','잠금화면 미리보기 · 시계 스타일','lock','#5a7cff','#2c45c0','비밀번호 패턴 시계 알림 미리보기 잠금 해제 잠금화면']],
- [['sec','보안 및 개인정보 보호','생체 인식 · 앱 권한','shield','#3aa0ff','#1a62c4','지문 얼굴 권한'],['loc','위치','가까운 정류장 버스 알림 · 위치 서비스','pin','#2fc2a8','#168c78','GPS 버스 정류장 도착 교통 bus 정류소'],['sos','안전 및 긴급','긴급 연락처 · 긴급 SOS','alert','#ff5a5a','#c62828','응급 119']],
+ [['sec','보안 및 개인정보 보호','생체 인식 · 앱 권한','shield','#3aa0ff','#1a62c4','지문 얼굴 권한'],['loc','위치','가까운 정류장 버스 · 자주 타는 버스 · 위치','pin','#2fc2a8','#168c78','GPS 버스 정류장 도착 교통 bus 정류소 자주 타는 버스 즐겨찾기 노선'],['sos','안전 및 긴급','긴급 연락처 · 긴급 SOS','alert','#ff5a5a','#c62828','응급 119']],
  [['acct','계정 및 백업','계정 관리 · 백업 및 복원','sync','#2fb4d9','#167a99','클라우드']],
  [['adv','유용한 기능','두 번 눌러 화면 끄기 · 한 손 모드','sparkle','#ffb340','#e07b00','편의 화면 끄기 더블탭 톡톡 두번 두 번 잠금 끄기'],['well','디지털 웰빙','사용 시간 · 자녀 보호','leaf','#4cc46a','#258a3f','시간 수면'],['apps','애플리케이션','기본 앱 · 앱 설정','grid','#6f7dff','#3d48cc','앱 어플']],
  [['gen','일반','언어 · 날짜 및 시간 · 키보드','sliders','#8e9aaf','#5b667a','한국어 키보드 시간'],['a11y','접근성','글자 크기 · 시각 보조','access','#3fa3ff','#1d63c9','글씨 크게 돋보기 시력']],
@@ -3350,25 +3359,34 @@ window.__nv.wg={open:openPicker,close:closePicker,add:(t,k)=>addWidget(k==='mock
 window.__nv.settings={open:openSettings,push:settingsPush,back:settingsBack,depth:()=>sStack.length};
 // ===================== v28 가까운 정류장 버스 도착 =====================
 // 정류장 200m 안에 들어가면 홈 아래쪽에 도착 예정 버스 카드가 모래가 모이듯 떠오르고, 멀어지면 흩어져요.
-// 실제 데이터: 국토교통부 TAGO (APK + 사용자가 넣은 공공데이터포털 키). 키가 없으면 '예시 데이터'로만 보여줌.
+// v30 실제 데이터: 뉴니버스 중계 서버(Cloudflare) → 국토교통부 TAGO. 사용자는 키를 넣지 않음.
+// (시험용: APK에 직접 키를 넣으면 그 키로 바로 조회 · '예시 데이터' 스위치는 시험용)
 // 배터리: 런처 화면이 보일 때만 조회(정류장 근처 30초, 그 밖 60초). 다른 앱을 쓰는 동안엔 위치를 읽지 않음.
 Object.assign(GLY,{bus:'M6.5 4h11A2 2 0 0 1 19.5 6v11h-15V6a2 2 0 0 1 2-2z M4.5 11.5h15 M4.5 7.5h15 M8 14.5h.01 M16 14.5h.01 M7.5 17v2.5 M16.5 17v2.5'});
 const BUS_R=200;
-const BUS={mode:'demo',st:'off',stop:null,arr:[],at:0,shown:false,dismiss:null,expand:false,loc:null,cache:null,err:'',perm:'',paused:false,tm:0,tick:0,t0:Date.now(),busy:false};
+const BUS={all:false,noted:{},mode:'demo',st:'off',stop:null,arr:[],at:0,shown:false,dismiss:null,expand:false,loc:null,cache:null,err:'',perm:'',paused:false,tm:0,tick:0,t0:Date.now(),busy:false};
 const busOn=()=>S.bus===true;
 function busKey(){try{return NATIVE&&window.NVNative&&NVNative.busKeyInfo?(NVNative.busKeyInfo()||''):''}catch(_){return ''}}
-const busReal=()=>!!busKey();
+const RELAY='https://newniverse-bus.guy0689.workers.dev';
+const busReal=()=>S.busDemo!==true;
+const busSrc=()=>busKey()?'key':'relay';
+// ---- 자주 타는 버스 (숫자 113 / 글자 순환1·급행3 모두) ----
+const busNorm=v=>String(v==null?'':v).normalize('NFKC').replace(/[\s·.\-_]/g,'').replace(/번$/,'').toUpperCase();
+function busFavs(){return Array.isArray(S.busFav)?S.busFav.filter(Boolean):[]}
+function busFavSet(txt){const L=[];String(txt||'').split(/[,，、\/\n]+|\s{1,}/).map(x=>x.trim().replace(/번$/,'')).filter(Boolean).forEach(x=>{if(x.length<=12&&!L.some(y=>busNorm(y)===busNorm(x)))L.push(x)});S.busFav=L.slice(0,12);BUS.all=false;BUS.html='';BUS.plk='';saveS();return S.busFav}
+const busIsFav=x=>{const F=busFavs().map(busNorm);return F.includes(busNorm(x.routeno))};
 const BEL=document.createElement('div');BEL.id='bus';BEL.setAttribute('role','status');BEL.setAttribute('aria-live','polite');
 const BFX=document.createElement('canvas');BFX.id='busfx';
 phone.insertBefore(BFX,$('dkp'));phone.insertBefore(BEL,$('dkp'));
 ['pointerdown','touchstart','mousedown'].forEach(ev=>BEL.addEventListener(ev,e=>e.stopPropagation(),{passive:true}));
-BEL.addEventListener('click',e=>{e.stopPropagation();if(e.target.closest('.x')){BUS.dismiss=BUS.stop&&BUS.stop.nodeid;busHide(false);toast('이 정류장을 벗어나면 다시 알려드려요');return}
+BEL.addEventListener('click',e=>{e.stopPropagation();if(e.target.closest('.fv')){BUS.all=!BUS.all;BUS.html='';BUS.plk='';busRender();busPlace();return}
+  if(e.target.closest('.x')){BUS.dismiss=BUS.stop&&BUS.stop.nodeid;busHide(false);toast('이 정류장을 벗어나면 다시 알려드려요');return}
   BUS.expand=!BUS.expand;BUS.plk='';BUS.html='';busRender();busPlace()});
 function busDist(a1,o1,a2,o2){const R=6371000,r=Math.PI/180,dA=(a2-a1)*r,dO=(o2-o1)*r;const h=Math.sin(dA/2)**2+Math.cos(a1*r)*Math.cos(a2*r)*Math.sin(dO/2)**2;return 2*R*Math.asin(Math.min(1,Math.sqrt(h)))}
 // ---- 예시 데이터 (실제 도착 정보 아님) ----
 const BUS_DEMO_STOP={nodenm:'시청 앞',nodeid:'DEMO',citycode:'',d:120};
 const BUS_DEMO=[['11','일반버스',260,900,'저상버스'],['2','일반버스',540,1200,''],['7-1','마을버스',130,780,''],['급행 1','좌석버스',840,1500,''],['0','농어촌버스',1300,2400,'']];
-function busDemoArr(){const el=(Date.now()-BUS.t0)/1000;return BUS_DEMO.map(([no,tp,b,per,vt])=>{const s=((b-el)%per+per)%per;return {routeno:no,routetp:tp,arrtime:Math.round(s),arrprevstationcnt:Math.max(1,Math.ceil(s/110)),vehicletp:vt}})}
+function busDemoArr(){const el=(Date.now()-BUS.t0)/1000;return BUS_DEMO.map(([no,tp,b,per,vt])=>{const s=((b-el)%per+per)%per;return {nodata:false,routeno:no,routetp:tp,arrtime:Math.round(s),arrprevstationcnt:Math.max(1,Math.ceil(s/110)),vehicletp:vt}})}
 // ---- TAGO 응답 읽기 ----
 function busItems(body){let j;try{j=JSON.parse(body)}catch(_){return {err:busXmlErr(body)}}
   const r=j&&j.response;if(!r)return {err:'응답 형식을 읽지 못했어요'};const hc=r.header&&String(r.header.resultCode);
@@ -3388,46 +3406,79 @@ window.NV_onBusData=(id,code,body)=>{const f=busWait[id];if(!f)return;if(body===
 window.NV_onBusPerm=p=>{BUS.perm=p;if(p==='none'){S.bus=false;saveS();busStop();toast('위치를 허락하지 않아 버스 알림을 껐어요');busSetUI();return}
   toast(p==='coarse'?'대략 위치만 허락했어요 · 정확한 위치면 더 잘 맞아요':'위치 허락 완료 · 정류장 근처에서 알려드려요');busStart();busSetUI()};
 const LOCERR={perm:'위치 허락이 없어요',off:'폰의 위치(GPS)가 꺼져 있어요',timeout:'위치를 아직 못 찾았어요',nolm:'이 폰은 위치를 쓸 수 없어요',req:'위치를 읽지 못했어요',nolocation:'위치를 읽지 못했어요'};
+// ---- v30 위치(웹) + 중계 서버 ----
+function busWebLoc(){return new Promise(res=>{if(!navigator.geolocation)return res({err:'nolm'});
+  navigator.geolocation.getCurrentPosition(p=>res({lat:p.coords.latitude,lng:p.coords.longitude,acc:Math.round(p.coords.accuracy||-1)}),e=>res({err:e&&e.code===1?'perm':e&&e.code===3?'timeout':'nolocation'}),{enableHighAccuracy:true,timeout:20000,maximumAge:30000})})}
+async function busRelay(path){try{const r=await fetch(RELAY+path,{cache:'no-store'});let j=null;try{j=await r.json()}catch(_){}
+  if(!j)return {err:'중계 서버 응답을 읽지 못했어요'};if(!j.ok)return {err:j.error==='rate'?'잠시 후 다시 확인할게요':(j.message||'중계 서버 오류')};return j}catch(_){return {err:'인터넷 연결을 확인해 주세요'}}}
+async function busGetNear(lat,lng){
+  if(busSrc()==='key')return busCall('near',lat.toFixed(6),lng.toFixed(6));
+  const j=await busRelay(`/v1/bus/stops?lat=${lat.toFixed(5)}&lng=${lng.toFixed(5)}&r=500`);if(j.err)return j;
+  return {list:(j.stops||[]).concat(j.nearest?[j.nearest]:[]).map(s=>({nodeid:s.id,nodenm:s.name,nodeno:s.no,citycode:s.city,gpslati:s.lat,gpslong:s.lng}))}}
+// 0초·0정류장 = 시간 정보가 없는 노선(안동 등). '0분'으로 보이지 않게 nodata로 표시
+async function busGetArr(city,node){
+  if(busSrc()==='key'){const a=await busCall('arr',city,node);if(a.err)return a;
+    const best={};a.list.forEach(x=>{if(!x||x.routeno==null)return;const k=String(x.routeno);const y={routeno:k,routetp:x.routetp,vehicletp:x.vehicletp,arrtime:+x.arrtime||0,arrprevstationcnt:+x.arrprevstationcnt||0};y.nodata=!(y.arrtime>0);
+      if(!best[k]||(best[k].nodata&&!y.nodata)||(!y.nodata&&y.arrtime<best[k].arrtime))best[k]=y});return {list:Object.values(best)}}
+  const j=await busRelay(`/v1/bus/arrivals?city=${encodeURIComponent(city)}&node=${encodeURIComponent(node)}`);if(j.err)return j;
+  return {stale:!!j.stale,list:(j.buses||[]).map(b=>({routeno:b.route,routetp:b.type,vehicletp:b.vehicle,arrtime:b.sec||0,arrprevstationcnt:b.stops||0,nodata:b.state==='nodata'}))}}
+function busNotice(){const F=busFavs();if(!F.length||!BUS.stop||!BUS.shown&&busWant()!==1)return;const now=Date.now();
+  for(const k in BUS.noted)if(now-BUS.noted[k]>900000)delete BUS.noted[k];
+  const hit=(BUS.arr||[]).filter(x=>busIsFav(x)&&!x.nodata&&busSec(x)>0&&(busSec(x)<=300||(x.arrprevstationcnt>0&&x.arrprevstationcnt<=3))).sort((a,b)=>busSec(a)-busSec(b))[0];
+  if(!hit)return;const key=BUS.stop.nodeid+'|'+busNorm(hit.routeno);if(BUS.noted[key])return;BUS.noted[key]=now;
+  const m=`${hit.routeno}번이 곧 와요 · ${busEta(hit)==='곧 도착'?'곧 도착':'약 '+busEta(hit)}${hit.arrprevstationcnt?' · '+hit.arrprevstationcnt+'정류장 전':''}`;
+  let n=$('busnote');if(!n){n=document.createElement('div');n.id='busnote';n.setAttribute('role','status');n.setAttribute('aria-live','polite');phone.appendChild(n)}
+  n.textContent=m;BUS.lastNote=m;n.classList.add('on');clearTimeout(BUS.nT);BUS.nT=setTimeout(()=>n.classList.remove('on'),6000);
+  try{if(NATIVE&&NVNative.vibrate)NVNative.vibrate(12)}catch(_){}}
 // ---- 한 번 조회 ----
 async function busCycle(){clearTimeout(BUS.tm);BUS.tm=0;if(!busOn()||BUS.paused||BUS.busy)return;
   const again=ms=>{clearTimeout(BUS.tm);if(busOn()&&!BUS.paused)BUS.tm=setTimeout(busCycle,ms)};
-  if(!busReal()){BUS.mode='demo';if(S.busDemoFar){busSetNear(null);BUS.st='far'}else{busSetNear(BUS_DEMO_STOP);BUS.arr=busDemoArr();BUS.at=Date.now();BUS.st='near'}busSetUI();again(30000);return}
+  if(!busReal()){BUS.mode='demo';if(S.busDemoFar){busSetNear(null);BUS.st='far'}else{busSetNear(BUS_DEMO_STOP);BUS.arr=busDemoArr();BUS.at=Date.now();BUS.st='near';setTimeout(busNotice,900)}busSetUI();again(30000);return}
   BUS.mode='live';BUS.busy=true;
   try{
-    let p='none';try{p=NVNative.busPerm()}catch(_){}BUS.perm=p;if(p==='none'){BUS.st='perm';busSetNear(null);return}
-    const L=await busCall('loc');if(!busOn()||BUS.paused)return;
+    let L;
+    if(NATIVE&&window.NVNative&&NVNative.busPerm){let p='none';try{p=NVNative.busPerm()}catch(_){}BUS.perm=p;if(p==='none'){BUS.st='perm';busSetNear(null);return}
+      L=await busCall('loc')}else L=await busWebLoc();
+    if(!busOn()||BUS.paused)return;
+    if(L&&L.err==='perm'&&!NATIVE){BUS.st='perm';busSetNear(null);again(60000);return}
     if(!L||L.err){BUS.st='loc';BUS.err=LOCERR[L&&L.err]||'위치를 읽지 못했어요';busSetNear(null);again(60000);return}
     BUS.loc=L;const C=BUS.cache;
     if(!C||busDist(C.lat,C.lng,L.lat,L.lng)>40||Date.now()-C.t>600000){
-      const r=await busCall('near',L.lat.toFixed(6),L.lng.toFixed(6));if(!busOn()||BUS.paused)return;
+      const r=await busGetNear(L.lat,L.lng);if(!busOn()||BUS.paused)return;
       if(r.err){BUS.st='err';BUS.err=r.err;busSetNear(null);again(60000);return}
       BUS.cache={lat:L.lat,lng:L.lng,t:Date.now(),list:r.list.filter(s=>s&&s.nodeid&&isFinite(+s.gpslati)&&isFinite(+s.gpslong))}}
     const list=BUS.cache.list.map(s=>Object.assign({},s,{d:Math.round(busDist(L.lat,L.lng,+s.gpslati,+s.gpslong))})).sort((a,b)=>a.d-b.d);
-    const s=list[0];
+    let s=list[0];
     if(!s||s.d>BUS_R){BUS.st=list.length?'far':'none';BUS.near=s||null;busSetNear(null);again(60000);return}
-    const a=await busCall('arr',s.citycode,s.nodeid);if(!busOn()||BUS.paused)return;
+    let a=await busGetArr(s.citycode,s.nodeid);if(!busOn()||BUS.paused)return;
+    // 가장 가까운 곳에 오는 버스가 없으면, 200m 안 다음 정류장(길 건너편 등) 한 곳만 더 봐요
+    const s2=list[1];if(!a.err&&!a.list.length&&s2&&s2.d<=BUS_R){const a2=await busGetArr(s2.citycode,s2.nodeid);if(!busOn()||BUS.paused)return;if(!a2.err&&a2.list.length){a=a2;s=s2}}
     if(a.err){BUS.st='err';BUS.err=a.err;busSetNear(s);BUS.arr=[];BUS.at=Date.now();again(30000);return}
-    const best={};a.list.forEach(x=>{if(!x||x.routeno==null)return;const k=String(x.routeno);x.arrtime=+x.arrtime||0;x.arrprevstationcnt=+x.arrprevstationcnt||0;if(!best[k]||x.arrtime<best[k].arrtime)best[k]=x});
-    BUS.arr=Object.values(best).sort((p,q)=>p.arrtime-q.arrtime);BUS.at=Date.now();BUS.st='near';BUS.err='';busSetNear(s);again(30000);
+    BUS.arr=a.list.slice().sort((p,q)=>busSec(p,1)-busSec(q,1));BUS.stale=!!a.stale;BUS.at=Date.now();BUS.st='near';BUS.err='';busSetNear(s);BUS.html='';again(30000);setTimeout(busNotice,900);
   }finally{BUS.busy=false;busSetUI();if(BUS.shown)busRender()}}
 function busSetNear(s){if(!s){BUS.stop=null;BUS.dismiss=null;return}
   if(!BUS.stop||BUS.stop.nodeid!==s.nodeid){BUS.expand=false;if(BUS.dismiss&&BUS.dismiss!==s.nodeid)BUS.dismiss=null}BUS.stop=s}
 // ---- 카드 그리기 ----
-function busEta(x){const s=x.arrtime-(Date.now()-BUS.at)/1000;return s<=60?'곧 도착':Math.round(s/60)+'분'}
+function busEta(x,short){if(x.nodata)return short?'정보 없음':'시간 정보 없음';const s=x.arrtime-(Date.now()-BUS.at)/1000;return s<=60?'곧 도착':Math.round(s/60)+'분'}
 function busTp(tp){tp=String(tp||'');return /마을/.test(tp)?'t1':/좌석|급행|광역/.test(tp)?'t2':/농어촌/.test(tp)?'t3':''}
+function busShown(){const A=BUS.arr||[],F=busFavs();if(!F.length||BUS.all)return A;return A.filter(busIsFav)}
+function busFavBtn(){const F=busFavs();if(!F.length)return '';return `<button class="fv${BUS.all?' all':''}" aria-label="${BUS.all?'자주 타는 버스만 보기':'모든 노선 보기'}">${BUS.all?'전체':'★ 자주'}</button>`}
 function busRender(){const s=BUS.stop;if(!s)return;const demo=BUS.mode==='demo',ago=Math.max(0,Math.round((Date.now()-BUS.at)/1000));
+  const SH=busShown(),F=busFavs(),allND=(BUS.arr||[]).length>0&&(BUS.arr||[]).every(x=>x.nodata);
+  const favMiss=F.length&&!BUS.all&&(BUS.arr||[]).length&&!SH.length?`자주 타는 버스(${esc(F.join(', '))})는 지금 이 정류장 정보에 없어요 · ‘★ 자주’를 눌러 전체 보기`:'';
   BEL.classList.toggle('cp',!!BUS.cp&&!BUS.expand);
-  if(BUS.cp&&!BUS.expand){const L=(BUS.arr||[]).slice().sort((p,q)=>busSec(p)-busSec(q)).slice(0,2);
-    const html=`<div class="bh"><span class="bi">${ico('bus')}</span><div class="tt"><b>${esc(s.nodenm||'정류장')}</b><small>${demo?'예시 데이터':'실시간'} · ${s.d}m</small></div><div class="cr">${L.length?L.map(x=>`<span>${esc(x.routeno)} ${busEta(x)}</span>`).join(''):'<span>정보 없음</span>'}</div><button class="x" aria-label="이 정류장 알림 닫기">${ico('x')}</button></div>`;
+  if(BUS.cp&&!BUS.expand){const L=SH.slice().sort((p,q)=>busSec(p)-busSec(q)).slice(0,2);
+    const html=`<div class="bh"><span class="bi">${ico('bus')}</span><div class="tt"><b>${esc(s.nodenm||'정류장')}</b><small>${demo?'예시 데이터':allND?'노선만':'실시간'} · ${s.d}m</small></div><div class="cr">${L.length?L.map(x=>`<span>${esc(x.routeno)} ${busEta(x,1)}</span>`).join(''):'<span>정보 없음</span>'}</div>${busFavBtn()}<button class="x" aria-label="이 정류장 알림 닫기">${ico('x')}</button></div>`;
     if(html!==BUS.html){BUS.html=html;BEL.innerHTML=html}return}
-  const L=(BUS.arr||[]).slice().sort((p,q)=>busSec(p)-busSec(q)),stn=x=>(x.arrprevstationcnt?x.arrprevstationcnt+'정류장 전':'')+(x.vehicletp&&/저상/.test(x.vehicletp)?' · 저상':'');
-  const rows=BUS.expand?L.slice(0,6).map(x=>{const e=busEta(x);return `<div class="r"><span class="no ${busTp(x.routetp)}">${esc(x.routeno)}</span><span class="eta${e==='곧 도착'?' soon':''}">${e}</span><span class="st">${stn(x)}</span></div>`}).join('')
-    :L.slice(0,3).map(x=>{const e=busEta(x);return `<div class="c"><div class="l1"><span class="no ${busTp(x.routetp)}">${esc(x.routeno)}</span><span class="eta${e==='곧 도착'?' soon':''}">${e}</span></div><small>${stn(x)||'&nbsp;'}</small></div>`}).join('');
-  const body=rows?(BUS.expand?`<div class="rows">${rows}</div>`:`<div class="chips">${rows}</div>`):`<div class="msg">${BUS.err?esc(BUS.err):'지금은 도착 예정인 버스 정보가 없어요'}</div>`;
-  const more=!BUS.expand&&(BUS.arr||[]).length>3?` · +${BUS.arr.length-3}`:'';
-  const html=`<div class="bh"><span class="bi">${ico('bus')}</span><div class="tt"><b>${esc(s.nodenm||'정류장')}</b><small>${demo?'예시 · 실제 도착 정보 아님':'가까운 정류장'} · ${s.d}m${demo?'':' · '+(ago<5?'방금':ago+'초 전')}${more}</small></div><span class="tag ${demo?'demo':'live'}">${demo?'예시 데이터':'실시간'}</span><button class="x" aria-label="이 정류장 알림 닫기">${ico('x')}</button></div>${body}
-${BUS.expand?`<div class="ft"><span>${demo?'예시 데이터 · 실제 도착 정보가 아니에요':'정보: 국토교통부 TAGO'+(BUS.perm==='coarse'?' · 대략 위치':'')}</span><span>눌러서 접기</span></div>`:''}`;if(html!==BUS.html){BUS.html=html;BEL.innerHTML=html}}
-function busSec(x){return x.arrtime-(Date.now()-BUS.at)/1000}
+  const L=SH.slice().sort((p,q)=>busSec(p)-busSec(q)),fn=x=>busIsFav(x)&&!x.nodata&&(busSec(x)<=300||(x.arrprevstationcnt>0&&x.arrprevstationcnt<=3))?' fn':'',
+    stn=x=>x.nodata?'운행 노선 · 도착 시간 미제공':(x.arrprevstationcnt?x.arrprevstationcnt+'정류장 전':'')+(x.vehicletp&&/저상/.test(x.vehicletp)?' · 저상':'');
+  const rows=BUS.expand?L.slice(0,6).map(x=>{const e=busEta(x);return `<div class="r${fn(x)}"><span class="no ${busTp(x.routetp)}">${esc(x.routeno)}</span><span class="eta${e==='곧 도착'?' soon':''}${x.nodata?' nd':''}">${e}</span><span class="st">${stn(x)}</span></div>`}).join('')
+    :L.slice(0,3).map(x=>{const e=busEta(x,1);return `<div class="c${fn(x)}"><div class="l1"><span class="no ${busTp(x.routetp)}">${esc(x.routeno)}</span><span class="eta${e==='곧 도착'?' soon':''}${x.nodata?' nd':''}">${e}</span></div><small>${x.nodata?'도착 시간 미제공':stn(x)||'&nbsp;'}</small></div>`}).join('');
+  const body=(rows?(BUS.expand?`<div class="rows">${rows}</div>`:`<div class="chips">${rows}</div>`):`<div class="msg">${BUS.err?esc(BUS.err):favMiss||'지금은 도착 예정인 버스 정보가 없어요'}</div>`)+(rows&&allND?`<div class="nd2">이 지역은 실시간 도착 시간을 아직 주지 않아서, 이 정류장에 다니는 노선만 보여요</div>`:'');
+  const more=!BUS.expand&&SH.length>3?` · +${SH.length-3}`:'';
+  const html=`<div class="bh"><span class="bi">${ico('bus')}</span><div class="tt"><b>${esc(s.nodenm||'정류장')}</b><small>${demo?'예시 · 실제 도착 정보 아님':'가까운 정류장'} · ${s.d}m${demo?'':' · '+(ago<5?'방금':ago+'초 전')}${more}</small></div>${busFavBtn()||`<span class="tag ${demo?'demo':'live'}">${demo?'예시 데이터':allND?'노선만':'실시간'}</span>`}<button class="x" aria-label="이 정류장 알림 닫기">${ico('x')}</button></div>${body}
+${BUS.expand?`<div class="ft"><span>${demo?'예시 데이터 · 실제 도착 정보가 아니에요':'정보: 국토교통부 TAGO'+(busSrc()==='relay'?' · 뉴니버스 중계':' · 내 키')+(BUS.stale?' · 잠시 전 정보':'')+(BUS.perm==='coarse'?' · 대략 위치':'')}</span><span>눌러서 접기</span></div>`:''}`;if(html!==BUS.html){BUS.html=html;BEL.innerHTML=html}}
+function busSec(x,raw){if(x.nodata)return 1e9;return x.arrtime-(raw?0:(Date.now()-BUS.at)/1000)}
 function esc(v){return String(v==null?'':v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c])}
 function busGaps(){const lo=38,hi=dockTop()-2,iv=(hitRects[cur]||[]).filter(h=>h.src!=='dock'&&h.h<H*.6).map(h=>[h.y-2,h.y+h.h+2]).sort((a,b)=>a[0]-b[0]);
   const g=[];let y=lo;iv.forEach(([a,b])=>{if(a>y)g.push([y,Math.min(a,hi)]);y=Math.max(y,b)});if(hi>y)g.push([y,hi]);return g.filter(x=>x[1]>x[0])}
@@ -3468,39 +3519,53 @@ window.__busResume=()=>{if(!busOn())return;BUS.paused=false;if(!BUS.tick)BUS.tic
 document.addEventListener('visibilitychange',()=>{if(document.hidden)window.NV_onPause();else window.__busResume()});
 async function busEnable(on){
   if(!on){S.bus=false;saveS();busStop();busSetUI();toast('버스 도착 알림 꺼짐');return}
-  if(busReal()){let p='none';try{p=NVNative.busPerm()}catch(_){}
-    if(p==='none'){const ok=await ask('위치 사용하기','가까운 정류장을 찾으려고 위치를 써요.<br>· 뉴니버스 화면이 보일 때만 읽어요<br>· 정류장을 찾을 때 좌표를 공공데이터포털(국토교통부)에 보내요<br>· 위치를 저장하거나 다른 곳에 보내지 않아요',{ok:'위치 허락하기'});
+  const LOCMSG='가까운 정류장을 찾으려고 위치를 써요.<br>· 뉴니버스 화면이 보일 때만 읽어요<br>· 정류장을 찾을 때 좌표를 뉴니버스 중계 서버를 거쳐 국토교통부(TAGO)에 보내요<br>· 위치를 저장하거나 다른 곳에 쓰지 않아요';
+  if(busReal()&&NATIVE&&window.NVNative&&NVNative.busPerm){let p='none';try{p=NVNative.busPerm()}catch(_){}
+    if(p==='none'){const ok=await ask('위치 사용하기',LOCMSG,{ok:'위치 허락하기'});
       if(!ok){S.bus=false;saveS();busSetUI();return}S.bus=true;saveS();busSetUI();try{NVNative.busAskPerm()}catch(_){NV_onBusPerm('none')}return}}
-  S.bus=true;saveS();busStart();busSetUI();toast(busReal()?'버스 도착 알림 켜짐 · 정류장 근처에서 떠올라요':'버스 도착 알림 켜짐 · 지금은 예시 데이터예요')}
+  else if(busReal()&&!NATIVE&&!S.busLocOk){const ok=await ask('위치 사용하기',LOCMSG+'<br>· 다음 창에서 브라우저가 위치 허락을 물어봐요',{ok:'계속'});if(!ok){S.bus=false;saveS();busSetUI();return}S.busLocOk=true}
+  S.bus=true;saveS();busStart();busSetUI();toast(busReal()?'버스 도착 알림 켜짐 · 정류장 근처에서 떠올라요':'버스 도착 알림 켜짐 · 시험용 예시 데이터예요')}
 function busStatus(){if(!busOn())return '꺼져 있어요';
   if(BUS.mode==='demo')return BUS.stop?'예시 데이터 · 정류장 근처라고 가정했어요':'예시 데이터 · 정류장에서 멀어졌다고 가정했어요';
-  return ({perm:'위치 허락이 필요해요',loc:BUS.err,err:BUS.err,far:'200m 안에 정류장이 없어요'+(BUS.near?` · 가장 가까운 곳 ${BUS.near.nodenm} ${BUS.near.d}m`:''),none:'근처 정류장을 못 찾았어요 · 이 지역은 TAGO에 없을 수 있어요',near:BUS.stop?`${BUS.stop.nodenm} · ${BUS.stop.d}m · 도착 버스 ${BUS.arr.length}개`:'',off:'확인 중…'})[BUS.st]||'확인 중…'}
+  return ({perm:NATIVE?'위치 허락이 필요해요':'브라우저 위치 허락이 필요해요',loc:BUS.err,err:BUS.err,far:'200m 안에 정류장이 없어요'+(BUS.near?` · 가장 가까운 곳 ${BUS.near.nodenm} ${BUS.near.d}m`:''),none:'근처(약 500m)에서 정류장을 못 찾았어요 · 이 지역이 TAGO에 없을 수도 있어요',near:BUS.stop?`${BUS.stop.nodenm} · ${BUS.stop.d}m · 도착 버스 ${BUS.arr.length}개`:'',off:'확인 중…'})[BUS.st]||'확인 중…'}
 let busUIfn=null;function busSetUI(){try{busUIfn&&busUIfn()}catch(_){}}
 function buildBusPage(add){
   const st=infoRow('지금 상태',busStatus());
   add(sCard(swRow('가까운 정류장 버스 알림','정류장 200m 안에 가면 몇 번 버스가 언제 오는지 홈에 떠올라요',busOn(),false,on=>busEnable(on)),st));
   const sw=st.previousSibling&&st.previousSibling.querySelector('.sw');
+  // 자주 타는 버스
+  const fr=infoRow('자주 타는 버스',busFavs().length?busFavs().join(', '):'비어 있어요 · 넣으면 카드에 그 버스만 보여요');
+  const fb=mk('div','bkey bfav','<input type="text" autocomplete="off" spellcheck="false" placeholder="예: 113, 순환1, 급행3" aria-label="자주 타는 버스 번호"><button>저장</button>');
+  const fi=fb.querySelector('input');fi.value=busFavs().join(', ');
+  fb.querySelector('button').onclick=()=>{const L=busFavSet(fi.value);fi.value=L.join(', ');fr.querySelector('small').textContent=L.length?L.join(', '):'비어 있어요 · 넣으면 카드에 그 버스만 보여요';toast(L.length?'자주 타는 버스 '+L.length+'개 저장 · 이 폰에만 저장돼요':'자주 타는 버스를 비웠어요');if(BUS.shown)busRender()};
+  add(sCard(fr,fb));
+  add(mk('div','note','쉼표나 띄어쓰기로 나눠 적어요 (113 · 순환1 · 급행3). 카드의 <b>★ 자주</b>를 누르면 모든 노선을 볼 수 있어요. 자주 타는 버스가 <b>3정류장 안</b>이나 <b>5분 안</b>으로 오면 홈 위쪽에 살짝 알려드려요. 백업 파일에도 같이 들어가요.'));
+  add(mk('div','note','도착 정보는 <b>뉴니버스 중계 서버</b>를 거쳐 국토교통부 TAGO에서 받아요. 키를 넣을 필요가 없어요. 좌표는 정류장을 찾는 데만 쓰고 저장하지 않아요.'));
+  // 시험용 (숨김): 예시 데이터 / 직접 키
+  const adv=mk('div','');adv.style.display=S.busAdv?'':'none';
+  const advT=infoRow('시험용 설정',S.busAdv?'눌러서 접기':'개발·시험할 때만 써요',()=>{S.busAdv=!S.busAdv;saveS();adv.style.display=S.busAdv?'':'none';advT.querySelector('small').textContent=S.busAdv?'눌러서 접기':'개발·시험할 때만 써요'});
+  add(sCard(advT));
+  const dm=swRow('예시 데이터로 보기','실제 위치·도착 정보 대신 연습 화면',S.busDemo===true,false,on=>{S.busDemo=!!on;saveS();BUS.cache=null;BUS.html='';if(busOn()){busStop();busStart()}busSetUI();toast(on?'예시 데이터로 바꿨어요':'실제 정보로 바꿨어요')});
+  const advCard=sCard(dm);adv.appendChild(advCard);
+  const br=mk('div','btnrow','<button>예시: 정류장 가까이 가기</button><button>예시: 멀어지기</button>');
+  br.children[0].onclick=()=>{S.busDemoFar=false;saveS();if(!busOn()){busEnable(true)}else busCycle();toast('설정을 닫으면 홈에서 보여요')};
+  br.children[1].onclick=()=>{S.busDemoFar=true;saveS();busCycle();toast('설정을 닫으면 카드가 흩어져요')};adv.appendChild(br);
+  let kr=null;
   if(NATIVE&&window.NVNative&&NVNative.busKeyInfo){
-    const kr=infoRow('버스 도착 정보 키',busKey()?'넣어 둔 키: '+busKey():'아직 없어요 · 없으면 예시 데이터로 보여요');
-    const box=mk('div','bkey','<input type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="공공데이터포털 일반 인증키 붙여넣기" aria-label="버스 도착 정보 키"><button>저장</button>');
+    kr=infoRow('직접 키 (시험용)',busKey()?'넣어 둔 키: '+busKey():'없어요 · 없으면 뉴니버스 중계 서버를 써요');
+    const box=mk('div','bkey','<input type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="공공데이터포털 일반 인증키" aria-label="버스 도착 정보 키"><button>저장</button>');
     const inp=box.querySelector('input');box.querySelector('button').onclick=async()=>{const v=inp.value.trim();if(!v){toast('키를 붙여넣어 주세요');return}if(v.length<20){toast('키가 너무 짧아요 · 다시 확인해 주세요');return}
       NVNative.busKeySet(v);inp.value='';BUS.cache=null;toast('키를 저장했어요 · 이 폰 안에만 저장돼요');busSetUI();if(busOn()){S.bus=false;busStop();await busEnable(true)}};
-    const del=infoRow('키 지우기','이 폰에서 키를 지우고 예시 데이터로 돌아가요',async()=>{if(!busKey())return;const ok=await ask('키 지우기','저장한 버스 도착 정보 키를 지울까요?',{ok:'지우기'});if(!ok)return;NVNative.busKeySet('');BUS.cache=null;busSetUI();if(busOn())busCycle();toast('키를 지웠어요')});
-    add(sCard(kr,box,del));
-    add(mk('div','note','키는 공공데이터포털(data.go.kr)에서 ‘국토교통부_(TAGO)_버스정류소정보’와 ‘버스도착정보’ 두 가지를 활용신청하면 바로 나와요. 마이페이지의 <b>일반 인증키</b>를 붙여넣으세요.'));
-    busUIfn=()=>{if(!st.isConnected)return;st.querySelector('small').textContent=busStatus();kr.querySelector('small').textContent=busKey()?'넣어 둔 키: '+busKey():'아직 없어요 · 없으면 예시 데이터로 보여요';if(sw)sw.classList.toggle('on',busOn())};
-  }else{
-    add(mk('div','note','웹 시제품은 위치를 쓰지 않고 <b>예시 데이터</b>만 보여줘요. 실제 폰 앱(APK)에 공공데이터포털 키를 넣으면 진짜 도착 정보가 나와요.'));
-    busUIfn=()=>{if(!st.isConnected)return;st.querySelector('small').textContent=busStatus();if(sw)sw.classList.toggle('on',busOn())};
+    const del=infoRow('키 지우기','지우면 뉴니버스 중계 서버로 돌아가요',async()=>{if(!busKey())return;const ok=await ask('키 지우기','저장한 키를 지울까요?',{ok:'지우기'});if(!ok)return;NVNative.busKeySet('');BUS.cache=null;busSetUI();if(busOn())busCycle();toast('키를 지웠어요 · 중계 서버를 써요')});
+    adv.appendChild(sCard(kr,box,del));
   }
-  if(!busReal()){const br=mk('div','btnrow','<button>예시: 정류장 가까이 가기</button><button>예시: 멀어지기</button>');
-    br.children[0].onclick=()=>{S.busDemoFar=false;saveS();if(!busOn()){busEnable(true)}else busCycle();toast('설정을 닫으면 홈에서 보여요')};
-    br.children[1].onclick=()=>{S.busDemoFar=true;saveS();busCycle();toast('설정을 닫으면 카드가 흩어져요')};add(br)}
+  add(adv);
+  busUIfn=()=>{if(!st.isConnected)return;st.querySelector('small').textContent=busStatus();if(kr)kr.querySelector('small').textContent=busKey()?'넣어 둔 키: '+busKey():'없어요 · 없으면 뉴니버스 중계 서버를 써요';if(sw)sw.classList.toggle('on',busOn())};
   add(mk('div','note','배터리를 아끼려고 뉴니버스 화면이 보일 때만 확인해요 (정류장 근처 30초, 그 밖 60초마다). 다른 앱을 쓰는 동안이나 화면이 꺼져 있을 땐 위치를 읽지 않아요. 정보 출처: 국토교통부 TAGO.'));
   add(sCard((PROTO.loc||[]).map(([l,s2,on])=>swRow(l,s2,on,true))));
 }
-if(busOn())setTimeout(()=>{if(busReal()){let p='none';try{p=NVNative.busPerm()}catch(_){}if(p==='none'){S.bus=false;saveS();return}}busStart()},1500);
-window.__nv.bus={st:()=>({mode:BUS.mode,st:BUS.st,shown:BUS.shown,stop:BUS.stop&&BUS.stop.nodenm,arr:BUS.arr.map(x=>x.routeno+':'+busEta(x)),err:BUS.err}),enable:busEnable,cycle:busCycle,demoFar:v=>{S.busDemoFar=v;busCycle()}};
+if(busOn())setTimeout(()=>{if(busReal()&&NATIVE&&window.NVNative&&NVNative.busPerm){let p='none';try{p=NVNative.busPerm()}catch(_){}if(p==='none'){S.bus=false;saveS();return}}busStart()},1500);
+window.__nv.bus={st:()=>({mode:BUS.mode,src:busSrc(),st:BUS.st,shown:BUS.shown,stop:BUS.stop&&BUS.stop.nodenm,arr:BUS.arr.map(x=>x.routeno+':'+busEta(x)),shownArr:busShown().map(x=>x.routeno),fav:busFavs(),all:BUS.all,note:BUS.lastNote||'',err:BUS.err}),setFav:t=>{const L=busFavSet(t);if(BUS.shown)busRender();return L},toggleAll:()=>{BUS.all=!BUS.all;BUS.html='';busRender();return BUS.all},inject:(list,stop)=>{BUS.arr=list;BUS.at=Date.now();if(stop)busSetNear(stop);BUS.st='near';BUS.html='';busRender();busNotice()},enable:busEnable,cycle:busCycle,demoFar:v=>{S.busDemoFar=v;busCycle()}};
 // ===================== v29 꼭 필요한 기본 기능 =====================
 const OWNPKG='kr.newniverse.launcher';
 Object.assign(GLY,{data:'M8 19V5 M4.5 8.5L8 5l3.5 3.5 M16 5v14 M12.5 15.5L16 19l3.5-3.5',contact:'M6 3.5h12v17H6z M12 8a2.3 2.3 0 1 0 0 4.6a2.3 2.3 0 1 0 0-4.6z M8.5 16.5c.6-1.7 2-2.6 3.5-2.6s2.9.9 3.5 2.6 M4 7.5h2 M4 12h2 M4 16.5h2',
@@ -3582,14 +3647,14 @@ function buildConnPage(add){
   add(mk('div','note','안드로이드는 다른 앱이 와이파이·블루투스·데이터를 직접 켜고 끄지 못하게 막아 두어서, 폰의 설정 창을 바로 띄워요. 지금 켜짐/꺼짐은 폰의 실제 상태예요.'))}
 
 // ---------- 3. 홈 배치 백업 · 복원 ----------
-function bakObj(){return {app:'newniverse',kind:'home-backup',v:29,ver:VER,t:Date.now(),layout:serLayout(),S:JSON.parse(JSON.stringify(S))}}
+function bakObj(){return {app:'newniverse',kind:'home-backup',v:30,ver:VER,t:Date.now(),layout:serLayout(),S:JSON.parse(JSON.stringify(S))}}
 function bakName(){const d=new Date(),p=n=>String(n).padStart(2,'0');return `newniverse-home-${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.json`}
 function autoBak(force){try{const last=+localStorage.getItem('nv_autobak_t')||0;if(!force&&Date.now()-last<6*3600000)return;const j=JSON.stringify(bakObj());localStorage.setItem('nv_autobak',j);localStorage.setItem('nv_autobak_t',String(Date.now()));if(nat('autoBakSave'))NVNative.autoBakSave(j)}catch(_){}}
 function autoBakGet(){let j='';try{j=localStorage.getItem('nv_autobak')||''}catch(_){}if(!j&&nat('autoBakLoad'))try{j=NVNative.autoBakLoad()||''}catch(_){}try{return j?JSON.parse(j):null}catch(_){return null}}
 function bakValid(o){return o&&o.app==='newniverse'&&o.layout&&Array.isArray(o.layout.pages)&&o.layout.pages.length}
 async function bakApply(o,from){if(!bakValid(o)){toast('뉴니버스 백업 파일이 아니에요');return}
   const n=o.layout.pages.reduce((k,p)=>k+(p.a||[]).length,0);
-  const ok=await ask('이 배치로 바꿀까요?',`${from} · ${new Date(o.t).toLocaleString('ko-KR',{month:'long',day:'numeric',hour:'numeric',minute:'2-digit'})} 저장<br>화면 ${o.layout.pages.length}개 · 아이콘·폴더·위젯 ${n}개 · 설정 포함<br>지금 배치는 자동 백업에 남겨 둬요. 이 폰에 없는 앱은 빠져요.`,{ok:'바꾸기'});if(!ok)return;
+  const ok=await ask('이 배치로 바꿀까요?',`${from} · ${new Date(o.t).toLocaleString('ko-KR',{month:'long',day:'numeric',hour:'numeric',minute:'2-digit'})} 저장<br>화면 ${o.layout.pages.length}개 · 아이콘·폴더·위젯 ${n}개 · 설정 포함${o.S&&Array.isArray(o.S.busFav)&&o.S.busFav.length?' · 자주 타는 버스 '+o.S.busFav.length+'개':''}<br>지금 배치는 자동 백업에 남겨 둬요. 이 폰에 없는 앱은 빠져요.`,{ok:'바꾸기'});if(!ok)return;
   autoBak(true);const lj=JSON.stringify(o.layout),sj=JSON.stringify(Object.assign({},o.S||{},{navUser:S.navUser}));
   try{localStorage.setItem('nv_layout21',lj);localStorage.setItem('nv_sand18',sj)}catch(_){}
   if(nat('saveState'))try{NVNative.saveState(JSON.stringify({v:21,layout:lj,S:sj,t:Date.now()}))}catch(_){}

@@ -1,0 +1,15 @@
+name = "newniverse-bus"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+account_id = "73cf2c9f1064a1c5c460999273769908"
+workers_dev = true
+preview_urls = false
+
+# 무료 플랜 전용. 비밀 값 TAGO_KEY 는 `wrangler secret put TAGO_KEY` 로만 넣음 (이 파일·저장소에 넣지 않음)
+[[ratelimits]]
+name = "RL_IP"
+namespace_id = "73040"
+simple = { limit = 60, period = 60 }
+
+[observability]
+enabled = false
