@@ -6,7 +6,7 @@ const UP = 'https://apis.data.go.kr/1613000/';
 const STOP_TTL = 86400, STOP_KEEP = 7 * 86400;   // 정류장: 하루 신선, 일주일까지 비상용
 const ARR_TTL = 25, ARR_KEEP = 180;              // 도착: 25초 신선, 3분까지 비상용(stale 표시)
 const GRID = 0.002;                              // 정류장 캐시 격자 (약 220m × 180m)
-const VER = '1';
+const VER = '2';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -69,7 +69,7 @@ function hit(ip, kind, max) {
   return ++b.n <= max;
 }
 // Cache API: 같은 키로 저장, 저장 시각을 헤더에 같이 둠
-async function cached(ctx, key, fresh, keep, load) {
+async function cached(ctx, key, fresh, keep, load, shared) {
   const cache = caches.default;
   const req = new Request(`https://newniverse-bus.cache/${VER}/${key}`);
   const got = await cache.match(req);
@@ -79,7 +79,7 @@ async function cached(ctx, key, fresh, keep, load) {
     old = { data: await got.json(), at: t };
     if (age < fresh) return { ...old, cached: true, stale: false };
   }
-  if (ctx.ip && !hit(ctx.ip, 'up', 20)) return old ? { ...old, cached: true, stale: true, upErr: 'rate' } : { err: 'rate' };
+  if (!shared && ctx.ip && !hit(ctx.ip, 'up', 20)) return old ? { ...old, cached: true, stale: true, upErr: 'rate' } : { err: 'rate' };
   const r = await load();
   if (r.err) {
     if (old) return { ...old, cached: true, stale: true, upErr: r.err };
@@ -98,6 +98,43 @@ function errOut(e) {
   return out({ ok: false, error: e, message: UPMSG[c] || (e === 'timeout' ? '공공데이터 서버 응답이 늦어요' : '공공데이터 서버 오류') }, status);
 }
 
+// ---------- 안동시 BIS (공식 공개 API, data.go.kr 15057790 · 키 없음) ----------
+// TAGO는 안동(37040) 도착 시간을 0으로만 줘서, 안동은 시청 BIS에서 직접 받음. 실패하면 TAGO로 돌아감.
+const BIS = 'https://bus.andong.go.kr/m01/s04.do';
+const BIS_ARR_TTL = 20, BIS_STOP_TTL = 86400;
+const ANDONG = '37040';
+async function bisGet(qs) {
+  try {
+    const r = await fetch(`${BIS}?${qs}`, { headers: { Accept: 'application/json', 'User-Agent': 'newniverse-bus/1 (+https://guy06891577-svg.github.io/newniverse-sand/)' }, signal: AbortSignal.timeout(7000) });
+    if (!r.ok) return { err: 'bis_http_' + r.status };
+    const t = await r.text(); let j; try { j = JSON.parse(t); } catch (_) { return { err: 'bis_badjson' }; }
+    return { list: Array.isArray(j) ? j : (j && typeof j === 'object' ? [j] : []) };
+  } catch (e) { return { err: 'bis_timeout' }; }
+}
+// 정류장 목록(약 2천 곳)은 하루 캐시: 정류장 이름 채우기 + TAGO 정류장 조회가 안 될 때 비상용
+async function bisStops(ctx) {
+  return cached(ctx, 'bis/stops', BIS_STOP_TTL, 7 * 86400, async () => {
+    const u = await bisGet('tab=1'); if (u.err) return u;
+    const L = u.list.filter(x => x && x.stationId && x.useYn !== 'N' && isFinite(+x.gpsX) && isFinite(+x.gpsY) && +x.gpsY > 30)
+      .map(x => ({ id: 'ADB' + x.stationId, name: String(x.stationNm || ''), no: x.mobiNum == null ? null : String(x.mobiNum), city: ANDONG, lat: +x.gpsY, lng: +x.gpsX }));
+    return L.length ? { data: L } : { err: 'bis_empty' };
+  }, true);
+}
+// predictTm = 분 (안동 BIS 누리집 '약 N분후 도착'과 같은 값), remainStation = 남은 정류장
+async function bisArrivals(ctx, node) {
+  const m = /^ADB(\d{6,12})$/.exec(node); if (!m) return { err: 'bis_id' };
+  return cached(ctx, `bis/arr/${m[1]}`, BIS_ARR_TTL, 120, async () => {
+    const u = await bisGet(`i=${m[1]}&tab=2`); if (u.err) return u;
+    return { data: u.list.filter(x => x && (x.routeNum != null || x.routeName != null)).map(x => {
+      const min = x.predictTm == null || x.predictTm === '' ? NaN : +x.predictTm;
+      const st = x.remainStation != null ? +x.remainStation : (x.rstop != null ? +x.rstop : NaN);
+      return { route: String(x.routeNum != null ? x.routeNum : x.routeName), routeId: x.routeId == null ? '' : String(x.routeId),
+        type: '', vehicle: '', sec: isFinite(min) && min >= 0 ? Math.round(min * 60) : 0, stops: isFinite(st) && st >= 0 ? st : 0,
+        stopName: '', has: isFinite(min) && min >= 0 };
+    }) };
+  });
+}
+
 async function stops(url, env, ctx) {
   const lat = num(url.searchParams.get('lat')), lng = num(url.searchParams.get('lng'));
   const r = Math.min(500, Math.max(30, Math.round(num(url.searchParams.get('r') || '200') || 200)));
@@ -110,30 +147,39 @@ async function stops(url, env, ctx) {
       id: String(s.nodeid), name: String(s.nodenm || ''), no: s.nodeno == null ? null : String(s.nodeno),
       city: String(s.citycode), lat: +s.gpslati, lng: +s.gpslong })) };
   });
-  if (c.err) return errOut(c.err);
+  let src = 'tago';
+  if (c.err) {   // TAGO 실패 + 안동 근처면 안동 BIS 정류장 목록으로 대신
+    if (lat > 36.3 && lat < 36.9 && lng > 128.4 && lng < 129.2) { const b = await bisStops(ctx); if (!b.err) { c.data = b.data; c.at = b.at; c.cached = b.cached; c.stale = b.stale; delete c.err; src = 'andong-bis'; } }
+    if (c.err) return errOut(c.err);
+  }
   const list = c.data.map(s => ({ ...s, d: Math.round(dist(lat, lng, s.lat, s.lng)) })).sort((a, b) => a.d - b.d);
   const near = list.filter(s => s.d <= r);
-  return out({ ok: true, mode: 'bus', r, at: new Date(c.at).toISOString(), cached: c.cached, stale: c.stale,
+  return out({ ok: true, mode: 'bus', source: src, r, at: new Date(c.at).toISOString(), cached: c.cached, stale: c.stale,
     stops: near.slice(0, 20), nearest: near.length ? null : (list[0] || null) }, 200, 30);
 }
 
 // arrtime·arrprevstationcnt 둘 다 0 = 시간 정보가 없는 노선(운행 노선만 알려줌). '0분'으로 보여주면 안 됨.
-function busState(sec, cnt) {
-  if (sec > 0) return sec <= 90 || cnt === 1 ? 'soon' : 'live';
-  return 'nodata';
+function busState(has, sec, cnt) {
+  if (!has) return 'nodata';
+  return sec <= 90 || cnt <= 1 ? 'soon' : 'live';
 }
 async function arrivals(url, env, ctx) {
   const city = url.searchParams.get('city') || url.searchParams.get('cityCode') || '';
   const node = url.searchParams.get('node') || url.searchParams.get('nodeId') || '';
   if (!/^\d{1,6}$/.test(city)) return bad('bad_city', 'city는 숫자 도시코드예요 (예: 37040)');
   if (!/^[A-Za-z0-9]{3,30}$/.test(node)) return bad('bad_node', 'node는 정류소ID예요 (예: ADB354000407)');
-  const c = await cached(ctx, `arr/${city}/${node.toUpperCase()}`, ARR_TTL, ARR_KEEP, async () => {
+  let c = null, source = 'tago', fallback = '';
+  if (city === ANDONG && /^ADB\d+$/i.test(node)) {
+    const b = await bisArrivals(ctx, node.toUpperCase());
+    if (!b.err) { c = b; source = 'andong-bis'; } else fallback = b.err;
+  }
+  if (!c) c = await cached(ctx, `arr/${city}/${node.toUpperCase()}`, ARR_TTL, ARR_KEEP, async () => {
     const u = await upstream(env, 'ArvlInfoInqireService/getSttnAcctoArvlPrearngeInfoList', { cityCode: city, nodeId: node.toUpperCase(), numOfRows: '100', pageNo: '1' });
     if (u.err) return u;
     return { data: u.list.filter(x => x && x.routeno != null).map(x => ({
       route: String(x.routeno), routeId: x.routeid == null ? '' : String(x.routeid), type: String(x.routetp || ''),
       vehicle: String(x.vehicletp || ''), sec: Math.max(0, +x.arrtime || 0), stops: Math.max(0, +x.arrprevstationcnt || 0),
-      stopName: String(x.nodenm || '') })) };
+      stopName: String(x.nodenm || ''), has: (+x.arrtime || 0) > 0 })) };
   });
   if (c.err) return errOut(c.err);
   const age = Math.max(0, Math.round((Date.now() - c.at) / 1000));
@@ -142,17 +188,19 @@ async function arrivals(url, env, ctx) {
   for (const x of c.data) (by[x.route] = by[x.route] || []).push(x);
   const buses = [];
   for (const k in by) {
-    const L = by[k].sort((a, b) => (a.sec || 1e9) - (b.sec || 1e9));
-    const f = L[0], n = L.find((x, i) => i > 0 && x.sec > 0);
-    const sec = f.sec > 0 ? Math.max(0, f.sec - age) : 0;
+    const has = x => x.has !== undefined ? x.has : x.sec > 0;   // 예전 캐시 호환
+    const L = by[k].sort((a, b) => (has(a) ? a.sec : 1e9) - (has(b) ? b.sec : 1e9));
+    const f = L[0], n = L.find((x, i) => i > 0 && has(x));
+    const sec = has(f) ? Math.max(0, f.sec - age) : 0;
     buses.push({ route: f.route, routeId: f.routeId, type: f.type, vehicle: f.vehicle,
-      state: busState(f.sec, f.stops), sec: f.sec > 0 ? sec : null, stops: f.sec > 0 ? f.stops : null,
+      state: busState(has(f), sec, f.stops), sec: has(f) ? sec : null, stops: has(f) ? f.stops : null,
       next: n ? { sec: Math.max(0, n.sec - age), stops: n.stops } : null });
   }
   const rank = s => s.state === 'nodata' ? 1e9 : s.sec;
   buses.sort((a, b) => rank(a) - rank(b) || a.route.localeCompare(b.route, 'ko', { numeric: true }));
-  const stopName = (c.data[0] && c.data[0].stopName) || '';
-  return out({ ok: true, mode: 'bus', city, node: node.toUpperCase(), stopName, at: new Date(c.at).toISOString(), age, cached: c.cached, stale: c.stale,
+  let stopName = (c.data[0] && c.data[0].stopName) || '';
+  if (!stopName && source === 'andong-bis') { const S = await bisStops(ctx); if (!S.err) { const f = S.data.find(x => x.id === node.toUpperCase()); if (f) stopName = f.name; } }
+  return out({ ok: true, mode: 'bus', source, ...(fallback ? { fallback } : {}), city, node: node.toUpperCase(), stopName, at: new Date(c.at).toISOString(), age, cached: c.cached, stale: c.stale,
     live: buses.some(b => b.state !== 'nodata'), buses }, 200, 10);
 }
 

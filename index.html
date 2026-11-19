@@ -2658,7 +2658,7 @@ DR.addEventListener('touchcancel',()=>{if(td&&td.m)setDR(1,true);td=null});
 setQP(0);setDR(0);
 window.__nv.panel=()=>({qp:qpP,dr:drP});window.__nv.S=S;window.__nv.layout=layout;window.__nv.buildDrawer=buildDrawer;
 // ---------- 설정 화면 (삼성 설정 구성을 참고한 뉴니버스 설정) ----------
-const VER='v30';
+const VER='v31';
 Object.assign(GLY,{
  wifi:'M2.5 9a14 14 0 0 1 19 0 M5.5 12.3a9.5 9.5 0 0 1 13 0 M8.6 15.5a5 5 0 0 1 6.8 0 M12 19h.01',
  devices:'M3.5 5h12v9h-12z M2 17h15 M18 8h3.5v11H18z',
@@ -3421,7 +3421,7 @@ async function busGetArr(city,node){
     const best={};a.list.forEach(x=>{if(!x||x.routeno==null)return;const k=String(x.routeno);const y={routeno:k,routetp:x.routetp,vehicletp:x.vehicletp,arrtime:+x.arrtime||0,arrprevstationcnt:+x.arrprevstationcnt||0};y.nodata=!(y.arrtime>0);
       if(!best[k]||(best[k].nodata&&!y.nodata)||(!y.nodata&&y.arrtime<best[k].arrtime))best[k]=y});return {list:Object.values(best)}}
   const j=await busRelay(`/v1/bus/arrivals?city=${encodeURIComponent(city)}&node=${encodeURIComponent(node)}`);if(j.err)return j;
-  return {stale:!!j.stale,list:(j.buses||[]).map(b=>({routeno:b.route,routetp:b.type,vehicletp:b.vehicle,arrtime:b.sec||0,arrprevstationcnt:b.stops||0,nodata:b.state==='nodata'}))}}
+  BUS.dsrc=j.source||'tago';return {stale:!!j.stale,list:(j.buses||[]).map(b=>({routeno:b.route,routetp:b.type,vehicletp:b.vehicle,arrtime:b.sec||0,arrprevstationcnt:b.stops||0,nodata:b.state==='nodata'}))}}
 function busNotice(){const F=busFavs();if(!F.length||!BUS.stop||!BUS.shown&&busWant()!==1)return;const now=Date.now();
   for(const k in BUS.noted)if(now-BUS.noted[k]>900000)delete BUS.noted[k];
   const hit=(BUS.arr||[]).filter(x=>busIsFav(x)&&!x.nodata&&busSec(x)>0&&(busSec(x)<=300||(x.arrprevstationcnt>0&&x.arrprevstationcnt<=3))).sort((a,b)=>busSec(a)-busSec(b))[0];
@@ -3477,7 +3477,7 @@ function busRender(){const s=BUS.stop;if(!s)return;const demo=BUS.mode==='demo',
   const body=(rows?(BUS.expand?`<div class="rows">${rows}</div>`:`<div class="chips">${rows}</div>`):`<div class="msg">${BUS.err?esc(BUS.err):favMiss||'지금은 도착 예정인 버스 정보가 없어요'}</div>`)+(rows&&allND?`<div class="nd2">이 지역은 실시간 도착 시간을 아직 주지 않아서, 이 정류장에 다니는 노선만 보여요</div>`:'');
   const more=!BUS.expand&&SH.length>3?` · +${SH.length-3}`:'';
   const html=`<div class="bh"><span class="bi">${ico('bus')}</span><div class="tt"><b>${esc(s.nodenm||'정류장')}</b><small>${demo?'예시 · 실제 도착 정보 아님':'가까운 정류장'} · ${s.d}m${demo?'':' · '+(ago<5?'방금':ago+'초 전')}${more}</small></div>${busFavBtn()||`<span class="tag ${demo?'demo':'live'}">${demo?'예시 데이터':allND?'노선만':'실시간'}</span>`}<button class="x" aria-label="이 정류장 알림 닫기">${ico('x')}</button></div>${body}
-${BUS.expand?`<div class="ft"><span>${demo?'예시 데이터 · 실제 도착 정보가 아니에요':'정보: 국토교통부 TAGO'+(busSrc()==='relay'?' · 뉴니버스 중계':' · 내 키')+(BUS.stale?' · 잠시 전 정보':'')+(BUS.perm==='coarse'?' · 대략 위치':'')}</span><span>눌러서 접기</span></div>`:''}`;if(html!==BUS.html){BUS.html=html;BEL.innerHTML=html}}
+${BUS.expand?`<div class="ft"><span>${demo?'예시 데이터 · 실제 도착 정보가 아니에요':(busSrc()==='relay'&&BUS.dsrc==='andong-bis'?'정보: 안동시 버스정보시스템':'정보: 국토교통부 TAGO')+(busSrc()==='relay'?' · 뉴니버스 중계':' · 내 키')+(BUS.stale?' · 잠시 전 정보':'')+(BUS.perm==='coarse'?' · 대략 위치':'')}</span><span>눌러서 접기</span></div>`:''}`;if(html!==BUS.html){BUS.html=html;BEL.innerHTML=html}}
 function busSec(x,raw){if(x.nodata)return 1e9;return x.arrtime-(raw?0:(Date.now()-BUS.at)/1000)}
 function esc(v){return String(v==null?'':v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c])}
 function busGaps(){const lo=38,hi=dockTop()-2,iv=(hitRects[cur]||[]).filter(h=>h.src!=='dock'&&h.h<H*.6).map(h=>[h.y-2,h.y+h.h+2]).sort((a,b)=>a[0]-b[0]);
@@ -3540,7 +3540,7 @@ function buildBusPage(add){
   fb.querySelector('button').onclick=()=>{const L=busFavSet(fi.value);fi.value=L.join(', ');fr.querySelector('small').textContent=L.length?L.join(', '):'비어 있어요 · 넣으면 카드에 그 버스만 보여요';toast(L.length?'자주 타는 버스 '+L.length+'개 저장 · 이 폰에만 저장돼요':'자주 타는 버스를 비웠어요');if(BUS.shown)busRender()};
   add(sCard(fr,fb));
   add(mk('div','note','쉼표나 띄어쓰기로 나눠 적어요 (113 · 순환1 · 급행3). 카드의 <b>★ 자주</b>를 누르면 모든 노선을 볼 수 있어요. 자주 타는 버스가 <b>3정류장 안</b>이나 <b>5분 안</b>으로 오면 홈 위쪽에 살짝 알려드려요. 백업 파일에도 같이 들어가요.'));
-  add(mk('div','note','도착 정보는 <b>뉴니버스 중계 서버</b>를 거쳐 국토교통부 TAGO에서 받아요. 키를 넣을 필요가 없어요. 좌표는 정류장을 찾는 데만 쓰고 저장하지 않아요.'));
+  add(mk('div','note','도착 정보는 <b>뉴니버스 중계 서버</b>를 거쳐 국토교통부 TAGO에서 받아요 (안동은 <b>안동시 버스정보시스템</b>에서 바로 받아 몇 분 뒤인지 나와요). 키를 넣을 필요가 없어요. 좌표는 정류장을 찾는 데만 쓰고 저장하지 않아요.'));
   // 시험용 (숨김): 예시 데이터 / 직접 키
   const adv=mk('div','');adv.style.display=S.busAdv?'':'none';
   const advT=infoRow('시험용 설정',S.busAdv?'눌러서 접기':'개발·시험할 때만 써요',()=>{S.busAdv=!S.busAdv;saveS();adv.style.display=S.busAdv?'':'none';advT.querySelector('small').textContent=S.busAdv?'눌러서 접기':'개발·시험할 때만 써요'});
@@ -3565,7 +3565,7 @@ function buildBusPage(add){
   add(sCard((PROTO.loc||[]).map(([l,s2,on])=>swRow(l,s2,on,true))));
 }
 if(busOn())setTimeout(()=>{if(busReal()&&NATIVE&&window.NVNative&&NVNative.busPerm){let p='none';try{p=NVNative.busPerm()}catch(_){}if(p==='none'){S.bus=false;saveS();return}}busStart()},1500);
-window.__nv.bus={st:()=>({mode:BUS.mode,src:busSrc(),st:BUS.st,shown:BUS.shown,stop:BUS.stop&&BUS.stop.nodenm,arr:BUS.arr.map(x=>x.routeno+':'+busEta(x)),shownArr:busShown().map(x=>x.routeno),fav:busFavs(),all:BUS.all,note:BUS.lastNote||'',err:BUS.err}),setFav:t=>{const L=busFavSet(t);if(BUS.shown)busRender();return L},toggleAll:()=>{BUS.all=!BUS.all;BUS.html='';busRender();return BUS.all},inject:(list,stop)=>{BUS.arr=list;BUS.at=Date.now();if(stop)busSetNear(stop);BUS.st='near';BUS.html='';busRender();busNotice()},enable:busEnable,cycle:busCycle,demoFar:v=>{S.busDemoFar=v;busCycle()}};
+window.__nv.bus={st:()=>({mode:BUS.mode,src:busSrc(),dsrc:BUS.dsrc||'',st:BUS.st,shown:BUS.shown,stop:BUS.stop&&BUS.stop.nodenm,arr:BUS.arr.map(x=>x.routeno+':'+busEta(x)),shownArr:busShown().map(x=>x.routeno),fav:busFavs(),all:BUS.all,note:BUS.lastNote||'',err:BUS.err}),setFav:t=>{const L=busFavSet(t);if(BUS.shown)busRender();return L},toggleAll:()=>{BUS.all=!BUS.all;BUS.html='';busRender();return BUS.all},inject:(list,stop)=>{BUS.arr=list;BUS.at=Date.now();if(stop)busSetNear(stop);BUS.st='near';BUS.html='';busRender();busNotice()},enable:busEnable,cycle:busCycle,demoFar:v=>{S.busDemoFar=v;busCycle()}};
 // ===================== v29 꼭 필요한 기본 기능 =====================
 const OWNPKG='kr.newniverse.launcher';
 Object.assign(GLY,{data:'M8 19V5 M4.5 8.5L8 5l3.5 3.5 M16 5v14 M12.5 15.5L16 19l3.5-3.5',contact:'M6 3.5h12v17H6z M12 8a2.3 2.3 0 1 0 0 4.6a2.3 2.3 0 1 0 0-4.6z M8.5 16.5c.6-1.7 2-2.6 3.5-2.6s2.9.9 3.5 2.6 M4 7.5h2 M4 12h2 M4 16.5h2',
