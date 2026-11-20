@@ -278,7 +278,10 @@ public class MainActivity extends Activity {
     @JavascriptInterface public String contactsPerm(){ return checkSelfPermission(android.Manifest.permission.READ_CONTACTS)==PackageManager.PERMISSION_GRANTED?"yes":"no"; }
     @JavascriptInterface public void contactsAsk(){ ui.post(()->{ try{ requestPermissions(new String[]{android.Manifest.permission.READ_CONTACTS},REQ_CON);}catch(Exception e){ js("window.NV_onConPerm&&NV_onConPerm('no')"); } }); }
     @JavascriptInterface public String contactsAll(){ return contactsJson(); }
-    @JavascriptInterface public void dial(String num){ String n=num==null?"":num.replaceAll("[^0-9+*#]",""); startI(new Intent(Intent.ACTION_DIAL,Uri.parse("tel:"+n))); }
+    @JavascriptInterface public void dial(String num){ String n=num==null?"":num.replaceAll("[^0-9+*#]",""); Intent i=new Intent(Intent.ACTION_DIAL,Uri.parse("tel:"+n));
+      // v33: 뉴니버스 전화가 깔려 있으면 그 앱 키패드로 (기본 전화 앱이 아니어도)
+      try{ Intent t=new Intent(i).setPackage("kr.newniverse.phone"); if(t.resolveActivity(getPackageManager())!=null) i=t; }catch(Exception e){}
+      startI(i); }
     @JavascriptInterface public void sms(String num){ String n=num==null?"":num.replaceAll("[^0-9+]",""); startI(new Intent(Intent.ACTION_SENDTO,Uri.parse("smsto:"+n))); }
     @JavascriptInterface public void openContact(String id){ try{ startI(new Intent(Intent.ACTION_VIEW,Uri.withAppendedPath(android.provider.ContactsContract.Contacts.CONTENT_URI,id.replaceAll("[^0-9]","")))); }catch(Exception e){} }
     /** 안드로이드 설정 화면 바로가기 (액션 이름으로) */

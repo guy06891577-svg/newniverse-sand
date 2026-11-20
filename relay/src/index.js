@@ -204,11 +204,92 @@ async function arrivals(url, env, ctx) {
     live: buses.some(b => b.state !== 'nodata'), buses }, 200, 10);
 }
 
+
+// ---------- 미세먼지 (에어코리아 · 한국환경공단, 공공데이터포털 15073877 측정소정보 + 15073861 대기오염정보) ----------
+// 같은 공공데이터포털 키(TAGO_KEY)를 씀. 두 서비스 모두 '활용신청'이 돼 있어야 함 (개발계정 하루 500회).
+const AIR = 'https://apis.data.go.kr/B552584/';
+const AIR_TTL = 1800, AIR_KEEP = 3 * 3600;        // 측정값: 30분 신선, 3시간까지 비상용
+const AIR_ST_TTL = 86400, AIR_ST_KEEP = 7 * 86400; // 측정소 목록: 하루
+const AIR_LBL = ['좋음', '보통', '나쁨', '매우나쁨'];
+async function airUp(env, path, params) {
+  const k = String(env.TAGO_KEY || '').trim();
+  if (!k) return { err: 'nokey' };
+  const ek = k.includes('%') ? k : encodeURIComponent(k);
+  const qs = new URLSearchParams({ ...params, returnType: 'json' }).toString();
+  let lastErr = 'upstream';
+  for (let i = 0; i < 2; i++) {
+    let txt = '', st = 0;
+    try {
+      const r = await fetch(`${AIR}${path}?serviceKey=${ek}&${qs}`, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(9000) });
+      st = r.status; txt = await r.text();
+    } catch (e) { lastErr = 'timeout'; continue; }
+    const rc = (txt.match(/"returnReasonCode"\s*:\s*"?(\d+)/) || txt.match(/<returnReasonCode>(\d+)</) || [])[1];
+    if (rc === '30' || rc === '20') return { err: 'not_registered' };
+    if (rc) { lastErr = 'tago_' + (+rc); if (rc === '22') break; continue; }
+    if (st === 401 || st === 403) return { err: 'not_registered' };
+    let j; try { j = JSON.parse(txt); } catch (_) { lastErr = 'badjson'; continue; }
+    const h = j && j.response && j.response.header;
+    const c = h ? String(+h.resultCode) : '';
+    if (c && c !== '0') { lastErr = 'tago_' + c; if (c === '1' || c === '99') { await new Promise(r => setTimeout(r, 400)); continue; } break; }
+    const b = j.response && j.response.body;
+    let it = b && b.items; if (it && it.item) it = it.item;
+    if (!it) it = []; else if (!Array.isArray(it)) it = [it];
+    return { list: it };
+  }
+  return { err: lastErr };
+}
+function airGrade(v, kind) {
+  if (typeof v !== 'number' || !isFinite(v) || v < 0) return null;
+  const t = kind === 'pm25' ? [15, 35, 75] : [30, 80, 150];   // 환경부 예보 기준 (㎍/㎥)
+  const g = v <= t[0] ? 1 : v <= t[1] ? 2 : v <= t[2] ? 3 : 4;
+  return { v, g, label: AIR_LBL[g - 1] };
+}
+async function airStations(ctx, env) {
+  return cached(ctx, 'air-st', AIR_ST_TTL, AIR_ST_KEEP, async () => {
+    const r = await airUp(env, 'MsrstnInfoInqireSvc/getMsrstnList', { numOfRows: '1000', pageNo: '1' });
+    if (r.err) return r;
+    const data = r.list.map(x => ({ name: String(x.stationName || ''), addr: String(x.addr || ''), lat: +x.dmX, lng: +x.dmY }))
+      .filter(x => x.name && x.lat > 30 && x.lat < 40 && x.lng > 120 && x.lng < 135);
+    return data.length ? { data } : { err: 'empty' };
+  }, true);
+}
+async function airNow(url, env, ctx) {
+  const lat = num(url.searchParams.get('lat')), lng = num(url.searchParams.get('lng'));
+  if (!(lat >= 33 && lat <= 39 && lng >= 124 && lng <= 132)) return bad('bad_location', '한국 안의 위도(lat)·경도(lng)를 주세요');
+  const S = await airStations(ctx, env);
+  if (S.err) return airErr(S.err);
+  const near = S.data.map(s => ({ ...s, d: Math.round(dist(lat, lng, s.lat, s.lng)) })).sort((a, b) => a.d - b.d).filter(s => s.d < 40000).slice(0, 3);
+  if (!near.length) return bad('no_station', '가까운 측정소가 없어요', 404);
+  let lastErr = null;
+  for (const st of near) {
+    const c = await cached(ctx, 'air-rt/' + encodeURIComponent(st.name), AIR_TTL, AIR_KEEP, async () => {
+      const r = await airUp(env, 'ArpltnInforInqireSvc/getMsrstnAcctoRltmMesureDnsty', { stationName: st.name, dataTerm: 'DAILY', numOfRows: '1', pageNo: '1', ver: '1.3' });
+      if (r.err) return r;
+      const x = r.list[0];
+      if (!x) return { err: 'empty' };
+      return { data: { dataTime: String(x.dataTime || ''), pm10: num(String(x.pm10Value || '')), pm25: num(String(x.pm25Value || '')) } };
+    });
+    if (c.err) { lastErr = c.err; if (c.err === 'not_registered' || c.err === 'rate' || c.err === 'nokey') break; continue; }
+    const pm10 = airGrade(c.data.pm10, 'pm10'), pm25 = airGrade(c.data.pm25, 'pm25');
+    if (!pm10 && !pm25) { lastErr = 'no_value'; continue; }   // 점검 중인 측정소면 다음 가까운 곳
+    return out({ ok: true, mode: 'air', source: 'airkorea', station: { name: st.name, addr: st.addr, d: st.d }, dataTime: c.data.dataTime,
+      pm10, pm25, at: new Date(c.at).toISOString(), age: Math.round((Date.now() - c.at) / 1000), cached: c.cached, stale: c.stale,
+      note: '에어코리아 실시간 측정값(확정 전 자료) · 등급은 환경부 기준' }, 200, 300);
+  }
+  return airErr(lastErr || 'upstream');
+}
+function airErr(e) {
+  if (e === 'not_registered') return out({ ok: false, error: 'not_registered', message: '에어코리아 서비스 활용신청이 필요해요 (공공데이터포털)' }, 503);
+  if (e === 'no_value') return out({ ok: false, error: 'no_value', message: '가까운 측정소 값이 지금 없어요' }, 502);
+  return errOut(e);
+}
+
 // 교통수단별 모듈. 지하철(subway)·철도(rail)는 나중에 같은 모양(stations/arrivals)으로 붙임.
 const MODES = {
   bus: { ready: true, routes: { stops, arrivals } },
   subway: { ready: false, routes: {} },   // 예정: /v1/subway/stations, /v1/subway/arrivals
   rail: { ready: false, routes: {} },     // 예정: /v1/rail/stations, /v1/rail/departures
+  air: { ready: true, routes: { now: airNow } },   // v33: 미세먼지 /v1/air?lat=&lng=
 };
 const ALIAS = { stops: 1, arrivals: 1 };
 
@@ -221,17 +302,18 @@ export default {
     const p = url.pathname.replace(/\/+$/, '') || '/';
     if (p === '/' || p === '/v1') return out({ ok: true, name: 'newniverse-bus', v: VER,
       modes: Object.fromEntries(Object.entries(MODES).map(([m, o]) => [m, o.ready ? Object.keys(o.routes).map(r => `/v1/${m}/${r}`) : 'planned'])),
-      examples: { stops: '/v1/bus/stops?lat=36.5684&lng=128.7294[&r=200]', arrivals: '/v1/bus/arrivals?city=37040&node=ADB354000407' },
-      source: '국토교통부 TAGO (공공데이터포털)' }, 200, 3600);
+      examples: { stops: '/v1/bus/stops?lat=36.5684&lng=128.7294[&r=200]', arrivals: '/v1/bus/arrivals?city=37040&node=ADB354000407', air: '/v1/air?lat=36.5684&lng=128.7294' },
+      source: '국토교통부 TAGO · 안동시 BIS · 에어코리아 (공공데이터포털)' }, 200, 3600);
     const seg = p.split('/');            // ['', 'v1', mode, op]
     if (seg[1] !== 'v1') return bad('not_found', '없는 주소예요', 404);
     let mode = seg[2], op = seg[3];
     if (ALIAS[mode]) { op = mode; mode = 'bus'; }   // 예전 모양 /v1/stops, /v1/arrivals
+    if (mode === 'air' && !op) op = 'now';           // /v1/air?lat=&lng=
     const M = MODES[mode];
     if (!M) return bad('not_found', '없는 주소예요', 404);
     if (!M.ready) return out({ ok: false, error: 'not_ready', mode, message: '아직 준비 중인 교통수단이에요' }, 501);
     const fn = M.routes[op];
-    if (!fn || seg.length > 4) return bad('not_found', '없는 주소예요', 404);
+    if (!fn || seg.length > 4 || (mode === 'air' && seg.length > 4)) return bad('not_found', '없는 주소예요', 404);
         if (env.RL_IP) {
       const ip = req.headers.get('cf-connecting-ip') || 'x';
       try { const { success } = await env.RL_IP.limit({ key: ip }); if (!success) return out({ ok: false, error: 'rate', message: '잠시 후 다시 시도해 주세요' }, 429); } catch (_) {}

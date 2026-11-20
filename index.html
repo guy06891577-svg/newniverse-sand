@@ -597,6 +597,7 @@ let EDIT=false,DRAG=null,AUTO=false,NINIT=false,KNOWN=null;const WREG=new Map();
 const DOCK=[A('전화','📞','#34c759','#1f9d40'),A('메시지','💬','#5ac8fa','#2a86d9'),A('인터넷','🧭','#4f7cff','#2a4fd1'),A('연락처','👤','#ff9f43','#e06a1a')];
 // ---------- 안드로이드 런처 모드 (APK 안에서 실행될 때만): 실제 설치된 앱으로 홈/독/서랍 구성 ----------
 const NATIVE=!!(window.NVNative&&/native=1/.test(location.search));
+const NVPHONE='kr.newniverse.phone';
 const ROLE_GLYPH={'com.samsung.android.dialer':'phone','com.google.android.dialer':'phone','com.android.dialer':'phone',
  'com.samsung.android.messaging':'message','com.google.android.apps.messaging':'message','com.android.messaging':'message',
  'com.sec.android.app.camera':'camera','com.android.camera2':'camera','com.google.android.GoogleCamera':'camera','com.android.camera':'camera',
@@ -621,7 +622,8 @@ function nativeApps(){
     return {n:shortName(o.label),full:o.label,e:'',c1:c[0],c2:c[1],pkg:o.pkg,act:o.act,gk:ROLE_GLYPH[o.pkg]||null,img:null}});
   const by=p=>NAPPS.find(a=>a.pkg===p);
   const pick=(k,fb,label,gk)=>{let a=(roles[k]&&by(roles[k]))||fb.map(by).find(Boolean);if(!a)return null;return Object.assign(Object.create(a),{n:label,gk,__base:a})};
-  const dock=[pick('phone',['com.samsung.android.dialer','com.google.android.dialer'],'전화','phone'),pick('sms',['com.samsung.android.messaging','com.google.android.apps.messaging'],'메시지','message'),
+  const nvp=by(NVPHONE);   // v33: 뉴니버스 전화가 깔려 있으면 독의 '전화'는 그 앱
+  const dock=[nvp?Object.assign(Object.create(nvp),{n:'전화',gk:'phone',__base:nvp}):pick('phone',['com.samsung.android.dialer','com.google.android.dialer'],'전화','phone'),pick('sms',['com.samsung.android.messaging','com.google.android.apps.messaging'],'메시지','message'),
     pick('browser',['com.sec.android.app.sbrowser','com.android.chrome'],'인터넷','globe'),pick('contacts',['com.samsung.android.app.contacts','com.google.android.contacts','com.android.contacts'],'연락처','person')].filter(Boolean);
   if(!NINIT){NINIT=true;setTimeout(()=>{try{NV_onInsets()}catch(e){}},0);setTimeout(()=>{try{wRestoreCheck();wPlace()}catch(e){console.warn(e)}},0);
     const o=nvLoadState();
@@ -637,8 +639,17 @@ function nativeApps(){
       else if(nw.length)setTimeout(saveLayout,0);
     }
   }
+  nvPhoneDock(roles);
   setTimeout(loadNativeIcons,0);
 }
+// v33: 이미 쓰던 배치(저장된 독)에도 한 번 적용 · 뉴니버스 전화를 지우면 원래 전화 앱을 다시 독에 놓음
+function nvPhoneDock(roles){try{
+  const by=p=>NAPPS.find(a=>a.pkg===p),nvp=by(NVPHONE),isDial=a=>{const b=a&&(a.__base||a);return !!b&&b.pkg!==NVPHONE&&(ROLE_GLYPH[b.pkg]==='phone'||(roles&&roles.phone===b.pkg))};
+  if(nvp){if(S.nvPhoneDock)return;if(DOCK.some(a=>(a.__base||a).pkg===NVPHONE)){S.nvPhoneDock=1;saveS();return}
+    const i=DOCK.findIndex(isDial);if(i<0)return;const old=DOCK[i];DOCK[i]=Object.assign(Object.create(nvp),{n:old.n||'전화',gk:'phone',__base:nvp});S.nvPhoneDock=1;saveS();saveLayout();
+    setTimeout(()=>{try{toast('독의 전화 아이콘이 뉴니버스 전화를 열어요')}catch(_){}},800)}
+  else if(S.nvPhoneDock){S.nvPhoneDock=0;saveS()}
+}catch(e){}}
 // 아이콘 그림은 조금씩 나눠 받아 화면이 멈추지 않게 하고, 다 받으면 한 번에 다시 그림
 let iconQ=[],iconT=0;
 function loadNativeIcons(){iconQ=NAPPS.filter(a=>!a.img);pumpIcons()}
@@ -655,7 +666,8 @@ if(NATIVE){document.documentElement.classList.add('native');nativeApps();
   window.NV_onAppsChanged=(pkg,kind)=>{acQ.push([pkg||'',kind||'change']);clearTimeout(acT);acT=setTimeout(()=>{const q=acQ;acQ=[];
     const before=new Set(NAPPS.map(akey));nativeApps();const now=new Set(NAPPS.map(akey)),gone=k=>!now.has(k);
     PAGES.forEach(P=>{P.apps=P.apps.filter(x=>{if(x.wg)return true;if(x.folder){x.items=x.items.filter(i=>!gone(akey(i)));return x.items.length>0}return !gone(akey(x))}).map(x=>x.folder&&x.items.length===1?x.items[0]:x)});
-    for(let i=DOCK.length-1;i>=0;i--)if(gone(akey(DOCK[i])))DOCK.splice(i,1);
+    for(let i=DOCK.length-1;i>=0;i--)if(gone(akey(DOCK[i]))){const was=(DOCK[i].__base||DOCK[i]).pkg;DOCK.splice(i,1);
+      if(was===NVPHONE){let rl={};try{rl=JSON.parse(NVNative.getRoles())}catch(_){}const d=NAPPS.find(a=>a.pkg===rl.phone)||NAPPS.find(a=>ROLE_GLYPH[a.pkg]==='phone');if(d&&!DOCK.some(x=>(x.__base||x).pkg===d.pkg))DOCK.splice(i,0,Object.assign(Object.create(d),{n:'전화',gk:'phone',__base:d}))}}
     const added=NAPPS.filter(a=>!before.has(akey(a))&&!onHome(a));
     if(S.addNew!==false)added.forEach(a=>addToHome(a));
     q.forEach(([p,k])=>{if(k==='update'&&p)NAPPS.filter(a=>a.pkg===p).forEach(a=>{a.img=null;if(typeof ICACHE!=='undefined')ICACHE.clear()})});
@@ -974,6 +986,8 @@ function renderPage(pi){
     c.fillText(`${now.getMonth()+1}월 ${now.getDate()}일 ${days[now.getDay()]}요일`,r.x+24,r.y+r.h*.7);
     c.font=`400 ${r.h*.085}px ${FONT}`;c.fillStyle='rgba(255,255,255,.7)';
     {const dl=typeof devLine==='function'?devLine():'';if(dl)c.fillText(dl,r.x+24,r.y+r.h*.86)}
+    const airR=airDraw(c,r);
+    if(airR)hitRects[pi].push(Object.assign(airR,{n:'미세먼지',act:airTap}));
     hitRects[pi].push({x:r.x,y:r.y,w:r.w,h:r.h,n:'시계 위젯'});
     // 검색창
     const sy=r.y+r.h+18,sh=46;glass(c,18,sy,W-36,sh,23);
@@ -2460,6 +2474,7 @@ function tap(e){
   const h=(hitRects[cur]||[]).find(o=>x>=o.x&&x<=o.x+o.w&&y>=o.y&&y<=o.y+o.h);
   if(EDIT){if(h&&(h.a||h.f)&&!h.act)homeMenu(h);return}
   if(!h){if(emptyTap(x,y,e))return}else lastTap=null;
+  if(h&&typeof h.act==='function'){if(!anim)h.act();return}
   if(h&&h.act){if(anim)return;if(h.act==='home'){if(cur!==0)go(0,1);else toast('첫 화면이에요')}else if(h.act==='back'){if(cur>0)go(cur-1,1);else toast('더 돌아갈 화면이 없어요')}else toast('최근 사용한 앱 · 시제품이라 아직 비어 있어요');return}
   if(h&&h.a&&h.a.wg){widgetTap(h.a);return}
   if(h&&h.f)openFolder(h.f,{x:h.x,y:h.y,w:Math.min(h.w,h.h)});else if(h)openApp(h.a||findApp(h.n));
@@ -2667,7 +2682,7 @@ DR.addEventListener('touchcancel',()=>{if(td&&td.m)setDR(1,true);td=null});
 setQP(0);setDR(0);
 window.__nv.panel=()=>({qp:qpP,dr:drP});window.__nv.S=S;window.__nv.layout=layout;window.__nv.buildDrawer=buildDrawer;
 // ---------- 설정 화면 (삼성 설정 구성을 참고한 뉴니버스 설정) ----------
-const VER='v32';
+const VER='v33';
 Object.assign(GLY,{
  wifi:'M2.5 9a14 14 0 0 1 19 0 M5.5 12.3a9.5 9.5 0 0 1 13 0 M8.6 15.5a5 5 0 0 1 6.8 0 M12 19h.01',
  devices:'M3.5 5h12v9h-12z M2 17h15 M18 8h3.5v11H18z',
@@ -2694,7 +2709,7 @@ const SETG=[
  [['sound','소리 및 진동','소리 크기 · 진동 · 벨소리','sound','#a46bff','#6a35d1','볼륨 음량 벨'],['noti','알림','앱 알림 · 방해 금지','bell','#ff7a59','#d9472a','알람']],
  [['disp','디스플레이','밝기 · 전환 품질 · 내비게이션 바','sun','#48c774','#2a9550','화면 밝기 내비게이션 네비게이션 내비 버튼 제스처 뒤로 홈 최근 전환 품질 부드럽게 끊김 버벅 화질 성능'],['batt','배터리','남은 전력 · 절전 모드','battery','#3ccf9a','#1d8f68','충전 전원']],
  [['wall','배경화면 및 스타일','배경화면 · 내 사진 합성','brush','#ff6fa0','#d6336c','바탕화면 사진 합성 벚꽃 성운 별밭 잠금화면 적용 잠금화면 배경'],['theme','테마','UI 스타일 · 아이콘 모양','palette','#c06bff','#8a2fd0','아이콘 궤도 사구 조각보 디자인'],['home','홈 화면','홈 편집 · 우주 흐름 속도 · 모래 전환','home','#6c8cff','#3a55d8','모래 바람 전환 스와이프 제스처 속도 편집 폴더 배치 아이콘 이동 페이지 추가 삭제 새 앱'],['lock','잠금화면','잠금화면 미리보기 · 시계 스타일','lock','#5a7cff','#2c45c0','비밀번호 패턴 시계 알림 미리보기 잠금 해제 잠금화면']],
- [['sec','보안 및 개인정보 보호','생체 인식 · 앱 권한','shield','#3aa0ff','#1a62c4','지문 얼굴 권한'],['loc','위치','가까운 정류장 버스 · 자주 타는 버스 · 위치','pin','#2fc2a8','#168c78','GPS 버스 정류장 도착 교통 bus 정류소 자주 타는 버스 즐겨찾기 노선'],['sos','안전 및 긴급','긴급 연락처 · 긴급 SOS','alert','#ff5a5a','#c62828','응급 119']],
+ [['sec','보안 및 개인정보 보호','생체 인식 · 앱 권한','shield','#3aa0ff','#1a62c4','지문 얼굴 권한'],['loc','위치','미세먼지 · 가까운 정류장 버스 · 자주 타는 버스','pin','#2fc2a8','#168c78','GPS 버스 정류장 도착 교통 bus 정류소 자주 타는 버스 즐겨찾기 노선 미세먼지 초미세먼지 대기 공기 날씨 에어코리아'],['sos','안전 및 긴급','긴급 연락처 · 긴급 SOS','alert','#ff5a5a','#c62828','응급 119']],
  [['acct','계정 및 백업','계정 관리 · 백업 및 복원','sync','#2fb4d9','#167a99','클라우드']],
  [['adv','유용한 기능','두 번 눌러 화면 끄기 · 한 손 모드','sparkle','#ffb340','#e07b00','편의 화면 끄기 더블탭 톡톡 두번 두 번 잠금 끄기'],['well','디지털 웰빙','사용 시간 · 자녀 보호','leaf','#4cc46a','#258a3f','시간 수면'],['apps','애플리케이션','기본 앱 · 앱 설정','grid','#6f7dff','#3d48cc','앱 어플']],
  [['gen','일반','언어 · 날짜 및 시간 · 키보드','sliders','#8e9aaf','#5b667a','한국어 키보드 시간'],['a11y','접근성','글자 크기 · 시각 보조','access','#3fa3ff','#1d63c9','글씨 크게 돋보기 시력']],
@@ -3416,7 +3431,7 @@ function busCall(kind,a,b){return new Promise(res=>{const id='b'+(++busSeq);cons
 window.NV_onBusLoc=(id,o)=>{const f=busWait[id];if(f)f(o||{err:'nolocation'})};
 window.NV_onBusData=(id,code,body)=>{const f=busWait[id];if(!f)return;if(body==='nokey')return f({err:'키가 없어요'});if(code<0)return f({err:'인터넷 연결을 확인해 주세요'});
   if(code===401||code===403)return f({err:busCodeMsg('30','')});const r=busItems(body);f(r)};
-window.NV_onBusPerm=p=>{BUS.perm=p;if(p==='none'){S.bus=false;saveS();busStop();busRelayout();toast('위치를 허락하지 않아 버스 알림을 껐어요');busSetUI();return}
+window.NV_onBusPerm=p=>{if(AIR.wait){AIR.wait=false;airAfterPerm(p);if(!busOn())return}BUS.perm=p;if(p==='none'){S.bus=false;saveS();busStop();busRelayout();toast('위치를 허락하지 않아 버스 알림을 껐어요');busSetUI();return}
   toast(p==='coarse'?'대략 위치만 허락했어요 · 정확한 위치면 더 잘 맞아요':'위치 허락 완료 · 정류장 근처에서 알려드려요');busStart();busSetUI();busRelayout()};
 const LOCERR={perm:'위치 허락이 없어요',off:'폰의 위치(GPS)가 꺼져 있어요',timeout:'위치를 아직 못 찾았어요',nolm:'이 폰은 위치를 쓸 수 없어요',req:'위치를 읽지 못했어요',nolocation:'위치를 읽지 못했어요'};
 // ---- v30 위치(웹) + 중계 서버 ----
@@ -3552,11 +3567,70 @@ async function busEnable(on){
       if(!ok){S.bus=false;saveS();busSetUI();return}S.bus=true;saveS();busSetUI();busRelayout();try{NVNative.busAskPerm()}catch(_){NV_onBusPerm('none')}return}}
   else if(busReal()&&!NATIVE&&!S.busLocOk){const ok=await ask('위치 사용하기',LOCMSG+'<br>· 다음 창에서 브라우저가 위치 허락을 물어봐요',{ok:'계속'});if(!ok){S.bus=false;saveS();busSetUI();return}S.busLocOk=true}
   S.bus=true;saveS();busStart();busSetUI();busRelayout();toast(busReal()?'버스 도착 알림 켜짐 · 정류장 근처에서 떠올라요':'버스 도착 알림 켜짐 · 시험용 예시 데이터예요')}
+
+// ---------- v33 미세먼지 (에어코리아 → 뉴니버스 중계 서버 /v1/air) ----------
+// 켤 때만 위치를 물음. 30분마다(뉴니버스 화면이 보일 때만) 가까운 측정소 값을 받아 시계 위젯 오른쪽에 표시.
+var AIR={d:null,at:0,st:'off',err:'',busy:false,tm:0,wait:false};
+try{const o=JSON.parse(localStorage.getItem('nv_air')||'null');if(o&&o.d&&Date.now()-o.at<3*3600e3){AIR.d=o.d;AIR.at=o.at}}catch(_){}
+const AIR_COL=['#6fc8ff','#7ee0a0','#ffd25e','#ff6b7a'];
+const airOn=()=>S.air===true;
+function airDraw(c,r){if(typeof AIR==='undefined'||!AIR||S.air!==true||!AIR.d||Date.now()-AIR.at>3*3600e3)return null;const d=AIR.d;const x=r.x+r.w-20;let y=r.y+r.h*.2;
+  c.save();c.textAlign='right';c.textBaseline='alphabetic';
+  // 좁은 폰에서 큰 시계 글자와 겹치지 않게 글자 크기를 줄임
+  const nw=new Date();c.font=`200 ${r.h*.46}px ${FONT}`;const clockEnd=r.x+22+c.measureText(String(nw.getHours()).padStart(2,'0')+':'+String(nw.getMinutes()).padStart(2,'0')).width;
+  let k=1;c.font=`800 ${Math.round(r.h*.108)}px ${FONT}`;const lw=Math.max(...[d.pm10,d.pm25].map(o=>c.measureText(o?o.label:'—').width));
+  if(x-lw<clockEnd+10)k=Math.max(.62,(x-clockEnd-10)/lw);
+  const row=(lbl,o)=>{c.font=`500 ${Math.round(r.h*.068*Math.max(k,.8))}px ${FONT}`;c.fillStyle='rgba(255,255,255,.62)';c.fillText(lbl,x,y);y+=r.h*.135;
+    c.font=`800 ${Math.round(r.h*.108*k)}px ${FONT}`;c.fillStyle=o?AIR_COL[o.g-1]:'rgba(255,255,255,.5)';c.fillText(o?o.label:'—',x,y);y+=r.h*.15};
+  row('미세먼지',d.pm10);row('초미세먼지',d.pm25);
+  c.font=`400 ${Math.round(r.h*.06)}px ${FONT}`;c.fillStyle='rgba(255,255,255,.5)';
+  const hh=(d.dataTime||'').match(/(\d{1,2}):\d\d$/);c.fillText(`${d.station&&d.station.name||''}${hh?' · '+(+hh[1])+'시':''}`,x,r.y+r.h*.86);
+  c.restore();return {x:r.x+r.w*.6,y:r.y,w:r.w*.4,h:r.h}}
+function airTap(){if(!AIR.d)return;const d=AIR.d,f=o=>o?`${o.label} ${o.v}㎍/㎥`:'측정값 없음';
+  toast(`미세먼지 ${f(d.pm10)} · 초미세 ${f(d.pm25)} · ${d.station.name} 측정소`)}
+function airSave(){try{localStorage.setItem('nv_air',JSON.stringify({d:AIR.d,at:AIR.at}))}catch(_){}}
+async function airCycle(force){clearTimeout(AIR.tm);AIR.tm=0;if(!airOn()||AIR.busy)return;
+  const again=ms=>{clearTimeout(AIR.tm);if(airOn())AIR.tm=setTimeout(airCycle,ms)};
+  if(!force&&AIR.d&&Date.now()-AIR.at<29*60e3){again(30*60e3-(Date.now()-AIR.at));return}
+  if(document.hidden){return}
+  AIR.busy=true;
+  try{
+    let L;
+    if(NATIVE&&window.NVNative&&NVNative.busPerm){let p='none';try{p=NVNative.busPerm()}catch(_){}if(p==='none'){AIR.st='perm';airUI();return}L=await busCall('loc')}
+    else L=await busWebLoc();
+    if(!L||L.err){AIR.st='loc';AIR.err=LOCERR[L&&L.err]||'위치를 읽지 못했어요';airUI();again(10*60e3);return}
+    const j=await busRelay(`/v1/air?lat=${L.lat.toFixed(2)}&lng=${L.lng.toFixed(2)}`);   // 약 1km 단위로만 보냄
+    if(j.err){AIR.st='err';AIR.err=j.err;airUI();again(15*60e3);return}
+    AIR.d={station:j.station,dataTime:j.dataTime,pm10:j.pm10,pm25:j.pm25};AIR.at=Date.now();AIR.st='ok';AIR.err='';airSave();airUI();try{renderAll()}catch(_){}
+    again(30*60e3);
+  }finally{AIR.busy=false}}
+function airStatus(){if(!airOn())return '꺼져 있어요';
+  if(AIR.st==='perm')return NATIVE?'위치 허락이 필요해요':'브라우저 위치 허락이 필요해요';
+  if(AIR.st==='loc')return AIR.err;
+  if(AIR.st==='err')return /활용신청/.test(AIR.err)?'준비 중 · 공공데이터포털 에어코리아 사용 신청이 끝나면 보여요':AIR.err;
+  if(AIR.d){const d=AIR.d,f=o=>o?`${o.label} ${o.v}`:'—';return `${d.station.name} 측정소 · 미세 ${f(d.pm10)} · 초미세 ${f(d.pm25)} (㎍/㎥) · ${d.dataTime}`}
+  return '확인 중…'}
+let airUIfn=null;function airUI(){try{airUIfn&&airUIfn()}catch(_){}}
+async function airEnable(on){
+  if(!on){S.air=false;saveS();clearTimeout(AIR.tm);airUI();try{renderAll()}catch(_){}toast('미세먼지 표시 꺼짐');return}
+  const MSG='가까운 측정소를 찾으려고 위치를 써요.<br>· 뉴니버스 화면이 보일 때 30분에 한 번만 읽어요<br>· 좌표는 약 1km 단위로 줄여 뉴니버스 중계 서버를 거쳐 에어코리아(한국환경공단) 측정소를 찾는 데만 써요<br>· 위치를 저장하지 않아요';
+  if(NATIVE&&window.NVNative&&NVNative.busPerm){let p='none';try{p=NVNative.busPerm()}catch(_){}
+    if(p==='none'){const ok=await ask('위치 사용하기',MSG,{ok:'위치 허락하기'});if(!ok){airUI();return}
+      S.air=true;saveS();airUI();AIR.wait=true;try{NVNative.busAskPerm()}catch(_){AIR.wait=false;S.air=false;saveS();airUI()}return}}
+  else if(!NATIVE&&!S.busLocOk){const ok=await ask('위치 사용하기',MSG+'<br>· 다음 창에서 브라우저가 위치 허락을 물어봐요',{ok:'계속'});if(!ok){airUI();return}S.busLocOk=true}
+  S.air=true;saveS();airUI();toast('미세먼지 표시 켜짐 · 홈 시계 오른쪽에 보여요');airCycle(true)}
+function airAfterPerm(p){if(p==='none'){S.air=false;saveS();airUI();toast('위치를 허락하지 않아 미세먼지 표시를 껐어요');return}airUI();airCycle(true)}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&airOn())setTimeout(()=>airCycle(false),600)});
+if(airOn())setTimeout(()=>airCycle(false),2200);
 function busStatus(){if(!busOn())return '꺼져 있어요';
   if(BUS.mode==='demo')return BUS.stop?'예시 데이터 · 정류장 근처라고 가정했어요':'예시 데이터 · 정류장에서 멀어졌다고 가정했어요';
   return ({perm:NATIVE?'위치 허락이 필요해요':'브라우저 위치 허락이 필요해요',loc:BUS.err,err:BUS.err,far:'200m 안에 정류장이 없어요'+(BUS.near?` · 가장 가까운 곳 ${BUS.near.nodenm} ${BUS.near.d}m`:''),none:'근처(약 500m)에서 정류장을 못 찾았어요 · 이 지역이 TAGO에 없을 수도 있어요',near:BUS.stop?`${BUS.stop.nodenm} · ${BUS.stop.d}m · 도착 버스 ${BUS.arr.length}개`:'',off:'확인 중…'})[BUS.st]||'확인 중…'}
 let busUIfn=null;function busSetUI(){try{busUIfn&&busUIfn()}catch(_){}}
 function buildBusPage(add){
+  {const ast=infoRow('지금 상태',airStatus());const sw=swRow('홈 시계에 미세먼지','미세먼지·초미세먼지를 좋음·보통·나쁨·매우나쁨으로 보여줘요',airOn(),false,on=>airEnable(on));
+   add(sCard(sw,ast));const asw=sw.querySelector('.sw');
+   airUIfn=()=>{if(!ast.isConnected)return;ast.querySelector('small').textContent=airStatus();if(asw)asw.classList.toggle('on',airOn())};
+   add(mk('div','note','정보 출처: 에어코리아(한국환경공단) 실시간 측정값 · 확정 전 자료라 나중에 바뀔 수 있어요. 등급은 환경부 기준 (미세먼지 30·80·150, 초미세먼지 15·35·75 ㎍/㎥).'))}
   const st=infoRow('지금 상태',busStatus());
   add(sCard(swRow('가까운 정류장 버스 알림','정류장 200m 안에 가면 몇 번 버스가 언제 오는지 홈에 떠올라요',busOn(),false,on=>busEnable(on)),st));
   const sw=st.previousSibling&&st.previousSibling.querySelector('.sw');
@@ -3598,7 +3672,7 @@ function buildBusPage(add){
   add(sCard((PROTO.loc||[]).map(([l,s2,on])=>swRow(l,s2,on,true))));
 }
 if(busOn())setTimeout(()=>{if(busReal()&&NATIVE&&window.NVNative&&NVNative.busPerm){let p='none';try{p=NVNative.busPerm()}catch(_){}if(p==='none'){S.bus=false;saveS();return}}busStart()},1500);
-window.__nv.go=(i,d)=>go(i,d==null?(i>cur?1:-1):d);window.__nv.bus={pos:v=>{S.busPos=v;BUS.expand=false;busRelayout()},geo:()=>({pin:busPinOn(),pos:busPos(),top:BEL.style.top,bottom:BEL.style.bottom,cls:BEL.className,rect:BEL.getBoundingClientRect().toJSON(),dock:dockTop()}),st:()=>({mode:BUS.mode,src:busSrc(),dsrc:BUS.dsrc||'',st:BUS.st,shown:BUS.shown,stop:BUS.stop&&BUS.stop.nodenm,arr:BUS.arr.map(x=>x.routeno+':'+busEta(x)),shownArr:busShown().map(x=>x.routeno),fav:busFavs(),all:BUS.all,note:BUS.lastNote||'',err:BUS.err}),setFav:t=>{const L=busFavSet(t);if(BUS.shown)busRender();return L},toggleAll:()=>{BUS.all=!BUS.all;BUS.html='';busRender();return BUS.all},inject:(list,stop)=>{BUS.arr=list;BUS.at=Date.now();if(stop)busSetNear(stop);BUS.st='near';BUS.html='';busRender();busNotice()},enable:busEnable,cycle:busCycle,demoFar:v=>{S.busDemoFar=v;busCycle()}};
+window.__nv.go=(i,d)=>go(i,d==null?(i>cur?1:-1):d);window.__nv.air={enable:airEnable,cycle:airCycle,st:()=>({on:airOn(),st:AIR.st,err:AIR.err,d:AIR.d,status:airStatus()})};window.__nv.bus={pos:v=>{S.busPos=v;BUS.expand=false;busRelayout()},geo:()=>({pin:busPinOn(),pos:busPos(),top:BEL.style.top,bottom:BEL.style.bottom,cls:BEL.className,rect:BEL.getBoundingClientRect().toJSON(),dock:dockTop()}),st:()=>({mode:BUS.mode,src:busSrc(),dsrc:BUS.dsrc||'',st:BUS.st,shown:BUS.shown,stop:BUS.stop&&BUS.stop.nodenm,arr:BUS.arr.map(x=>x.routeno+':'+busEta(x)),shownArr:busShown().map(x=>x.routeno),fav:busFavs(),all:BUS.all,note:BUS.lastNote||'',err:BUS.err}),setFav:t=>{const L=busFavSet(t);if(BUS.shown)busRender();return L},toggleAll:()=>{BUS.all=!BUS.all;BUS.html='';busRender();return BUS.all},inject:(list,stop)=>{BUS.arr=list;BUS.at=Date.now();if(stop)busSetNear(stop);BUS.st='near';BUS.html='';busRender();busNotice()},enable:busEnable,cycle:busCycle,demoFar:v=>{S.busDemoFar=v;busCycle()}};
 // ===================== v29 꼭 필요한 기본 기능 =====================
 const OWNPKG='kr.newniverse.launcher';
 Object.assign(GLY,{data:'M8 19V5 M4.5 8.5L8 5l3.5 3.5 M16 5v14 M12.5 15.5L16 19l3.5-3.5',contact:'M6 3.5h12v17H6z M12 8a2.3 2.3 0 1 0 0 4.6a2.3 2.3 0 1 0 0-4.6z M8.5 16.5c.6-1.7 2-2.6 3.5-2.6s2.9.9 3.5 2.6 M4 7.5h2 M4 12h2 M4 16.5h2',
