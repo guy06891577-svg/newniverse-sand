@@ -284,12 +284,90 @@ function airErr(e) {
   return errOut(e);
 }
 
+
+// ---------- 날씨 (기상청 단기예보 조회서비스, 공공데이터포털 15084084) ----------
+// 초단기실황(기온·강수형태·습도) + 초단기예보(하늘상태). 같은 키(TAGO_KEY). 격자(약 5km)별 30분 캐시를 모두가 같이 씀.
+const WX = 'https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/';
+const WX_TTL = 1800, WX_KEEP = 3 * 3600;
+// 기상청 격자 변환 (단기예보 활용가이드의 Lambert 정각원추도법, 5km 격자)
+function wxGrid(lat, lng) {
+  const RE = 6371.00877 / 5.0, D = Math.PI / 180, s1 = 30 * D, s2 = 60 * D, olon = 126 * D, olat = 38 * D;
+  let sn = Math.tan(Math.PI * 0.25 + s2 * 0.5) / Math.tan(Math.PI * 0.25 + s1 * 0.5); sn = Math.log(Math.cos(s1) / Math.cos(s2)) / Math.log(sn);
+  let sf = Math.tan(Math.PI * 0.25 + s1 * 0.5); sf = Math.pow(sf, sn) * Math.cos(s1) / sn;
+  let ro = Math.tan(Math.PI * 0.25 + olat * 0.5); ro = RE * sf / Math.pow(ro, sn);
+  let ra = Math.tan(Math.PI * 0.25 + lat * D * 0.5); ra = RE * sf / Math.pow(ra, sn);
+  let th = lng * D - olon; if (th > Math.PI) th -= 2 * Math.PI; if (th < -Math.PI) th += 2 * Math.PI; th *= sn;
+  return { nx: Math.floor(ra * Math.sin(th) + 43 + 0.5), ny: Math.floor(ro - ra * Math.cos(th) + 136 + 0.5) };
+}
+function kst(ms) { const d = new Date(ms + 9 * 3600e3); const p = n => String(n).padStart(2, '0');
+  return { date: `${d.getUTCFullYear()}${p(d.getUTCMonth() + 1)}${p(d.getUTCDate())}`, hh: p(d.getUTCHours()), mm: d.getUTCMinutes() }; }
+async function wxUp(env, op, params) {
+  const k = String(env.TAGO_KEY || '').trim();
+  if (!k) return { err: 'nokey' };
+  const ek = k.includes('%') ? k : encodeURIComponent(k);
+  const qs = new URLSearchParams({ ...params, dataType: 'JSON', pageNo: '1' }).toString();
+  let lastErr = 'upstream';
+  for (let i = 0; i < 2; i++) {
+    let txt = '', st = 0;
+    try { const r = await fetch(`${WX}${op}?serviceKey=${ek}&${qs}`, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(9000) }); st = r.status; txt = await r.text(); }
+    catch (e) { lastErr = 'timeout'; continue; }
+    const rc = (txt.match(/"returnReasonCode"\s*:\s*"?(\d+)/) || txt.match(/<returnReasonCode>(\d+)</) || [])[1];
+    if (rc === '30' || rc === '20') return { err: 'not_registered' };
+    if (rc) { lastErr = 'tago_' + (+rc); if (rc === '22') break; continue; }
+    if (st === 401 || st === 403) return { err: 'not_registered' };
+    let j; try { j = JSON.parse(txt); } catch (_) { lastErr = 'badjson'; continue; }
+    const h = j && j.response && j.response.header, c = h ? String(+h.resultCode) : '';
+    if (c === '3') return { err: 'no_data' };               // 아직 발표 전
+    if (c && c !== '0') { lastErr = 'tago_' + c; if (c === '1' || c === '99') { await new Promise(r => setTimeout(r, 400)); continue; } break; }
+    let it = j.response.body && j.response.body.items && j.response.body.items.item;
+    if (!it) it = []; else if (!Array.isArray(it)) it = [it];
+    return { list: it };
+  }
+  return { err: lastErr };
+}
+const WX_PTY = { 1: '비', 2: '비/눈', 3: '눈', 5: '빗방울', 6: '진눈깨비', 7: '눈날림' };
+const WX_SKY = { 1: '맑음', 3: '구름많음', 4: '흐림' };
+async function wxLoad(env, nx, ny) {
+  const now = Date.now();
+  // 초단기실황: 매시 정각 자료, 약 40분 뒤 나옴 / 초단기예보: 매시 30분 자료, 약 45분 뒤 나옴
+  const tryN = async back => { const t = kst(now - (40 + back * 60) * 60e3);
+    return { r: await wxUp(env, 'getUltraSrtNcst', { numOfRows: '20', base_date: t.date, base_time: t.hh + '00', nx: String(nx), ny: String(ny) }), base: t.date + t.hh + '00' }; };
+  let n = await tryN(0); if (n.r.err === 'no_data' || (n.r.list && !n.r.list.length)) n = await tryN(1);
+  if (n.r.err) return { err: n.r.err };
+  const O = {}; n.r.list.forEach(x => { O[x.category] = x.obsrValue; });
+  const temp = num(String(O.T1H ?? '')); if (!isFinite(temp)) return { err: 'empty' };
+  let sky = null, ptyF = null;
+  const tryF = async back => { const t = kst(now - (45 + back * 60) * 60e3);
+    return wxUp(env, 'getUltraSrtFcst', { numOfRows: '60', base_date: t.date, base_time: t.hh + '30', nx: String(nx), ny: String(ny) }); };
+  let f = await tryF(0); if (f.err === 'no_data' || (f.list && !f.list.length)) f = await tryF(1);
+  if (!f.err) { const first = (cat) => f.list.filter(x => x.category === cat).sort((a, b) => (a.fcstDate + a.fcstTime).localeCompare(b.fcstDate + b.fcstTime))[0];
+    const s = first('SKY'), p = first('PTY'); sky = s ? +s.fcstValue : null; ptyF = p ? +p.fcstValue : null; }
+  const pty = +O.PTY || 0;
+  const text = pty ? (WX_PTY[pty] || '강수') : (sky && WX_SKY[sky]) || (ptyF ? WX_PTY[ptyF] : '') || '';
+  return { data: { base: n.base, temp, pty, sky, text, reh: num(String(O.REH ?? '')), rn1: num(String(O.RN1 ?? '')), wsd: num(String(O.WSD ?? '')) } };
+}
+async function wxNow(url, env, ctx) {
+  const lat = num(url.searchParams.get('lat')), lng = num(url.searchParams.get('lng'));
+  if (!(lat >= 33 && lat <= 39 && lng >= 124 && lng <= 132)) return bad('bad_location', '한국 안의 위도(lat)·경도(lng)를 주세요');
+  const { nx, ny } = wxGrid(lat, lng);
+  const c = await cached(ctx, `wx/${nx}_${ny}`, WX_TTL, WX_KEEP, () => wxLoad(env, nx, ny), true);
+  if (c.err) {
+    if (c.err === 'not_registered') return out({ ok: false, error: 'not_registered', message: '기상청 단기예보 조회서비스 활용신청이 필요해요 (공공데이터포털)' }, 503);
+    return errOut(c.err);
+  }
+  const d = c.data, nf = v => (isFinite(v) ? v : null);
+  return out({ ok: true, mode: 'weather', source: 'kma', grid: { nx, ny }, base: d.base, temp: d.temp, text: d.text, pty: d.pty, sky: d.sky,
+    reh: nf(d.reh), rn1: nf(d.rn1), wsd: nf(d.wsd), at: new Date(c.at).toISOString(), age: Math.round((Date.now() - c.at) / 1000), cached: c.cached, stale: c.stale,
+    note: '기상청 초단기실황·초단기예보' }, 200, 300);
+}
+
 // 교통수단별 모듈. 지하철(subway)·철도(rail)는 나중에 같은 모양(stations/arrivals)으로 붙임.
 const MODES = {
   bus: { ready: true, routes: { stops, arrivals } },
   subway: { ready: false, routes: {} },   // 예정: /v1/subway/stations, /v1/subway/arrivals
   rail: { ready: false, routes: {} },     // 예정: /v1/rail/stations, /v1/rail/departures
   air: { ready: true, routes: { now: airNow } },   // v33: 미세먼지 /v1/air?lat=&lng=
+  weather: { ready: true, routes: { now: wxNow } },   // v34: 날씨 /v1/weather?lat=&lng=
 };
 const ALIAS = { stops: 1, arrivals: 1 };
 
@@ -302,13 +380,13 @@ export default {
     const p = url.pathname.replace(/\/+$/, '') || '/';
     if (p === '/' || p === '/v1') return out({ ok: true, name: 'newniverse-bus', v: VER,
       modes: Object.fromEntries(Object.entries(MODES).map(([m, o]) => [m, o.ready ? Object.keys(o.routes).map(r => `/v1/${m}/${r}`) : 'planned'])),
-      examples: { stops: '/v1/bus/stops?lat=36.5684&lng=128.7294[&r=200]', arrivals: '/v1/bus/arrivals?city=37040&node=ADB354000407', air: '/v1/air?lat=36.5684&lng=128.7294' },
-      source: '국토교통부 TAGO · 안동시 BIS · 에어코리아 (공공데이터포털)' }, 200, 3600);
+      examples: { stops: '/v1/bus/stops?lat=36.5684&lng=128.7294[&r=200]', arrivals: '/v1/bus/arrivals?city=37040&node=ADB354000407', air: '/v1/air?lat=36.5684&lng=128.7294', weather: '/v1/weather?lat=36.5684&lng=128.7294' },
+      source: '국토교통부 TAGO · 안동시 BIS · 에어코리아 · 기상청 (공공데이터포털)' }, 200, 3600);
     const seg = p.split('/');            // ['', 'v1', mode, op]
     if (seg[1] !== 'v1') return bad('not_found', '없는 주소예요', 404);
     let mode = seg[2], op = seg[3];
     if (ALIAS[mode]) { op = mode; mode = 'bus'; }   // 예전 모양 /v1/stops, /v1/arrivals
-    if (mode === 'air' && !op) op = 'now';           // /v1/air?lat=&lng=
+    if ((mode === 'air' || mode === 'weather') && !op) op = 'now';           // /v1/air?lat=&lng=
     const M = MODES[mode];
     if (!M) return bad('not_found', '없는 주소예요', 404);
     if (!M.ready) return out({ ok: false, error: 'not_ready', mode, message: '아직 준비 중인 교통수단이에요' }, 501);

@@ -439,7 +439,8 @@ public class MainActivity extends Activity {
     @JavascriptInterface public void vibrate(int ms){ try{ Vibrator v=(Vibrator)getSystemService(VIBRATOR_SERVICE); if(v!=null) v.vibrate(VibrationEffect.createOneShot(Math.max(1,ms),VibrationEffect.DEFAULT_AMPLITUDE)); }catch(Exception e){} }
     @JavascriptInterface public void expandNotifications(){
       try{ Object sb=getSystemService("statusbar"); Class.forName("android.app.StatusBarManager").getMethod("expandNotificationsPanel").invoke(sb);}catch(Exception e){} }
-    @JavascriptInterface public String info(){ return "{\"model\":\""+Build.MANUFACTURER+" "+Build.MODEL+"\",\"android\":\""+Build.VERSION.RELEASE+"\",\"sdk\":"+Build.VERSION.SDK_INT+"}"; }
+    @JavascriptInterface public String info(){ String vn=""; try{ vn=getPackageManager().getPackageInfo(getPackageName(),0).versionName; }catch(Exception e){} if(vn==null) vn=""; vn=vn.replaceAll("[^A-Za-z0-9._\\-]","");
+      return "{\"model\":\""+Build.MANUFACTURER+" "+Build.MODEL+"\",\"android\":\""+Build.VERSION.RELEASE+"\",\"sdk\":"+Build.VERSION.SDK_INT+",\"app\":\""+vn+"\"}"; }
     /** 두 번 톡톡 화면 끄기: "ok"=꺼짐, "old"=안드로이드 9 미만, "need"=접근성 권한 필요 */
     @JavascriptInterface public String lockScreen(){
       if(Flavor.BASIC) return "dim";   // 기본판: 접근성 서비스 없음 → 화면을 어둡게만
