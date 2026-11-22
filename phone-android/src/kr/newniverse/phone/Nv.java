@@ -14,7 +14,7 @@ import android.webkit.*;
 /** 공용 도구: 알림 채널, 권한·기본 앱 확인, 연락처 이름 찾기, 번호 모양, WebView 설정 */
 final class Nv {
   static final String CH_IN="incoming2", CH_ON="ongoing", CH_MISS="missed";
-  static final String VER="1-test";
+  static final String VER="2-test";
 
   static void channels(Context c){
     NotificationManager nm=c.getSystemService(NotificationManager.class);

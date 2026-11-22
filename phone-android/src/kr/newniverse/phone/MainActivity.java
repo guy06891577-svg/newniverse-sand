@@ -31,7 +31,7 @@ public class MainActivity extends Activity {
   }
   @Override protected void onNewIntent(Intent i){ super.onNewIntent(i); setIntent(i); take(i); js("window.NV_intent&&NV_intent()"); }
   @Override protected void onResume(){ super.onResume(); js("window.NV_resume&&NV_resume()"); }
-  @Override protected void onActivityResult(int rq,int rs,Intent d){ super.onActivityResult(rq,rs,d); js("window.NV_resume&&NV_resume("+(rq==RQ_ROLE?"'role'":"''")+")"); }
+  @Override protected void onActivityResult(int rq,int rs,Intent d){ super.onActivityResult(rq,rs,d); js("window.NV_resume&&NV_resume("+(rq==RQ_ROLE?"'role',"+(rs==RESULT_OK):"''")+")"); }
   @Override public void onRequestPermissionsResult(int rq,String[] p,int[] g){ js("window.NV_resume&&NV_resume('perm')"); }
   @SuppressWarnings("deprecation")
   @Override public void onBackPressed(){

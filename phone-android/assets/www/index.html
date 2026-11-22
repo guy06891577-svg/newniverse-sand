@@ -226,6 +226,46 @@ h1{padding-top:12px}
 #sheet .who .no{font-size:13px;color:var(--sub)}
 #bd{position:absolute;inset:0;z-index:25;background:rgba(0,0,0,.4);display:none}
 #bd.on{display:block}
+h1 small{font-size:13px;font-weight:600;color:var(--sub)}
+#v-search{position:absolute}
+.sbox .x[hidden]{display:none}.srow .nm .t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sbox .x{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--dim)}.sbox .x svg{width:16px;height:16px}
+.ix{position:sticky;top:0;z-index:2;margin:0 -4px;padding:9px 12px 7px;font-size:13px;font-weight:800;color:var(--a1);background:rgba(8,6,22,.72);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-radius:12px}
+.ix+.card{margin-top:4px}
+#abIdx[hidden]{display:none}
+.sbox input{min-width:0}
+#sList.abl{padding-right:34px}
+.srow.abr{cursor:pointer}.srow.abr:active{background:rgba(143,107,255,.1)}
+.srow.abr .ph{flex:none;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--a1);opacity:.85}.srow.abr .ph svg{width:18px;height:18px}
+#abIdx{position:absolute;right:4px;top:150px;bottom:calc(env(safe-area-inset-bottom) + 96px);width:26px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:0;z-index:4;touch-action:none;border-radius:13px}
+#abIdx b{flex:1;max-height:24px;display:flex;align-items:center;justify-content:center;width:100%;font-size:11.5px;font-weight:700;color:var(--sub)}
+#abIdx b.off{opacity:.3}
+#abIdx.on{background:rgba(143,107,255,.14)}
+#abBub{position:absolute;right:46px;width:64px;height:64px;margin-top:-32px;border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800;color:var(--fg);background:rgba(20,17,44,.92);border:1px solid rgba(143,107,255,.45);box-shadow:0 0 24px rgba(143,107,255,.3);z-index:6;pointer-events:none}
+
+#v-keypad{position:absolute}
+#kpMore{position:absolute;top:calc(env(safe-area-inset-top) + 8px);right:10px;z-index:5;width:40px;height:40px;color:var(--fg);opacity:.82;border-radius:50%;transition:background .15s}
+#kpMore svg{width:22px;height:22px;stroke-width:2.6}
+#kpMore:active,#kpMore.on{background:rgba(143,107,255,.18);opacity:1}
+#kpMore i{position:absolute;top:8px;right:8px;width:7px;height:7px;border-radius:50%;background:var(--a1);box-shadow:0 0 6px var(--a1)}
+#mbd{position:absolute;inset:0;z-index:34}
+#kpMenu{position:absolute;top:calc(env(safe-area-inset-top) + 52px);right:12px;width:min(300px,calc(100% - 24px));z-index:35;border-radius:22px;padding:6px;background:rgba(20,17,44,.96);border:1px solid rgba(160,190,255,.22);box-shadow:0 18px 50px rgba(0,0,0,.5),0 0 0 1px rgba(143,107,255,.08) inset;transform-origin:top right;animation:mIn .16s ease-out}
+@keyframes mIn{from{opacity:0;transform:scale(.94) translateY(-4px)}to{opacity:1;transform:none}}
+#kpMenu .mi{display:flex;align-items:center;gap:12px;width:100%;padding:11px 12px;border-radius:16px;text-align:left;color:var(--fg);font-size:14.5px;font-weight:600;line-height:1.3}
+#kpMenu .mi:active{background:rgba(255,255,255,.07)}
+#kpMenu .mi svg{flex:none;width:20px;height:20px;color:var(--a1)}
+#kpMenu .mi small{display:block;font-size:11.5px;font-weight:500;color:var(--sub);margin-top:2px}
+#kpMenu .mi.st{cursor:default}
+#kpMenu .mi.st b{color:var(--a1);font-weight:700}
+#kpMenu .mi .pill{margin-left:auto;flex:none;padding:5px 10px;border-radius:11px;font-size:12px;font-weight:700;color:#0a0820;background:var(--acc)}
+#kpMenu hr{border:0;height:1px;background:rgba(255,255,255,.07);margin:4px 10px}
+#sheet .steps2{font-size:13.5px;line-height:1.6;color:var(--sub);margin:2px 2px 10px}
+#sheet .steps2 ol{padding-left:20px;margin:8px 0}#sheet .steps2 li{margin:3px 0}#sheet .steps2 b{color:var(--fg)}
+#sheet .path{display:inline-block;margin-top:4px;padding:6px 10px;border-radius:12px;background:rgba(143,107,255,.12);border:1px solid rgba(143,107,255,.25);color:var(--fg);font-size:12.5px}
+#sheet .opt.pri{color:var(--a1)}
+.empty .b2{margin-left:8px;background:none;color:var(--fg);border:1px solid var(--line)}
+.empty small{display:block;margin-top:8px;font-size:12.5px;color:var(--sub)}
+
 /* call */
 #ctl{display:flex;flex-wrap:wrap;justify-content:center;gap:16px 14px}
 #ctl .cb{width:30%}
@@ -243,6 +283,7 @@ h1{padding-top:12px}
 <canvas id="neb"></canvas>
 
 <section class="view" id="v-keypad" hidden>
+ <button class="icb" id="kpMore" aria-label="전화 설정 메뉴" aria-haspopup="true"></button>
  <div id="kpTop"><div id="matches"></div></div>
  <div id="num"></div>
  <div id="keys"></div>
@@ -258,9 +299,10 @@ h1{padding-top:12px}
 </section>
 
 <section class="view" id="v-search" hidden>
- <h1>검색</h1>
- <div class="sbox glass"><span data-i="search"></span><input id="sIn" placeholder="이름, 초성(ㄱㅅㅈ), 번호" autocomplete="off" enterkeyhint="search"></div>
+ <h1>주소록 <small id="abCnt"></small></h1>
+ <div class="sbox glass"><span data-i="search"></span><input id="sIn" placeholder="주소록 검색 · 이름, 초성(ㄱㅅㅈ), 번호" autocomplete="off" enterkeyhint="search"><button class="x" id="sClr" aria-label="검색어 지우기" hidden></button></div>
  <div class="scroll" id="sList"></div>
+ <div id="abIdx" aria-label="초성으로 빨리 넘기기"></div><div id="abBub" hidden></div>
 </section>
 
 <section class="view" id="v-settings" hidden>
@@ -307,11 +349,12 @@ h1{padding-top:12px}
 <nav id="tabs" class="glass">
  <button data-v="keypad"><span data-i="grid"></span>키패드</button>
  <button data-v="recent"><span data-i="clock"></span><i class="badge" style="display:none"></i>최근 통화</button>
- <button data-v="search"><span data-i="search"></span>검색</button>
+ <button data-v="search"><span data-i="book"></span>주소록</button>
  <button data-v="settings"><span data-i="gear"></span>설정</button>
 </nav>
 <div id="bd"></div>
 <div id="sheet" class="glass" style="background:rgba(20,17,44,.95)"></div>
+<div id="kpMenu" class="glass" role="menu" hidden></div><div id="mbd" hidden></div>
 <div id="toast"><span></span><button></button></div>
 </div></div>
 
@@ -346,12 +389,19 @@ const P={
  pause:'<path d="M9 6v12M15 6v12"/>',
  x:'<path d="M6 6l12 12M18 6L6 18"/>',
  addp:'<circle cx="10" cy="8.5" r="3.6"/><path d="M3.5 20a6.5 6.5 0 0 1 13 0M18.5 8v6M15.5 11h6"/>',
- swap:'<path d="M7 7h11l-3-3M17 17H6l3 3"/>'
+ swap:'<path d="M7 7h11l-3-3M17 17H6l3 3"/>',
+ more:'<circle cx="12" cy="5.5" r=".9"/><circle cx="12" cy="12" r=".9"/><circle cx="12" cy="18.5" r=".9"/>',
+ check:'<circle cx="12" cy="12" r="8.5"/><path d="M8.3 12.2l2.6 2.6 4.9-5.3"/>',
+ shield:'<path d="M12 3.5l7 2.6v5.6c0 4.3-2.9 7.6-7 8.8-4.1-1.2-7-4.5-7-8.8V6.1z"/><path d="M9.2 12l2 2 3.8-4"/>',
+ info:'<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.2M12 7.8v.2"/>',
+ ret:'<path d="M9 14l-5-5 5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/>',
+ book:'<path d="M6 3.5h11.5a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H6a1.5 1.5 0 0 1-1.5-1.5v-14A1.5 1.5 0 0 1 6 3.5z"/><circle cx="11.5" cy="10" r="2.6"/><path d="M7.6 16.6a4.2 4.2 0 0 1 7.8 0M4.5 7.5h-1M4.5 12h-1M4.5 16.5h-1"/>',
+ key:'<circle cx="8" cy="15" r="3.6"/><path d="M10.6 12.4L19 4M15.5 7.5l2.5 2.5"/>'
 };
 P.block=P.rej;P.vm=P.msg;
 const ic=(n,sw=1.7)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${P[n]||P.phone}</svg>`;
 $$('[data-i]').forEach(e=>e.insertAdjacentHTML('afterbegin',ic(e.dataset.i)));
-$('#kpCall').innerHTML=ic('phone',2);$('#kpDel').innerHTML=ic('back');
+$('#kpCall').innerHTML=ic('phone',2);$('#kpDel').innerHTML=ic('back');$('#kpMore').innerHTML=ic('more',2.6);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const buzz=()=>{try{NV&&NV.vibrate(12)}catch(e){}};
 
@@ -470,17 +520,16 @@ function groups(){const map=new Map();
  return [...days.entries()].sort((a,b)=>a[0]-b[0]).map(([off,gs])=>({off,gs:gs.sort((a,b)=>b.last.t-a.last.t)}))}
 function banners(){const P0=ST.perms||{};let h='';
  if(!NV)return '';
- if(!ST.def&&ST.canRole!==false)h+=`<div class="banner glass"><div class="grow"><b>기본 전화 앱으로 설정</b>걸려오는 전화도 뉴니버스 화면으로 받아요</div><button data-b="role">설정</button></div>`;
  if(!P0.log||!P0.contacts||!P0.phone)h+=`<div class="banner glass warn"><div class="grow"><b>권한이 필요해요</b>${[!P0.log&&'통화 기록',!P0.contacts&&'연락처',!P0.phone&&'전화'].filter(Boolean).join(' · ')}</div><button data-b="perm">허용</button></div>`;
  return h}
-document.addEventListener('click',e=>{const b=e.target.closest('[data-b]');if(!b||!NV)return;const a=b.dataset.b;
- if(a==='role')NV.requestRole();else if(a==='perm')NV.requestPerms();else if(a==='defapps')NV.openDefaultApps();else if(a==='appset')NV.openAppSettings();else if(a==='fsi')NV.openFsiSettings()});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-b]');if(!b||!NV)return;const a=b.dataset.b;menuClose();if(b.closest('#sheet'))closeSheet();
+ if(a==='role'){roleAsked=Date.now();NV.requestRole()}else if(a==='settab')show('settings');else if(a==='perm'){permAsked=Date.now();NV.requestPerms()}else if(a==='none'){}else if(a==='perm')NV.requestPerms();else if(a==='defapps')NV.openDefaultApps();else if(a==='appset')NV.openAppSettings();else if(a==='fsi')NV.openFsiSettings()});
 function renderRecent(){
  $('#rBanner').innerHTML=banners();
  const ds=groups();const rows=ds.reduce((s,d)=>s+d.gs.length,0);const live=CALLS.filter(c=>!pendingDel.has(c.id)&&dayOff(c.t)<15).length;
  $('#rStat').innerHTML=CALLS.length?`최근 15일 <b>${live}통</b> → 사람별 하루 한 줄 · 지금 <b>${rows}줄</b>`:'';
  const missToday=CALLS.some(c=>!pendingDel.has(c.id)&&c.type==='miss'&&dayOff(c.t)===0);$('#tabs .badge').style.display=missToday?'':'none';
- if(!CALLS.length){$('#rList').innerHTML=(ST.perms&&!ST.perms.log)||!NV?`<div class="empty"><b>통화 기록을 보려면</b>'통화 기록' 권한을 허용해 주세요<br><button data-b="perm">권한 허용</button></div>`:`<div class="empty"><b>최근 30일 통화가 없어요</b></div>`;return}
+ if(!CALLS.length){$('#rList').innerHTML=(!NV||!ST.perms||!ST.perms.log)?`<div class="empty"><b>통화 기록 권한이 필요해요</b>최근 통화를 보려면 '통화 기록' 권한을 허용해 주세요<br><button data-b="perm">권한 허용</button>${NV&&!ST.def&&ST.canRole!==false?'<button class="b2" data-b="role">기본 전화 앱으로 설정</button>':''}<small>허용 창이 안 뜨면 키패드 위 ⋮ 메뉴 › 앱 정보에서 '제한된 설정 허용' 후 다시 시도해 주세요</small></div>`:`<div class="empty"><b>최근 30일 통화가 없어요</b></div>`;return}
  let h='';ds.slice(0,daysShown).forEach(d=>{
   const n=d.gs.reduce((s,g)=>s+g.calls.length,0);
   h+=`<div class="day">${dayLabel(d.off)}<span>${d.gs.length}명 · ${n}통</span></div><div class="card glass">`;
@@ -536,30 +585,88 @@ const rsGet=()=>{try{return JSON.parse(localStorage.getItem(RS_KEY)||'[]')}catch
 function addRecentSearch(p){if(!p||p.hidden||!p.key)return;const l=rsGet().filter(x=>x.key!==p.key);l.unshift({key:p.key,name:p.unk?'':p.name,num:p.num,at:Date.now()});localStorage.setItem(RS_KEY,JSON.stringify(l.slice(0,20)))}
 function rsPerson(x){const nm=CMAP.get(x.key)||x.name;return {key:x.key,name:nm||fmt(x.num),num:x.num,unk:!nm}}
 function srow(p,n,nmHtml,rm){return `<div class="srow" data-k="${esc(p.key)}" data-n="${esc(p.num)}">${avHtml(p)}<div class="grow"><div class="nm">${nmHtml||esc(p.name)}<span class="n15" title="최근 15일 통화 수">${n}</span></div><div class="no">${esc(fmt(p.num))}</div></div>${rm?`<button class="x" data-rm aria-label="최근 검색에서 빼기">${ic('x')}</button>`:''}<button class="qcall" data-call aria-label="전화">${ic('phone')}</button></div>`}
+const AB_KEYS=['ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ','A','#'];
+function abKey(name){const c=cho(String(name||'').trim())[0]||'#';if(AB_KEYS.includes(c))return c;if(/[a-z]/i.test(c))return 'A';return '#'}
+function abRow(p,n,nmHtml,rm){return `<div class="srow abr" data-k="${esc(p.key)}" data-n="${esc(p.num)}" data-nm="${esc(p.name)}">${avHtml(p)}<div class="grow"><div class="nm"><span class="t">${nmHtml||esc(p.name)}</span>${n?`<span class="n15" title="최근 15일 통화 수">${n}</span>`:''}</div><div class="no">${esc(fmt(p.num))}</div></div>${rm?`<button class="x" data-rm aria-label="최근 검색에서 빼기">${ic('x')}</button>`:''}<span class="ph" aria-hidden="true">${ic('phone')}</span></div>`}
 let SR=new Map();
-function renderSearch(){const q=$('#sIn').value.trim();let h='';SR=new Map();
+function abPeople(){const seen=new Set(),L=[];CONTACTS.forEach(c=>{const k=norm(c.num);if(!k)return;const id=c.name+'|'+k;if(seen.has(id))return;seen.add(id);L.push({key:k,name:c.name,num:c.num,unk:false})});
+ const rank=k=>k==='A'?1:k==='#'?2:0;
+ return L.sort((a,b)=>{const ka=abKey(a.name),kb=abKey(b.name);return rank(ka)-rank(kb)||a.name.localeCompare(b.name,'ko')||a.num.localeCompare(b.num)})}
+function renderSearch(){const q=$('#sIn').value.trim();let h='';SR=new Map();$('#sClr').hidden=!q;
+ const P0=ST.perms||{};const AB=NV&&!P0.contacts?[]:abPeople();$('#abCnt').textContent=AB.length?AB.length+'명':'';
+ const idx=$('#abIdx');
  if(!q){
   const list=rsGet().map(rsPerson).map(p=>({p,n:c15(p.key)})).sort((a,b)=>b.n-a.n||a.p.name.localeCompare(b.p.name,'ko'));
-  h+=`<div class="sec">최근 검색 <small>(최근 15일)</small>${list.length?'<button class="clr" id="rsClr">모두 지우기</button>':''}</div>`;
-  if(list.length){h+='<div class="card glass">'+list.map(({p,n})=>{SR.set(p.key,p);return srow(p,n,null,true)}).join('')+'</div><div class="hint">이름 옆 숫자 = 최근 15일 통화 수 · 많은 순</div>'}
-  else h+='<div class="hint">아직 검색한 사람이 없어요. 찾아서 전화하거나 누르면 여기에 남아요</div>';
-  const top=[...new Map(CALLS.filter(c=>!c.p.hidden&&dayOff(c.t)<15).map(c=>[c.p.key,c.p])).values()].map(p=>({p,n:c15(p.key)})).sort((a,b)=>b.n-a.n).slice(0,8);
-  if(top.length){h+=`<div class="sec">자주 통화 <small>(최근 15일)</small></div><div class="card glass">`+top.map(({p,n})=>{SR.set(p.key,p);return srow(p,n)}).join('')+'</div>'}
- }else{
+  if(list.length){h+=`<div class="sec">최근 검색 <small>(최근 15일)</small><button class="clr" id="rsClr">모두 지우기</button></div>`;
+   h+='<div class="card glass">'+list.map(({p,n})=>{SR.set(p.key,p);return abRow(p,n,null,true)}).join('')+'</div><div class="hint">이름 옆 숫자 = 최근 15일 통화 수 · 많은 순</div>'}
+  if(NV&&!P0.contacts){h+=`<div class="empty"><b>연락처 권한이 필요해요</b>주소록을 보려면 '연락처' 권한을 허용해 주세요<br><button data-b="perm">권한 허용</button></div>`;idx.innerHTML='';idx.hidden=true}
+  else if(!AB.length){h+=`<div class="empty"><b>저장된 연락처가 없어요</b></div>`;idx.innerHTML='';idx.hidden=true}
+  else{let last='';const has=new Set();
+   AB.forEach(p=>{const k=abKey(p.name);if(k!==last){if(last)h+='</div>';h+=`<div class="ix" id="ix-${k==='#'?'etc':k}" data-ix="${k}">${k}</div><div class="card glass">`;last=k;has.add(k)}SR.set(p.key+'|'+p.name,p);h+=abRow(p,c15(p.key))});h+='</div>';
+   idx.innerHTML=AB_KEYS.map(k=>`<b data-k="${k}" class="${has.has(k)?'':'off'}">${k}</b>`).join('');idx.hidden=false}
+  $('#sList').classList.toggle('abl',!idx.hidden);
+ }else{idx.hidden=true;$('#sList').classList.remove('abl');
   const qc=cho(q),qd=digits(q);const m=new Map();
   const consider=(p)=>{if(p.hidden||m.has(p.key+'|'+p.name))return;let r=null;if(!p.unk){const i=p.name.indexOf(q);if(i>=0)r=[i,q.length];else{const j=cho(p.name).indexOf(qc);if(j>=0&&/^[ㄱ-ㅎ]+$/.test(q))r=[j,qc.length]}}
    const nd=qd.length>=2&&digits(norm(p.num)).includes(qd);if(r||nd)m.set(p.key+'|'+p.name,{p,r})};
   CONTACTS.forEach(c=>consider({key:norm(c.num),name:c.name,num:c.num,unk:false}));CALLS.forEach(c=>c.p.unk&&consider(c.p));
   const res=[...m.values()].map(x=>Object.assign(x,{n:c15(x.p.key)})).sort((a,b)=>b.n-a.n||a.p.name.localeCompare(b.p.name,'ko')).slice(0,80);
   h+=`<div class="sec">검색 결과 <small>${res.length}명</small><span class="r">15일 통화 수 많은 순</span></div>`;
-  h+=res.length?'<div class="card glass">'+res.map(({p,r,n})=>{SR.set(p.key,p);return srow(p,n,p.unk?null:hl(p.name,r))}).join('')+'</div>':'<div class="hint">결과가 없어요</div>'}
+  h+=res.length?'<div class="card glass">'+res.map(({p,r,n})=>{SR.set(p.key+'|'+p.name,p);return abRow(p,n,p.unk?null:hl(p.name,r))}).join('')+'</div>':'<div class="hint">결과가 없어요</div>'}
  $('#sList').innerHTML=h}
-$('#sIn').oninput=renderSearch;
+$('#sIn').oninput=()=>{renderSearch();$('#sList').scrollTop=0};
+$('#sClr').innerHTML=ic('x');$('#sClr').onclick=()=>{$('#sIn').value='';renderSearch();$('#sIn').focus()};
+// 연락처를 누르면 바로 전화 · 길게 누르면 문자/저장 메뉴
+let abLP=null,abLPfired=false;
+$('#sList').addEventListener('pointerdown',e=>{const r=e.target.closest('.srow');abLPfired=false;clearTimeout(abLP);if(!r||e.target.closest('[data-rm]'))return;
+ abLP=setTimeout(()=>{abLPfired=true;buzz();const p=SR.get(r.dataset.k+'|'+r.dataset.nm)||SR.get(r.dataset.k)||{key:r.dataset.k,num:r.dataset.n,name:fmt(r.dataset.n),unk:true};personSheet(p)},550)});
+['pointerup','pointercancel','pointerleave'].forEach(t=>$('#sList').addEventListener(t,()=>clearTimeout(abLP)));
+$('#sList').addEventListener('scroll',()=>clearTimeout(abLP),{passive:true});
 $('#sList').addEventListener('click',e=>{if(e.target.id==='rsClr'){localStorage.removeItem(RS_KEY);renderSearch();return}
- const r=e.target.closest('.srow');if(!r)return;const p=SR.get(r.dataset.k)||{key:r.dataset.k,num:r.dataset.n,name:fmt(r.dataset.n),unk:true};
+ if(abLPfired){abLPfired=false;return}
+ const r=e.target.closest('.srow');if(!r)return;const p=SR.get(r.dataset.k+'|'+r.dataset.nm)||SR.get(r.dataset.k)||{key:r.dataset.k,num:r.dataset.n,name:fmt(r.dataset.n),unk:true};
  if(e.target.closest('[data-rm]')){localStorage.setItem(RS_KEY,JSON.stringify(rsGet().filter(x=>x.key!==p.key)));renderSearch();return}
- if(e.target.closest('[data-call]')){dial(p.num,p);return}
- addRecentSearch(p);personSheet(p)});
+ buzz();dial(p.num,p)});
+// 초성 빨리 넘기기
+(()=>{const idx=$('#abIdx'),bub=$('#abBub');let on=false;
+ const pick=y=>{const bs=[...idx.children];if(!bs.length)return;let b=bs.find(x=>{const r=x.getBoundingClientRect();return y>=r.top&&y<r.bottom});if(!b)b=y<bs[0].getBoundingClientRect().top?bs[0]:bs[bs.length-1];
+  const k=b.dataset.k;const ar=$('#app').getBoundingClientRect(),br=b.getBoundingClientRect();bub.textContent=k;bub.style.top=(br.top+br.height/2-ar.top)+'px';bub.hidden=false;
+  let i=AB_KEYS.indexOf(k),t=null;for(let j=i;j<AB_KEYS.length&&!t;j++)t=document.getElementById('ix-'+(AB_KEYS[j]==='#'?'etc':AB_KEYS[j]));
+  for(let j=i-1;j>=0&&!t;j--)t=document.getElementById('ix-'+AB_KEYS[j]);
+  if(t){const L=$('#sList'),c=t.nextElementSibling||t;L.scrollTop+=c.getBoundingClientRect().top-L.getBoundingClientRect().top-t.offsetHeight}};
+ idx.addEventListener('pointerdown',e=>{on=true;idx.classList.add('on');try{idx.setPointerCapture(e.pointerId)}catch(_){}pick(e.clientY);buzz();e.preventDefault()});
+ idx.addEventListener('pointermove',e=>{if(on)pick(e.clientY)});
+ const end=()=>{on=false;idx.classList.remove('on');setTimeout(()=>{if(!on)bub.hidden=true},350)};
+ idx.addEventListener('pointerup',end);idx.addEventListener('pointercancel',end)})();
+
+/* ---------- 키패드 ⋮ 메뉴 (v2) ---------- */
+let roleAsked=0,permAsked=0;
+function permMissing(){const P0=ST.perms||{};return [!P0.log&&'통화 기록',!P0.contacts&&'연락처',!P0.phone&&'전화'].filter(Boolean)}
+function moreDot(){const b=$('#kpMore');if(!b)return;const need=!!NV&&((!ST.def&&ST.canRole!==false)||permMissing().length>0);let d=b.querySelector('i');if(need&&!d)b.insertAdjacentHTML('beforeend','<i></i>');else if(!need&&d)d.remove()}
+function menuItems(){const miss=permMissing();let h='';
+ if(ST.def)h+=`<div class="mi st" role="menuitem" aria-disabled="true" data-b="none"><span data-i="check"></span><div><b>기본 전화 앱 사용 중</b><small>걸려오는 전화도 뉴니버스 화면으로 받아요</small></div></div>`;
+ else if(ST.canRole===false)h+=`<button class="mi" role="menuitem" data-b="defapps"><span data-i="phone"></span><div>기본 전화 앱으로 설정<small>폰의 기본 앱 설정에서 고를 수 있어요</small></div></button>`;
+ else h+=`<button class="mi" role="menuitem" data-b="role"><span data-i="phone"></span><div>기본 전화 앱으로 설정<small>걸려오는 전화도 뉴니버스 화면으로 받아요</small></div></button>`;
+ h+=miss.length?`<button class="mi" role="menuitem" data-b="perm"><span data-i="key"></span><div>권한 허용하기<small>${miss.join(' · ')}</small></div></button>`
+  :`<div class="mi st" role="menuitem" aria-disabled="true" data-b="none"><span data-i="key"></span><div><b>권한 모두 허용됨</b><small>통화 기록 · 연락처 · 전화</small></div></div>`;
+ h+='<hr>';
+ h+=`<button class="mi" role="menuitem" data-b="appset"><span data-i="shield"></span><div>앱 정보 · 제한된 설정<small>‘액세스가 거부됨’이 뜰 때 여기서 허용해요</small></div></button>`;
+ if(ST.def)h+=`<button class="mi" role="menuitem" data-b="defapps"><span data-i="ret"></span><div>원래 전화 앱으로 돌아가기<small>기본 앱 설정 › 전화 앱 › 전화</small></div></button>`;
+ h+=`<button class="mi" role="menuitem" data-b="settab"><span data-i="gear"></span><div>전화 설정 전체 보기</div></button>`;
+ return h}
+function menuOpen(){if(NV)try{ST=JSON.parse(NV.status())}catch(e){}const m=$('#kpMenu');m.innerHTML=menuItems();m.querySelectorAll('[data-i]').forEach(e=>e.insertAdjacentHTML('afterbegin',ic(e.dataset.i)));m.hidden=false;$('#mbd').hidden=false;$('#kpMore').classList.add('on');$('#kpMore').setAttribute('aria-expanded','true')}
+function menuClose(){const m=$('#kpMenu');if(!m||m.hidden)return false;m.hidden=true;$('#mbd').hidden=true;$('#kpMore').classList.remove('on');$('#kpMore').setAttribute('aria-expanded','false');return true}
+$('#kpMore').onclick=e=>{e.stopPropagation();buzz();if(!$('#kpMenu').hidden)menuClose();else menuOpen()};
+$('#mbd').onclick=menuClose;
+function restrictedSheet(kind){const perm=kind==='perm';
+ sheet(`<h3>${perm?'통화 기록 권한을 받지 못했어요':'기본 전화 앱으로 설정되지 않았어요'}</h3>
+  <div class="steps2">${perm?'허용 창이 뜨지 않았다면 안드로이드가 직접 설치한 앱의 권한을 막은 거예요.':'‘앱을 기본 전화 앱으로 사용하기 위한 액세스가 거부됨’ 창이 떴다면, 안드로이드가 직접 설치한 앱을 막은 거예요.'}
+  <ol><li>아래 <b>앱 정보 열기</b>를 눌러요</li><li>오른쪽 위 <b>⋮</b> › <b>제한된 설정 허용</b> (지문·비밀번호 확인)</li><li>돌아와서 <b>다시 시도</b>를 눌러요</li></ol>
+  <span class="path">설정 › 애플리케이션 › 뉴니버스 전화 › ⋮ › 제한된 설정 허용</span></div>
+  <button class="opt pri" data-b="appset"><span data-i="shield"></span>앱 정보 열기</button>
+  <button class="opt" data-b="${perm?'perm':'role'}"><span data-i="swap"></span>다시 시도</button>
+  <button class="opt" data-a="close"><span data-i="x"></span>닫기</button>`);
+ $('#sheet').onclick=e=>{if(e.target.closest('[data-a="close"]'))closeSheet()}}
 
 /* ---------- 설정 ---------- */
 function renderSettings(){const P0=ST.perms||{};const yes=b=>b?'<span class="ok">허용됨</span>':'<span class="no">꺼짐</span>';
@@ -583,23 +690,25 @@ function renderSettings(){const P0=ST.perms||{};const yes=b=>b?'<span class="ok"
   <div class="srow2"><div class="grow">기본 앱 설정 바로 열기</div><button class="sbtn" data-b="defapps">열기</button></div>
  </div>
  <div class="set glass"><h3>알아 두기</h3>
-  <div class="steps">112·119 같은 긴급 전화는 안전을 위해 항상 폰 기본 전화 앱이 연결해요.<br>통화 녹음은 넣지 않았어요 (안드로이드가 일반 앱의 통화 녹음을 막아요).<br>뉴니버스 전화 v1 시험판 · ${esc(ST.ver||'')} · 안드로이드 ${ST.sdk||'?'}</div>
+  <div class="steps">112·119 같은 긴급 전화는 안전을 위해 항상 폰 기본 전화 앱이 연결해요.<br>통화 녹음은 넣지 않았어요 (안드로이드가 일반 앱의 통화 녹음을 막아요).<br>뉴니버스 전화 v2 시험판 · ${esc(ST.ver||'')} · 안드로이드 ${ST.sdk||'?'}</div>
  </div>`}
 
 /* ---------- 화면 전환 ---------- */
 let cur='recent';
 const VIEWS=['keypad','recent','search','settings','incoming','incall'];
-function show(v){cur=v;VIEWS.forEach(x=>$('#v-'+x).hidden=x!==v);
- const full=v==='incoming'||v==='incall';$('#tabs').style.display=full?'none':'';closeSheet();
+function show(v,keep){cur=v;VIEWS.forEach(x=>$('#v-'+x).hidden=x!==v);
+ const full=v==='incoming'||v==='incall';$('#tabs').style.display=full?'none':'';if(!keep)closeSheet();menuClose();
  $$('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
  if(v==='keypad'){KP=kpPeople();renderKp()}if(v==='recent'){renderRecent();NV&&NV.clearMissed&&NV.clearMissed()}if(v==='search')renderSearch();if(v==='settings')renderSettings();
  try{localStorage.setItem('nvp_tab',v)}catch(e){}}
 $('#tabs').onclick=e=>{const b=e.target.closest('button');if(b){buzz();show(b.dataset.v)}};
 function incallBar(){let b=$('#incallBar');if(!b){b=document.createElement('button');b.id='incallBar';b.innerHTML=ic('phone')+'<span>통화 중 · 눌러서 통화 화면으로</span>';b.onclick=()=>NV&&NV.openCall();$('#app').appendChild(b)}b.classList.toggle('on',!!ST.inCall)}
 
-window.NV_resume=(why)=>{if(MODE!=='main')return;load();incallBar();show(cur);if(why==='role'&&ST.def)toast('기본 전화 앱으로 설정됐어요')};
+window.NV_resume=(why,ok)=>{if(MODE!=='main')return;const keep=$('#sheet').classList.contains('on');load();incallBar();show(cur,keep);moreDot();
+ if(why==='role'){roleAsked=0;if(ST.def)toast('기본 전화 앱으로 설정됐어요');else restrictedSheet('role')}
+ else if(why==='perm'&&permAsked){const quick=Date.now()-permAsked<1500;permAsked=0;if(ST.perms&&!ST.perms.log&&quick)restrictedSheet('perm')}};
 window.NV_intent=()=>{if(!NV)return;const v=NV.takeView(),d=NV.takeDial();if(v==='keypad'){num=d?String(d).replace(/[^\d+*#]/g,''):num;show('keypad')}else if(v==='recent')show('recent')};
-window.NV_back=()=>{if($('#sheet').classList.contains('on')){closeSheet();return true}if(cur==='keypad'&&num){num='';renderKp();return true}if(cur!=='recent'){show('recent');return true}return false};
+window.NV_back=()=>{if(menuClose())return true;if($('#sheet').classList.contains('on')){closeSheet();return true}if(cur==='keypad'&&num){num='';renderKp();return true}if(cur!=='recent'){show('recent');return true}return false};
 
 /* ======================= 통화 화면 (mode=call) ======================= */
 let CS=null,tmr=null,endT=null,lastLive=null,dtmfStr='';
@@ -654,7 +763,7 @@ $('#icEnd').onclick=()=>{buzz();NV&&NV.hangup()};
 
 /* ---------- 시작 ---------- */
 if(MODE==='call'){$('#tabs').style.display='none';VIEWS.forEach(x=>$('#v-'+x).hidden=true);if(NV){const s=J(()=>NV.state(),null);if(s)NV_call(s)}}
-else{load();incallBar();try{const P0=ST.perms||{};if(NV&&(!P0.log||!P0.contacts||!P0.phone)&&!localStorage.getItem('nvp_asked')){localStorage.setItem('nvp_asked','1');setTimeout(()=>NV.requestPerms(),600)}}catch(e){}let first='recent';if(NV){const v=NV.takeView(),d=NV.takeDial();if(v==='keypad'){first='keypad';num=d?String(d).replace(/[^\d+*#]/g,''):''}else if(v==='recent')first='recent'}show(first)}
+else{load();incallBar();setTimeout(moreDot,0);try{const P0=ST.perms||{};if(NV&&(!P0.log||!P0.contacts||!P0.phone)&&!localStorage.getItem('nvp_asked')){localStorage.setItem('nvp_asked','1');setTimeout(()=>NV.requestPerms(),600)}}catch(e){}let first='recent';if(NV){const v=NV.takeView(),d=NV.takeDial();if(v==='keypad'){first='keypad';num=d?String(d).replace(/[^\d+*#]/g,''):''}else if(v==='recent')first='recent'}show(first)}
 window.__nvp={show,state:()=>({cur,num,calls:CALLS.length,rows:groups().reduce((s,d)=>s+d.gs.length,0)}),norm,fmt,cho,choDigits};
 })();
 
