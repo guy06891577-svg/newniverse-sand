@@ -226,6 +226,8 @@ h1{padding-top:12px}
 #sheet .who .no{font-size:13px;color:var(--sub)}
 #bd{position:absolute;inset:0;z-index:25;background:rgba(0,0,0,.4);display:none}
 #bd.on{display:block}
+h1.sub{align-items:center;padding-left:8px;gap:4px;font-size:22px}h1.sub .icb{width:44px;height:44px;color:var(--fg)}h1.sub .icb svg{width:24px;height:24px}
+#tabs button{min-width:0}
 h1 small{font-size:13px;font-weight:600;color:var(--sub)}
 #v-search{position:absolute}
 .sbox .x[hidden]{display:none}.srow .nm .t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -306,7 +308,7 @@ h1 small{font-size:13px;font-weight:600;color:var(--sub)}
 </section>
 
 <section class="view" id="v-settings" hidden>
- <h1>설정</h1>
+ <h1 class="sub"><button class="icb" id="setBack" aria-label="뒤로"></button>전화 설정</h1>
  <div class="scroll" id="setList"></div>
 </section>
 
@@ -350,7 +352,6 @@ h1 small{font-size:13px;font-weight:600;color:var(--sub)}
  <button data-v="keypad"><span data-i="grid"></span>키패드</button>
  <button data-v="recent"><span data-i="clock"></span><i class="badge" style="display:none"></i>최근 통화</button>
  <button data-v="search"><span data-i="book"></span>주소록</button>
- <button data-v="settings"><span data-i="gear"></span>설정</button>
 </nav>
 <div id="bd"></div>
 <div id="sheet" class="glass" style="background:rgba(20,17,44,.95)"></div>
@@ -396,12 +397,13 @@ const P={
  info:'<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.2M12 7.8v.2"/>',
  ret:'<path d="M9 14l-5-5 5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/>',
  book:'<path d="M6 3.5h11.5a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H6a1.5 1.5 0 0 1-1.5-1.5v-14A1.5 1.5 0 0 1 6 3.5z"/><circle cx="11.5" cy="10" r="2.6"/><path d="M7.6 16.6a4.2 4.2 0 0 1 7.8 0M4.5 7.5h-1M4.5 12h-1M4.5 16.5h-1"/>',
+ larr:'<path d="M19 12H5M11 6l-6 6 6 6"/>',
  key:'<circle cx="8" cy="15" r="3.6"/><path d="M10.6 12.4L19 4M15.5 7.5l2.5 2.5"/>'
 };
 P.block=P.rej;P.vm=P.msg;
 const ic=(n,sw=1.7)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${P[n]||P.phone}</svg>`;
 $$('[data-i]').forEach(e=>e.insertAdjacentHTML('afterbegin',ic(e.dataset.i)));
-$('#kpCall').innerHTML=ic('phone',2);$('#kpDel').innerHTML=ic('back');$('#kpMore').innerHTML=ic('more',2.6);
+$('#kpCall').innerHTML=ic('phone',2);$('#kpDel').innerHTML=ic('back');$('#kpMore').innerHTML=ic('more',2.6);$('#setBack').innerHTML=ic('larr',2);$('#setBack').onclick=()=>{buzz();show(setFrom||'keypad')};
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const buzz=()=>{try{NV&&NV.vibrate(12)}catch(e){}};
 
@@ -690,17 +692,18 @@ function renderSettings(){const P0=ST.perms||{};const yes=b=>b?'<span class="ok"
   <div class="srow2"><div class="grow">기본 앱 설정 바로 열기</div><button class="sbtn" data-b="defapps">열기</button></div>
  </div>
  <div class="set glass"><h3>알아 두기</h3>
-  <div class="steps">112·119 같은 긴급 전화는 안전을 위해 항상 폰 기본 전화 앱이 연결해요.<br>통화 녹음은 넣지 않았어요 (안드로이드가 일반 앱의 통화 녹음을 막아요).<br>뉴니버스 전화 v2 시험판 · ${esc(ST.ver||'')} · 안드로이드 ${ST.sdk||'?'}</div>
+  <div class="steps">112·119 같은 긴급 전화는 안전을 위해 항상 폰 기본 전화 앱이 연결해요.<br>통화 녹음은 넣지 않았어요 (안드로이드가 일반 앱의 통화 녹음을 막아요).<br>뉴니버스 전화 v3 시험판 · ${esc(ST.ver||'')} · 안드로이드 ${ST.sdk||'?'}</div>
  </div>`}
 
 /* ---------- 화면 전환 ---------- */
 let cur='recent';
 const VIEWS=['keypad','recent','search','settings','incoming','incall'];
-function show(v,keep){cur=v;VIEWS.forEach(x=>$('#v-'+x).hidden=x!==v);
- const full=v==='incoming'||v==='incall';$('#tabs').style.display=full?'none':'';if(!keep)closeSheet();menuClose();
+let setFrom='keypad';
+function show(v,keep){if(v==='settings'&&cur!=='settings'&&VIEWS.includes(cur)&&cur!=='incoming'&&cur!=='incall')setFrom=cur;cur=v;VIEWS.forEach(x=>$('#v-'+x).hidden=x!==v);
+ const full=v==='incoming'||v==='incall'||v==='settings';$('#tabs').style.display=full?'none':'';if(!keep)closeSheet();menuClose();
  $$('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
  if(v==='keypad'){KP=kpPeople();renderKp()}if(v==='recent'){renderRecent();NV&&NV.clearMissed&&NV.clearMissed()}if(v==='search')renderSearch();if(v==='settings')renderSettings();
- try{localStorage.setItem('nvp_tab',v)}catch(e){}}
+ if(v!=='settings')try{localStorage.setItem('nvp_tab',v)}catch(e){}}
 $('#tabs').onclick=e=>{const b=e.target.closest('button');if(b){buzz();show(b.dataset.v)}};
 function incallBar(){let b=$('#incallBar');if(!b){b=document.createElement('button');b.id='incallBar';b.innerHTML=ic('phone')+'<span>통화 중 · 눌러서 통화 화면으로</span>';b.onclick=()=>NV&&NV.openCall();$('#app').appendChild(b)}b.classList.toggle('on',!!ST.inCall)}
 
@@ -708,7 +711,7 @@ window.NV_resume=(why,ok)=>{if(MODE!=='main')return;const keep=$('#sheet').class
  if(why==='role'){roleAsked=0;if(ST.def)toast('기본 전화 앱으로 설정됐어요');else restrictedSheet('role')}
  else if(why==='perm'&&permAsked){const quick=Date.now()-permAsked<1500;permAsked=0;if(ST.perms&&!ST.perms.log&&quick)restrictedSheet('perm')}};
 window.NV_intent=()=>{if(!NV)return;const v=NV.takeView(),d=NV.takeDial();if(v==='keypad'){num=d?String(d).replace(/[^\d+*#]/g,''):num;show('keypad')}else if(v==='recent')show('recent')};
-window.NV_back=()=>{if(menuClose())return true;if($('#sheet').classList.contains('on')){closeSheet();return true}if(cur==='keypad'&&num){num='';renderKp();return true}if(cur!=='recent'){show('recent');return true}return false};
+window.NV_back=()=>{if(menuClose())return true;if($('#sheet').classList.contains('on')){closeSheet();return true}if(cur==='settings'){show(setFrom||'keypad');return true}if(cur==='keypad'&&num){num='';renderKp();return true}if(cur!=='recent'){show('recent');return true}return false};
 
 /* ======================= 통화 화면 (mode=call) ======================= */
 let CS=null,tmr=null,endT=null,lastLive=null,dtmfStr='';
