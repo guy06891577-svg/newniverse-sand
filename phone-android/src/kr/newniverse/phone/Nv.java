@@ -14,7 +14,7 @@ import android.webkit.*;
 /** 공용 도구: 알림 채널, 권한·기본 앱 확인, 연락처 이름 찾기, 번호 모양, WebView 설정 */
 final class Nv {
   static final String CH_IN="incoming2", CH_ON="ongoing", CH_MISS="missed";
-  static final String VER="3-test";
+  static final String VER="4-test";
 
   static void channels(Context c){
     NotificationManager nm=c.getSystemService(NotificationManager.class);
@@ -76,9 +76,16 @@ final class Nv {
     w.setOverScrollMode(WebView.OVER_SCROLL_NEVER);
     w.addJavascriptInterface(bridge,"NVPhone");
     w.setWebChromeClient(new WebChromeClient());
+    // v4: 화면이 상태 표시줄·내비게이션 바 뒤까지 그려지는 폰이면 그 높이를 CSS(--sat/--sab)로 알려 줌. 보통은 0이라 아무 변화 없음.
+    final int[] ins={0,0};
+    w.setOnApplyWindowInsetsListener((v,wi)->{ float d=v.getResources().getDisplayMetrics().density;
+      ins[0]=Math.round(wi.getSystemWindowInsetTop()/d); ins[1]=Math.round(wi.getSystemWindowInsetBottom()/d); pushInsets((WebView)v,ins); return v.onApplyWindowInsets(wi); });
     w.setWebViewClient(new WebViewClient(){
       @Override public boolean shouldOverrideUrlLoading(WebView v,WebResourceRequest r){ return !"file".equals(r.getUrl().getScheme()); }
+      @Override public void onPageFinished(WebView v,String u){ pushInsets(v,ins); }
     });
     w.loadUrl(url);
   }
+  static void pushInsets(WebView w,int[] ins){ if(ins[0]<=0&&ins[1]<=0) return; int t=Math.max(0,Math.min(ins[0],120)), b=Math.max(0,Math.min(ins[1],120));
+    w.evaluateJavascript("(function(){var r=document.documentElement.style;r.setProperty('--sat','max(env(safe-area-inset-top,0px), "+t+"px)');r.setProperty('--sab','max(env(safe-area-inset-bottom,0px), "+b+"px)')})()",null); }
 }
