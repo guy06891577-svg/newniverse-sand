@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:">
+<title>뉴니버스 문자</title>
+<style>
+:root{--sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);--a1:#6fd3ff;--a2:#8f6bff;--acc:linear-gradient(135deg,var(--a1),var(--a2));--red:#ff4d6d;--fg:#f3f1ff;--sub:rgba(226,222,255,.62);--dim:rgba(226,222,255,.38);
+ --glass:rgba(255,255,255,.075);--line:rgba(255,255,255,.14);--r:22px;
+ --font:"Pretendard","Noto Sans KR","Apple SD Gothic Neo",system-ui,-apple-system,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{height:100%;background:#04030c;color:var(--fg);font-family:var(--font);overflow:hidden}
+button,input,textarea{font-family:inherit;color:inherit}
+button{background:none;border:none;cursor:pointer}
+svg{display:block}
+#app{position:fixed;inset:0;overflow:hidden;background:#05040f}
+#neb{position:absolute;inset:0;width:100%;height:100%}
+.view{position:absolute;inset:0;display:flex;flex-direction:column;padding-top:calc(var(--sat) + 6px)}
+.glass{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(18px) saturate(1.2);-webkit-backdrop-filter:blur(18px) saturate(1.2)}
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;min-height:0}
+.scroll::-webkit-scrollbar{display:none}
+.icb{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--fg);flex:none}
+.icb svg{width:24px;height:24px}
+.icb:active{background:rgba(143,107,255,.18)}
+/* 목록 */
+.head{display:flex;align-items:center;padding:12px 10px 6px 22px;gap:8px}
+.head h1{flex:1;font-size:26px;font-weight:800;letter-spacing:-.5px;display:flex;align-items:baseline;gap:8px}
+.head h1 small{font-size:13px;font-weight:600;color:var(--a1)}
+#more{position:relative;opacity:.85}
+#more svg{width:22px;height:22px}
+#more.on{background:rgba(143,107,255,.18);opacity:1}
+#more i{position:absolute;top:8px;right:8px;width:7px;height:7px;border-radius:50%;background:var(--a1);box-shadow:0 0 6px var(--a1)}
+.sbox{margin:4px 14px 10px;border-radius:18px;display:flex;align-items:center;gap:8px;padding:0 6px 0 14px;height:46px}
+.sbox>span{flex:none;display:flex;color:var(--sub)}.sbox>span svg{width:18px;height:18px}
+.sbox input{flex:1;min-width:0;background:none;border:none;outline:none;font-size:15.5px}
+.sbox input::placeholder{color:var(--dim)}
+.sbox input::-webkit-search-cancel-button,.sbox input::-webkit-search-decoration{-webkit-appearance:none;appearance:none;display:none}
+.sbox .x{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--dim)}
+.sbox .x svg{width:16px;height:16px}
+#lList{padding:0 14px calc(var(--sab) + 110px)}
+.trow{display:flex;align-items:center;gap:12px;padding:12px;border-radius:20px;margin-bottom:6px;width:100%;text-align:left;cursor:pointer}
+.trow:active{background:rgba(143,107,255,.12)}
+.av{flex:none;width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:var(--fg);background:rgba(143,107,255,.16);border:1px solid rgba(160,190,255,.22);position:relative}
+.av svg{width:22px;height:22px;color:var(--a1)}
+.trow.un .av{border:none;background:var(--acc);color:#0a0820}
+.trow.un .av svg{color:#0a0820}
+.tm{flex:1;min-width:0}
+.tl{display:flex;align-items:baseline;gap:8px}
+.tn{flex:1;min-width:0;font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.trow.un .tn{font-weight:800}
+.tt{flex:none;font-size:12px;color:var(--dim)}
+.trow.un .tt{color:var(--a1);font-weight:700}
+.ts{display:flex;align-items:center;gap:8px;margin-top:3px}
+.tsn{flex:1;min-width:0;font-size:13.5px;color:var(--sub);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-all}
+.trow.un .tsn{color:var(--fg)}
+.tsn .f{color:#ff8da0;font-weight:700}
+.cnt{flex:none;min-width:22px;height:22px;padding:0 7px;border-radius:11px;background:var(--acc);color:#0a0820;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center}
+em{font-style:normal;color:var(--a1);font-weight:700}
+.sec{font-size:12.5px;font-weight:700;color:var(--sub);padding:12px 6px 6px}
+#fab{position:absolute;right:20px;bottom:calc(var(--sab) + 24px);width:60px;height:60px;border-radius:50%;background:var(--acc);display:flex;align-items:center;justify-content:center;box-shadow:0 10px 30px rgba(111,160,255,.45);z-index:5}
+#fab svg{width:26px;height:26px;color:#0a0820}
+.empty{padding:50px 22px;text-align:center;color:var(--sub);font-size:14px;line-height:1.6}
+.empty b{display:block;color:var(--fg);font-size:16px;margin-bottom:6px}
+.empty button{margin-top:14px;padding:11px 18px;border-radius:16px;font-weight:700;color:#0a0820;background:var(--acc);font-size:14px}
+.empty .b2{margin-left:8px;background:none;color:var(--fg);border:1px solid var(--line)}
+.empty small{display:block;margin-top:10px;font-size:12.5px;color:var(--sub)}
+/* 대화 */
+.bar{display:flex;align-items:center;gap:6px;padding:6px 8px 8px}
+.bar .who{flex:1;min-width:0;display:flex;align-items:center;gap:10px}
+.bar .av{width:38px;height:38px;font-size:15px}
+.bar .nm{font-size:17px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .no{font-size:12px;color:var(--sub);margin-top:1px}
+.bar .wt{min-width:0}
+.bar h2{flex:1;font-size:21px;font-weight:800}
+#cList{padding:6px 14px 12px;display:flex;flex-direction:column}
+.day{align-self:center;margin:14px 0 8px;padding:5px 12px;border-radius:12px;font-size:12px;font-weight:600;color:var(--sub);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08)}
+.m{display:flex;align-items:flex-end;gap:6px;margin-top:3px;max-width:100%}
+.m.g{margin-top:10px}
+.m.out{flex-direction:row-reverse}
+.bb{max-width:76%;padding:9px 13px;border-radius:20px;font-size:15.5px;line-height:1.45;white-space:pre-wrap;word-break:break-word;user-select:text}
+.m.in .bb{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.12);border-bottom-left-radius:7px}
+.m.out .bb{background:var(--acc);color:#0a0820;border-bottom-right-radius:7px;font-weight:500}
+.m.out.fail .bb{background:rgba(255,77,109,.18);color:var(--fg);border:1px solid rgba(255,77,109,.45)}
+.m.out.sending .bb{opacity:.7}
+.mt{flex:none;font-size:11px;color:var(--dim);padding-bottom:2px;white-space:nowrap}
+.mt .f{color:#ff8da0;font-weight:700}
+.mimg{display:block;max-width:100%;width:220px;border-radius:14px;margin:2px 0 4px;background:rgba(255,255,255,.05);min-height:120px;object-fit:cover}
+.mimg.ok{min-height:0;background:none}
+.mbad{font-size:13px;color:var(--sub)}
+#cBar{display:flex;align-items:flex-end;gap:8px;padding:8px 10px calc(var(--sab) + 10px)}
+.inw{flex:1;min-width:0;border-radius:22px;padding:4px 6px 4px 14px;display:flex;flex-direction:column}
+#cIn{width:100%;background:none;border:none;outline:none;resize:none;font-size:16px;line-height:1.4;max-height:120px;padding:7px 0;display:block}
+#cIn::placeholder{color:var(--dim)}
+#cCnt{font-size:11px;color:var(--dim);padding:0 0 4px}
+#cSend{flex:none;width:46px;height:46px;border-radius:50%;background:var(--acc);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(111,160,255,.35)}
+#cSend svg{width:22px;height:22px;color:#0a0820}
+#cSend:disabled{background:rgba(255,255,255,.1);box-shadow:none}
+#cSend:disabled svg{color:var(--dim)}
+.cnote{text-align:center;font-size:12.5px;color:var(--dim);padding:30px 20px;line-height:1.6}
+/* 새 문자 */
+.tofield{margin:2px 14px 10px;border-radius:18px;display:flex;align-items:center;gap:10px;padding:0 8px 0 16px;height:50px}
+.tofield label{font-size:14px;color:var(--sub);font-weight:600;flex:none}
+.tofield input{flex:1;min-width:0;background:none;border:none;outline:none;font-size:16px}
+#nList{padding:0 14px calc(var(--sab) + 30px)}
+.crow{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:18px;width:100%;text-align:left;cursor:pointer}
+.crow:active{background:rgba(143,107,255,.12)}
+.crow .av{width:40px;height:40px;font-size:15px}
+.crow .tn{font-size:15.5px}
+.crow .no{font-size:12.5px;color:var(--sub);margin-top:2px}
+/* 설정 */
+#setList{padding:4px 14px calc(var(--sab) + 30px)}
+.set{border-radius:var(--r);padding:6px 14px;margin-bottom:12px}
+.set h3{font-size:13px;font-weight:700;color:var(--sub);padding:10px 2px 4px}
+.srow2{display:flex;align-items:center;gap:10px;padding:11px 2px;border-bottom:1px solid rgba(255,255,255,.06);font-size:14.5px}
+.srow2:last-child{border-bottom:none}
+.srow2 .grow{flex:1}
+.srow2 small{display:block;font-size:12px;color:var(--sub);margin-top:2px;line-height:1.45}
+.ok{color:var(--a1);font-weight:700;font-size:13px}
+.no2{color:#ff8da0;font-weight:700;font-size:13px}
+.sbtn{padding:8px 13px;border-radius:13px;font-size:13px;font-weight:700;border:1px solid var(--line);flex:none}
+.sbtn.pri{background:var(--acc);color:#0a0820;border:none}
+.steps{font-size:13px;color:var(--sub);line-height:1.7;padding:4px 2px 10px}
+.steps b{color:var(--fg)}
+.steps ol{padding-left:18px}
+/* ⋮ 메뉴 */
+#mbd{position:absolute;inset:0;z-index:34}
+#menu{position:absolute;top:calc(var(--sat) + 70px);right:12px;width:min(300px,calc(100% - 24px));z-index:35;border-radius:22px;padding:6px;background:#15122c;border:1px solid rgba(160,190,255,.22);box-shadow:0 18px 50px rgba(0,0,0,.5);transform-origin:top right;animation:mIn .16s ease-out}
+@keyframes mIn{from{opacity:0;transform:scale(.94) translateY(-4px)}to{opacity:1;transform:none}}
+#menu .mi{display:flex;align-items:center;gap:12px;width:100%;padding:11px 12px;border-radius:16px;text-align:left;color:var(--fg);font-size:14.5px;font-weight:600;line-height:1.3}
+#menu .mi:active{background:rgba(255,255,255,.07)}
+#menu .mi svg{flex:none;width:20px;height:20px;color:var(--a1)}
+#menu .mi small{display:block;font-size:11.5px;font-weight:500;color:var(--sub);margin-top:2px}
+#menu .mi.st{cursor:default}
+#menu .mi.st b{color:var(--a1);font-weight:700}
+#menu hr{border:0;height:1px;background:rgba(255,255,255,.07);margin:4px 10px}
+/* 아래 시트 · 알림 띠 */
+#bd{position:absolute;inset:0;z-index:25;background:rgba(0,0,0,.45)}
+#sheet{position:absolute;left:12px;right:12px;bottom:calc(var(--sab) + 14px);border-radius:26px;padding:18px;z-index:30;background:#15122c;border:1px solid rgba(160,190,255,.2)}
+#sheet h3{font-size:16px;margin-bottom:10px;line-height:1.4}
+#sheet .opt{display:flex;align-items:center;gap:12px;width:100%;padding:12px 6px;font-size:15px;font-weight:600;border-bottom:1px solid rgba(255,255,255,.07);text-align:left}
+#sheet .opt:last-child{border-bottom:none}
+#sheet .opt svg{width:20px;height:20px;color:var(--a1);flex:none}
+#sheet .opt.pri{color:var(--a1)}
+#sheet .steps2{font-size:13.5px;line-height:1.6;color:var(--sub);margin:2px 2px 10px}
+#sheet .steps2 ol{padding-left:20px;margin:8px 0}#sheet .steps2 li{margin:3px 0}#sheet .steps2 b{color:var(--fg)}
+#sheet .path{display:inline-block;margin-top:4px;padding:6px 10px;border-radius:12px;background:rgba(143,107,255,.12);border:1px solid rgba(143,107,255,.25);color:var(--fg);font-size:12.5px}
+#sheet .quote{font-size:14px;color:var(--sub);line-height:1.5;max-height:90px;overflow:hidden;margin-bottom:6px;white-space:pre-wrap;word-break:break-all}
+#toast{position:absolute;left:50%;bottom:calc(var(--sab) + 100px);transform:translateX(-50%) translateY(20px);opacity:0;z-index:40;padding:10px 16px;border-radius:18px;font-size:13.5px;font-weight:600;white-space:nowrap;transition:all .2s;pointer-events:none;background:rgba(24,20,52,.94);border:1px solid var(--line)}
+#toast.on{opacity:1;transform:translateX(-50%)}
+</style>
+</head>
+<body>
+<div id="app">
+<canvas id="neb"></canvas>
+
+<section class="view" id="v-list">
+ <div class="head"><h1>문자 <small id="lUn"></small></h1><button class="icb" id="more" aria-label="문자 설정 메뉴" aria-haspopup="true"></button></div>
+ <div class="sbox glass"><span data-i="search"></span><input id="lQ" type="search" placeholder="이름 · 초성 · 번호 · 문자 내용" autocomplete="off" enterkeyhint="search"><button class="x" id="lQx" aria-label="지우기" hidden></button></div>
+ <div class="scroll" id="lList"></div>
+ <button id="fab" aria-label="새 문자 쓰기"></button>
+</section>
+
+<section class="view" id="v-conv" hidden>
+ <div class="bar"><button class="icb" id="cBack" aria-label="뒤로"></button><div class="who"><div class="av" id="cAv"></div><div class="wt"><div class="nm" id="cName"></div><div class="no" id="cNum"></div></div></div><button class="icb" id="cCall" aria-label="전화 걸기"></button></div>
+ <div class="scroll" id="cList"></div>
+ <div id="cBar"><div class="inw glass"><textarea id="cIn" rows="1" placeholder="문자 입력"></textarea><div id="cCnt" hidden></div></div><button id="cSend" aria-label="보내기" disabled></button></div>
+</section>
+
+<section class="view" id="v-new" hidden>
+ <div class="bar"><button class="icb" id="nBack" aria-label="뒤로"></button><h2>새 문자</h2></div>
+ <div class="tofield glass"><label for="nTo">받는 사람</label><input id="nTo" placeholder="이름 · 초성 · 번호" autocomplete="off" inputmode="text"></div>
+ <div class="scroll" id="nList"></div>
+</section>
+
+<section class="view" id="v-set" hidden>
+ <div class="bar"><button class="icb" id="sBack" aria-label="뒤로"></button><h2>문자 설정</h2></div>
+ <div class="scroll" id="setList"></div>
+</section>
+
+<div id="mbd" hidden></div><div id="menu" role="menu" hidden></div>
+<div id="bd" hidden></div><div id="sheet" hidden></div>
+<div id="toast"></div>
+</div>
+<script>
+'use strict';
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const NV=window.NVSms||null;
+let ST={perms:{}};
+/* ---------- 선 아이콘 ---------- */
+const P={
+ search:'<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
+ x:'<path d="M6 6l12 12M18 6L6 18"/>',
+ more:'<circle cx="12" cy="5.5" r=".9"/><circle cx="12" cy="12" r=".9"/><circle cx="12" cy="18.5" r=".9"/>',
+ pen:'<path d="M4 20l1-4.5L15.5 5a2.1 2.1 0 0 1 3 3L8 18.5z"/><path d="M13.5 7l3 3"/>',
+ larr:'<path d="M19 12H5M11 6l-6 6 6 6"/>',
+ phone:'<path d="M5 4h3.2l1.6 4-2 1.3a11 11 0 0 0 5 5l1.3-2 4 1.6V17a2 2 0 0 1-2 2A15 15 0 0 1 3 6a2 2 0 0 1 2-2z"/>',
+ send:'<path d="M12 19V5M6 11l6-6 6 6"/>',
+ user:'<circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/>',
+ msg:'<path d="M4 5h16v11H9l-5 4z"/>',
+ check:'<circle cx="12" cy="12" r="8.5"/><path d="M8.3 12.2l2.6 2.6 4.9-5.3"/>',
+ key:'<circle cx="8" cy="15" r="3.6"/><path d="M10.6 12.4L19 4M15.5 7.5l2.5 2.5"/>',
+ shield:'<path d="M12 3.5l7 2.6v5.6c0 4.3-2.9 7.6-7 8.8-4.1-1.2-7-4.5-7-8.8V6.1z"/><path d="M9.2 12l2 2 3.8-4"/>',
+ ret:'<path d="M9 14l-5-5 5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/>',
+ gear:'<circle cx="12" cy="12" r="3"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8"/>',
+ copy:'<rect x="8" y="8" width="11" height="11" rx="2"/><path d="M5 15V6a1 1 0 0 1 1-1h9"/>',
+ retry:'<path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5"/><path d="M20 12a8 8 0 0 1-14 5.3L4 15M4 20v-5h5"/>',
+ hash:'<path d="M5 9h14M5 15h14M10 4l-2 16M16 4l-2 16"/>'
+};
+const ic=(n,sw=1.7)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${P[n]||P.msg}</svg>`;
+function icons(root){(root||document).querySelectorAll('[data-i]').forEach(e=>{if(!e.querySelector('svg'))e.insertAdjacentHTML('afterbegin',ic(e.dataset.i))})}
+icons();
+$('#more').innerHTML=ic('more',2.6);$('#lQx').innerHTML=ic('x',2);$('#fab').innerHTML=ic('pen',2);
+$('#cBack').innerHTML=ic('larr',2);$('#nBack').innerHTML=ic('larr',2);$('#sBack').innerHTML=ic('larr',2);$('#cCall').innerHTML=ic('phone',1.8);$('#cSend').innerHTML=ic('send',2.2);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const buzz=()=>{try{NV&&NV.vibrate(12)}catch(e){}};
+const J=(s,d)=>{try{return JSON.parse(s)}catch(e){return d}};
+
+/* ---------- 우주 배경 (전화 앱과 같음) ---------- */
+function nebula(){const c=$('#neb'),r=c.getBoundingClientRect();if(!r.width)return;const d=Math.min(2,devicePixelRatio||1);c.width=r.width*d;c.height=r.height*d;const x=c.getContext('2d');x.scale(d,d);const W=r.width,H=r.height;
+ x.fillStyle='#05040f';x.fillRect(0,0,W,H);let s=7;const rnd=()=>(s=(s*16807)%2147483647)/2147483647;
+ const blob=(cx,cy,rr,col)=>{const g=x.createRadialGradient(cx,cy,0,cx,cy,rr);g.addColorStop(0,col);g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(0,0,W,H)};
+ blob(W*.15,H*.12,W*.9,'rgba(60,120,220,.30)');blob(W*.95,H*.35,W*.85,'rgba(130,80,230,.30)');blob(W*.3,H*.8,W*.9,'rgba(90,60,200,.22)');blob(W*.7,H*.95,W*.6,'rgba(60,170,240,.14)');
+ for(let i=0;i<14;i++)blob(W*rnd(),H*rnd(),W*(.1+rnd()*.25),`rgba(${110+rnd()*60|0},${110+rnd()*60|0},255,.07)`);
+ for(let i=0;i<170;i++){const a=rnd()*.7+.1,rr=rnd()*1.1+.2;x.fillStyle=`rgba(230,235,255,${a})`;x.beginPath();x.arc(W*rnd(),H*rnd(),rr,0,7);x.fill()}
+ x.fillStyle='rgba(5,4,15,.25)';x.fillRect(0,0,W,H)}
+let nebT;nebula();addEventListener('resize',()=>{clearTimeout(nebT);nebT=setTimeout(nebula,200)});
+
+/* ---------- 번호 · 이름 · 초성 ---------- */
+function norm(n){let d=String(n||'').replace(/[^0-9+]/g,'');if(d.startsWith('+82'))d='0'+d.slice(3);else if(d.startsWith('82')&&d.length>=11)d='0'+d.slice(2);return d.replace(/\+/g,'')}
+function fmt(n){const raw=String(n||'');let d=norm(raw);const L=d.length;if(!L)return raw;
+ if(/^02/.test(d)&&L>=9&&L<=10)return d.slice(0,2)+'-'+d.slice(2,L-4)+'-'+d.slice(L-4);
+ if(/^1[5-9]\d{6}$/.test(d))return d.slice(0,4)+'-'+d.slice(4);
+ if(/^0/.test(d)&&(L===10||L===11))return d.slice(0,3)+'-'+d.slice(3,L-4)+'-'+d.slice(L-4);
+ return /[a-zA-Z가-힣]/.test(raw)?raw:d}
+const CHO='ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
+const cho=s=>[...String(s)].map(c=>{const k=c.charCodeAt(0)-0xAC00;return k>=0&&k<11172?CHO[Math.floor(k/588)]:c}).join('');
+const isCho=q=>/^[ㄱ-ㅎ]+$/.test(q);
+let CONTACTS=[],BYNUM=new Map();
+function loadContacts(){CONTACTS=NV?J(NV.getContacts(),[]):[];BYNUM=new Map();CONTACTS.forEach(c=>{const k=norm(c.num);if(k&&!BYNUM.has(k))BYNUM.set(k,c.name)})}
+function nameOf(addr){const k=norm(addr);if(!k)return addr?String(addr):'알 수 없는 번호';return BYNUM.get(k)||fmt(addr)}
+function hasName(addr){return BYNUM.has(norm(addr))}
+function avatar(addr,nm){return hasName(addr)?esc([...nm][0]||''):ic('user')}
+function hl(text,q){const t=esc(text);if(!q)return t;const e=esc(q).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');try{return t.replace(new RegExp(e,'gi'),m=>`<em>${m}</em>`)}catch(_){return t}}
+
+/* ---------- 시간 ---------- */
+const DAY=864e5;
+function startOf(t){const d=new Date(t);d.setHours(0,0,0,0);return d.getTime()}
+function hm(t){const d=new Date(t);let h=d.getHours(),m=d.getMinutes();return (h<12?'오전 ':'오후 ')+((h%12)||12)+':'+String(m).padStart(2,'0')}
+function when(t){const now=Date.now(),s0=startOf(now);if(t>=s0)return hm(t);if(t>=s0-DAY)return '어제';const d=new Date(t);if(d.getFullYear()===new Date(now).getFullYear())return (d.getMonth()+1)+'월 '+d.getDate()+'일';return d.getFullYear()+'. '+(d.getMonth()+1)+'. '+d.getDate()+'.'}
+function dayLabel(t){const d=new Date(t),s0=startOf(Date.now());const w='일월화수목금토'[d.getDay()]+'요일';if(t>=s0)return '오늘 · '+w;if(t>=s0-DAY)return '어제 · '+w;return (d.getFullYear()!==new Date().getFullYear()?d.getFullYear()+'년 ':'')+(d.getMonth()+1)+'월 '+d.getDate()+'일 '+w}
+
+/* ---------- 읽음 (기본 앱이 아니면 폰 저장소에 못 쓰므로 이 앱 안에서만 기억) ---------- */
+const SEEN=J(localStorage.getItem('nvSeen'),{})||{};
+const saveSeen=()=>{try{localStorage.setItem('nvSeen',JSON.stringify(SEEN))}catch(e){}};
+const unreadOf=t=>t.unread>0&&(ST.def||(t.lastIn||t.date)>(SEEN[t.id]||0))?t.unread:0;
+
+/* ---------- 대화 목록 ---------- */
+let THREADS=[],cur='list',CONV=null,MSGS=[],PENDING=[];
+function loadThreads(){THREADS=NV?J(NV.getThreads(),[]):[]}
+const clean=s=>String(s||'').replace(/^\s*\[(Web발신|국제발신|국외발신)\]\s*/,'').replace(/\s*\n+\s*/g,' ');
+function rowHtml(t,q){const nm=nameOf(t.addr),u=unreadOf(t),snip=clean(t.snip);
+ const sn=(t.out?(t.fail?'<span class="f">전송 실패</span> · ':'나: '):'')+(q&&snip.toLowerCase().includes(q.toLowerCase())?hl(snip,q):esc(snip));
+ return `<div class="trow${u?' un':''}" role="button" tabindex="0" data-t="${t.id}"><div class="av">${avatar(t.addr,nm)}</div><div class="tm"><div class="tl"><div class="tn">${q?hl(nm,q):esc(nm)}</div><div class="tt">${when(t.date)}</div></div><div class="ts"><div class="tsn">${sn}</div>${u?`<div class="cnt">${u>99?'99+':u}</div>`:''}</div></div></div>`}
+function matchThread(t,q){if(!q)return true;const nm=nameOf(t.addr);const ql=q.toLowerCase();
+ if(isCho(q))return cho(nm).includes(q);
+ const qd=q.replace(/[^0-9]/g,'');if(qd.length>=2&&qd.length===q.replace(/[\s-]/g,'').length&&norm(t.addr).includes(qd))return true;
+ return nm.toLowerCase().includes(ql)||String(t.snip||'').toLowerCase().includes(ql)}
+let lastQ='';
+function renderList(){const q=$('#lQ').value.trim();lastQ=q;$('#lQx').hidden=!q;
+ const totalUn=THREADS.reduce((a,t)=>a+(unreadOf(t)?1:0),0);$('#lUn').textContent=totalUn?`안 읽음 ${totalUn}`:'';
+ const L=$('#lList');
+ if(NV&&ST.perms&&!ST.perms.read){L.innerHTML=`<div class="empty"><b>문자 권한이 필요해요</b>문자 목록을 보려면 ‘SMS’ 권한을 허용해 주세요<br><button data-b="perm">권한 허용</button><small>허용 창이 안 뜨면 오른쪽 위 ⋮ › 앱 정보 · 제한된 설정</small></div>`;bindB(L);return}
+ if(!NV){L.innerHTML=`<div class="empty"><b>폰에서 열어 주세요</b>뉴니버스 문자 앱 안에서만 문자를 읽을 수 있어요</div>`;return}
+ const list=THREADS.filter(t=>matchThread(t,q));
+ let h='';
+ if(q&&list.length)h+=`<div class="sec">대화 ${list.length}</div>`;
+ h+=list.slice(0,q?60:400).map(t=>rowHtml(t,q)).join('');
+ if(q&&q.length>=2&&!isCho(q)){const dup=new Set(list.map(t=>t.id+'|'+clean(t.snip)));const hits=J(NV.search(q),[]).filter(r=>!dup.has(r.thread+'|'+clean(r.body))).slice(0,40);
+  if(hits.length)h+=`<div class="sec">문자 내용 ${hits.length}</div>`+hits.map(r=>{const nm=nameOf(r.addr);const b=clean(r.body);const i=b.toLowerCase().indexOf(q.toLowerCase());const cut=i>24?'…'+b.slice(i-18):b;
+   return `<div class="trow" role="button" tabindex="0" data-t="${r.thread}"><div class="av">${avatar(r.addr,nm)}</div><div class="tm"><div class="tl"><div class="tn">${esc(nm)}</div><div class="tt">${when(r.date)}</div></div><div class="ts"><div class="tsn">${hl(cut,q)}</div></div></div></div>`}).join('')}
+ if(!h)h=q?`<div class="empty"><b>찾는 문자가 없어요</b>이름, 초성(ㄱㄴ), 번호, 문자 내용으로 찾을 수 있어요</div>`:`<div class="empty"><b>아직 문자가 없어요</b>오른쪽 아래 연필을 눌러 새 문자를 써 보세요</div>`;
+ L.innerHTML=h}
+$('#lList').addEventListener('click',e=>{const r=e.target.closest('.trow');if(!r)return;buzz();const t=THREADS.find(x=>String(x.id)===r.dataset.t);if(t)openConv(t);});
+let qT;$('#lQ').addEventListener('input',()=>{clearTimeout(qT);qT=setTimeout(renderList,120)});
+$('#lQx').onclick=()=>{$('#lQ').value='';renderList();$('#lQ').focus()};
+$('#fab').onclick=()=>{buzz();openNew('')};
+
+/* ---------- 대화 화면 ---------- */
+function openConv(t,body){CONV={id:t.id||0,addr:t.addr};PENDING=[];show('conv');
+ const nm=nameOf(t.addr);$('#cName').textContent=nm;$('#cNum').textContent=hasName(t.addr)?fmt(t.addr):'';$('#cNum').hidden=!hasName(t.addr);$('#cAv').innerHTML=avatar(t.addr,nm);
+ $('#cIn').value=body||'';inputChanged();loadMsgs(true);
+ if(NV){NV.viewing(t.addr);NV.markRead(CONV.id||0,t.addr)}
+ if(t.id){const th=THREADS.find(x=>x.id===t.id);SEEN[t.id]=Math.max(Date.now(),th?th.date:0);saveSeen()}}
+function loadMsgs(scroll){if(!CONV)return;
+ if(!CONV.id){const k=norm(CONV.addr);const th=THREADS.find(x=>norm(x.addr)===k);if(th)CONV.id=th.id}
+ MSGS=CONV.id&&NV?J(NV.getMessages(CONV.id,400),[]):[];
+ if(CONV.id&&MSGS.length){SEEN[CONV.id]=Math.max(SEEN[CONV.id]||0,MSGS[MSGS.length-1].date,Date.now());saveSeen()}
+ // 보낸 직후 아직 저장소에 안 보이는 문자는 잠깐 화면에만 붙여 둠
+ PENDING=PENDING.filter(p=>Date.now()-p.date<60000&&!MSGS.some(m=>m.dir==='out'&&m.body===p.body&&m.date>=p.date-15000));
+ renderMsgs(scroll)}
+function renderMsgs(scroll){const L=$('#cList'),all=MSGS.concat(PENDING);const atBottom=L.scrollHeight-L.scrollTop-L.clientHeight<80;
+ if(!all.length){L.innerHTML=`<div class="cnote">${esc(nameOf(CONV.addr))}에게 보내는 첫 문자예요</div>`;return}
+ let h='',lastDay=0;
+ all.forEach((m,i)=>{const d=startOf(m.date);if(d!==lastDay){h+=`<div class="day">${dayLabel(m.date)}</div>`;lastDay=d}
+  const prev=all[i-1],next=all[i+1];
+  const first=!prev||prev.dir!==m.dir||startOf(prev.date)!==d||m.date-prev.date>120000;
+  const last=!next||next.dir!==m.dir||startOf(next.date)!==d||next.date-m.date>120000||m.st!=='ok';
+  let body='';(m.imgs||[]).forEach(p=>{body+=`<img class="mimg" data-p="${esc(p)}" alt="사진">`});
+  if(m.body)body+=esc(m.body);else if(!(m.imgs||[]).length&&m.mms)body+='<span class="mbad">(멀티미디어 문자)</span>';
+  const meta=m.st==='fail'?`<span class="f">전송 실패</span>`:m.st==='sending'?'보내는 중':(last?hm(m.date):'');
+  h+=`<div class="m ${m.dir}${first?' g':''}${m.st!=='ok'?' '+m.st:''}" data-id="${esc(m.id)}"><div class="bb">${body}</div>${meta?`<div class="mt">${meta}</div>`:''}</div>`});
+ L.innerHTML=h;loadImgs();
+ if(scroll||atBottom)L.scrollTop=L.scrollHeight}
+function loadImgs(){$$('#cList img.mimg:not(.ok)').forEach(im=>{const p=im.dataset.p;setTimeout(()=>{const u=NV?NV.getPart(p):'';if(u){im.src=u;im.classList.add('ok');im.onload=()=>{const L=$('#cList');if(L.scrollHeight-L.scrollTop-L.clientHeight<400)L.scrollTop=L.scrollHeight}}else im.outerHTML='<span class="mbad">사진을 불러오지 못했어요</span>\n'},0)})}
+// 길게 누르기: 복사 / 실패 문자 다시 보내기
+let lpT,lpX,lpY;
+$('#cList').addEventListener('pointerdown',e=>{const m=e.target.closest('.m');if(!m)return;lpX=e.clientX;lpY=e.clientY;lpT=setTimeout(()=>{buzz();msgSheet(m.dataset.id)},480)});
+['pointerup','pointercancel','pointerleave'].forEach(n=>$('#cList').addEventListener(n,()=>clearTimeout(lpT)));
+$('#cList').addEventListener('pointermove',e=>{if(Math.abs(e.clientX-lpX)>8||Math.abs(e.clientY-lpY)>8)clearTimeout(lpT)});
+$('#cList').addEventListener('click',e=>{const m=e.target.closest('.m.fail');if(m)msgSheet(m.dataset.id)});
+function msgSheet(id){const m=MSGS.concat(PENDING).find(x=>x.id===id);if(!m)return;
+ sheet(`<div class="quote">${esc(m.body||'(사진)')}</div>${m.body?'<button class="opt" data-a="copy"><span data-i="copy"></span>복사</button>':''}${m.st==='fail'?'<button class="opt pri" data-a="resend"><span data-i="retry"></span>다시 보내기</button>':''}<button class="opt" data-a="close"><span data-i="x"></span>닫기</button>`,
+ a=>{if(a==='copy'){NV&&NV.copy(m.body);toast('복사했어요')}if(a==='resend')doSend(m.body)})}
+function inputChanged(){const ta=$('#cIn'),v=ta.value;ta.style.height='auto';ta.style.height=Math.min(ta.scrollHeight,120)+'px';
+ $('#cSend').disabled=!v.trim();const c=$('#cCnt');
+ if(!v){c.hidden=true;c.textContent='';return}
+ const r=(NV?NV.segments(v):'1,0,0').split(',').map(Number);const n=r[0]||1,used=r[1]||v.length,rem=r[2]||0;
+ c.textContent=n>1?`${n}개로 나눠 보내요 · 남은 글자 ${rem}`:`${used} / ${used+rem}자`;c.hidden=false}
+$('#cIn').addEventListener('input',inputChanged);
+function doSend(text){if(!CONV||!text||!text.trim())return;
+ const r=NV?NV.send(CONV.addr,text):'err';
+ if(r==='ok'){buzz();PENDING.push({id:'p'+Date.now(),dir:'out',body:text,date:Date.now(),st:'sending'});renderMsgs(true);setTimeout(()=>{refresh()},1500);return true}
+ toast(r==='perm'?'문자 보내기 권한을 허용해 주세요':r==='empty'?'받는 번호가 없어요':'보내지 못했어요');return false}
+$('#cSend').onclick=()=>{const v=$('#cIn').value;if(doSend(v)){$('#cIn').value='';inputChanged();$('#cIn').focus()}};
+$('#cBack').onclick=()=>{buzz();goList()};
+$('#cCall').onclick=()=>{buzz();NV&&NV.dial(CONV.addr)};
+
+/* ---------- 새 문자 ---------- */
+let newBody='';
+function openNew(body){newBody=body||'';show('new');$('#nTo').value='';renderNew();setTimeout(()=>$('#nTo').focus(),60)}
+function renderNew(){const q=$('#nTo').value.trim(),L=$('#nList');let h='';
+ const qd=q.replace(/[^0-9]/g,'');const numLike=qd.length>=3&&/^[0-9+\-\s()]+$/.test(q);
+ if(numLike)h+=`<div class="crow" role="button" tabindex="0" data-n="${esc(qd)}"><div class="av">${ic('hash')}</div><div class="tm"><div class="tn">${esc(fmt(qd))}</div><div class="no">이 번호로 보내기</div></div></div>`;
+ if(NV&&ST.perms&&!ST.perms.contacts){h+=`<div class="empty"><b>연락처 권한이 없어요</b>번호를 직접 입력하거나 권한을 허용해 주세요<br><button data-b="perm">권한 허용</button></div>`;L.innerHTML=h;bindB(L);return}
+ let list;
+ if(!q){const seen=new Set();list=[];THREADS.slice(0,30).forEach(t=>{const k=norm(t.addr);if(hasName(t.addr)&&!seen.has(k)&&list.length<8){seen.add(k);list.push({name:nameOf(t.addr),num:t.addr})}});
+  if(list.length)h+='<div class="sec">최근 대화</div>'+list.map(c=>crow(c,'')).join('');
+  h+='<div class="sec">주소록</div>'+CONTACTS.slice(0,300).map(c=>crow(c,'')).join('')}
+ else{const ql=q.toLowerCase();list=CONTACTS.filter(c=>isCho(q)?cho(c.name).includes(q):(c.name.toLowerCase().includes(ql)||(qd.length>=2&&norm(c.num).includes(qd))));
+  h+=list.slice(0,120).map(c=>crow(c,isCho(q)?'':q)).join('');
+  if(!list.length&&!numLike)h+=`<div class="empty"><b>맞는 연락처가 없어요</b>이름, 초성(ㄱㄴ), 번호로 찾아요</div>`}
+ L.innerHTML=h}
+function crow(c,q){return `<div class="crow" role="button" tabindex="0" data-n="${esc(c.num)}"><div class="av">${esc([...c.name][0]||'')}</div><div class="tm"><div class="tn">${q?hl(c.name,q):esc(c.name)}</div><div class="no">${esc(fmt(c.num))}</div></div></div>`}
+$('#nTo').addEventListener('input',renderNew);
+$('#nTo').addEventListener('keydown',e=>{if(e.key==='Enter'){const f=$('#nList .crow');if(f)f.click()}});
+$('#nList').addEventListener('click',e=>{const r=e.target.closest('.crow');if(!r)return;buzz();openAddr(r.dataset.n,newBody);newBody=''});
+$('#nBack').onclick=()=>{buzz();goList()};
+function openAddr(addr,body){const k=norm(addr);const th=THREADS.find(x=>norm(x.addr)===k);openConv(th||{id:0,addr},body)}
+
+/* ---------- ⋮ 메뉴 · 설정 ---------- */
+let roleAsked=0,permAsked=0;
+function permMissing(){const p=ST.perms||{};return [!p.read&&'문자 읽기',!p.send&&'문자 보내기',!p.recv&&'문자 받기',!p.contacts&&'연락처',!p.notif&&'알림'].filter(Boolean)}
+function moreDot(){const b=$('#more');const need=!!NV&&permMissing().length>0;let d=b.querySelector('i');if(need&&!d)b.insertAdjacentHTML('beforeend','<i></i>');else if(!need&&d)d.remove()}
+function menuItems(){const miss=permMissing();let h='';
+ if(ST.def)h+=`<div class="mi st" role="menuitem" aria-disabled="true"><span data-i="check"></span><div><b>기본 문자 앱 사용 중</b><small>받은 문자를 뉴니버스 문자가 저장해요</small></div></div>`;
+ else h+=`<button class="mi" role="menuitem" data-b="rolewarn"><span data-i="msg"></span><div>기본 문자 앱으로 설정<small>지금은 원래 문자 앱이 기본이에요</small></div></button>`;
+ h+=miss.length?`<button class="mi" role="menuitem" data-b="perm"><span data-i="key"></span><div>권한 허용하기<small>${miss.join(' · ')}</small></div></button>`
+  :`<div class="mi st" role="menuitem" aria-disabled="true"><span data-i="key"></span><div><b>권한 모두 허용됨</b><small>문자 · 연락처 · 알림</small></div></div>`;
+ h+='<hr>';
+ h+=`<button class="mi" role="menuitem" data-b="appset"><span data-i="shield"></span><div>앱 정보 · 제한된 설정<small>‘액세스가 거부됨’이 뜰 때 여기서 허용해요</small></div></button>`;
+ if(ST.def)h+=`<button class="mi" role="menuitem" data-b="defapps"><span data-i="ret"></span><div>원래 문자 앱으로 돌아가기<small>기본 앱 설정 › SMS 앱 › 메시지</small></div></button>`;
+ h+=`<button class="mi" role="menuitem" data-b="settab"><span data-i="gear"></span><div>문자 설정 전체 보기</div></button>`;
+ return h}
+function status(){if(NV)ST=J(NV.status(),ST)||ST;moreDot()}
+function menuOpen(){status();const m=$('#menu');m.innerHTML=menuItems();icons(m);bindB(m);m.hidden=false;$('#mbd').hidden=false;$('#more').classList.add('on');$('#more').setAttribute('aria-expanded','true')}
+function menuClose(){const m=$('#menu');if(m.hidden)return false;m.hidden=true;$('#mbd').hidden=true;$('#more').classList.remove('on');$('#more').setAttribute('aria-expanded','false');return true}
+$('#more').onclick=e=>{e.stopPropagation();buzz();if(!$('#menu').hidden)menuClose();else menuOpen()};
+$('#mbd').onclick=menuClose;
+function bindB(root){root.querySelectorAll('[data-b]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();buzz();act(b.dataset.b)})}
+function act(k){menuClose();
+ if(k==='perm'){permAsked=Date.now();NV&&NV.requestPerms()}
+ else if(k==='role'){closeSheet();roleAsked=Date.now();NV&&NV.requestRole()}
+ else if(k==='rolewarn')roleWarn();
+ else if(k==='appset'){NV&&NV.openAppSettings()}
+ else if(k==='defapps'){NV&&NV.openDefaultApps()}
+ else if(k==='settab'){closeSheet();show('set')}}
+function roleWarn(){sheet(`<h3>기본 문자 앱으로 바꾸기 전에</h3><div class="steps2">v1 시험판은 <b>사진·장문(MMS) 문자를 아직 받지 못해요</b>. 기본으로 바꾸면 그동안 오는 사진·장문 문자를 놓칠 수 있어요.<br>기본으로 바꾸지 않아도 <b>문자 보기 · 보내기 · 새 문자 알림</b>은 돼요.</div>
+ <button class="opt pri" data-b="role"><span data-i="msg"></span>그래도 기본으로 설정</button><button class="opt" data-a="close"><span data-i="x"></span>나중에</button>`)}
+function restrictedSheet(kind){const perm=kind==='perm';
+ sheet(`<h3>${perm?'문자 권한을 받지 못했어요':'기본 문자 앱으로 설정되지 않았어요'}</h3>
+  <div class="steps2">${perm?'허용 창이 뜨지 않았다면 안드로이드가 직접 설치한 앱의 문자 권한을 막은 거예요.':'‘액세스가 거부됨’ 창이 떴다면 안드로이드가 직접 설치한 앱을 막은 거예요.'}
+  <ol><li>아래 <b>앱 정보 열기</b>를 눌러요</li><li>오른쪽 위 <b>⋮</b> › <b>제한된 설정 허용</b> (지문·비밀번호 확인)</li><li>돌아와서 <b>다시 시도</b>를 눌러요</li></ol>
+  <span class="path">설정 › 애플리케이션 › 뉴니버스 문자 › ⋮ › 제한된 설정 허용</span></div>
+  <button class="opt pri" data-b="appset"><span data-i="shield"></span>앱 정보 열기</button>
+  <button class="opt" data-b="${perm?'perm':'role'}"><span data-i="retry"></span>다시 시도</button>
+  <button class="opt" data-a="close"><span data-i="x"></span>닫기</button>`)}
+function renderSettings(){status();const p=ST.perms||{};const yes=b=>b?'<span class="ok">허용됨</span>':'<span class="no2">꺼짐</span>';
+ $('#setList').innerHTML=`
+ <div class="set glass"><h3>기본 문자 앱</h3>
+  <div class="srow2"><div class="grow">뉴니버스 문자를 기본으로<small>${ST.def?'지금 기본 문자 앱이에요. 받은 문자를 이 앱이 저장하고 알려요.':'지금은 원래 문자 앱이 기본이에요. 보기·보내기·새 문자 알림은 되고, 저장은 원래 앱이 해요.'}</small></div>${ST.def?'<span class="ok">사용 중</span>':'<button class="sbtn pri" data-b="rolewarn">설정</button>'}</div>
+ </div>
+ <div class="set glass"><h3>권한</h3>
+  <div class="srow2"><div class="grow">문자 읽기<small>대화 목록, 대화, 내용 찾기</small></div>${yes(p.read)}</div>
+  <div class="srow2"><div class="grow">문자 보내기 · 받기<small>보내기, 새 문자 알림</small></div>${yes(p.send&&p.recv)}</div>
+  <div class="srow2"><div class="grow">연락처<small>이름 표시, 받는 사람 찾기</small></div>${yes(p.contacts)}</div>
+  <div class="srow2"><div class="grow">알림<small>새 문자 알림</small></div>${yes(p.notif)}</div>
+  <div class="srow2"><div class="grow"><small>거절한 권한은 ‘앱 정보 › 권한’에서 다시 켤 수 있어요</small></div><button class="sbtn" data-b="perm">다시 묻기</button><button class="sbtn" data-b="appset">앱 정보</button></div>
+ </div>
+ <div class="set glass"><h3>원래 문자 앱으로 돌아가려면</h3>
+  <div class="steps"><ol><li>폰 <b>설정</b> › <b>애플리케이션</b> › <b>기본 앱 선택</b></li><li><b>SMS 앱</b>을 누르고 <b>메시지</b>(삼성 기본 문자)를 고르면 끝</li></ol>뉴니버스 문자를 지워도 원래 문자 앱으로 돌아가요. 문자는 폰 저장소에 그대로 남아요.</div>
+  <div class="srow2"><div class="grow">기본 앱 설정 바로 열기</div><button class="sbtn" data-b="defapps">열기</button></div>
+ </div>
+ <div class="set glass"><h3>알아 두기</h3>
+  <div class="steps">문자 내용은 폰 밖으로 나가지 않아요 (인터넷 권한 없음).<br>v1은 사진·장문(MMS)을 보기만 하고, 새로 받거나 보내지는 못해요. 긴 글은 여러 개의 문자로 나눠 보내요.<br>뉴니버스 문자 v1 시험판 · ${esc(ST.ver||'')} · 안드로이드 ${ST.sdk||'?'}</div>
+ </div>`;bindB($('#setList'))}
+$('#sBack').onclick=()=>{buzz();goList()};
+
+/* ---------- 시트 · 알림 띠 ---------- */
+let sheetCb=null;
+function sheet(h,cb){const s=$('#sheet');s.innerHTML=h;icons(s);bindB(s);sheetCb=cb||null;s.hidden=false;$('#bd').hidden=false;
+ s.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{const a=b.dataset.a;closeSheet();if(a!=='close'&&sheetCb)sheetCb(a)})}
+function closeSheet(){const s=$('#sheet');if(s.hidden)return false;s.hidden=true;$('#bd').hidden=true;return true}
+$('#bd').onclick=closeSheet;
+let toastT;function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('on'),2200)}
+
+/* ---------- 화면 전환 · 안드로이드 신호 ---------- */
+function show(v){cur=v;menuClose();$('#toast').classList.remove('on');['list','conv','new','set'].forEach(k=>$('#v-'+k).hidden=k!==v);if(v==='set')renderSettings();if(v!=='conv'&&NV)NV.viewing('')}
+function goList(){CONV=null;show('list');renderList()}
+function refresh(){status();loadThreads();if(cur==='list')renderList();else if(cur==='conv')loadMsgs(false);else if(cur==='new')renderNew()}
+window.NV_refresh=refresh;
+window.NV_back=()=>{if(closeSheet())return true;if(menuClose())return true;if(cur!=='list'){goList();return true}if($('#lQ').value){$('#lQ').value='';renderList();return true}return false};
+window.NV_resume=(kind,ok)=>{const before=ST.def;status();loadContacts();refresh();
+ if(cur==='set')renderSettings();
+ if(kind==='role'&&roleAsked&&!ST.def){roleAsked=0;restrictedSheet('role')}
+ else if(kind==='role'&&ST.def&&!before){roleAsked=0;toast('기본 문자 앱이 되었어요')}
+ if(kind==='perm'&&permAsked&&ST.perms&&!ST.perms.read){permAsked=0;restrictedSheet('perm')}
+ else if(kind==='perm')permAsked=0};
+window.NV_intent=()=>{if(!NV)return;const o=J(NV.takeOpen(),null);if(!o||!o.addr)return;closeSheet();menuClose();
+ if(o.addr==='*')openNew(o.body);else openAddr(o.addr.split(/[;,]/)[0],o.body)};
+/* 시작 */
+status();loadContacts();loadThreads();show('list');renderList();
+if(NV&&permMissing().length&&!localStorage.getItem('nvAsked')){localStorage.setItem('nvAsked','1');permAsked=Date.now();NV.requestPerms()}
+NV_intent();
+</script>
+</body>
+</html>

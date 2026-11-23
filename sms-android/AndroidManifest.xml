@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="kr.newniverse.sms">
+  <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="34"/>
+  <!-- 실행 중 사용자가 '허용'을 눌러야 동작. 문자 권한은 직접 설치한 앱이면 '제한된 설정 허용'이 먼저 필요 -->
+  <uses-permission android:name="android.permission.READ_SMS"/>
+  <uses-permission android:name="android.permission.SEND_SMS"/>
+  <uses-permission android:name="android.permission.RECEIVE_SMS"/>
+  <uses-permission android:name="android.permission.RECEIVE_MMS"/>
+  <uses-permission android:name="android.permission.RECEIVE_WAP_PUSH"/>
+  <uses-permission android:name="android.permission.READ_CONTACTS"/>
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+  <uses-permission android:name="android.permission.VIBRATE"/>
+  <!-- 인터넷 권한 없음: 문자 내용은 폰 밖으로 나가지 않음 -->
+  <queries>
+    <intent><action android:name="android.intent.action.DIAL"/><data android:scheme="tel"/></intent>
+  </queries>
+  <application android:label="뉴니버스 문자" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher"
+      android:supportsRtl="true" android:usesCleartextTraffic="false" android:allowBackup="false" android:theme="@style/NV">
+    <activity android:name=".MainActivity" android:exported="true" android:launchMode="singleTask"
+        android:screenOrientation="portrait" android:windowSoftInputMode="adjustResize"
+        android:configChanges="orientation|screenSize|keyboardHidden|keyboard|navigation|uiMode|density|screenLayout|smallestScreenSize">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN"/>
+        <category android:name="android.intent.category.LAUNCHER"/>
+        <category android:name="android.intent.category.APP_MESSAGING"/>
+      </intent-filter>
+      <!-- 기본 문자 앱 자격: 문자 보내기 화면 (SEND / SENDTO, sms·smsto·mms·mmsto) -->
+      <intent-filter>
+        <action android:name="android.intent.action.SEND"/>
+        <action android:name="android.intent.action.SENDTO"/>
+        <category android:name="android.intent.category.DEFAULT"/>
+        <category android:name="android.intent.category.BROWSABLE"/>
+        <data android:scheme="sms"/>
+        <data android:scheme="smsto"/>
+        <data android:scheme="mms"/>
+        <data android:scheme="mmsto"/>
+      </intent-filter>
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW"/>
+        <category android:name="android.intent.category.DEFAULT"/>
+        <category android:name="android.intent.category.BROWSABLE"/>
+        <data android:scheme="sms"/>
+        <data android:scheme="smsto"/>
+      </intent-filter>
+    </activity>
+    <!-- 기본 문자 앱 자격: 문자 받기 (SMS_DELIVER) -->
+    <receiver android:name=".SmsDeliverReceiver" android:exported="true" android:permission="android.permission.BROADCAST_SMS">
+      <intent-filter><action android:name="android.provider.Telephony.SMS_DELIVER"/></intent-filter>
+    </receiver>
+    <!-- 기본 앱이 아닐 때: 알림만 (저장은 원래 문자 앱이 함) -->
+    <receiver android:name=".SmsReceivedReceiver" android:exported="true" android:permission="android.permission.BROADCAST_SMS">
+      <intent-filter android:priority="0"><action android:name="android.provider.Telephony.SMS_RECEIVED"/></intent-filter>
+    </receiver>
+    <!-- 기본 문자 앱 자격: 사진·장문(MMS) 도착 신호 (WAP_PUSH_DELIVER) -->
+    <receiver android:name=".MmsReceiver" android:exported="true" android:permission="android.permission.BROADCAST_WAP_PUSH">
+      <intent-filter>
+        <action android:name="android.provider.Telephony.WAP_PUSH_DELIVER"/>
+        <data android:mimeType="application/vnd.wap.mms-message"/>
+      </intent-filter>
+    </receiver>
+    <receiver android:name=".SentReceiver" android:exported="false"/>
+    <!-- 기본 문자 앱 자격: 전화 거절하며 문자 보내기 (RESPOND_VIA_MESSAGE) -->
+    <service android:name=".RespondService" android:exported="true" android:permission="android.permission.SEND_RESPOND_VIA_MESSAGE">
+      <intent-filter>
+        <action android:name="android.intent.action.RESPOND_VIA_MESSAGE"/>
+        <category android:name="android.intent.category.DEFAULT"/>
+        <data android:scheme="sms"/>
+        <data android:scheme="smsto"/>
+        <data android:scheme="mms"/>
+        <data android:scheme="mmsto"/>
+      </intent-filter>
+    </service>
+  </application>
+</manifest>
