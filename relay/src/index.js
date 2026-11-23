@@ -120,17 +120,26 @@ async function bisStops(ctx) {
     return L.length ? { data: L } : { err: 'bis_empty' };
   }, true);
 }
+// 방면: BIS의 via = '기점 -> 종점' (그 차가 이번에 달리는 방향). 종점을 '○○ 방면'으로 씀.
+// 기점과 종점이 같은 순환 노선이나 모양이 다르면 빈칸 (추측하지 않음)
+function bisDir(via) {
+  if (typeof via !== 'string') return '';
+  const m = /^\s*(.+?)\s*-+>\s*(.+?)\s*$/.exec(via); if (!m) return '';
+  const a = m[1].trim(), b = m[2].trim();
+  if (!b || b === a || b.length > 30) return '';
+  return b;
+}
 // predictTm = 분 (안동 BIS 누리집 '약 N분후 도착'과 같은 값), remainStation = 남은 정류장
 async function bisArrivals(ctx, node) {
   const m = /^ADB(\d{6,12})$/.exec(node); if (!m) return { err: 'bis_id' };
-  return cached(ctx, `bis/arr/${m[1]}`, BIS_ARR_TTL, 120, async () => {
+  return cached(ctx, `bis/arr2/${m[1]}`, BIS_ARR_TTL, 120, async () => {
     const u = await bisGet(`i=${m[1]}&tab=2`); if (u.err) return u;
     return { data: u.list.filter(x => x && (x.routeNum != null || x.routeName != null)).map(x => {
       const min = x.predictTm == null || x.predictTm === '' ? NaN : +x.predictTm;
       const st = x.remainStation != null ? +x.remainStation : (x.rstop != null ? +x.rstop : NaN);
       return { route: String(x.routeNum != null ? x.routeNum : x.routeName), routeId: x.routeId == null ? '' : String(x.routeId),
         type: '', vehicle: '', sec: isFinite(min) && min >= 0 ? Math.round(min * 60) : 0, stops: isFinite(st) && st >= 0 ? st : 0,
-        stopName: '', has: isFinite(min) && min >= 0 };
+        stopName: '', has: isFinite(min) && min >= 0, dir: bisDir(x.via) };
     }) };
   });
 }
@@ -194,7 +203,8 @@ async function arrivals(url, env, ctx) {
     const sec = has(f) ? Math.max(0, f.sec - age) : 0;
     buses.push({ route: f.route, routeId: f.routeId, type: f.type, vehicle: f.vehicle,
       state: busState(has(f), sec, f.stops), sec: has(f) ? sec : null, stops: has(f) ? f.stops : null,
-      next: n ? { sec: Math.max(0, n.sec - age), stops: n.stops } : null });
+      dir: f.dir || '',   // 방면(종점). 모르면 '' — TAGO 도착 정보에는 방향이 없어서 안동 BIS만 채워짐
+      next: n ? { sec: Math.max(0, n.sec - age), stops: n.stops, dir: n.dir || '' } : null });
   }
   const rank = s => s.state === 'nodata' ? 1e9 : s.sec;
   buses.sort((a, b) => rank(a) - rank(b) || a.route.localeCompare(b.route, 'ko', { numeric: true }));

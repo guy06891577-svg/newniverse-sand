@@ -166,6 +166,7 @@
   .btns button.p{background:linear-gradient(135deg,#e6b85c,#d9813b);color:#1a1205}
   #stats{font-size:11px;color:#8e88b0;margin-top:12px;text-align:center}
   #hint{position:absolute;left:0;right:0;text-align:center;font-size:12px;color:rgba(255,255,255,.75);z-index:5;pointer-events:none;transition:opacity 1s}
+  #hint.ov{display:none}
   #hint-desktop{display:none;position:fixed;bottom:12px;left:0;right:0;text-align:center;color:#777;font-size:12px}
   #fold{position:absolute;inset:0;z-index:8;display:none;touch-action:none}
   #fold .bd{position:absolute;inset:0;background:rgba(8,6,22,.45);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);opacity:0;transition:opacity .35s}
@@ -401,6 +402,8 @@
   #bus .no.t2{background:rgba(255,120,90,.2);border-color:rgba(255,140,110,.5)}
   #bus .no.t3{background:rgba(255,200,80,.18);border-color:rgba(255,210,110,.5)}
   #bus .eta{flex:1;font-size:16px;font-weight:700}
+  #bus .r .eta{flex:none;min-width:44px}
+  #bus .r .dr{flex:1;min-width:0;font-size:12.5px;color:var(--nv-fg,#fff);opacity:.82;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #bus .eta.soon{color:#9ff5d0}
   #bus .st{font-size:12px;color:var(--nv-sub);text-align:right;white-space:nowrap}
   #bus .ft{margin-top:7px;font-size:10.5px;color:rgba(255,255,255,.5);display:flex;justify-content:space-between;gap:8px}
@@ -468,6 +471,8 @@
   #bus.cp .bh{gap:7px}
   #bus.cp .cr{flex:none;display:flex;gap:5px}
   #bus.cp .cr span{font-size:12.5px;font-weight:700;padding:3px 7px;border-radius:8px;background:var(--nv-glass2);border:1px solid var(--nv-line);white-space:nowrap}
+  #bus.cp .cr span.d{padding:2px 7px 3px;line-height:1.25}
+  #bus.cp .cr span i{display:block;font-style:normal;font-size:10px;font-weight:600;color:var(--nv-sub);max-width:92px;overflow:hidden;text-overflow:ellipsis}
 </style>
 </head>
 <body>
@@ -666,7 +671,10 @@ function pumpIcons(){const batch=iconQ.splice(0,6);if(!batch.length){relayoutSoo
 function tintFrom(a,im){try{const c=document.createElement('canvas');c.width=c.height=16;const x=c.getContext('2d');x.drawImage(im,0,0,16,16);const d=x.getImageData(0,0,16,16).data;let r=0,g=0,b=0,n=0;
   for(let i=0;i<d.length;i+=4){if(d[i+3]<128)continue;const mx=Math.max(d[i],d[i+1],d[i+2]),mn=Math.min(d[i],d[i+1],d[i+2]);const w=(mx-mn)/255+.08;r+=d[i]*w;g+=d[i+1]*w;b+=d[i+2]*w;n+=w}
   if(n){r/=n;g/=n;b/=n;const h=v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0');a.c1=`#${h(r*1.1+12)}${h(g*1.1+12)}${h(b*1.1+12)}`;a.c2=`#${h(r*.6)}${h(g*.6)}${h(b*.6)}`}}catch(e){}}
-let rlT=0;function relayoutSoon(){clearTimeout(rlT);rlT=setTimeout(()=>{if(typeof inTrans==='function'&&inTrans()){relayoutSoon();return}if(typeof ICACHE!=='undefined')ICACHE.clear();if(W)layout()},250)}
+let rlT=0;function relayoutSoon(){clearTimeout(rlT);rlT=setTimeout(()=>{if(typeof inTrans==='function'&&inTrans()){relayoutSoon();return}if(typeof ICACHE!=='undefined')ICACHE.clear();if(W)softLayout()},250)}
+// v36: 앱 설치·삭제·아이콘 갱신은 바뀐 화면 그림만 다시 그림(캔버스 크기·모래알·버스 카드·위젯은 그대로). 화면 크기나 쪽 수가 바뀌면 전체 다시 배치
+let SOFTN=0,FULLN=0;function softLayout(){if(!W)return;const r=phone.getBoundingClientRect(),n=PAGES.length;if(Math.abs(r.width-W)>.5||Math.abs(r.height-H)>.5){FULLN++;layout();return}
+  normalizePages();if(PAGES.length!==n){FULLN++;layout();return}SOFTN++;if(cur>PAGES.length-1)cur=PAGES.length-1;renderAll();hintPlace();try{if(typeof wPlace==='function')wPlace()}catch(_){}}
 if(NATIVE){document.documentElement.classList.add('native');nativeApps();
   // v21: 설치·삭제·업데이트 자동 반영 (여러 신호가 겹쳐 와도 한 번만 처리)
   let acT=0,acQ=[];
@@ -2265,8 +2273,12 @@ function layout(){
   renderNav();phone.dataset.ui=S.ui||'classic';
   const dT=dockTop();const dY=uiDots!=null?uiDots:dT-22;$('dots').style.top=dY+'px';$('hint').style.top=(uiDots!=null?dY-46:dT-40)+'px';
   phone.style.setProperty('--navh',(navBand()+safeB())+'px');
-  draw();if(typeof wPlace==='function')wPlace();
+  hintPlace();draw();if(typeof wPlace==='function')wPlace();
 }
+// v36: 첫 화면 안내 문구가 마지막 줄 앱 이름과 겹치면 그 자리에 쓰지 않고, 한 번만 알림 문구로 보여줌
+function hintPlace(){const el=$('hint');if(!el)return;const t=parseFloat(el.style.top)||0,b=t+(el.offsetHeight||36);
+  const ov=(hitRects[cur]||[]).some(h=>h.src!=='dock'&&h.h<H*.6&&h.y<b-2&&h.y+h.h>t+2);el.classList.toggle('ov',ov);
+  if(ov&&!S.hintTold&&getComputedStyle(el).opacity!=='0'){S.hintTold=1;try{saveS()}catch(_){}setTimeout(()=>{try{toast('옆으로 밀면 다음 화면 · 아래로 빠른 설정 · 위로 전체 앱')}catch(_){}},1800)}}
 function quadDraw(tx,alpha,scale,ox){
   gl.useProgram(P2);gl.bindBuffer(gl.ARRAY_BUFFER,quad);gl.enableVertexAttribArray(L2);gl.vertexAttribPointer(L2,2,gl.FLOAT,false,0,0);
   gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tx);gl.uniform1i(U2.u_tex,0);
@@ -2693,7 +2705,7 @@ DR.addEventListener('touchcancel',()=>{if(td&&td.m)setDR(1,true);td=null});
 setQP(0);setDR(0);
 window.__nv.panel=()=>({qp:qpP,dr:drP});window.__nv.S=S;window.__nv.layout=layout;window.__nv.buildDrawer=buildDrawer;
 // ---------- 설정 화면 (삼성 설정 구성을 참고한 뉴니버스 설정) ----------
-const VER='v35';
+const VER='v36';
 Object.assign(GLY,{
  wifi:'M2.5 9a14 14 0 0 1 19 0 M5.5 12.3a9.5 9.5 0 0 1 13 0 M8.6 15.5a5 5 0 0 1 6.8 0 M12 19h.01',
  devices:'M3.5 5h12v9h-12z M2 17h15 M18 8h3.5v11H18z',
@@ -3140,7 +3152,7 @@ function removeItem(a){const l=locate(a);if(!l)return false;if(l.kind==='page')P
 function firstFree(start){for(let pi=start||0;pi<PAGES.length;pi++)if(fits(pi,{}))return pi;PAGES.push({apps:[]});return PAGES.length-1}
 function addToHome(a,pi){const base=a.__base||a;const p=pi!=null&&PAGES[pi]&&fits(pi,base)?pi:firstFree(pi!=null?pi:0);PAGES[p].apps.push(base);return p}
 function onHome(a){const k=akey(a);const hit=x=>x.wg?false:x.folder?x.items.some(hit):akey(x)===k;return PAGES.some(P=>P.apps.some(hit))||DOCK.some(hit)}
-function commit(msg){normalizePages();saveLayout();layout();if(msg)toast(msg)}
+function commit(msg){saveLayout();softLayout();saveLayout();if(msg)toast(msg)}   // v36: 홈 전체 대신 바뀐 그림만 (쪽 수·크기가 바뀌면 전체)
 function addToDock(a){const base=a.__base||a;if(DOCK.length>=DOCK_MAX){toast(`독이 꽉 찼어요 (최대 ${DOCK_MAX}개) · 먼저 하나를 빼 주세요`);return false}
   removeItem(a);DOCK.push(base);commit('독에 넣었어요');return true}
 function dockToHome(a){removeItem(a);const p=addToHome(a,cur);commit(`독에서 빼서 ${p+1}번째 화면에 놓았어요`)}
@@ -3244,6 +3256,7 @@ function folderCardMenu(a,el){const b=el.getBoundingClientRect(),pr=phone.getBou
   showMenu([{ic:'↩️',t:'폴더에서 빼기',fn:()=>takeOut(FCUR,a)},{ic:'ⓘ',t:'앱 정보',fn:()=>appInfo(a)},{ic:'🗑️',t:'삭제',fn:()=>uninstallApp(a)}],r,a.full||a.n)}
 FO.querySelector('h2').addEventListener('pointerdown',e=>e.stopPropagation());
 FO.querySelector('h2').addEventListener('click',e=>{e.stopPropagation();if(FCUR)renameFolder(FCUR)});
+window.__nv.lay={soft:()=>SOFTN,full:()=>FULLN,folder:(pi,i,j)=>{const L=PAGES[pi].apps;const a=L[i],b=L[j];L.splice(j,1);L.splice(i,1,F('폴더',[a,b]));commit('폴더를 만들었어요')}};   // v36 검사용
 window.__nv.dock={drawer:()=>{buildDrawer();setDR(1,false);return $("dGrid").textContent},top:()=>dockTop(),ny:()=>navY(),names:()=>DOCK.map(a=>a.n),hasApp:p=>NAPPS.some(a=>a.pkg===p),key:p=>{const a=NAPPS.find(x=>x.pkg===p);return a?akey(a):null},add:p=>addToDock(NAPPS.find(a=>a.pkg===p))};   // v35 검사용
 window.__nv.edit={set:setEdit,on:()=>EDIT,pages:()=>PAGES.map(P=>P.apps.map(a=>a.folder?{folder:a.n,items:a.items.map(x=>x.n)}:a.n)),dock:()=>DOCK.map(a=>a.n),
   ser:serLayout,save:saveNow,cho,match:appMatch,menu:()=>menuOpen()?[...LPM.querySelectorAll('button span')].map(s=>s.textContent):null,closeMenu,
@@ -3474,7 +3487,7 @@ async function busGetArr(city,node){
     const best={};a.list.forEach(x=>{if(!x||x.routeno==null)return;const k=String(x.routeno);const y={routeno:k,routetp:x.routetp,vehicletp:x.vehicletp,arrtime:+x.arrtime||0,arrprevstationcnt:+x.arrprevstationcnt||0};y.nodata=!(y.arrtime>0);
       if(!best[k]||(best[k].nodata&&!y.nodata)||(!y.nodata&&y.arrtime<best[k].arrtime))best[k]=y});return {list:Object.values(best)}}
   const j=await busRelay(`/v1/bus/arrivals?city=${encodeURIComponent(city)}&node=${encodeURIComponent(node)}`);if(j.err)return j;
-  BUS.dsrc=j.source||'tago';return {stale:!!j.stale,list:(j.buses||[]).map(b=>({routeno:b.route,routetp:b.type,vehicletp:b.vehicle,arrtime:b.sec||0,arrprevstationcnt:b.stops||0,nodata:b.state==='nodata'}))}}
+  BUS.dsrc=j.source||'tago';return {stale:!!j.stale,list:(j.buses||[]).map(b=>({routeno:b.route,routetp:b.type,vehicletp:b.vehicle,arrtime:b.sec||0,arrprevstationcnt:b.stops||0,nodata:b.state==='nodata',dir:typeof b.dir==='string'?b.dir.slice(0,30):''}))}}
 function busNotice(){const F=busFavs();if(!F.length||!BUS.stop||!BUS.shown&&busWant()!==1)return;const now=Date.now();
   for(const k in BUS.noted)if(now-BUS.noted[k]>900000)delete BUS.noted[k];
   const hit=(BUS.arr||[]).filter(x=>busIsFav(x)&&!x.nodata&&busSec(x)>0&&(busSec(x)<=300||(x.arrprevstationcnt>0&&x.arrprevstationcnt<=3))).sort((a,b)=>busSec(a)-busSec(b))[0];
@@ -3525,12 +3538,12 @@ function busRender(){const s=BUS.stop,idle=busPinOn()&&(BUS.kind==='idle'||!s);B
   const favMiss=F.length&&!BUS.all&&(BUS.arr||[]).length&&!SH.length?`자주 타는 버스(${esc(F.join(', '))})는 지금 이 정류장 정보에 없어요 · ‘★ 자주’를 눌러 전체 보기`:'';
   BEL.classList.toggle('cp',!!BUS.cp&&!BUS.expand);
   if(BUS.cp&&!BUS.expand){const L=SH.slice().sort((p,q)=>busSec(p)-busSec(q)).slice(0,2);
-    const html=`<div class="bh"><span class="bi">${ico('bus')}</span><div class="tt"><b>${esc(s.nodenm||'정류장')}</b><small>${demo?'예시 데이터':allND?'노선만':'실시간'} · ${s.d}m</small></div><div class="cr">${L.length?L.map(x=>`<span>${esc(x.routeno)} ${busEta(x,1)}</span>`).join(''):'<span>정보 없음</span>'}</div>${busFavBtn()}${busPinOn()?'':'<button class="x" aria-label="이 정류장 알림 닫기">'+ico('x')+'</button>'}</div>`;
+    const html=`<div class="bh"><span class="bi">${ico('bus')}</span><div class="tt"><b>${esc(s.nodenm||'정류장')}</b><small>${demo?'예시 데이터':allND?'노선만':'실시간'} · ${s.d}m</small></div><div class="cr">${L.length?L.map(x=>`<span${x.dir?' class="d"':''}>${esc(x.routeno)} ${busEta(x,1)}${x.dir?`<i>${esc(x.dir)} 방면</i>`:''}</span>`).join(''):'<span>정보 없음</span>'}</div>${busFavBtn()}${busPinOn()?'':'<button class="x" aria-label="이 정류장 알림 닫기">'+ico('x')+'</button>'}</div>`;
     if(html!==BUS.html){BUS.html=html;BEL.innerHTML=html}return}
   const L=SH.slice().sort((p,q)=>busSec(p)-busSec(q)),fn=x=>busIsFav(x)&&!x.nodata&&(busSec(x)<=300||(x.arrprevstationcnt>0&&x.arrprevstationcnt<=3))?' fn':'',
     stn=x=>x.nodata?'운행 노선 · 도착 시간 미제공':(x.arrprevstationcnt?x.arrprevstationcnt+'정류장 전':'')+(x.vehicletp&&/저상/.test(x.vehicletp)?' · 저상':'');
-  const rows=BUS.expand?L.slice(0,6).map(x=>{const e=busEta(x);return `<div class="r${fn(x)}"><span class="no ${busTp(x.routetp)}">${esc(x.routeno)}</span><span class="eta${e==='곧 도착'?' soon':''}${x.nodata?' nd':''}">${e}</span><span class="st">${stn(x)}</span></div>`}).join('')
-    :L.slice(0,3).map(x=>{const e=busEta(x,1);return `<div class="c${fn(x)}"><div class="l1"><span class="no ${busTp(x.routetp)}">${esc(x.routeno)}</span><span class="eta${e==='곧 도착'?' soon':''}${x.nodata?' nd':''}">${e}</span></div><small>${x.nodata?'도착 시간 미제공':stn(x)||'&nbsp;'}</small></div>`}).join('');
+  const rows=BUS.expand?L.slice(0,6).map(x=>{const e=busEta(x);return `<div class="r${fn(x)}"><span class="no ${busTp(x.routetp)}">${esc(x.routeno)}</span><span class="eta${e==='곧 도착'?' soon':''}${x.nodata?' nd':''}">${e}</span><span class="dr">${x.dir?esc(x.dir)+' 방면':''}</span><span class="st">${stn(x)}</span></div>`}).join('')
+    :L.slice(0,3).map(x=>{const e=busEta(x,1);return `<div class="c${fn(x)}"><div class="l1"><span class="no ${busTp(x.routetp)}">${esc(x.routeno)}</span><span class="eta${e==='곧 도착'?' soon':''}${x.nodata?' nd':''}">${e}</span></div><small>${x.dir?esc(x.dir)+' 방면'+(x.nodata?'':stn(x)?' · '+stn(x):''):x.nodata?'도착 시간 미제공':stn(x)||'&nbsp;'}</small></div>`}).join('');
   const body=(rows?(BUS.expand?`<div class="rows">${rows}</div>`:`<div class="chips">${rows}</div>`):`<div class="msg">${BUS.err?esc(BUS.err):favMiss||'지금은 도착 예정인 버스 정보가 없어요'}</div>`)+(rows&&allND?`<div class="nd2">이 지역은 실시간 도착 시간을 아직 주지 않아서, 이 정류장에 다니는 노선만 보여요</div>`:'');
   const more=!BUS.expand&&SH.length>3?` · +${SH.length-3}`:'';
   const html=`<div class="bh"><span class="bi">${ico('bus')}</span><div class="tt"><b>${esc(s.nodenm||'정류장')}</b><small>${demo?'예시 · 실제 도착 정보 아님':'가까운 정류장'} · ${s.d}m${demo?'':' · '+(ago<5?'방금':ago+'초 전')}${more}</small></div>${busFavBtn()||`<span class="tag ${demo?'demo':'live'}">${demo?'예시 데이터':allND?'노선만':'실시간'}</span>`}${busPinOn()?'':'<button class="x" aria-label="이 정류장 알림 닫기">'+ico('x')+'</button>'}</div>${body}
@@ -3572,15 +3585,17 @@ function busShow(){if(BUS.shown)return;BUS.shown=true;BUS.plk='';busRender();BEL
 function busHide(quick){if(!BUS.shown)return;BUS.shown=false;clearTimeout(BUS.hT);
   if(quick){BEL.classList.remove('on');BEL.style.display='none';return}
   const R=busRect();BEL.classList.remove('on');BEL.classList.add('out');bfxBurst(R,false);BUS.hT=setTimeout(()=>{BEL.style.display='none';BEL.classList.remove('out')},600)}
-function busWant(){const pin=busPinOn();if(!busOn()||BUS.paused)return 0;if(!pin&&(!BUS.stop||busDis()))return 0;if(document.hidden)return -1;
-  try{if(overlayOpen()||EDIT||(!pin&&inTrans())||lockOn||phone.classList.contains('locked'))return -1}catch(_){}
+function busWant(){const pin=busPinOn();if(!busOn())return 0;if(BUS.paused)return BUS.shown?3:0;if(!pin&&(!BUS.stop||busDis()))return 0;if(document.hidden)return -1;
+  try{if(busCovered()||EDIT||(!pin&&inTrans())||lockOn||phone.classList.contains('locked'))return -1}catch(_){}
   return BUS.stop&&!busDis()?1:2}
-function busTick(){const w=busWant();if(w>=1){const k=w===1?'stop':'idle';
+// 화면 전체를 덮는 창(설정·서랍·폴더·빠른 설정 등)일 때만 숨김. 길게 누르기 메뉴·확인 창은 카드 위에 떠서 그대로 둠
+function busCovered(){try{return $('settings').classList.contains('open')||qpP>0||drP>0||fOpen||lockOn||wpkOpen||$('off').classList.contains('on')||$('recents').classList.contains('on')||$('a11yG').classList.contains('on')||$('lwp').style.display==='flex'||(typeof meEditing!=='undefined'&&meEditing)}catch(_){return false}}
+function busTick(){const w=busWant();if(w===3)return;if(w>=1){const k=w===1?'stop':'idle';
     if(!BUS.shown){BUS.kind=k;busShow()}else{const ch=BUS.kind&&BUS.kind!==k;BUS.kind=k;if(ch)BUS.html='';busRender();busPlace();if(ch&&busPinOn()&&!inTrans())bfxBurst(busRect(),k==='stop')}}
   else if(BUS.shown)busHide(w===-1)}
 function busStart(){BUS.paused=false;BUS.t0=BUS.t0||Date.now();if(!BUS.tick)BUS.tick=setInterval(busTick,1000);busCycle()}
 function busStop(){clearTimeout(BUS.tm);BUS.tm=0;clearInterval(BUS.tick);BUS.tick=0;busSetNear(null);BUS.st='off';busHide(true)}
-window.NV_onPause=()=>{BUS.paused=true;clearTimeout(BUS.tm);BUS.tm=0;clearInterval(BUS.tick);BUS.tick=0;busHide(true)};
+window.NV_onPause=()=>{BUS.paused=true;clearTimeout(BUS.tm);BUS.tm=0;clearInterval(BUS.tick);BUS.tick=0};   // v36: 삭제 확인 창 같은 시스템 창이 잠깐 떠도 버스 카드는 그대로 둠(다시 나타나며 깜빡이지 않게)
 window.__busResume=()=>{if(!busOn())return;BUS.paused=false;if(!BUS.tick)BUS.tick=setInterval(busTick,1000);setTimeout(busCycle,400)};
 document.addEventListener('visibilitychange',()=>{if(document.hidden)window.NV_onPause();else window.__busResume()});
 function busRelayout(){BUS.plk='';BUS.html='';try{renderAll()}catch(_){}try{relayoutSoon()}catch(_){}setTimeout(()=>{try{busTick()}catch(_){}},60)}
