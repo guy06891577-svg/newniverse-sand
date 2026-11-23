@@ -595,7 +595,7 @@ const PAGES=[
     A('녹음','🎙️','#ef5350','#b71c1c'),F('도구',[A('손전등','🔦','#ffca28','#ff8f00','#222'),A('스캐너','📄','#66bb6a','#2e7d32'),A('나침반','🧭','#4f7cff','#2a4fd1'),A('자','📏','#ffd45e','#f2a93b'),A('녹화','📹','#ef5350','#b71c1c'),A('타이머','⏱️','#5ac8fa','#2e8fc4')]),A('뉴니버스','🌌','#e6b85c','#7b3fe4')]}
 ];
 let EDIT=false,DRAG=null,AUTO=false,NINIT=false,KNOWN=null;const WREG=new Map();
-const DOCK=[A('전화','📞','#34c759','#1f9d40'),A('메시지','💬','#5ac8fa','#2a86d9'),A('인터넷','🧭','#4f7cff','#2a4fd1'),A('연락처','👤','#ff9f43','#e06a1a')];
+const DOCK=[A('전화','📞','#34c759','#1f9d40'),A('메시지','💬','#5ac8fa','#2a86d9'),A('인터넷','🧭','#4f7cff','#2a4fd1')];   // v35: 주소록은 뉴니버스 전화의 탭이라 독에서 뺌
 // ---------- 안드로이드 런처 모드 (APK 안에서 실행될 때만): 실제 설치된 앱으로 홈/독/서랍 구성 ----------
 const NATIVE=!!(window.NVNative&&/native=1/.test(location.search));
 const NVPHONE='kr.newniverse.phone';
@@ -625,7 +625,7 @@ function nativeApps(){
   const pick=(k,fb,label,gk)=>{let a=(roles[k]&&by(roles[k]))||fb.map(by).find(Boolean);if(!a)return null;return Object.assign(Object.create(a),{n:label,gk,__base:a})};
   const nvp=by(NVPHONE);   // v33: 뉴니버스 전화가 깔려 있으면 독의 '전화'는 그 앱
   const dock=[nvp?Object.assign(Object.create(nvp),{n:'전화',gk:'phone',__base:nvp}):pick('phone',['com.samsung.android.dialer','com.google.android.dialer'],'전화','phone'),pick('sms',['com.samsung.android.messaging','com.google.android.apps.messaging'],'메시지','message'),
-    pick('browser',['com.sec.android.app.sbrowser','com.android.chrome'],'인터넷','globe'),pick('contacts',['com.samsung.android.app.contacts','com.google.android.contacts','com.android.contacts'],'연락처','person')].filter(Boolean);
+    pick('browser',['com.sec.android.app.sbrowser','com.android.chrome'],'인터넷','globe')].filter(Boolean);   // v35: 독은 전화·메시지·인터넷 3개
   if(!NINIT){NINIT=true;setTimeout(()=>{try{NV_onInsets()}catch(e){}},0);setTimeout(()=>{try{wRestoreCheck();wPlace()}catch(e){console.warn(e)}},0);
     const o=nvLoadState();
     if(!(o&&deserLayout(o))){
@@ -640,16 +640,22 @@ function nativeApps(){
       else if(nw.length)setTimeout(saveLayout,0);
     }
   }
-  nvPhoneDock(roles);
+  nvPhoneDock(roles);dockNoContacts(roles);
   setTimeout(loadNativeIcons,0);
 }
 // v33: 이미 쓰던 배치(저장된 독)에도 한 번 적용 · 뉴니버스 전화를 지우면 원래 전화 앱을 다시 독에 놓음
 function nvPhoneDock(roles){try{
   const by=p=>NAPPS.find(a=>a.pkg===p),nvp=by(NVPHONE),isDial=a=>{const b=a&&(a.__base||a);return !!b&&b.pkg!==NVPHONE&&(ROLE_GLYPH[b.pkg]==='phone'||(roles&&roles.phone===b.pkg))};
-  if(nvp){if(S.nvPhoneDock)return;if(DOCK.some(a=>(a.__base||a).pkg===NVPHONE)){S.nvPhoneDock=1;saveS();return}
-    const i=DOCK.findIndex(isDial);if(i<0)return;const old=DOCK[i];DOCK[i]=Object.assign(Object.create(nvp),{n:old.n||'전화',gk:'phone',__base:nvp});S.nvPhoneDock=1;saveS();saveLayout();
+  if(nvp){if(S.nvPhoneDock)return;if(DOCK.some(a=>(a.__base||a).pkg===NVPHONE)){S.nvPhoneDock=1;setTimeout(()=>{try{saveS()}catch(_){}},0);return}
+    const i=DOCK.findIndex(isDial);if(i<0)return;const old=DOCK[i];DOCK[i]=Object.assign(Object.create(nvp),{n:old.n||'전화',gk:'phone',__base:nvp});S.nvPhoneDock=1;setTimeout(()=>{try{saveS();saveLayout()}catch(_){}},0);   // v35: 처음 켤 때 저장이 빠지던 것 고침
     setTimeout(()=>{try{toast('독의 전화 아이콘이 뉴니버스 전화를 열어요')}catch(_){}},800)}
-  else if(S.nvPhoneDock){S.nvPhoneDock=0;saveS()}
+  else if(S.nvPhoneDock){S.nvPhoneDock=0;setTimeout(()=>{try{saveS()}catch(_){}},0)}
+}catch(e){}}
+// v35: 이미 쓰던 배치의 독에서도 연락처(주소록)를 한 번만 뺌 · 앱은 앱 서랍에 그대로 · 나중에 직접 다시 넣으면 그대로 둠
+function dockNoContacts(roles){try{if(S.dockNoCon)return;
+  const isCon=a=>{const b=a&&(a.__base||a);if(!b)return false;if(b.pkg)return ROLE_GLYPH[b.pkg]==='person'||(roles&&roles.contacts===b.pkg);return a.gk==='person'||b.n==='연락처'};
+  let n=0;for(let i=DOCK.length-1;i>=0;i--)if(isCon(DOCK[i])){DOCK.splice(i,1);n++}
+  S.dockNoCon=1;setTimeout(()=>{try{saveS();if(n){saveLayout();relayoutSoon()}}catch(_){}},0);   // 처음 켤 때는 저장 함수가 아직 준비 전이라 한 박자 뒤에 저장
 }catch(e){}}
 // 아이콘 그림은 조금씩 나눠 받아 화면이 멈추지 않게 하고, 다 받으면 한 번에 다시 그림
 let iconQ=[],iconT=0;
@@ -688,7 +694,7 @@ function openApp(a){
 // ---------- 레이아웃 ----------
 let W=0,H=0,DPR=1,GW=0,GH=0;
 let pageCanvases=[], hitRects=[];
-if(!NATIVE){regWeb();const o=nvLoadState();if(o)deserLayout(o)}
+if(!NATIVE){regWeb();const o=nvLoadState();if(o)deserLayout(o);dockNoContacts(null)}
 function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
 const FONT='system-ui,-apple-system,"Noto Sans KR","Apple SD Gothic Neo",sans-serif';
 const EFONT='"Noto Color Emoji","Apple Color Emoji","Segoe UI Emoji",sans-serif';
@@ -1096,7 +1102,7 @@ UIM.orbit=(c,pi)=>{
   // 초승달 필수 앱
   dc.save();dc.beginPath();dc.moveTo(10,essY+8);dc.quadraticCurveTo(W/2,essY-34,W-10,essY+8);dc.quadraticCurveTo(W/2,essY+40,10,essY+8);
   dc.fillStyle='rgba(255,255,255,.07)';dc.fill();dc.strokeStyle='rgba(255,220,170,.25)';dc.stroke();dc.restore();
-  DOCK.forEach((a,i)=>{const t=(i+.5)/4,x=W*(.1+.8*t),y=essY+8-Math.sin(Math.PI*t)*22;planet(dc,a,x,y,29,true);addItemHit(pi,a,x-40,y-34,80,78)});
+  DOCK.forEach((a,i)=>{const t=(i+.5)/Math.max(1,DOCK.length),x=W*(.1+.8*t),y=essY+8-Math.sin(Math.PI*t)*22;planet(dc,a,x,y,29,true);addItemHit(pi,a,x-40,y-34,80,78)});
   return {dotsY:NY-14};
 };
 function planet(c,a,x,y,r,bright){
@@ -1136,7 +1142,7 @@ UIM.dune=(c,pi)=>{
   // 언덕 필수 앱
   dc.save();dc.beginPath();dc.moveTo(0,essTop+30);dc.bezierCurveTo(W*.3,essTop-14,W*.7,essTop-14,W,essTop+30);dc.lineTo(W,NY-4);dc.lineTo(0,NY-4);dc.closePath();
   const dg=dc.createLinearGradient(0,essTop,0,NY);dg.addColorStop(0,'rgba(236,196,140,.30)');dg.addColorStop(1,'rgba(150,95,60,.18)');dc.fillStyle=dg;dc.fill();dc.strokeStyle='rgba(255,225,180,.4)';dc.stroke();dc.restore();
-  DOCK.forEach((a,i)=>{const cx=W*(.125+.25*i),cy=essTop+44;if(setIconAt(dc,a,cx,cy,58)){txt(dc,a.n,cx,cy+33,{size:14,w:800});addItemHit(pi,a,cx-44,cy-34,88,86);return}dc.save();dc.beginPath();dc.arc(cx,cy,27,0,7);const g=dc.createLinearGradient(cx-27,cy-27,cx+27,cy+27);g.addColorStop(0,a.c1);g.addColorStop(1,a.c2);dc.fillStyle=g;dc.shadowColor='rgba(60,30,10,.4)';dc.shadowBlur=10;dc.shadowOffsetY=4;dc.fill();dc.restore();
+  DOCK.forEach((a,i)=>{const cx=W*(i+.5)/Math.max(1,DOCK.length),cy=essTop+44;if(setIconAt(dc,a,cx,cy,58)){txt(dc,a.n,cx,cy+33,{size:14,w:800});addItemHit(pi,a,cx-44,cy-34,88,86);return}dc.save();dc.beginPath();dc.arc(cx,cy,27,0,7);const g=dc.createLinearGradient(cx-27,cy-27,cx+27,cy+27);g.addColorStop(0,a.c1);g.addColorStop(1,a.c2);dc.fillStyle=g;dc.shadowColor='rgba(60,30,10,.4)';dc.shadowBlur=10;dc.shadowOffsetY=4;dc.fill();dc.restore();
     emo(dc,a.e,cx,cy,26);txt(dc,a.n,cx,cy+33,{size:14,w:700});addItemHit(pi,a,cx-44,cy-34,88,86)});
   return {dotsY:essTop-16};
 };
@@ -1188,8 +1194,8 @@ UIM.bojagi=(c,pi)=>{
   const bx=m,bw=W-m*2,bh=NY-10-essTop;hanji(dc,bx,essTop,bw,bh,'#efe6d2',99);
   dc.save();dc.strokeStyle='rgba(120,70,40,.28)';dc.lineWidth=1.2;dc.beginPath();dc.moveTo(bx+8,essTop+8);dc.lineTo(W/2,essTop+bh*.42);dc.lineTo(bx+bw-8,essTop+8);dc.moveTo(bx+8,essTop+bh-8);dc.lineTo(W/2,essTop+bh*.42);dc.lineTo(bx+bw-8,essTop+bh-8);dc.stroke();dc.restore();
   // 매듭
-  dc.save();dc.fillStyle='#b8433a';dc.beginPath();dc.ellipse(W/2-16,essTop+bh*.42-8,15,9,-.6,0,7);dc.ellipse(W/2+16,essTop+bh*.42-8,15,9,.6,0,7);dc.fill();dc.beginPath();dc.arc(W/2,essTop+bh*.42,9,0,7);dc.fillStyle='#8f2e27';dc.fill();dc.restore();
-  DOCK.forEach((a,i)=>{const cx=i<2?bx+bw*(.13+.24*i):bx+bw*(.63+.24*(i-2)),cy=essTop+bh*.42;
+  if(DOCK.length%2===0){dc.save();dc.fillStyle='#b8433a';dc.beginPath();dc.ellipse(W/2-16,essTop+bh*.42-8,15,9,-.6,0,7);dc.ellipse(W/2+16,essTop+bh*.42-8,15,9,.6,0,7);dc.fill();dc.beginPath();dc.arc(W/2,essTop+bh*.42,9,0,7);dc.fillStyle='#8f2e27';dc.fill();dc.restore();}
+  DOCK.forEach((a,i)=>{const n=DOCK.length,cx=n===4?(i<2?bx+bw*(.13+.24*i):bx+bw*(.63+.24*(i-2))):bx+bw*(i+.5)/Math.max(1,n),cy=essTop+bh*.42;
     if(setIconAt(dc,a,cx,cy-8,50)){txt(dc,a.n,cx,cy+20,{size:15,w:800,font:SERIF,color:'#3a2a1a',shadow:false});addItemHit(pi,a,cx-42,cy-36,84,80);return}
     dc.save();dc.beginPath();dc.arc(cx,cy-8,24,0,7);const g=dc.createLinearGradient(cx-24,cy-32,cx+24,cy+16);g.addColorStop(0,a.c1);g.addColorStop(1,a.c2);dc.fillStyle=g;dc.fill();dc.restore();
     emo(dc,a.e,cx,cy-8,24);txt(dc,a.n,cx,cy+20,{size:15,w:800,font:SERIF,color:'#3a2a1a',shadow:false});addItemHit(pi,a,cx-42,cy-36,84,80)});
@@ -2687,7 +2693,7 @@ DR.addEventListener('touchcancel',()=>{if(td&&td.m)setDR(1,true);td=null});
 setQP(0);setDR(0);
 window.__nv.panel=()=>({qp:qpP,dr:drP});window.__nv.S=S;window.__nv.layout=layout;window.__nv.buildDrawer=buildDrawer;
 // ---------- 설정 화면 (삼성 설정 구성을 참고한 뉴니버스 설정) ----------
-const VER='v34';
+const VER='v35';
 Object.assign(GLY,{
  wifi:'M2.5 9a14 14 0 0 1 19 0 M5.5 12.3a9.5 9.5 0 0 1 13 0 M8.6 15.5a5 5 0 0 1 6.8 0 M12 19h.01',
  devices:'M3.5 5h12v9h-12z M2 17h15 M18 8h3.5v11H18z',
@@ -3238,6 +3244,7 @@ function folderCardMenu(a,el){const b=el.getBoundingClientRect(),pr=phone.getBou
   showMenu([{ic:'↩️',t:'폴더에서 빼기',fn:()=>takeOut(FCUR,a)},{ic:'ⓘ',t:'앱 정보',fn:()=>appInfo(a)},{ic:'🗑️',t:'삭제',fn:()=>uninstallApp(a)}],r,a.full||a.n)}
 FO.querySelector('h2').addEventListener('pointerdown',e=>e.stopPropagation());
 FO.querySelector('h2').addEventListener('click',e=>{e.stopPropagation();if(FCUR)renameFolder(FCUR)});
+window.__nv.dock={drawer:()=>{buildDrawer();setDR(1,false);return $("dGrid").textContent},top:()=>dockTop(),ny:()=>navY(),names:()=>DOCK.map(a=>a.n),hasApp:p=>NAPPS.some(a=>a.pkg===p),key:p=>{const a=NAPPS.find(x=>x.pkg===p);return a?akey(a):null},add:p=>addToDock(NAPPS.find(a=>a.pkg===p))};   // v35 검사용
 window.__nv.edit={set:setEdit,on:()=>EDIT,pages:()=>PAGES.map(P=>P.apps.map(a=>a.folder?{folder:a.n,items:a.items.map(x=>x.n)}:a.n)),dock:()=>DOCK.map(a=>a.n),
   ser:serLayout,save:saveNow,cho,match:appMatch,menu:()=>menuOpen()?[...LPM.querySelectorAll('button span')].map(s=>s.textContent):null,closeMenu,
   geom:pi=>gridGeom(pi),slot:(pi,i)=>itemRect(pi,i)||slotRect(gridGeom(pi),i)};
