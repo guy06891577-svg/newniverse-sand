@@ -32,7 +32,7 @@ svg{display:block}
 #res{font-size:46px;font-weight:800;letter-spacing:-1.2px;line-height:1.15;font-variant-numeric:tabular-nums;padding:2px 0 4px;user-select:none}
 #res.err{font-size:22px;font-weight:700;color:var(--red);letter-spacing:0}
 #hint{font-size:12px;color:var(--dim);min-height:16px}
-#hist{flex:1;padding:0 16px 6px;min-height:52px;display:flex;flex-direction:column;justify-content:flex-start;align-items:stretch}
+#hist{flex:1;padding:0 16px 6px;min-height:0;display:flex;flex-direction:column;justify-content:flex-start;align-items:stretch}
 .hrow{display:flex;align-items:baseline;gap:10px;width:100%;text-align:left;padding:8px 10px;border-radius:14px}
 .hrow:active{background:rgba(143,107,255,.12)}
 .hrow .he{flex:1;min-width:0;color:var(--sub);font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
@@ -75,6 +75,8 @@ svg{display:block}
 #fxChips::-webkit-scrollbar{display:none}
 #fxChips button{flex:none;padding:8px 12px;border-radius:16px;font-size:13px;font-weight:700;color:var(--sub);background:rgba(255,255,255,.06);border:1px solid var(--line)}
 #fxChips button.on{color:#0a0820;background:var(--acc);border:none}
+#fxTop{flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;display:flex;flex-direction:column}
+#fxTop::-webkit-scrollbar{display:none}
 #sheet{position:absolute;inset:0;z-index:20}
 #sheet .bd{position:absolute;inset:0;background:rgba(4,3,12,.55)}
 #sheet .box{position:absolute;left:0;right:0;bottom:0;max-height:78%;border-radius:24px 24px 0 0;padding:12px 16px calc(var(--sab) + 16px);display:flex;flex-direction:column}
@@ -108,17 +110,19 @@ body.sci #keys{padding-top:2px}
 #uCats::-webkit-scrollbar{display:none}
 #uCats button{flex:none;padding:8px 12px;border-radius:16px;font-size:13px;font-weight:700;color:var(--sub);background:rgba(255,255,255,.06);border:1px solid var(--line)}
 #uCats button.on{color:#0a0820;background:var(--acc);border:none}
-#uBody{flex:1;min-height:0;display:flex;gap:10px;padding:0 12px calc(var(--sab) + 16px)}
+#uBody{flex:1;min-height:0;display:flex;flex-direction:column;gap:10px;padding:0 14px 0}
 #uLeft{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;overflow-y:auto;scrollbar-width:none}
 #uLeft::-webkit-scrollbar{display:none}
+#uLeft .uOut{margin-top:auto;flex:none;display:flex;flex-direction:column;gap:10px}
 .ucard{border-radius:20px;padding:12px 14px;text-align:left;width:100%}
 .ucard.on{border-color:rgba(111,211,255,.45);box-shadow:0 0 0 1px rgba(111,211,255,.25)}
 .ulab{display:flex;align-items:center;gap:4px;font-size:14px;font-weight:700;color:var(--a1)}
 .ulab svg{width:16px;height:16px}
 .uamt{display:block;margin-top:6px;font-size:24px;font-weight:800;letter-spacing:-.6px;font-variant-numeric:tabular-nums;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#uKeys{width:46%;max-width:220px;flex:none;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;align-content:start}
+#uKeys{width:auto;max-width:none;flex:none;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;align-content:start;padding:6px 0 calc(var(--sab) + 14px)}
 #uKeys .k{height:52px;font-size:22px}
 #uMeta{font-size:13px;color:var(--sub);line-height:1.45;padding:0 4px;word-break:keep-all}
+.umbox{border-radius:18px;padding:12px 14px}
 #uMeta b{color:var(--fg);font-weight:800}
 .ufield{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-radius:16px;width:100%;text-align:left;border:1px solid var(--line);background:rgba(255,255,255,.06)}
 .ufield.on{border-color:rgba(111,211,255,.45);box-shadow:0 0 0 1px rgba(111,211,255,.25)}
@@ -131,6 +135,27 @@ body.sci #keys{padding-top:2px}
 .chip.on{color:#0a0820;background:var(--acc);border:none}
 #hSheet .box{max-height:78%}
 #hList{flex:1;overflow-y:auto;min-height:0;padding:4px 0}
+@media (max-height:700px){
+  /* 짧은 화면: 계산 키 높이(58)는 유지하고, 여백·표시칸만 줄여 탭 바와 겹치지 않게 */
+  #res{font-size:36px;padding:0}
+  #expr{min-height:20px;font-size:16px}
+  #disp{padding:0 22px 2px}
+  #hint{display:none}
+  #hist{padding:0 16px}
+  #keys,#fxKeys{gap:4px;padding:2px 14px calc(var(--sab) + 86px)}
+  .fxamt{font-size:28px}
+  #uBody{gap:6px}
+  #uCats{padding:4px 12px 4px}
+  #uCats button{padding:6px 10px}
+  #uLeft{gap:6px}
+  #uLeft .uOut{gap:6px}
+  .ufield{padding:6px 12px}
+  .ufield .fv{font-size:18px}
+  .chip{padding:4px 8px;font-size:12px}
+  .ucard{padding:8px 12px}
+  .umbox{padding:8px 12px}
+  #uHead{padding:4px 8px 2px}
+}
 @media (orientation:landscape){
   body.sci #v-calc{flex-wrap:nowrap}
   body.sci #sci{grid-template-columns:repeat(4,1fr)}
@@ -167,6 +192,7 @@ body.sci #keys{padding-top:2px}
   </section>
 
   <section id="v-fx" class="view" hidden>
+    <div id="fxTop">
     <div id="fxBox">
       <div id="fxStack">
         <button type="button" class="fxcard glass on" id="cardKrw">
@@ -189,6 +215,7 @@ body.sci #keys{padding-top:2px}
       <button type="button" id="fxRef" class="glass">새로고침</button>
     </div>
     <div id="fxChips"></div>
+    </div>
     <div id="fxKeys"></div>
   </section>
 
@@ -1177,11 +1204,11 @@ function renderUnit(){
         <button type="button" class="chip ${nb.step===100?'on':''}" data-st="100">100원</button>
         <button type="button" class="chip ${nb.step===1000?'on':''}" data-st="1000">1,000원</button>
       </div>
-      <div id="uMeta" class="glass" style="border-radius:18px;padding:12px 14px">${r.ok? (
+      <div class="uOut"><div id="uMeta" class="glass umbox">${r.ok? (
         r.mode==='remain'
           ? `<b>1인당 ${r.perD}원</b><br>인원으로 나누고 ${r.rem===0?'남는 돈이 없어요':r.remD+'원이 남아요'}`
           : `<b>1인당 ${r.perD}원</b><br>${r.people}명이면 합계 ${r.sumD}원, 총액보다 ${r.extraD}원 더 나와요`
-      ):'총액과 인원을 넣어 주세요'}</div>`;
+      ):'총액과 인원을 넣어 주세요'}</div></div>`;
   }else if(uCat==='tax'){
     const inc=tx.mode!=='disc' && tx.mode==='inc'?taxInc(tx.amt||'0'):null;
     const ext=tx.mode==='ext'?taxExt(tx.amt||'0'):null;
@@ -1195,12 +1222,12 @@ function renderUnit(){
       </div>
       ${tx.mode!=='disc'?`
         <button type="button" class="ufield ${tx.focus==='amt'?'on':''}" data-tf="amt"><span class="fn">${tx.mode==='inc'?'공급가 (원)':'부가세 포함가 (원)'}</span><span class="fv">${comma(tx.amt||'0')}</span></button>
-        <div id="uMeta" class="glass" style="border-radius:18px;padding:12px 14px">${show?`<b>공급가 ${show.supply}원</b><br>부가세(10%) ${show.vat}원<br>포함가 ${show.incl}원`:'금액을 넣어 주세요'}
-        <div style="margin-top:6px;color:var(--dim);font-size:12px">부가세 10% 기준이에요</div></div>
+        <div class="uOut"><div id="uMeta" class="glass umbox">${show?`<b>공급가 ${show.supply}원</b><br>부가세(10%) ${show.vat}원<br>포함가 ${show.incl}원`:'금액을 넣어 주세요'}
+        <div style="margin-top:6px;color:var(--dim);font-size:12px">부가세 10% 기준이에요</div></div></div>
       `:`
         <button type="button" class="ufield ${tx.focus==='price'?'on':''}" data-tf="price"><span class="fn">정가 (원)</span><span class="fv">${comma(tx.price||'0')}</span></button>
         <button type="button" class="ufield ${tx.focus==='rate'?'on':''}" data-tf="rate"><span class="fn">할인율 (%)</span><span class="fv">${comma(tx.rate||'0')}</span></button>
-        <div id="uMeta" class="glass" style="border-radius:18px;padding:12px 14px">${disc?`<b>할인가 ${disc.sale}원</b><br>할인액 ${disc.off}원`:'정가와 할인율을 넣어 주세요'}</div>
+        <div class="uOut"><div id="uMeta" class="glass umbox">${disc?`<b>할인가 ${disc.sale}원</b><br>할인액 ${disc.off}원`:'정가와 할인율을 넣어 주세요'}</div></div>
       `}`;
   }else{
     let topAmt, botAmt;
@@ -1208,17 +1235,20 @@ function renderUnit(){
       topAmt=uSide==='from'?comma(trimDot(uStr||'0')):fmtUnit(unitConvert(uCat,uTo,uFrom,uStr||'0'));
       botAmt=uSide==='to'?comma(trimDot(uStr||'0')):fmtUnit(unitConvert(uCat,uFrom,uTo,uStr||'0'));
     }catch(e){ topAmt=uSide==='from'?comma(trimDot(uStr||'0')):'—'; botAmt=uSide==='to'?comma(trimDot(uStr||'0')):'—'; }
+    const hint=uCat==='area'&&((uFrom==='pyeong'&&uTo==='m2')||(uFrom==='m2'&&uTo==='pyeong'))?'<div id="uMeta">1평 = 400/121 ㎡ (약 3.305785 ㎡)</div>':
+      (uCat==='len'&&(uFrom==='ja'||uTo==='ja'||uFrom==='chi'||uTo==='chi')?'<div id="uMeta">1자 = 10/33 m, 1치 = 1/10자</div>':'');
     left.innerHTML=`
       <button type="button" class="ucard glass ${uSide==='from'?'on':''}" data-side="from">
         <span class="ulab" data-pick="from">${unitName(uCat,uFrom)} ${ic('chev',2)}</span>
         <span class="uamt" id="uFromAmt">${topAmt}</span>
       </button>
+      <div class="uOut">
       <button type="button" class="ucard glass ${uSide==='to'?'on':''}" data-side="to">
         <span class="ulab" data-pick="to">${unitName(uCat,uTo)} ${ic('chev',2)}</span>
         <span class="uamt" id="uToAmt">${botAmt}</span>
       </button>
-      ${uCat==='area'&&((uFrom==='pyeong'&&uTo==='m2')||(uFrom==='m2'&&uTo==='pyeong'))?'<div id="uMeta">1평 = 400/121 ㎡ (약 3.305785 ㎡)</div>':''}
-      ${uCat==='len'&&(uFrom==='ja'||uTo==='ja'||uFrom==='chi'||uTo==='chi')?'<div id="uMeta">1자 = 10/33 m, 1치 = 1/10자</div>':''}`;
+      ${hint}
+      </div>`;
   }
 }
 $('#uCats').onclick=e=>{const b=e.target.closest('[data-cat]'); if(b){buzz(); setCat(b.dataset.cat);}};
