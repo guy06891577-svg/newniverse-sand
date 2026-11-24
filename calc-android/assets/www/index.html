@@ -6,6 +6,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src https://open.er-api.com https://latest.currency-api.pages.dev https://cdn.jsdelivr.net">
 <title>뉴니버스 계산기</title>
 <style>
+
 :root{--sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);--a1:#6fd3ff;--a2:#8f6bff;--acc:linear-gradient(135deg,var(--a1),var(--a2));--red:#ff4d6d;--fg:#f3f1ff;--sub:rgba(226,222,255,.62);--dim:rgba(226,222,255,.38);
  --glass:rgba(255,255,255,.075);--line:rgba(255,255,255,.14);--r:22px;
  --font:"Pretendard","Noto Sans KR","Apple SD Gothic Neo",system-ui,-apple-system,sans-serif}
@@ -87,6 +88,56 @@ svg{display:block}
 #fxList .cc{font-size:13px;color:var(--dim);font-weight:700}
 #toast{position:absolute;left:50%;bottom:calc(var(--sab) + 100px);transform:translateX(-50%) translateY(20px);opacity:0;z-index:40;padding:10px 16px;border-radius:18px;font-size:14px;font-weight:700;white-space:nowrap;transition:all .2s;pointer-events:none;background:rgba(24,20,52,.94);border:1px solid var(--line)}
 #toast.on{opacity:1;transform:translateX(-50%)}
+
+.head .tools{display:flex;gap:2px;margin-left:auto}
+.head .icb.on{background:rgba(143,107,255,.22);color:var(--a1)}
+#sci{display:none;grid-template-columns:repeat(4,1fr);gap:6px;padding:0 14px 4px;flex:none}
+body.sci #sci{display:grid}
+body.sci #hist{display:none}
+body.sci #hint{display:none}
+body.sci .k{height:48px;font-size:24px;border-radius:16px}
+body.sci #keys{padding-top:2px}
+.sk{height:40px;border-radius:14px;background:rgba(255,255,255,.06);border:1px solid var(--line);font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;color:var(--fg);padding:0 2px}
+.sk:active,.sk.pr{background:rgba(143,107,255,.24)}
+.sk.on{background:var(--acc);color:#0a0820;border:none}
+.sk.ang{color:var(--a1);font-size:13px;font-weight:800;letter-spacing:-.2px}
+#v-unit{padding-top:calc(var(--sat) + 6px)}
+#uHead{display:flex;align-items:center;padding:6px 8px 4px;gap:4px}
+#uHead h1{flex:1;font-size:22px;font-weight:800;letter-spacing:-.4px}
+#uCats{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:6px 12px 8px;flex:none}
+#uCats::-webkit-scrollbar{display:none}
+#uCats button{flex:none;padding:8px 12px;border-radius:16px;font-size:13px;font-weight:700;color:var(--sub);background:rgba(255,255,255,.06);border:1px solid var(--line)}
+#uCats button.on{color:#0a0820;background:var(--acc);border:none}
+#uBody{flex:1;min-height:0;display:flex;gap:10px;padding:0 12px calc(var(--sab) + 16px)}
+#uLeft{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;overflow-y:auto;scrollbar-width:none}
+#uLeft::-webkit-scrollbar{display:none}
+.ucard{border-radius:20px;padding:12px 14px;text-align:left;width:100%}
+.ucard.on{border-color:rgba(111,211,255,.45);box-shadow:0 0 0 1px rgba(111,211,255,.25)}
+.ulab{display:flex;align-items:center;gap:4px;font-size:14px;font-weight:700;color:var(--a1)}
+.ulab svg{width:16px;height:16px}
+.uamt{display:block;margin-top:6px;font-size:24px;font-weight:800;letter-spacing:-.6px;font-variant-numeric:tabular-nums;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#uKeys{width:46%;max-width:220px;flex:none;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;align-content:start}
+#uKeys .k{height:52px;font-size:22px}
+#uMeta{font-size:13px;color:var(--sub);line-height:1.45;padding:0 4px;word-break:keep-all}
+#uMeta b{color:var(--fg);font-weight:800}
+.ufield{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-radius:16px;width:100%;text-align:left;border:1px solid var(--line);background:rgba(255,255,255,.06)}
+.ufield.on{border-color:rgba(111,211,255,.45);box-shadow:0 0 0 1px rgba(111,211,255,.25)}
+.ufield .fn{font-size:13px;font-weight:700;color:var(--dim)}
+.ufield .fv{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}
+.urow{display:flex;gap:8px}
+.chip{padding:8px 10px;border-radius:14px;font-size:13px;font-weight:700;color:var(--sub);background:rgba(255,255,255,.06);border:1px solid var(--line);white-space:nowrap}
+.urow{flex-wrap:wrap}
+.urow .chip{text-align:center;justify-content:center}
+.chip.on{color:#0a0820;background:var(--acc);border:none}
+#hSheet .box{max-height:78%}
+#hList{flex:1;overflow-y:auto;min-height:0;padding:4px 0}
+@media (orientation:landscape){
+  body.sci #v-calc{flex-wrap:nowrap}
+  body.sci #sci{grid-template-columns:repeat(4,1fr)}
+  body.sci .k,body.sci .sk{height:36px}
+  body.sci #res{font-size:36px}
+  .head h1{font-size:22px}
+}
 </style>
 </head>
 <body>
@@ -95,7 +146,14 @@ svg{display:block}
 </defs></svg>
 <div id="app">
   <canvas id="neb"></canvas>
-  <header class="head"><h1>계산기</h1></header>
+  <header class="head">
+    <h1>계산기</h1>
+    <div class="tools">
+      <button type="button" class="icb" id="btnHist" aria-label="계산 기록"></button>
+      <button type="button" class="icb" id="btnUnit" aria-label="단위 계산기"></button>
+      <button type="button" class="icb" id="btnSci" aria-label="공학용"></button>
+    </div>
+  </header>
 
   <section id="v-calc" class="view">
     <div id="hist" class="scroll"></div>
@@ -104,6 +162,7 @@ svg{display:block}
       <div id="res">0</div>
       <div id="hint">결과를 길게 누르면 복사돼요</div>
     </div>
+    <div id="sci"></div>
     <div id="keys"></div>
   </section>
 
@@ -133,6 +192,18 @@ svg{display:block}
     <div id="fxKeys"></div>
   </section>
 
+  <section id="v-unit" class="view" hidden>
+    <div id="uHead">
+      <button type="button" class="icb" id="uBack" aria-label="뒤로"></button>
+      <h1 id="uTitle">단위 계산기</h1>
+    </div>
+    <div id="uCats"></div>
+    <div id="uBody">
+      <div id="uLeft"></div>
+      <div id="uKeys"></div>
+    </div>
+  </section>
+
   <nav id="tabs" class="glass">
     <button type="button" data-v="calc" class="on"><span data-i="calc"></span>계산</button>
     <button type="button" data-v="fx"><span data-i="fx"></span>환율</button>
@@ -140,14 +211,22 @@ svg{display:block}
   <div id="sheet" hidden>
     <div class="bd" id="shBd"></div>
     <div class="box glass">
-      <div class="hh">통화 고르기</div>
+      <div class="hh" id="shTitle">통화 고르기</div>
       <input id="fxQ" type="search" placeholder="이름이나 코드로 찾기" enterkeyhint="search" autocomplete="off">
       <div id="fxList"></div>
+    </div>
+  </div>
+  <div id="hSheet" hidden>
+    <div class="bd" id="hBd"></div>
+    <div class="box glass" style="position:absolute;left:0;right:0;bottom:0;max-height:78%;border-radius:24px 24px 0 0;padding:12px 16px calc(var(--sab) + 16px);display:flex;flex-direction:column">
+      <div class="hh" style="font-size:18px;font-weight:800;padding:6px 8px 10px">계산 기록</div>
+      <div id="hList"></div>
     </div>
   </div>
   <div id="toast"></div>
 </div>
 <script>
+
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const NV=window.NVCalc||null;
 const P={
@@ -156,7 +235,11 @@ const P={
   swap:'<path d="M7 8h11M15 5l3 3-3 3M17 16H6M9 13l-3 3 3 3"/>',
   chev:'<path d="M6 9l6 6 6-6"/>',
   ref:'<path d="M20 12a8 8 0 1 1-2.2-5.5M20 4v6h-6"/>',
-  back:'<path d="M18 5H9L4 12l5 7h9a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z"/><path d="M11.2 9.5l5 5M16.2 9.5l-5 5"/>'
+  back:'<path d="M18 5H9L4 12l5 7h9a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z"/><path d="M11.2 9.5l5 5M16.2 9.5l-5 5"/>',
+  larr:'<path d="M15 6L9 12l6 6"/>',
+  hist:'<circle cx="12" cy="13" r="7.5"/><path d="M12 9.5V13l2.4 1.5"/><path d="M8 4.5h8"/>',
+  unit:'<rect x="3" y="8" width="18" height="8" rx="1.5"/><path d="M7 8v4M11 8v5.5M15 8v4M19 8v5.5"/>',
+  sci:'<path d="M4 14h2.8l2.6 7 4.2-16H20"/>'
 };
 const ic=(n,sw=1.9)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${P[n]||''}</svg>`;
 function icons(root){(root||document).querySelectorAll('[data-i]').forEach(e=>{if(!e.querySelector('svg'))e.insertAdjacentHTML('afterbegin',ic(e.dataset.i))})}
@@ -164,6 +247,10 @@ icons();
 $('#fxSwap').innerHTML=ic('swap',2);
 $('#fxPick').insertAdjacentHTML('beforeend',ic('chev',2.2));
 $('#fxRef').insertAdjacentHTML('afterbegin',ic('ref',2));
+$('#btnHist').innerHTML=ic('hist',1.9);
+$('#btnUnit').innerHTML=ic('unit',1.9);
+$('#btnSci').innerHTML=ic('sci',1.9);
+$('#uBack').innerHTML=ic('larr',2);
 const buzz=()=>{try{NV&&NV.vibrate(12)}catch(e){}};
 const J=(s,d)=>{try{return JSON.parse(s)}catch(e){return d}};
 let toastT;function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('on'),2000)}
@@ -174,8 +261,7 @@ function nebula(){const c=$('#neb'),r=c.getBoundingClientRect();if(!r.width)retu
  for(let i=0;i<14;i++)blob(W*rnd(),H*rnd(),W*(.1+rnd()*.25),`rgba(${110+rnd()*60|0},${110+rnd()*60|0},255,.07)`);
  for(let i=0;i<170;i++){const a=rnd()*.7+.1,rr=rnd()*1.1+.2;x.fillStyle=`rgba(230,235,255,${a})`;x.beginPath();x.arc(W*rnd(),H*rnd(),rr,0,7);x.fill()}
  x.fillStyle='rgba(5,4,15,.25)';x.fillRect(0,0,W,H)}
-let nebT;nebula();addEventListener('resize',()=>{clearTimeout(nebT);nebT=setTimeout(nebula,200)});
-
+let nebT;nebula();addEventListener('resize',()=>{clearTimeout(nebT);nebT=setTimeout(()=>{nebula();syncOri()},200)});
 /* ---------- 소수 계산 (0.1+0.2=0.3) ---------- */
 const Dec=(()=>{
   const MAXS=24;
@@ -227,19 +313,115 @@ function fmtDec(x,maxFrac){
   return comma(s);
 }
 
+
+function fromNum(x){
+  if(!Number.isFinite(x)) throw 'bad';
+  if(Object.is(x,-0)) x=0;
+  let s=x.toFixed(14).replace(/(\.\d*?)0+$/,'$1').replace(/\.$/,'');
+  if(s==='-0') s='0';
+  return Dec.n(s);
+}
+function decPow(x,y){
+  const yp=Dec.plain(y), xp=Dec.plain(x);
+  if(yp==='0') return Dec.n(1);
+  if(xp==='0'){ if(yp[0]==='-') throw 'div0'; return Dec.n(0); }
+  if(/^-?\d+$/.test(yp)){
+    let n=BigInt(yp), neg=n<0n; if(neg) n=-n;
+    if(n>999n) return fromNum(Math.pow(Number(xp),Number(yp)));
+    let r=Dec.n(1), b=Dec.n(x);
+    while(n>0n){ if(n&1n) r=Dec.mul(r,b); b=Dec.mul(b,b); n>>=1n; }
+    return neg?Dec.div(Dec.n(1),r):r;
+  }
+  if(Number(xp)<0) throw 'bad';
+  return fromNum(Math.pow(Number(xp),Number(yp)));
+}
+let angleDeg=true, secondOn=false, sciOn=false;
+try{const a=localStorage.getItem('nvc_ang'); if(a==='rad') angleDeg=false;}catch(e){}
+
+function reduceDeg(x){
+  let d=Number(Dec.plain(x)); if(!Number.isFinite(d)) return NaN;
+  d=((d%360)+360)%360; if(Math.abs(d-360)<1e-12) d=0; return d;
+}
+function specialSin(d){
+  const t={0:0,30:.5,90:1,150:.5,180:0,210:-.5,270:-1,330:-.5};
+  const k=Object.keys(t).find(k=>Math.abs(d-Number(k))<1e-10); if(k!=null) return Dec.n(String(t[k]));
+  if([45,135].some(v=>Math.abs(d-v)<1e-10)) return fromNum(Math.SQRT2/2);
+  if([225,315].some(v=>Math.abs(d-v)<1e-10)) return fromNum(-Math.SQRT2/2);
+  if([60,120].some(v=>Math.abs(d-v)<1e-10)) return fromNum(Math.sqrt(3)/2);
+  if([240,300].some(v=>Math.abs(d-v)<1e-10)) return fromNum(-Math.sqrt(3)/2);
+  return null;
+}
+function specialCos(d){ return specialSin(((90-d)%360+360)%360); }
+function toRadNum(x){ return Number(Dec.plain(x))*Math.PI/180; }
+function fromRadToDeg(n){ return n*180/Math.PI; }
+const PI=Dec.n('3.141592653589793'), E=Dec.n('2.718281828459045');
+
+function applyFn(fn,x){
+  const n=Number(Dec.plain(x));
+  if(fn==='√'||fn==='sqrt'){
+    if(n<0) throw 'bad';
+    const s=Math.sqrt(n);
+    if(Number.isInteger(n)&&Math.abs(s-Math.round(s))<1e-12) return Dec.n(String(Math.round(s)));
+    return fromNum(s);
+  }
+  if(fn==='abs'){ const p=Dec.plain(x); return Dec.n(p[0]==='-'?p.slice(1):p); }
+  if(fn==='ln'){ if(n<=0) throw 'bad'; if(Math.abs(n-Math.E)<1e-12) return Dec.n(1); return fromNum(Math.log(n)); }
+  if(fn==='log'){ if(n<=0) throw 'bad'; const l=Math.log10(n); if(Math.abs(l-Math.round(l))<1e-12 && n>=1) return Dec.n(String(Math.round(l))); return fromNum(l); }
+  if(fn==='exp') return fromNum(Math.exp(n));
+  if(fn==='sin'||fn==='cos'||fn==='tan'){
+    if(angleDeg){
+      const d=reduceDeg(x);
+      if(fn==='sin'){ const s=specialSin(d); if(s) return s; return fromNum(Math.sin(d*Math.PI/180)); }
+      if(fn==='cos'){ const s=specialCos(d); if(s) return s; return fromNum(Math.cos(d*Math.PI/180)); }
+      if(fn==='tan'){
+        if([90,270].some(v=>Math.abs(d-v)<1e-10)) throw 'bad';
+        if([0,180].some(v=>Math.abs(d-v)<1e-10)) return Dec.n(0);
+        if([45,225].some(v=>Math.abs(d-v)<1e-10)) return Dec.n(1);
+        if([135,315].some(v=>Math.abs(d-v)<1e-10)) return Dec.n(-1);
+        return fromNum(Math.tan(d*Math.PI/180));
+      }
+    }
+    const a=n;
+    if(fn==='sin'){ if(Math.abs(a)<1e-14) return Dec.n(0); if(Math.abs(a-Math.PI/2)<1e-12) return Dec.n(1); if(Math.abs(a-Math.PI)<1e-12) return Dec.n(0); if(Math.abs(a+Math.PI/2)<1e-12) return Dec.n(-1); return fromNum(Math.sin(a)); }
+    if(fn==='cos'){ if(Math.abs(a)<1e-14) return Dec.n(1); if(Math.abs(a-Math.PI/2)<1e-12) return Dec.n(0); if(Math.abs(a-Math.PI)<1e-12) return Dec.n(-1); return fromNum(Math.cos(a)); }
+    if(fn==='tan'){ if(Math.abs(a-Math.PI/2)<1e-12||Math.abs(a+Math.PI/2)<1e-12) throw 'bad'; if(Math.abs(a)<1e-14||Math.abs(a-Math.PI)<1e-12) return Dec.n(0); return fromNum(Math.tan(a)); }
+  }
+  if(fn==='asin'||fn==='acos'||fn==='atan'){
+    if(n<-1||n>1){ if(fn!=='atan') throw 'bad'; }
+    const a=fn==='asin'?Math.asin(n):fn==='acos'?Math.acos(n):Math.atan(n);
+    if(!angleDeg) return fromNum(a);
+    const d=fromRadToDeg(a);
+    const r=Math.round(d);
+    if(Math.abs(d-r)<1e-9) return Dec.n(String(r));
+    return fromNum(d);
+  }
+  throw 'bad';
+}
+
+const FN={'sin':1,'cos':1,'tan':1,'asin':1,'acos':1,'atan':1,'ln':1,'log':1,'abs':1,'exp':1,'√':1};
 function tokenize(s){
-  const t=[]; s=String(s).replace(/×/g,'*').replace(/÷/g,'/').replace(/,/g,'').replace(/\s/g,'');
+  const t=[]; s=String(s).replace(/×/g,'*').replace(/÷/g,'/').replace(/,/g,'').replace(/\s/g,'')
+    .replace(/sin⁻¹/g,'asin').replace(/cos⁻¹/g,'acos').replace(/tan⁻¹/g,'atan');
   let i=0;
+  const isVal=x=>x&&(x.n!=null||x==='π'||x==='e'||x===')'||x==='%');
+  const implicit=()=>{ const p=t[t.length-1]; if(isVal(p)) t.push('*'); };
   while(i<s.length){
     const c=s[i];
-    if('()+*/'.includes(c)){ t.push(c); i++; continue }
-    if(c==='%'){ t.push('%'); i++; continue }
+    if(c==='π'){ implicit(); t.push('π'); i++; continue; }
+    const rest=s.slice(i);
+    const m=rest.match(/^(asin|acos|atan|sin|cos|tan|ln|log|abs|exp|√)/);
+    if(m){ implicit(); t.push(m[1]); i+=m[1].length; continue; }
+    if(c==='e' && !/[a-zπ^]/i.test(s[i+1]||'')){ implicit(); t.push('e'); i++; continue; }
+    if('()+*/^'.includes(c)){ if(c==='(') implicit(); t.push(c); i++; continue; }
+    if(c==='%'){ t.push('%'); i++; continue; }
     if(c==='-'){
       const prev=t[t.length-1];
-      if(!prev||prev==='('||prev==='+'||prev==='-'||prev==='*'||prev==='/'||prev==='u-'){ t.push('u-'); i++; continue }
+      if(!prev||prev==='('||prev==='+'||prev==='-'||prev==='*'||prev==='/'||prev==='^'||prev==='u-'||FN[prev]){ t.push('u-'); i++; continue; }
       t.push('-'); i++; continue;
     }
     if(/\d/.test(c)||c==='.'){
+      const prev=t[t.length-1];
+      if(prev==='π'||prev==='e'||prev===')') t.push('*');
       let n=''; while(i<s.length&&(/\d/.test(s[i])||s[i]==='.')) n+=s[i++];
       if(n==='.'||n.split('.').length>2) throw 'bad';
       t.push({n}); continue;
@@ -250,27 +432,35 @@ function tokenize(s){
 }
 function evalExpr(s){
   const tokens=tokenize(s); if(!tokens.length) return Dec.n(0);
-  const out=[],ops=[],prec={'u-':5,'*':3,'/':3,'+':2,'-':2},right={'u-':1};
+  const out=[],ops=[],prec={'u-':5,'^':4,'*':3,'/':3,'+':2,'-':2},right={'u-':1,'^':1};
+  Object.keys(FN).forEach(f=>prec[f]=6);
   const pushOp=op=>{
-    while(ops.length){const t=ops[ops.length-1]; if(t==='(')break; const p=prec[t],q=prec[op]; if(p>q||(p===q&&!right[op])) out.push(ops.pop()); else break}
+    while(ops.length){const t=ops[ops.length-1]; if(t==='(')break; const p=prec[t],q=prec[op]; if(p==null)break; if(p>q||(p===q&&!right[op])) out.push(ops.pop()); else break}
     ops.push(op);
   };
   for(const tok of tokens){
     if(tok&&tok.n!=null) out.push(tok);
+    else if(tok==='π'||tok==='e') out.push(tok);
     else if(tok==='%') out.push('%');
+    else if(FN[tok]) pushOp(tok);
     else if(tok==='(') ops.push(tok);
-    else if(tok===')'){ while(ops.length&&ops[ops.length-1]!=='(') out.push(ops.pop()); if(ops.pop()!=='(') throw 'paren' }
+    else if(tok===')'){ while(ops.length&&ops[ops.length-1]!=='(') out.push(ops.pop()); if(ops.pop()!=='(') throw 'paren'; if(ops.length&&FN[ops[ops.length-1]]) out.push(ops.pop()); }
     else pushOp(tok);
   }
   while(ops.length){const t=ops.pop(); if(t==='('||t===')') throw 'paren'; out.push(t)}
   const st=[];
   const asNum=x=>x.p?Dec.div(x.v,100):x.v;
+  const val=x=>({v:x,p:false});
   for(const t of out){
-    if(t&&t.n!=null){ st.push({v:Dec.n(t.n),p:false}); continue }
-    if(t==='%'){ if(!st.length) throw 'empty'; const x=st.pop(); st.push({v:x.v,p:true}); continue }
-    if(t==='u-'){ if(!st.length) throw 'empty'; const x=st.pop(); st.push({v:Dec.neg(x.v),p:x.p}); continue }
+    if(t&&t.n!=null){ st.push(val(Dec.n(t.n))); continue; }
+    if(t==='π'){ st.push(val(PI)); continue; }
+    if(t==='e'){ st.push(val(E)); continue; }
+    if(t==='%'){ if(!st.length) throw 'empty'; const x=st.pop(); st.push({v:x.v,p:true}); continue; }
+    if(t==='u-'){ if(!st.length) throw 'empty'; const x=st.pop(); st.push({v:Dec.neg(x.v),p:x.p}); continue; }
+    if(FN[t]){ if(!st.length) throw 'empty'; const x=st.pop(); st.push(val(applyFn(t, asNum(x)))); continue; }
     if(st.length<2) throw 'empty';
     const b=st.pop(),a=st.pop(); let v;
+    if(t==='^'){ v=decPow(asNum(a),asNum(b)); st.push(val(v)); continue; }
     if((t==='+'||t==='-')&&b.p&&!a.p){
       const amt=Dec.mul(a.v,Dec.div(b.v,100));
       v=t==='+'?Dec.add(a.v,amt):Dec.sub(a.v,amt);
@@ -278,7 +468,7 @@ function evalExpr(s){
       const av=asNum(a), bv=asNum(b);
       v=t==='+'?Dec.add(av,bv):t==='-'?Dec.sub(av,bv):t==='*'?Dec.mul(av,bv):Dec.div(av,bv);
     }
-    st.push({v,p:false});
+    st.push(val(v));
   }
   if(st.length!==1) throw 'bad';
   const r=st[0]; return r.p?Dec.div(r.v,100):r.v;
@@ -286,7 +476,7 @@ function evalExpr(s){
 function tryEval(s){
   try{
     let e=String(s||'').trim(); if(!e) return {ok:true,value:Dec.n(0),display:'0'};
-    if(/[+\-×÷*(/]$/.test(e)) e=e.replace(/[+\-×÷*(/]+$/,'');
+    if(/[+\-×÷*(/^]$/.test(e)) e=e.replace(/[+\-×÷*(/^]+$/,'');
     if(!e||e==='(') return {ok:true,pending:true,value:null,display:''};
     const v=evalExpr(e); const display=fmtDec(v);
     return {ok:true,value:v,display};
@@ -305,6 +495,12 @@ function curNum(){
   const m=raw.match(/(-?(?:\d+\.?\d*|\.\d+))%?$/); return m?m[1]:'';
 }
 function setRaw(s){raw=s; justEq=false; renderCalc()}
+function pretty(s){
+  return String(s)
+    .replace(/asin/g,'sin⁻¹').replace(/acos/g,'cos⁻¹').replace(/atan/g,'tan⁻¹')
+    .replace(/exp\(/g,'e^(')
+    .replace(/\d+(?:\.\d+)?/g,comma);
+}
 function renderCalc(){
   $('#expr').textContent=raw?pretty(raw):(justEq?'':'');
   const r=tryEval(justEq?raw:raw);
@@ -313,41 +509,116 @@ function renderCalc(){
   if(r.pending){return}
   el.textContent=r.display; el.classList.toggle('err',!r.ok);
 }
-function pretty(s){return String(s).replace(/\d+(?:\.\d+)?/g,comma)}
 function saveHist(){try{localStorage.setItem('nvc_hist',JSON.stringify(hist.slice(0,50)))}catch(e){}}
 function renderHist(){
   const box=$('#hist');
-  if(!hist.length){box.innerHTML='';return}
+  if(!hist.length){box.innerHTML=''; renderHSheet(); return;}
   box.innerHTML=hist.map((h,i)=>`<button type="button" class="hrow" data-i="${i}"><span class="he">${esc(h.expr)}</span><span class="hv">${esc(h.display)}</span></button>`).join('')
     +`<button type="button" id="hClr">기록 지우기</button>`;
+  renderHSheet();
+}
+function renderHSheet(){
+  const box=$('#hList'); if(!box) return;
+  if(!hist.length){box.innerHTML='<div style="padding:20px;text-align:center;color:var(--dim)">아직 계산 기록이 없어요</div>';return;}
+  box.innerHTML=hist.map((h,i)=>`<button type="button" class="hrow" data-i="${i}"><span class="he">${esc(h.expr)}</span><span class="hv">${esc(h.display)}</span></button>`).join('')
+    +`<button type="button" id="hClr2" style="display:block;margin:8px auto;font-size:13px;font-weight:700;color:var(--dim);padding:6px 12px">기록 지우기</button>`;
 }
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 
+function wrapOrInsert(fn, close){
+  /* fn is like sin / √ / abs / exp ; close=true wraps current value */
+  const name=fn==='sqrt'?'√':fn;
+  const r=raw?tryEval(raw):null;
+  if(justEq || (r&&r.ok&&r.value&&!/[+\-×÷*^(]$/.test(raw) && raw)){
+    const inner=justEq?Dec.plain(r.value):(r&&r.ok&&r.value&&!raw.includes('(')?Dec.plain(r.value):raw);
+    raw=`${name}(${justEq||(r&&r.ok&&!/[+\-×÷*^]$/.test(raw))? (tryEval(raw).ok?Dec.plain(tryEval(raw).value):raw) : raw})`;
+    /* simpler path below */
+  }
+}
+function applyUnary(name){
+  const ev=raw?tryEval(raw):{ok:false};
+  if(justEq && ev.ok && ev.value){
+    raw=`${name}(${Dec.plain(ev.value)})`; justEq=false; renderCalc(); return;
+  }
+  if(ev.ok && ev.value && raw && !/[+\-×÷*^(]$/.test(raw)){
+    raw=`${name}(${raw})`; justEq=false; renderCalc(); return;
+  }
+  if(justEq){ raw=''; justEq=false; }
+  raw+=(raw&&isValEnd(raw)?'×':'')+name+'(';
+  renderCalc();
+}
+function isValEnd(s){ return /(?:\d|π|e|\)|%)$/.test(s); }
+function insertConst(sym){
+  if(justEq){ raw=''; justEq=false; }
+  if(isValEnd(raw)) raw+='×';
+  raw+=sym; renderCalc();
+}
+
 function press(k){
   buzz();
-  if(k==='AC'){raw='';justEq=false;renderCalc();return}
+  if(k==='2nd'){ secondOn=!secondOn; renderSci(); return; }
+  if(k==='Deg'||k==='Rad'){
+    angleDeg=!angleDeg; try{localStorage.setItem('nvc_ang',angleDeg?'deg':'rad')}catch(e){}
+    renderSci(); renderCalc(); return;
+  }
+  if(k==='sin'||k==='cos'||k==='tan'||k==='asin'||k==='acos'||k==='atan'||k==='ln'||k==='log'||k==='√'||k==='abs'||k==='exp'){ applyUnary(k); return; }
+  if(k==='inv'){
+    const ev=raw?tryEval(raw):{ok:false};
+    if(ev.ok&&ev.value&&raw&&!/[+\-×÷*^(]$/.test(raw)){ raw='1/('+(justEq?Dec.plain(ev.value):raw)+')'; justEq=false; renderCalc(); return; }
+    if(justEq){raw='';justEq=false;} raw+=(isValEnd(raw)?'×':'')+'1/('; renderCalc(); return;
+  }
+  if(k==='sq'){
+    const ev=raw?tryEval(raw):{ok:false};
+    if(ev.ok&&ev.value&&raw&&!/[+\-×÷*^(]$/.test(raw)){ raw=(justEq?'('+Dec.plain(ev.value)+')':(/^[0-9.πe-]+$/.test(raw)?raw:'('+raw+')'))+'^2'; justEq=false; renderCalc(); return; }
+    if(justEq){raw='';justEq=false;} raw+='^2'; renderCalc(); return;
+  }
+  if(k==='pow'){
+    if(justEq){ const ev=tryEval(raw); raw=ev.ok&&ev.value?Dec.plain(ev.value):raw; justEq=false; }
+    if(!raw) raw='0';
+    if(/[+\-×÷*^(]$/.test(raw)) return;
+    raw+='^'; renderCalc(); return;
+  }
+  if(k==='yroot'){
+    if(justEq){ const ev=tryEval(raw); raw=ev.ok&&ev.value?Dec.plain(ev.value):raw; justEq=false; }
+    if(!raw) return;
+    if(/[+\-×÷*^(]$/.test(raw)) return;
+    raw+='^(1/'; renderCalc(); return;
+  }
+  if(k==='π'||k==='e'){ insertConst(k); return; }
+  if(k==='exp10'){
+    if(justEq){raw='';justEq=false;}
+    raw+=(isValEnd(raw)?'×':'')+'10^('; renderCalc(); return;
+  }
+
+  if(k==='AC'||k==='C'){raw='';justEq=false;renderCalc();return}
   if(k==='⌫'){
     if(justEq){raw='';justEq=false;renderCalc();return}
-    raw=raw.slice(0,-1); renderCalc(); return;
+    /* delete function names as a chunk */
+    const fns=['asin(','acos(','atan(','sin(','cos(','tan(','ln(','log(','abs(','exp(','√(','10^('];
+    const hit=fns.find(f=>raw.endsWith(f));
+    if(hit) raw=raw.slice(0,-hit.length);
+    else raw=raw.slice(0,-1);
+    renderCalc(); return;
   }
   if(k==='='){
-    const r=tryEval(raw);
-    if(!raw||r.pending) return;
-    if(!r.ok){ $('#res').textContent=r.display;$('#res').classList.add('err'); return; }
+    let ev=tryEval(raw);
+    if(!raw||ev.pending) return;
+    if(!ev.ok && ev.error==='paren'){
+      let s=raw, g=0; for(const ch of s){ if(ch==='(')g++; else if(ch===')')g--; }
+      if(g>0){ ev=tryEval(s+')'.repeat(g)); if(ev.ok) raw=s+')'.repeat(g); }
+    }
+    if(!ev.ok){ $('#res').textContent=ev.display;$('#res').classList.add('err'); return; }
     const expr=pretty(raw);
-    hist.unshift({expr,display:r.display}); if(hist.length>50)hist.pop(); saveHist(); renderHist();
-    raw=Dec.plain(r.value); justEq=true; renderCalc(); $('#expr').textContent=expr; return;
+    hist.unshift({expr,display:ev.display}); if(hist.length>50)hist.pop(); saveHist(); renderHist();
+    raw=Dec.plain(ev.value); justEq=true; renderCalc(); $('#expr').textContent=expr; return;
   }
   if(k==='±'){
     if(justEq){ const v=tryEval(raw); if(v.ok&&v.value){ raw=Dec.plain(Dec.neg(v.value)); justEq=false; renderCalc(); } return; }
     const m=raw.match(/^(.*?)(-?(?:\d+\.?\d*|\.\d+))(%?)$/);
-    if(!m){ if(!raw||/[+\-×÷(]$/.test(raw)) raw+='-'; renderCalc(); return; }
+    if(!m){ if(!raw||/[+\-×÷(^]$/.test(raw)) raw+='-'; renderCalc(); return; }
     const head=m[1], num=m[2], pct=m[3]||'';
     if(num[0]==='-') raw=head+num.slice(1)+pct;
-    else {
-      if(/(\d|\)|%)$/.test(head) && !/[+\-×÷(]$/.test(head)) { /* don't */ }
-      raw=head+'-'+num.replace(/^-/,'')+pct;
-    }
+    else raw=head+'-'+num.replace(/^-/,'')+pct;
     renderCalc(); return;
   }
   const ops='+-×÷';
@@ -360,6 +631,7 @@ function press(k){
   }
   if(k==='('||k===')'){
     if(justEq){ raw=(k==='(')?'(':raw+k; justEq=false; renderCalc(); return; }
+    if(k==='('&&isValEnd(raw)) raw+='×';
     raw+=k; renderCalc(); return;
   }
   if(k==='%'){
@@ -374,16 +646,8 @@ function press(k){
     raw+=(n===''||n==='-')?'0.':'.'; renderCalc(); return;
   }
   if(k==='00'||/^\d$/.test(k)){
-    const n=curNum().replace(/^-/,'');
-    const int=(n.split('.')[0]||'');
-    const add=k==='00'?'00':k;
-    if((int.replace(/^0+/,'' )|| (n.includes('.')?'0':'')).length + (int==='0'&&!n.includes('.')?0:0) >= 0){
-      const digits=(n.includes('.')?n.replace('.',''):n).replace(/^0+/,n.includes('.')||n===''?'0':'') ;
-    }
-    const only=n.replace(/^-/,'').replace('.','');
-    if(only.replace(/^0+/,'') .length>=12 && !(n==='0'||n===''||n==='-0')){
-      if(!(n==='0'||n==='')){ /* cap */ if(only.length>=12 && n!=='0') return; }
-    }
+    if(isValEnd(raw)&&curNum()===''&& /[πe)]$/.test(raw)) raw+='×';
+    const n=curNum();
     if((n.replace(/^-/,'').replace('.','').length>=12) && n!=='' && n!=='0') return;
     if((n===''||n==='0') && k==='00'){ if(n==='') raw+='0'; renderCalc(); return; }
     if(n==='0' && k!=='.' && !raw.endsWith('.')){ raw=raw.slice(0,-1)+ (k==='00'?'0':k); renderCalc(); return; }
@@ -407,9 +671,15 @@ $('#hist').onclick=e=>{
   const h=hist[+r.dataset.i]; if(!h) return;
   raw=h.display.replace(/,/g,''); justEq=true; renderCalc();
 };
+$('#hList').onclick=e=>{
+  if(e.target.closest('#hClr2')){hist=[];saveHist();renderHist();return}
+  const r=e.target.closest('.hrow'); if(!r) return;
+  const h=hist[+r.dataset.i]; if(!h) return;
+  raw=h.display.replace(/,/g,''); justEq=true; renderCalc(); closeHist(); show('calc');
+};
 (function longpress(){
-  const el=$('#res'); let t,moved;
-  const start=ev=>{ moved=false; clearTimeout(t); t=setTimeout(()=>{ t=0; copyRes(); },560); };
+  const el=$('#res'); let t;
+  const start=()=>{ clearTimeout(t); t=setTimeout(()=>{ t=0; copyRes(); },560); };
   const end=()=>{ if(t){clearTimeout(t);t=0} };
   el.addEventListener('pointerdown',start); el.addEventListener('pointerup',end);
   el.addEventListener('pointercancel',end); el.addEventListener('pointerleave',end);
@@ -422,6 +692,39 @@ function copyRes(){
   if(window.__LOG) window.__LOG.push('copy:'+t);
   toast('복사했어요');
 }
+
+function sciKeys(){
+  const ang=angleDeg?'Deg':'Rad';
+  if(!secondOn) return [
+    ['2nd','⇆',''],['Deg',ang,'ang'],['√','√',''],['abs','|x|',''],
+    ['sin','sin',''],['cos','cos',''],['tan','tan',''],['π','π',''],
+    ['ln','ln',''],['log','log',''],['inv','1/x',''],['e','e',''],
+    ['exp','eˣ',''],['sq','x²',''],['pow','xʸ',''],['±','+/−','']
+  ];
+  return [
+    ['2nd','⇆','on'],['Deg',ang,'ang'],['sq','x²',''],['abs','|x|',''],
+    ['asin','sin⁻¹',''],['acos','cos⁻¹',''],['atan','tan⁻¹',''],['π','π',''],
+    ['exp','eˣ',''],['exp10','10ˣ',''],['inv','1/x',''],['e','e',''],
+    ['ln','ln',''],['√','√',''],['yroot','ʸ√x',''],['±','+/−','']
+  ];
+}
+function renderSci(){
+  $('#sci').innerHTML=sciKeys().map(([k,lab,c])=>`<button type="button" class="sk ${c} ${k==='2nd'&&secondOn?'on':''}" data-k="${k}">${lab}</button>`).join('');
+  $('#btnSci').classList.toggle('on',sciOn);
+  document.body.classList.toggle('sci',sciOn);
+}
+$('#sci').onclick=e=>{const b=e.target.closest('[data-k]'); if(b) press(b.dataset.k)};
+function setSci(on){ sciOn=!!on; if(!sciOn) secondOn=false; renderSci(); }
+$('#btnSci').onclick=()=>{buzz(); setSci(!sciOn)};
+function syncOri(){
+  const land=innerWidth>innerHeight+40;
+  if(land && tab==='calc') setSci(true);
+}
+
+function openHist(){ renderHSheet(); $('#hSheet').hidden=false; }
+function closeHist(){ if($('#hSheet').hidden) return false; $('#hSheet').hidden=true; return true; }
+$('#btnHist').onclick=()=>{buzz(); openHist();};
+$('#hBd').onclick=()=>closeHist();
 
 /* ---------- 환율 ---------- */
 const CUR=[
@@ -528,7 +831,7 @@ function setCode(c){
   fxCode=c; try{localStorage.setItem('nvc_fx_code',c)}catch(e){}
   if(fxSide==='krw') applyFx('krw'); else applyFx('fx');
 }
-function openSheet(){ $('#sheet').hidden=false; $('#fxQ').value=''; renderList(''); setTimeout(()=>{$('#fxQ').focus()},200); }
+function openSheet(){ sheetMode='fx'; $('#shTitle').textContent='통화 고르기'; $('#fxQ').placeholder='이름이나 코드로 찾기'; $('#sheet').hidden=false; $('#fxQ').value=''; renderList(''); setTimeout(()=>{$('#fxQ').focus()},200); }
 function closeSheet(){ if($('#sheet').hidden) return false; $('#sheet').hidden=true; return true; }
 function renderList(q){
   q=(q||'').trim().toLowerCase();
@@ -618,23 +921,441 @@ async function loadRates(force){
 }
 $('#fxRef').onclick=()=>{if(!fxLoading) loadRates(true)};
 
+
+/* ---------- 단위 · N빵 · 세금·할인 ---------- */
+const UCATS=[
+  {id:'area',n:'면적'},
+  {id:'len',n:'길이'},
+  {id:'temp',n:'온도'},
+  {id:'vol',n:'부피'},
+  {id:'mass',n:'무게'},
+  {id:'data',n:'데이터'},
+  {id:'spd',n:'속도'},
+  {id:'time',n:'시간'},
+  {id:'nbbang',n:'N빵'},
+  {id:'tax',n:'세금·할인'}
+];
+/* toBase: 각 카테고리의 기본 단위로. 면적 ㎡, 길이 m, 부피 L, 무게 g, 데이터 B(1024), 속도 km/h, 시간 초 */
+const UDEF={
+  area:[
+    {id:'pyeong',n:'평'},{id:'m2',n:'㎡'},{id:'cm2',n:'㎠'},{id:'km2',n:'㎢'},
+    {id:'ha',n:'헥타르'},{id:'ac',n:'에이커'},{id:'ft2',n:'제곱피트'},{id:'yd2',n:'제곱야드'}
+  ],
+  len:[
+    {id:'m',n:'미터'},{id:'km',n:'킬로미터'},{id:'cm',n:'센티미터'},{id:'mm',n:'밀리미터'},
+    {id:'ja',n:'자'},{id:'chi',n:'치'},{id:'in',n:'인치'},{id:'ft',n:'피트'},{id:'yd',n:'야드'},{id:'mi',n:'마일'}
+  ],
+  temp:[{id:'C',n:'섭씨 °C'},{id:'F',n:'화씨 °F'},{id:'K',n:'켈빈 K'}],
+  vol:[
+    {id:'L',n:'리터'},{id:'mL',n:'밀리리터'},{id:'m3',n:'세제곱미터'},
+    {id:'gal',n:'갤런(미국)'},{id:'cup',n:'컵'},{id:'tbsp',n:'큰술'},{id:'tsp',n:'작은술'},
+    {id:'doe',n:'되'},{id:'mal',n:'말'}
+  ],
+  mass:[
+    {id:'g',n:'그램'},{id:'kg',n:'킬로그램'},{id:'t',n:'톤'},{id:'mg',n:'밀리그램'},
+    {id:'geun',n:'근'},{id:'lb',n:'파운드'},{id:'oz',n:'온스'}
+  ],
+  data:[
+    {id:'B',n:'바이트'},{id:'KB',n:'킬로바이트'},{id:'MB',n:'메가바이트'},
+    {id:'GB',n:'기가바이트'},{id:'TB',n:'테라바이트'},{id:'PB',n:'페타바이트'}
+  ],
+  spd:[{id:'kmh',n:'km/h'},{id:'ms',n:'m/s'},{id:'mph',n:'mph'},{id:'kn',n:'노트'}],
+  time:[{id:'s',n:'초'},{id:'min',n:'분'},{id:'h',n:'시간'},{id:'day',n:'일'},{id:'wk',n:'주'},{id:'ms',n:'밀리초'}]
+};
+const PAIR={area:['pyeong','m2'],len:['m','ja'],temp:['C','F'],vol:['L','mL'],mass:['kg','geun'],data:['GB','MB'],spd:['kmh','ms'],time:['h','min']};
+
+function uToBase(cat,id,x){
+  const v=Dec.n(x);
+  if(cat==='area'){
+    if(id==='m2') return v;
+    if(id==='pyeong') return Dec.mul(v,Dec.div(Dec.n(400),Dec.n(121)));
+    if(id==='cm2') return Dec.div(v,Dec.n(10000));
+    if(id==='km2') return Dec.mul(v,Dec.n(1000000));
+    if(id==='ha') return Dec.mul(v,Dec.n(10000));
+    if(id==='ac') return Dec.mul(v,Dec.n('4046.8564224'));
+    if(id==='ft2') return Dec.mul(v,Dec.n('0.09290304'));
+    if(id==='yd2') return Dec.mul(v,Dec.n('0.83612736'));
+  }
+  if(cat==='len'){
+    if(id==='m') return v;
+    if(id==='km') return Dec.mul(v,Dec.n(1000));
+    if(id==='cm') return Dec.div(v,Dec.n(100));
+    if(id==='mm') return Dec.div(v,Dec.n(1000));
+    if(id==='ja') return Dec.mul(v,Dec.div(Dec.n(10),Dec.n(33)));
+    if(id==='chi') return Dec.mul(v,Dec.div(Dec.n(1),Dec.n(33)));
+    if(id==='in') return Dec.mul(v,Dec.n('0.0254'));
+    if(id==='ft') return Dec.mul(v,Dec.n('0.3048'));
+    if(id==='yd') return Dec.mul(v,Dec.n('0.9144'));
+    if(id==='mi') return Dec.mul(v,Dec.n('1609.344'));
+  }
+  if(cat==='vol'){
+    if(id==='L') return v;
+    if(id==='mL') return Dec.div(v,Dec.n(1000));
+    if(id==='m3') return Dec.mul(v,Dec.n(1000));
+    if(id==='gal') return Dec.mul(v,Dec.n('3.785411784'));
+    if(id==='cup') return Dec.mul(v,Dec.n('0.2365882365'));
+    if(id==='tbsp') return Dec.mul(v,Dec.n('0.014786764781'));
+    if(id==='tsp') return Dec.mul(v,Dec.n('0.00492892159375'));
+    if(id==='doe') return Dec.mul(v,Dec.n('1.8'));
+    if(id==='mal') return Dec.mul(v,Dec.n('18'));
+  }
+  if(cat==='mass'){
+    if(id==='g') return v;
+    if(id==='kg') return Dec.mul(v,Dec.n(1000));
+    if(id==='t') return Dec.mul(v,Dec.n(1000000));
+    if(id==='mg') return Dec.div(v,Dec.n(1000));
+    if(id==='geun') return Dec.mul(v,Dec.n(600));
+    if(id==='lb') return Dec.mul(v,Dec.n('453.59237'));
+    if(id==='oz') return Dec.mul(v,Dec.n('28.349523125'));
+  }
+  if(cat==='data'){
+    const p={B:0,KB:1,MB:2,GB:3,TB:4,PB:5}[id]||0;
+    return Dec.mul(v, decPow(Dec.n(1024),Dec.n(p)));
+  }
+  if(cat==='spd'){
+    if(id==='kmh') return v;
+    if(id==='ms') return Dec.mul(v,Dec.n('3.6'));
+    if(id==='mph') return Dec.mul(v,Dec.n('1.609344'));
+    if(id==='kn') return Dec.mul(v,Dec.n('1.852'));
+  }
+  if(cat==='time'){
+    if(id==='s') return v;
+    if(id==='ms') return Dec.div(v,Dec.n(1000));
+    if(id==='min') return Dec.mul(v,Dec.n(60));
+    if(id==='h') return Dec.mul(v,Dec.n(3600));
+    if(id==='day') return Dec.mul(v,Dec.n(86400));
+    if(id==='wk') return Dec.mul(v,Dec.n(604800));
+  }
+  return v;
+}
+function uFromBase(cat,id,base){
+  const v=base;
+  if(cat==='area'){
+    if(id==='m2') return v;
+    if(id==='pyeong') return Dec.div(v,Dec.div(Dec.n(400),Dec.n(121)));
+    if(id==='cm2') return Dec.mul(v,Dec.n(10000));
+    if(id==='km2') return Dec.div(v,Dec.n(1000000));
+    if(id==='ha') return Dec.div(v,Dec.n(10000));
+    if(id==='ac') return Dec.div(v,Dec.n('4046.8564224'));
+    if(id==='ft2') return Dec.div(v,Dec.n('0.09290304'));
+    if(id==='yd2') return Dec.div(v,Dec.n('0.83612736'));
+  }
+  if(cat==='len'){
+    if(id==='m') return v;
+    if(id==='km') return Dec.div(v,Dec.n(1000));
+    if(id==='cm') return Dec.mul(v,Dec.n(100));
+    if(id==='mm') return Dec.mul(v,Dec.n(1000));
+    if(id==='ja') return Dec.div(v,Dec.div(Dec.n(10),Dec.n(33)));
+    if(id==='chi') return Dec.div(v,Dec.div(Dec.n(1),Dec.n(33)));
+    if(id==='in') return Dec.div(v,Dec.n('0.0254'));
+    if(id==='ft') return Dec.div(v,Dec.n('0.3048'));
+    if(id==='yd') return Dec.div(v,Dec.n('0.9144'));
+    if(id==='mi') return Dec.div(v,Dec.n('1609.344'));
+  }
+  if(cat==='vol'){
+    if(id==='L') return v;
+    if(id==='mL') return Dec.mul(v,Dec.n(1000));
+    if(id==='m3') return Dec.div(v,Dec.n(1000));
+    if(id==='gal') return Dec.div(v,Dec.n('3.785411784'));
+    if(id==='cup') return Dec.div(v,Dec.n('0.2365882365'));
+    if(id==='tbsp') return Dec.div(v,Dec.n('0.014786764781'));
+    if(id==='tsp') return Dec.div(v,Dec.n('0.00492892159375'));
+    if(id==='doe') return Dec.div(v,Dec.n('1.8'));
+    if(id==='mal') return Dec.div(v,Dec.n('18'));
+  }
+  if(cat==='mass'){
+    if(id==='g') return v;
+    if(id==='kg') return Dec.div(v,Dec.n(1000));
+    if(id==='t') return Dec.div(v,Dec.n(1000000));
+    if(id==='mg') return Dec.mul(v,Dec.n(1000));
+    if(id==='geun') return Dec.div(v,Dec.n(600));
+    if(id==='lb') return Dec.div(v,Dec.n('453.59237'));
+    if(id==='oz') return Dec.div(v,Dec.n('28.349523125'));
+  }
+  if(cat==='data'){
+    const p={B:0,KB:1,MB:2,GB:3,TB:4,PB:5}[id]||0;
+    return Dec.div(v, decPow(Dec.n(1024),Dec.n(p)));
+  }
+  if(cat==='spd'){
+    if(id==='kmh') return v;
+    if(id==='ms') return Dec.div(v,Dec.n('3.6'));
+    if(id==='mph') return Dec.div(v,Dec.n('1.609344'));
+    if(id==='kn') return Dec.div(v,Dec.n('1.852'));
+  }
+  if(cat==='time'){
+    if(id==='s') return v;
+    if(id==='ms') return Dec.mul(v,Dec.n(1000));
+    if(id==='min') return Dec.div(v,Dec.n(60));
+    if(id==='h') return Dec.div(v,Dec.n(3600));
+    if(id==='day') return Dec.div(v,Dec.n(86400));
+    if(id==='wk') return Dec.div(v,Dec.n(604800));
+  }
+  return v;
+}
+function tempConvert(from,to,x){
+  const n=Dec.n(x);
+  let c;
+  if(from==='C') c=n;
+  else if(from==='K') c=Dec.sub(n,Dec.n('273.15'));
+  else if(from==='F') c=Dec.div(Dec.mul(Dec.sub(n,Dec.n(32)),Dec.n(5)),Dec.n(9));
+  else c=n;
+  if(to==='C') return c;
+  if(to==='K') return Dec.add(c,Dec.n('273.15'));
+  if(to==='F') return Dec.add(Dec.div(Dec.mul(c,Dec.n(9)),Dec.n(5)),Dec.n(32));
+  return c;
+}
+function unitConvert(cat,from,to,amount){
+  if(cat==='temp') return tempConvert(from,to,amount);
+  const b=uToBase(cat,from,amount);
+  return uFromBase(cat,to,b);
+}
+function fmtUnit(x,maxF){ try{return fmtDec(typeof x==='object'?x:Dec.n(x), maxF==null?6:maxF);}catch(e){return String(x)} }
+
+function taxInc(supply){
+  const s=Dec.n(String(supply).replace(/,/g,''));
+  const vat=Dec.div(s,Dec.n(10));
+  const incl=Dec.add(s,vat);
+  return {supply:fmtDec(s,2), vat:fmtDec(vat,2), incl:fmtDec(incl,2),
+    supplyP:Dec.plain(s), vatP:Dec.plain(vat), inclP:Dec.plain(incl)};
+}
+function taxExt(incl){
+  const t=Dec.n(String(incl).replace(/,/g,''));
+  const s=Dec.div(t,Dec.n('1.1'));
+  const vat=Dec.sub(t,s);
+  return {supply:fmtDec(s,2), vat:fmtDec(vat,2), incl:fmtDec(t,2),
+    supplyP:Dec.plain(s), vatP:Dec.plain(vat), inclP:Dec.plain(t)};
+}
+function taxDisc(price,rate){
+  const p=Dec.n(String(price).replace(/,/g,'')), r=Dec.n(String(rate).replace(/,/g,''));
+  const off=Dec.div(Dec.mul(p,r),Dec.n(100));
+  const sale=Dec.sub(p,off);
+  return {price:fmtDec(p,2), rate:fmtDec(r,4), off:fmtDec(off,2), sale:fmtDec(sale,2),
+    offP:Dec.plain(off), saleP:Dec.plain(sale)};
+}
+function nbbangCalc(total,people,step){
+  const T=Math.round(Number(String(total).replace(/,/g,'')));
+  const N=Math.floor(Number(String(people).replace(/,/g,'')));
+  const S=Number(step)||0;
+  if(!(T>=0) || !(N>=1)) return {ok:false};
+  if(!S){
+    const per=Math.floor(T/N), rem=T-per*N;
+    return {ok:true,mode:'remain',per,rem,sum:per*N,total:T,people:N,step:0,
+      perD:comma(String(per)), remD:comma(String(rem)), sumD:comma(String(per*N))};
+  }
+  const per=Math.ceil((T/N)/S)*S, sum=per*N, extra=sum-T;
+  return {ok:true,mode:'up',per,extra,sum,total:T,people:N,step:S,
+    perD:comma(String(per)), extraD:comma(String(extra)), sumD:comma(String(sum))};
+}
+
+let uCat='area', uFrom='pyeong', uTo='m2', uSide='from', uStr='1',
+    nb={total:'0',people:'2',step:0,focus:'total'},
+    tx={mode:'inc',amt:'0',price:'0',rate:'0',focus:'amt'};
+
+function setCat(id){
+  uCat=id;
+  if(PAIR[id]){ uFrom=PAIR[id][0]; uTo=PAIR[id][1]; }
+  uSide='from';
+  if(id==='nbbang'){ if(nb.total==='0') nb.focus='total'; }
+  if(id==='tax'){ tx.focus=tx.mode==='disc'?'price':'amt'; }
+  renderUnit();
+}
+function unitName(cat,id){ const l=UDEF[cat]||[]; return (l.find(x=>x.id===id)||{n:id}).n; }
+
+function renderUnit(){
+  $('#uTitle').textContent=uCat==='nbbang'?'N빵':uCat==='tax'?'세금·할인':'단위 계산기';
+  $('#uCats').innerHTML=UCATS.map(c=>`<button type="button" data-cat="${c.id}" class="${c.id===uCat?'on':''}">${c.n}</button>`).join('');
+  const left=$('#uLeft');
+  if(uCat==='nbbang'){
+    const r=nbbangCalc(nb.total,nb.people,nb.step);
+    const stepLab=nb.step===0?'안 함':(nb.step===100?'100원':'1,000원');
+    left.innerHTML=`
+      <button type="button" class="ufield ${nb.focus==='total'?'on':''}" data-nf="total"><span class="fn">총액 (원)</span><span class="fv">${comma(nb.total||'0')}</span></button>
+      <button type="button" class="ufield ${nb.focus==='people'?'on':''}" data-nf="people"><span class="fn">인원 (명)</span><span class="fv">${comma(nb.people||'0')}</span></button>
+      <div style="font-size:13px;font-weight:700;color:var(--dim);padding:0 4px">올림 단위</div>
+      <div class="urow">
+        <button type="button" class="chip ${nb.step===0?'on':''}" data-st="0">안 함</button>
+        <button type="button" class="chip ${nb.step===100?'on':''}" data-st="100">100원</button>
+        <button type="button" class="chip ${nb.step===1000?'on':''}" data-st="1000">1,000원</button>
+      </div>
+      <div id="uMeta" class="glass" style="border-radius:18px;padding:12px 14px">${r.ok? (
+        r.mode==='remain'
+          ? `<b>1인당 ${r.perD}원</b><br>인원으로 나누고 ${r.rem===0?'남는 돈이 없어요':r.remD+'원이 남아요'}`
+          : `<b>1인당 ${r.perD}원</b><br>${r.people}명이면 합계 ${r.sumD}원, 총액보다 ${r.extraD}원 더 나와요`
+      ):'총액과 인원을 넣어 주세요'}</div>`;
+  }else if(uCat==='tax'){
+    const inc=tx.mode!=='disc' && tx.mode==='inc'?taxInc(tx.amt||'0'):null;
+    const ext=tx.mode==='ext'?taxExt(tx.amt||'0'):null;
+    const disc=tx.mode==='disc'?taxDisc(tx.price||'0',tx.rate||'0'):null;
+    const show=inc||ext;
+    left.innerHTML=`
+      <div class="urow" style="flex-direction:column;align-items:stretch">
+        <button type="button" class="chip ${tx.mode==='inc'?'on':''}" data-tm="inc">공급가 → 포함가</button>
+        <button type="button" class="chip ${tx.mode==='ext'?'on':''}" data-tm="ext">포함가 → 공급가</button>
+        <button type="button" class="chip ${tx.mode==='disc'?'on':''}" data-tm="disc">할인</button>
+      </div>
+      ${tx.mode!=='disc'?`
+        <button type="button" class="ufield ${tx.focus==='amt'?'on':''}" data-tf="amt"><span class="fn">${tx.mode==='inc'?'공급가 (원)':'부가세 포함가 (원)'}</span><span class="fv">${comma(tx.amt||'0')}</span></button>
+        <div id="uMeta" class="glass" style="border-radius:18px;padding:12px 14px">${show?`<b>공급가 ${show.supply}원</b><br>부가세(10%) ${show.vat}원<br>포함가 ${show.incl}원`:'금액을 넣어 주세요'}
+        <div style="margin-top:6px;color:var(--dim);font-size:12px">부가세 10% 기준이에요</div></div>
+      `:`
+        <button type="button" class="ufield ${tx.focus==='price'?'on':''}" data-tf="price"><span class="fn">정가 (원)</span><span class="fv">${comma(tx.price||'0')}</span></button>
+        <button type="button" class="ufield ${tx.focus==='rate'?'on':''}" data-tf="rate"><span class="fn">할인율 (%)</span><span class="fv">${comma(tx.rate||'0')}</span></button>
+        <div id="uMeta" class="glass" style="border-radius:18px;padding:12px 14px">${disc?`<b>할인가 ${disc.sale}원</b><br>할인액 ${disc.off}원`:'정가와 할인율을 넣어 주세요'}</div>
+      `}`;
+  }else{
+    let topAmt, botAmt;
+    try{
+      topAmt=uSide==='from'?comma(trimDot(uStr||'0')):fmtUnit(unitConvert(uCat,uTo,uFrom,uStr||'0'));
+      botAmt=uSide==='to'?comma(trimDot(uStr||'0')):fmtUnit(unitConvert(uCat,uFrom,uTo,uStr||'0'));
+    }catch(e){ topAmt=uSide==='from'?comma(trimDot(uStr||'0')):'—'; botAmt=uSide==='to'?comma(trimDot(uStr||'0')):'—'; }
+    left.innerHTML=`
+      <button type="button" class="ucard glass ${uSide==='from'?'on':''}" data-side="from">
+        <span class="ulab" data-pick="from">${unitName(uCat,uFrom)} ${ic('chev',2)}</span>
+        <span class="uamt" id="uFromAmt">${topAmt}</span>
+      </button>
+      <button type="button" class="ucard glass ${uSide==='to'?'on':''}" data-side="to">
+        <span class="ulab" data-pick="to">${unitName(uCat,uTo)} ${ic('chev',2)}</span>
+        <span class="uamt" id="uToAmt">${botAmt}</span>
+      </button>
+      ${uCat==='area'&&((uFrom==='pyeong'&&uTo==='m2')||(uFrom==='m2'&&uTo==='pyeong'))?'<div id="uMeta">1평 = 400/121 ㎡ (약 3.305785 ㎡)</div>':''}
+      ${uCat==='len'&&(uFrom==='ja'||uTo==='ja'||uFrom==='chi'||uTo==='chi')?'<div id="uMeta">1자 = 10/33 m, 1치 = 1/10자</div>':''}`;
+  }
+}
+$('#uCats').onclick=e=>{const b=e.target.closest('[data-cat]'); if(b){buzz(); setCat(b.dataset.cat);}};
+$('#uLeft').onclick=e=>{
+  const st=e.target.closest('[data-st]'); if(st){ nb.step=+st.dataset.st; renderUnit(); return; }
+  const tm=e.target.closest('[data-tm]'); if(tm){ tx.mode=tm.dataset.tm; tx.focus=tx.mode==='disc'?'price':'amt'; renderUnit(); return; }
+  const nf=e.target.closest('[data-nf]'); if(nf){ nb.focus=nf.dataset.nf; renderUnit(); return; }
+  const tf=e.target.closest('[data-tf]'); if(tf){ tx.focus=tf.dataset.tf; renderUnit(); return; }
+  const pick=e.target.closest('[data-pick]'); if(pick){ openUnitPick(pick.dataset.pick); return; }
+  const card=e.target.closest('[data-side]'); if(card){
+    if(uSide!==card.dataset.side){
+      /* switch editing side: take displayed value of that side as new raw */
+      try{
+        if(card.dataset.side==='to'){ const v=unitConvert(uCat,uFrom,uTo,uStr||'0'); uStr=Dec.plain(v); }
+        else { const v=unitConvert(uCat,uTo,uFrom,uStr||'0'); uStr=Dec.plain(v); }
+      }catch(err){}
+      uSide=card.dataset.side;
+    }
+    renderUnit();
+  }
+};
+
+let uPickSide='from', sheetMode='fx';
+function openUnitPick(side){
+  uPickSide=side; sheetMode='unit';
+  $('#shTitle').textContent='단위 고르기';
+  $('#fxQ').value=''; $('#fxQ').placeholder='단위 이름 찾기';
+  renderUnitList('');
+  $('#sheet').hidden=false;
+  setTimeout(()=>{$('#fxQ').focus()},200);
+}
+function renderUnitList(q){
+  q=(q||'').trim();
+  const rows=(UDEF[uCat]||[]).filter(x=>!q||x.n.includes(q)||x.id.toLowerCase().includes(q.toLowerCase()));
+  const cur=uPickSide==='from'?uFrom:uTo;
+  $('#fxList').innerHTML=rows.map(x=>`<button type="button" data-uid="${x.id}" class="${x.id===cur?'on':''}"><span class="cn">${x.n}</span><span class="cc">${x.id}</span></button>`).join('')||'<div style="padding:20px;text-align:center;color:var(--dim)">찾는 단위가 없어요</div>';
+}
+const _fxQinput=()=>{ if(sheetMode==='unit') renderUnitList($('#fxQ').value); else renderList($('#fxQ').value); };
+$('#fxQ').oninput=_fxQinput;
+const _fxListClick=e=>{
+  if(sheetMode==='unit'){
+    const b=e.target.closest('[data-uid]'); if(!b) return;
+    if(uPickSide==='from') uFrom=b.dataset.uid; else uTo=b.dataset.uid;
+    closeSheet(); renderUnit(); return;
+  }
+  const b=e.target.closest('[data-c]'); if(!b) return; setCode(b.dataset.c); closeSheet();
+};
+$('#fxList').onclick=_fxListClick;
+
+function uPress(k){
+  buzz();
+  if(uCat==='nbbang'){
+    let s=nb[nb.focus]||'0';
+    s=editNum(s,k, nb.focus==='people'?6:12, nb.focus!=='people');
+    nb[nb.focus]=s; renderUnit(); return;
+  }
+  if(uCat==='tax'){
+    const f=tx.focus||'amt';
+    let s=tx[f]||'0';
+    s=editNum(s,k, f==='rate'?6:12, true);
+    tx[f]=s; renderUnit(); return;
+  }
+  uStr=editNum(uStr||'0',k,12,true);
+  renderUnit();
+}
+function editNum(s,k,maxd,allowDot){
+  if(k==='C'||k==='AC') return '0';
+  if(k==='⌫'){ s=s.slice(0,-1); return (s===''||s==='-'||s==='-0')?'0':s; }
+  if(k==='±'||k==='+/-'){ if(s[0]==='-') return s.slice(1)||'0'; return s==='0'?s:'-'+s; }
+  if(k==='.'){ if(!allowDot||s.includes('.')) return s; return (s===''||s==='-')?'0.':s+'.'; }
+  if(k==='00'||/^\d$/.test(k)){
+    const body=s.replace(/^-/,'').replace('.','');
+    if(body.replace(/^0+/,'').length>=maxd && s!=='0') return s;
+    if(s==='0'&&k==='00') return s;
+    if(s==='0') return k==='00'?'0':k;
+    return s+k;
+  }
+  return s;
+}
+function uMove(dir){
+  buzz();
+  if(uCat==='nbbang'){ nb.focus=dir==='up'?'total':'people'; renderUnit(); return; }
+  if(uCat==='tax'){
+    if(tx.mode==='disc') tx.focus=dir==='up'?'price':'rate';
+    else tx.focus='amt';
+    renderUnit(); return;
+  }
+  /* flip side like Samsung ↑↓ */
+  const cardSide=dir==='up'?'from':'to';
+  if(uSide!==cardSide){
+    try{
+      if(cardSide==='to') uStr=Dec.plain(unitConvert(uCat,uFrom,uTo,uStr||'0'));
+      else uStr=Dec.plain(unitConvert(uCat,uTo,uFrom,uStr||'0'));
+    }catch(e){}
+    uSide=cardSide;
+  }
+  renderUnit();
+}
+$('#uKeys').innerHTML=[
+  ['7',''],['8',''],['9',''],['C','ac fn'],
+  ['4',''],['5',''],['6',''],['⌫','fn'],
+  ['1',''],['2',''],['3',''],['↑','fn'],
+  ['±','fn'],['0',''],['.','fn'],['↓','fn']
+].map(([k,c])=>`<button type="button" class="k ${c}" data-uk="${k}" aria-label="${k==='⌫'?'한 칸 지우기':k==='↑'?'위 칸':k==='↓'?'아래 칸':k}">${k==='⌫'?ic('back',2.4):k}</button>`).join('');
+$('#uKeys').onclick=e=>{
+  const b=e.target.closest('[data-uk]'); if(!b) return;
+  const k=b.dataset.uk;
+  if(k==='↑') uMove('up'); else if(k==='↓') uMove('down'); else uPress(k);
+};
+$('#btnUnit').onclick=()=>{buzz(); show('unit');};
+$('#uBack').onclick=()=>{buzz(); show('calc');};
+
 /* ---------- 탭 · 뒤로 ---------- */
 let tab='calc';
 function show(v){
-  tab=v; $('#toast').classList.remove('on'); $('#v-calc').hidden=v!=='calc'; $('#v-fx').hidden=v!=='fx';
+  tab=v; $('#toast').classList.remove('on');
+  ['calc','fx','unit'].forEach(k=>{ const el=$('#v-'+k); if(el) el.hidden=k!==v; });
   $$('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
-  try{localStorage.setItem('nvc_tab',v)}catch(e){}
+  $('#tabs').style.display=v==='unit'?'none':'';
+  $('.head').style.visibility=v==='unit'?'hidden':'visible';
+  try{ if(v!=='unit') localStorage.setItem('nvc_tab',v);}catch(e){}
   if(v==='fx' && (!fxInfo||!fxInfo.krwPer)) loadRates();
+  if(v==='unit') renderUnit();
 }
 $('#tabs').onclick=e=>{const b=e.target.closest('button[data-v]'); if(b){buzz(); show(b.dataset.v)}};
-window.NV_back=()=>{ if(closeSheet()) return true; return false; };
+function closeSheet(){ if($('#sheet').hidden) return false; $('#sheet').hidden=true; sheetMode='fx'; $('#fxQ').placeholder='이름이나 코드로 찾기'; $('#shTitle').textContent='통화 고르기'; return true; }
+window.NV_back=()=>{ if(closeSheet()) return true; if(closeHist()) return true; if(tab==='unit'){ show('calc'); return true; } return false; };
 window.NV_resume=()=>{};
+$('#shBd').onclick=()=>closeSheet();
 
 /* ---------- 시험용 API ---------- */
 window.Calc={
   eval(s){const r=tryEval(s); return {ok:r.ok,display:r.display||'',error:r.error||'',message:r.message||'',plain:r.value?Dec.plain(r.value):''}},
   press, getRaw:()=>raw, justEq:()=>justEq, hist:()=>hist.slice(), setRaw, ac:()=>press('AC'),
-  fmt:s=>{try{return fmtDec(Dec.n(s))}catch(e){return String(e)}}
+  fmt:s=>{try{return fmtDec(Dec.n(s))}catch(e){return String(e)}},
+  setSci, isSci:()=>sciOn, setDeg:(d)=>{angleDeg=!!d; try{localStorage.setItem('nvc_ang',angleDeg?'deg':'rad')}catch(e){} renderSci();},
+  isDeg:()=>angleDeg, setSecond:(o)=>{secondOn=!!o; renderSci();}, isSecond:()=>secondOn
 };
 window.FX={
   setRates(info){fxInfo=info; fxOffline=false; try{localStorage.setItem('nvc_fx',JSON.stringify(info))}catch(e){} applyFx(fxSide)},
@@ -648,12 +1369,21 @@ window.FX={
   load:force=>loadRates(force),
   setAmount(side,s){ if(side==='krw'){fxSide='krw';krwStr=String(s);applyFx('krw')} else {fxSide='fx';fxStr=String(s);applyFx('fx')} }
 };
+window.Unit={
+  convert:(cat,from,to,amt)=>{ const v=unitConvert(cat,from,to,String(amt).replace(/,/g,'')); return {ok:true,display:fmtUnit(v),plain:Dec.plain(v)}; },
+  setCat, setPair:(a,b)=>{uFrom=a;uTo=b;renderUnit();},
+  state:()=>({cat:uCat,from:uFrom,to:uTo,side:uSide,str:uStr,fromName:unitName(uCat,uFrom),toName:unitName(uCat,uTo)}),
+  press:uPress, move:uMove
+};
+window.Nbbang={ calc:nbbangCalc, set:(t,p,st)=>{nb.total=String(t);nb.people=String(p);nb.step=st||0; if(tab==='unit') renderUnit(); return nbbangCalc(t,p,st);} };
+window.Tax={ vatInc:taxInc, vatExt:taxExt, discount:taxDisc };
 
 try{const t=localStorage.getItem('nvc_tab'); if(t==='fx'||t==='calc') tab=t}catch(e){}
-renderHist(); renderCalc(); renderFx(); show(tab);
+renderSci(); renderHist(); renderCalc(); renderFx(); show(tab);
 if(tab==='fx') loadRates();
 else if(fxInfo&&fxInfo.krwPer){ /* keep cache */ }
-else { /* 미리 받아 두기 */ setTimeout(()=>{if(!fxInfo) loadRates()},400); }
+else { setTimeout(()=>{if(!fxInfo) loadRates()},400); }
+syncOri();
 </script>
 </body>
 </html>

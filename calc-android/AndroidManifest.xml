@@ -6,7 +6,7 @@
   <application android:label="뉴니버스 계산기" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher"
       android:supportsRtl="true" android:usesCleartextTraffic="false" android:allowBackup="false" android:theme="@style/NV">
     <activity android:name=".MainActivity" android:exported="true" android:launchMode="singleTask"
-        android:screenOrientation="portrait" android:windowSoftInputMode="adjustResize"
+        android:screenOrientation="fullUser" android:windowSoftInputMode="adjustResize"
         android:configChanges="orientation|screenSize|keyboardHidden|keyboard|navigation|uiMode|density|screenLayout|smallestScreenSize">
       <intent-filter>
         <action android:name="android.intent.action.MAIN"/>
