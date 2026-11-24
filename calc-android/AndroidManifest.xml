@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="kr.newniverse.calc">
+  <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="34"/>
+  <!-- 환율을 받을 때만 사용. 계산 기록·입력은 폰 안에만 저장 -->
+  <uses-permission android:name="android.permission.INTERNET"/>
+  <application android:label="뉴니버스 계산기" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher"
+      android:supportsRtl="true" android:usesCleartextTraffic="false" android:allowBackup="false" android:theme="@style/NV">
+    <activity android:name=".MainActivity" android:exported="true" android:launchMode="singleTask"
+        android:screenOrientation="portrait" android:windowSoftInputMode="adjustResize"
+        android:configChanges="orientation|screenSize|keyboardHidden|keyboard|navigation|uiMode|density|screenLayout|smallestScreenSize">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN"/>
+        <category android:name="android.intent.category.LAUNCHER"/>
+        <category android:name="android.intent.category.APP_CALCULATOR"/>
+      </intent-filter>
+    </activity>
+  </application>
+</manifest>

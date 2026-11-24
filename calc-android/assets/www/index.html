@@ -1,0 +1,659 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src https://open.er-api.com https://latest.currency-api.pages.dev https://cdn.jsdelivr.net">
+<title>뉴니버스 계산기</title>
+<style>
+:root{--sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);--a1:#6fd3ff;--a2:#8f6bff;--acc:linear-gradient(135deg,var(--a1),var(--a2));--red:#ff4d6d;--fg:#f3f1ff;--sub:rgba(226,222,255,.62);--dim:rgba(226,222,255,.38);
+ --glass:rgba(255,255,255,.075);--line:rgba(255,255,255,.14);--r:22px;
+ --font:"Pretendard","Noto Sans KR","Apple SD Gothic Neo",system-ui,-apple-system,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{height:100%;background:#04030c;color:var(--fg);font-family:var(--font);overflow:hidden}
+button,input{font-family:inherit;color:inherit}
+button{background:none;border:none;cursor:pointer}
+svg{display:block}
+#app{position:fixed;inset:0;overflow:hidden;background:#05040f}
+#neb{position:absolute;inset:0;width:100%;height:100%}
+.head{position:relative;z-index:2;display:flex;align-items:center;padding:calc(var(--sat) + 10px) 22px 4px;gap:8px}
+.head h1{flex:1;font-size:26px;font-weight:800;letter-spacing:-.5px}
+.view{position:absolute;inset:0;display:flex;flex-direction:column;padding-top:calc(var(--sat) + 52px);z-index:1}
+.glass{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(18px) saturate(1.2);-webkit-backdrop-filter:blur(18px) saturate(1.2)}
+.scroll{overflow-y:auto;overflow-x:hidden;scrollbar-width:none;min-height:0}
+.scroll::-webkit-scrollbar{display:none}
+.icb{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--fg);flex:none}
+.icb svg{width:22px;height:22px}
+.icb:active{background:rgba(143,107,255,.18)}
+#disp{padding:4px 22px 8px;text-align:right;flex:none}
+#expr{min-height:26px;font-size:18px;font-weight:600;color:var(--sub);word-break:break-all;font-variant-numeric:tabular-nums}
+#res{font-size:46px;font-weight:800;letter-spacing:-1.2px;line-height:1.15;font-variant-numeric:tabular-nums;padding:2px 0 4px;user-select:none}
+#res.err{font-size:22px;font-weight:700;color:var(--red);letter-spacing:0}
+#hint{font-size:12px;color:var(--dim);min-height:16px}
+#hist{flex:1;padding:0 16px 6px;min-height:52px;display:flex;flex-direction:column;justify-content:flex-start;align-items:stretch}
+.hrow{display:flex;align-items:baseline;gap:10px;width:100%;text-align:left;padding:8px 10px;border-radius:14px}
+.hrow:active{background:rgba(143,107,255,.12)}
+.hrow .he{flex:1;min-width:0;color:var(--sub);font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.hrow .hv{flex:none;font-size:16px;font-weight:800;font-variant-numeric:tabular-nums}
+#hClr{display:block;align-self:center;margin:2px auto 8px;flex:none;font-size:13px;font-weight:700;color:var(--dim);padding:6px 12px;border-radius:12px}
+#hClr:active{background:rgba(143,107,255,.12)}
+#keys,#fxKeys{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:6px 14px calc(var(--sab) + 92px);flex:none}
+.k{height:58px;border-radius:18px;background:rgba(255,255,255,.07);border:1px solid var(--line);font-size:26px;font-weight:700;display:flex;align-items:center;justify-content:center;color:var(--fg)}
+.k:active,.k.pr{background:rgba(143,107,255,.24)}
+.k.op{color:var(--a1)}
+.k.fn{font-size:20px;color:var(--sub)}
+.k.ac{color:var(--red);font-size:18px;font-weight:800}
+.k.eq{background:var(--acc);color:#0a0820;border:none;font-weight:800}
+.k.eq:active{filter:brightness(1.08)}
+.k svg{width:22px;height:22px}
+.k.wide{grid-column:span 2}
+#tabs{position:absolute;left:14px;right:14px;bottom:calc(var(--sab) + 14px);height:64px;border-radius:24px;display:flex;z-index:5;padding:6px}
+#tabs button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:13px;font-weight:700;color:var(--dim);border-radius:18px}
+#tabs button svg{width:22px;height:22px}
+#tabs button.on{color:var(--fg);background:rgba(255,255,255,.08)}
+#tabs button.on svg{stroke:url(#gacc)}
+#fxBox{padding:4px 16px 0;display:flex;flex-direction:column;gap:10px;flex:none}
+.fxcard{display:block;width:100%;text-align:left;border-radius:22px;padding:14px 16px 12px;position:relative}
+.fxcard.on{border-color:rgba(111,211,255,.45);box-shadow:0 0 0 1px rgba(111,211,255,.25)}
+.fxlab{display:block;font-size:12px;font-weight:700;color:var(--dim);letter-spacing:.2px}
+.fxcur,.fxpick{display:block;margin-top:2px;font-size:15px;font-weight:700;color:var(--a1);background:none;border:none;padding:0;text-align:left}
+.fxpick{display:inline-flex;align-items:center;gap:4px}
+.fxpick svg{width:16px;height:16px}
+.fxamt{display:block;margin-top:4px;font-size:32px;font-weight:800;letter-spacing:-.8px;font-variant-numeric:tabular-nums;line-height:1.2;word-break:break-all}
+#fxSwap{display:flex;width:40px;height:40px;margin:-6px auto;z-index:2;border-radius:50%;background:rgba(20,16,44,.92);border:1px solid var(--line);color:var(--fg);position:relative}
+#fxStack{position:relative}
+#fxMeta{padding:8px 22px 0;text-align:center;flex:none}
+#fxRate{font-size:16px;font-weight:700;margin-top:4px}
+#fxWhen{font-size:13px;color:var(--sub);margin-top:4px;font-weight:600}
+#fxNote{font-size:12px;color:var(--dim);margin-top:3px;line-height:1.45}
+#fxRef{display:inline-flex;align-items:center;justify-content:center;gap:6px;margin:8px auto 0;padding:8px 16px;border-radius:16px;font-size:14px;font-weight:800}
+#fxRef svg{width:16px;height:16px}
+#fxRef:active{background:rgba(143,107,255,.16)}
+#fxChips{display:flex;gap:6px;padding:8px 14px 0;overflow-x:auto;scrollbar-width:none;flex:none}
+#fxChips::-webkit-scrollbar{display:none}
+#fxChips button{flex:none;padding:8px 12px;border-radius:16px;font-size:13px;font-weight:700;color:var(--sub);background:rgba(255,255,255,.06);border:1px solid var(--line)}
+#fxChips button.on{color:#0a0820;background:var(--acc);border:none}
+#sheet{position:absolute;inset:0;z-index:20}
+#sheet .bd{position:absolute;inset:0;background:rgba(4,3,12,.55)}
+#sheet .box{position:absolute;left:0;right:0;bottom:0;max-height:78%;border-radius:24px 24px 0 0;padding:12px 16px calc(var(--sab) + 16px);display:flex;flex-direction:column}
+#sheet .hh{font-size:18px;font-weight:800;padding:6px 8px 10px}
+#fxQ{width:100%;height:46px;border-radius:16px;border:1px solid var(--line);background:rgba(255,255,255,.06);padding:0 14px;font-size:16px;outline:none}
+#fxQ::placeholder{color:var(--dim)}
+#fxList{flex:1;overflow-y:auto;margin-top:8px;min-height:0}
+#fxList button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:12px 10px;border-radius:14px}
+#fxList button:active,#fxList button.on{background:rgba(143,107,255,.14)}
+#fxList .cn{flex:1;font-size:16px;font-weight:700}
+#fxList .cc{font-size:13px;color:var(--dim);font-weight:700}
+#toast{position:absolute;left:50%;bottom:calc(var(--sab) + 100px);transform:translateX(-50%) translateY(20px);opacity:0;z-index:40;padding:10px 16px;border-radius:18px;font-size:14px;font-weight:700;white-space:nowrap;transition:all .2s;pointer-events:none;background:rgba(24,20,52,.94);border:1px solid var(--line)}
+#toast.on{opacity:1;transform:translateX(-50%)}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <linearGradient id="gacc" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6fd3ff"/><stop offset="1" stop-color="#8f6bff"/></linearGradient>
+</defs></svg>
+<div id="app">
+  <canvas id="neb"></canvas>
+  <header class="head"><h1>계산기</h1></header>
+
+  <section id="v-calc" class="view">
+    <div id="hist" class="scroll"></div>
+    <div id="disp">
+      <div id="expr"></div>
+      <div id="res">0</div>
+      <div id="hint">결과를 길게 누르면 복사돼요</div>
+    </div>
+    <div id="keys"></div>
+  </section>
+
+  <section id="v-fx" class="view" hidden>
+    <div id="fxBox">
+      <div id="fxStack">
+        <button type="button" class="fxcard glass on" id="cardKrw">
+          <span class="fxlab">원화</span>
+          <span class="fxcur">대한민국 원 · KRW</span>
+          <span class="fxamt" id="krwAmt">0</span>
+        </button>
+        <button type="button" id="fxSwap" class="icb" aria-label="입력 칸 바꾸기"></button>
+        <button type="button" class="fxcard glass" id="cardFx">
+          <span class="fxlab">외화</span>
+          <span class="fxpick" id="fxPick">미국 달러 · USD</span>
+          <span class="fxamt" id="fxAmt">0</span>
+        </button>
+      </div>
+    </div>
+    <div id="fxMeta">
+      <div id="fxRate">환율을 받는 중…</div>
+      <div id="fxWhen"></div>
+      <div id="fxNote">기준 환율이라 은행 거래 환율과 다를 수 있어요</div>
+      <button type="button" id="fxRef" class="glass">새로고침</button>
+    </div>
+    <div id="fxChips"></div>
+    <div id="fxKeys"></div>
+  </section>
+
+  <nav id="tabs" class="glass">
+    <button type="button" data-v="calc" class="on"><span data-i="calc"></span>계산</button>
+    <button type="button" data-v="fx"><span data-i="fx"></span>환율</button>
+  </nav>
+  <div id="sheet" hidden>
+    <div class="bd" id="shBd"></div>
+    <div class="box glass">
+      <div class="hh">통화 고르기</div>
+      <input id="fxQ" type="search" placeholder="이름이나 코드로 찾기" enterkeyhint="search" autocomplete="off">
+      <div id="fxList"></div>
+    </div>
+  </div>
+  <div id="toast"></div>
+</div>
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const NV=window.NVCalc||null;
+const P={
+  calc:'<rect x="5" y="3" width="14" height="18" rx="3"/><path d="M8 7h8"/><path d="M12 11.5v6M9 14.5h6"/>',
+  fx:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+  swap:'<path d="M7 8h11M15 5l3 3-3 3M17 16H6M9 13l-3 3 3 3"/>',
+  chev:'<path d="M6 9l6 6 6-6"/>',
+  ref:'<path d="M20 12a8 8 0 1 1-2.2-5.5M20 4v6h-6"/>',
+  back:'<path d="M18 5H9L4 12l5 7h9a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z"/><path d="M11.2 9.5l5 5M16.2 9.5l-5 5"/>'
+};
+const ic=(n,sw=1.9)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${P[n]||''}</svg>`;
+function icons(root){(root||document).querySelectorAll('[data-i]').forEach(e=>{if(!e.querySelector('svg'))e.insertAdjacentHTML('afterbegin',ic(e.dataset.i))})}
+icons();
+$('#fxSwap').innerHTML=ic('swap',2);
+$('#fxPick').insertAdjacentHTML('beforeend',ic('chev',2.2));
+$('#fxRef').insertAdjacentHTML('afterbegin',ic('ref',2));
+const buzz=()=>{try{NV&&NV.vibrate(12)}catch(e){}};
+const J=(s,d)=>{try{return JSON.parse(s)}catch(e){return d}};
+let toastT;function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('on'),2000)}
+function nebula(){const c=$('#neb'),r=c.getBoundingClientRect();if(!r.width)return;const d=Math.min(2,devicePixelRatio||1);c.width=r.width*d;c.height=r.height*d;const x=c.getContext('2d');x.scale(d,d);const W=r.width,H=r.height;
+ x.fillStyle='#05040f';x.fillRect(0,0,W,H);let s=7;const rnd=()=>(s=(s*16807)%2147483647)/2147483647;
+ const blob=(cx,cy,rr,col)=>{const g=x.createRadialGradient(cx,cy,0,cx,cy,rr);g.addColorStop(0,col);g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(0,0,W,H)};
+ blob(W*.15,H*.12,W*.9,'rgba(60,120,220,.30)');blob(W*.95,H*.35,W*.85,'rgba(130,80,230,.30)');blob(W*.3,H*.8,W*.9,'rgba(90,60,200,.22)');blob(W*.7,H*.95,W*.6,'rgba(60,170,240,.14)');
+ for(let i=0;i<14;i++)blob(W*rnd(),H*rnd(),W*(.1+rnd()*.25),`rgba(${110+rnd()*60|0},${110+rnd()*60|0},255,.07)`);
+ for(let i=0;i<170;i++){const a=rnd()*.7+.1,rr=rnd()*1.1+.2;x.fillStyle=`rgba(230,235,255,${a})`;x.beginPath();x.arc(W*rnd(),H*rnd(),rr,0,7);x.fill()}
+ x.fillStyle='rgba(5,4,15,.25)';x.fillRect(0,0,W,H)}
+let nebT;nebula();addEventListener('resize',()=>{clearTimeout(nebT);nebT=setTimeout(nebula,200)});
+
+/* ---------- 소수 계산 (0.1+0.2=0.3) ---------- */
+const Dec=(()=>{
+  const MAXS=24;
+  function n(v){
+    if(v&&typeof v==='object'&&typeof v.n==='bigint') return v;
+    let s=String(v??'0').replace(/,/g,'').trim();
+    if(s===''||s==='.'||s==='-'||s==='-.' ) s='0';
+    let sign=1n; if(s[0]==='-'){sign=-1n;s=s.slice(1)} else if(s[0]==='+') s=s.slice(1);
+    if(!/^\d*(\.\d*)?$/.test(s)) throw 'bad';
+    const [a,b='']=s.split('.');
+    const int=a===''?'0':a, frac=b;
+    return norm({n:sign*BigInt(int+frac), s:frac.length});
+  }
+  function norm(x){let {n,s}=x; if(n===0n) return {n:0n,s:0}; while(s>0&&n%10n===0n){n/=10n;s--} return {n,s}}
+  function align(x,y){x=n(x);y=n(y);const s=Math.max(x.s,y.s);return [{n:x.n*10n**BigInt(s-x.s),s},{n:y.n*10n**BigInt(s-y.s),s}]}
+  function add(x,y){const [a,b]=align(x,y);return norm({n:a.n+b.n,s:a.s})}
+  function sub(x,y){const [a,b]=align(x,y);return norm({n:a.n-b.n,s:a.s})}
+  function mul(x,y){x=n(x);y=n(y);return norm({n:x.n*y.n,s:x.s+y.s})}
+  function div(x,y){
+    x=n(x);y=n(y); if(y.n===0n) throw 'div0';
+    const extra=MAXS; let num=x.n*10n**BigInt(extra+y.s), den=y.n*10n**BigInt(x.s);
+    let sign=1n; if(num<0n){sign=-sign;num=-num} if(den<0n){sign=-sign;den=-den}
+    let q=num/den, r=num%den; if(r*2n>=den) q+=1n;
+    return norm({n:sign*q,s:extra});
+  }
+  function neg(x){x=n(x);return {n:-x.n,s:x.s}}
+  function plain(x){
+    x=norm(n(x)); const sign=x.n<0n?'-':''; let d=(x.n<0n?-x.n:x.n).toString();
+    if(x.s===0) return sign+d; d=d.padStart(x.s+1,'0'); const i=d.length-x.s; const f=d.slice(i).replace(/0+$/,'');
+    return sign+d.slice(0,i)+(f?'.'+f:'');
+  }
+  function digits(x){x=norm(n(x)); return (x.n<0n?-x.n:x.n).toString().length}
+  return {n,add,sub,mul,div,neg,plain,norm,digits};
+})();
+
+function comma(s){
+  s=String(s); const neg=s[0]==='-'; if(neg)s=s.slice(1);
+  const [a,b]=s.split('.'); const i=a.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  return (neg?'-':'')+i+(b!=null?'.'+b:'');
+}
+function fmtDec(x,maxFrac){
+  let s=Dec.plain(x);
+  const neg=s[0]==='-'; const body=neg?s.slice(1):s;
+  const [a,b='']=body.split('.');
+  if(a.replace(/^0+/,'').length>16) throw 'big';
+  const mf=maxFrac==null?12:maxFrac;
+  let f=b.slice(0,mf).replace(/0+$/,'');
+  s=(neg?'-':'')+a+(f?'.'+f:'');
+  return comma(s);
+}
+
+function tokenize(s){
+  const t=[]; s=String(s).replace(/×/g,'*').replace(/÷/g,'/').replace(/,/g,'').replace(/\s/g,'');
+  let i=0;
+  while(i<s.length){
+    const c=s[i];
+    if('()+*/'.includes(c)){ t.push(c); i++; continue }
+    if(c==='%'){ t.push('%'); i++; continue }
+    if(c==='-'){
+      const prev=t[t.length-1];
+      if(!prev||prev==='('||prev==='+'||prev==='-'||prev==='*'||prev==='/'||prev==='u-'){ t.push('u-'); i++; continue }
+      t.push('-'); i++; continue;
+    }
+    if(/\d/.test(c)||c==='.'){
+      let n=''; while(i<s.length&&(/\d/.test(s[i])||s[i]==='.')) n+=s[i++];
+      if(n==='.'||n.split('.').length>2) throw 'bad';
+      t.push({n}); continue;
+    }
+    throw 'bad';
+  }
+  return t;
+}
+function evalExpr(s){
+  const tokens=tokenize(s); if(!tokens.length) return Dec.n(0);
+  const out=[],ops=[],prec={'u-':5,'*':3,'/':3,'+':2,'-':2},right={'u-':1};
+  const pushOp=op=>{
+    while(ops.length){const t=ops[ops.length-1]; if(t==='(')break; const p=prec[t],q=prec[op]; if(p>q||(p===q&&!right[op])) out.push(ops.pop()); else break}
+    ops.push(op);
+  };
+  for(const tok of tokens){
+    if(tok&&tok.n!=null) out.push(tok);
+    else if(tok==='%') out.push('%');
+    else if(tok==='(') ops.push(tok);
+    else if(tok===')'){ while(ops.length&&ops[ops.length-1]!=='(') out.push(ops.pop()); if(ops.pop()!=='(') throw 'paren' }
+    else pushOp(tok);
+  }
+  while(ops.length){const t=ops.pop(); if(t==='('||t===')') throw 'paren'; out.push(t)}
+  const st=[];
+  const asNum=x=>x.p?Dec.div(x.v,100):x.v;
+  for(const t of out){
+    if(t&&t.n!=null){ st.push({v:Dec.n(t.n),p:false}); continue }
+    if(t==='%'){ if(!st.length) throw 'empty'; const x=st.pop(); st.push({v:x.v,p:true}); continue }
+    if(t==='u-'){ if(!st.length) throw 'empty'; const x=st.pop(); st.push({v:Dec.neg(x.v),p:x.p}); continue }
+    if(st.length<2) throw 'empty';
+    const b=st.pop(),a=st.pop(); let v;
+    if((t==='+'||t==='-')&&b.p&&!a.p){
+      const amt=Dec.mul(a.v,Dec.div(b.v,100));
+      v=t==='+'?Dec.add(a.v,amt):Dec.sub(a.v,amt);
+    }else{
+      const av=asNum(a), bv=asNum(b);
+      v=t==='+'?Dec.add(av,bv):t==='-'?Dec.sub(av,bv):t==='*'?Dec.mul(av,bv):Dec.div(av,bv);
+    }
+    st.push({v,p:false});
+  }
+  if(st.length!==1) throw 'bad';
+  const r=st[0]; return r.p?Dec.div(r.v,100):r.v;
+}
+function tryEval(s){
+  try{
+    let e=String(s||'').trim(); if(!e) return {ok:true,value:Dec.n(0),display:'0'};
+    if(/[+\-×÷*(/]$/.test(e)) e=e.replace(/[+\-×÷*(/]+$/,'');
+    if(!e||e==='(') return {ok:true,pending:true,value:null,display:''};
+    const v=evalExpr(e); const display=fmtDec(v);
+    return {ok:true,value:v,display};
+  }catch(err){
+    const msg=err==='div0'?'0으로 나눌 수 없어요':err==='paren'?'괄호를 확인해 주세요':err==='big'?'숫자가 너무 커요':'식을 확인해 주세요';
+    return {ok:false,error:String(err),message:msg,display:msg};
+  }
+}
+
+/* ---------- 계산 입력 ---------- */
+let raw='', justEq=false, hist=[];
+try{hist=J(localStorage.getItem('nvc_hist'),[])||[]}catch(e){hist=[]}
+if(!Array.isArray(hist)) hist=[];
+
+function curNum(){
+  const m=raw.match(/(-?(?:\d+\.?\d*|\.\d+))%?$/); return m?m[1]:'';
+}
+function setRaw(s){raw=s; justEq=false; renderCalc()}
+function renderCalc(){
+  $('#expr').textContent=raw?pretty(raw):(justEq?'':'');
+  const r=tryEval(justEq?raw:raw);
+  const el=$('#res');
+  if(!raw){el.textContent='0';el.classList.remove('err');return}
+  if(r.pending){return}
+  el.textContent=r.display; el.classList.toggle('err',!r.ok);
+}
+function pretty(s){return String(s).replace(/\d+(?:\.\d+)?/g,comma)}
+function saveHist(){try{localStorage.setItem('nvc_hist',JSON.stringify(hist.slice(0,50)))}catch(e){}}
+function renderHist(){
+  const box=$('#hist');
+  if(!hist.length){box.innerHTML='';return}
+  box.innerHTML=hist.map((h,i)=>`<button type="button" class="hrow" data-i="${i}"><span class="he">${esc(h.expr)}</span><span class="hv">${esc(h.display)}</span></button>`).join('')
+    +`<button type="button" id="hClr">기록 지우기</button>`;
+}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+function press(k){
+  buzz();
+  if(k==='AC'){raw='';justEq=false;renderCalc();return}
+  if(k==='⌫'){
+    if(justEq){raw='';justEq=false;renderCalc();return}
+    raw=raw.slice(0,-1); renderCalc(); return;
+  }
+  if(k==='='){
+    const r=tryEval(raw);
+    if(!raw||r.pending) return;
+    if(!r.ok){ $('#res').textContent=r.display;$('#res').classList.add('err'); return; }
+    const expr=pretty(raw);
+    hist.unshift({expr,display:r.display}); if(hist.length>50)hist.pop(); saveHist(); renderHist();
+    raw=Dec.plain(r.value); justEq=true; renderCalc(); $('#expr').textContent=expr; return;
+  }
+  if(k==='±'){
+    if(justEq){ const v=tryEval(raw); if(v.ok&&v.value){ raw=Dec.plain(Dec.neg(v.value)); justEq=false; renderCalc(); } return; }
+    const m=raw.match(/^(.*?)(-?(?:\d+\.?\d*|\.\d+))(%?)$/);
+    if(!m){ if(!raw||/[+\-×÷(]$/.test(raw)) raw+='-'; renderCalc(); return; }
+    const head=m[1], num=m[2], pct=m[3]||'';
+    if(num[0]==='-') raw=head+num.slice(1)+pct;
+    else {
+      if(/(\d|\)|%)$/.test(head) && !/[+\-×÷(]$/.test(head)) { /* don't */ }
+      raw=head+'-'+num.replace(/^-/,'')+pct;
+    }
+    renderCalc(); return;
+  }
+  const ops='+-×÷';
+  if(ops.includes(k)){
+    if(justEq) justEq=false;
+    if(!raw) raw='0';
+    if(/[+\-×÷]$/.test(raw)) raw=raw.slice(0,-1)+k;
+    else raw+=k;
+    renderCalc(); return;
+  }
+  if(k==='('||k===')'){
+    if(justEq){ raw=(k==='(')?'(':raw+k; justEq=false; renderCalc(); return; }
+    raw+=k; renderCalc(); return;
+  }
+  if(k==='%'){
+    if(justEq) justEq=false;
+    if(!raw||/[+\-×÷(%]$/.test(raw)) return;
+    raw+='%'; renderCalc(); return;
+  }
+  /* digits */
+  if(justEq){ raw=''; justEq=false; }
+  if(k==='.'){
+    const n=curNum(); if(n.includes('.')) return;
+    raw+=(n===''||n==='-')?'0.':'.'; renderCalc(); return;
+  }
+  if(k==='00'||/^\d$/.test(k)){
+    const n=curNum().replace(/^-/,'');
+    const int=(n.split('.')[0]||'');
+    const add=k==='00'?'00':k;
+    if((int.replace(/^0+/,'' )|| (n.includes('.')?'0':'')).length + (int==='0'&&!n.includes('.')?0:0) >= 0){
+      const digits=(n.includes('.')?n.replace('.',''):n).replace(/^0+/,n.includes('.')||n===''?'0':'') ;
+    }
+    const only=n.replace(/^-/,'').replace('.','');
+    if(only.replace(/^0+/,'') .length>=12 && !(n==='0'||n===''||n==='-0')){
+      if(!(n==='0'||n==='')){ /* cap */ if(only.length>=12 && n!=='0') return; }
+    }
+    if((n.replace(/^-/,'').replace('.','').length>=12) && n!=='' && n!=='0') return;
+    if((n===''||n==='0') && k==='00'){ if(n==='') raw+='0'; renderCalc(); return; }
+    if(n==='0' && k!=='.' && !raw.endsWith('.')){ raw=raw.slice(0,-1)+ (k==='00'?'0':k); renderCalc(); return; }
+    raw+=k; renderCalc();
+  }
+}
+
+const KEYS=[
+  ['AC','ac fn'],['(',')','fn'],[')','fn'],['⌫','fn'],
+  ['7',''],['8',''],['9',''],['÷','op'],
+  ['4',''],['5',''],['6',''],['×','op'],
+  ['1',''],['2',''],['3',''],['-','op'],
+  ['0',''],['.',''],['%','fn'],['+','op'],
+  ['±','fn'],['=','eq wide']
+];
+$('#keys').innerHTML=KEYS.map(([k,c])=>`<button type="button" class="k ${c}" data-k="${k}" aria-label="${k==='⌫'?'한 칸 지우기':k}">${k==='⌫'?ic('back',2.4):k}</button>`).join('');
+$('#keys').onclick=e=>{const b=e.target.closest('[data-k]'); if(b) press(b.dataset.k)};
+$('#hist').onclick=e=>{
+  if(e.target.closest('#hClr')){hist=[];saveHist();renderHist();return}
+  const r=e.target.closest('.hrow'); if(!r) return;
+  const h=hist[+r.dataset.i]; if(!h) return;
+  raw=h.display.replace(/,/g,''); justEq=true; renderCalc();
+};
+(function longpress(){
+  const el=$('#res'); let t,moved;
+  const start=ev=>{ moved=false; clearTimeout(t); t=setTimeout(()=>{ t=0; copyRes(); },560); };
+  const end=()=>{ if(t){clearTimeout(t);t=0} };
+  el.addEventListener('pointerdown',start); el.addEventListener('pointerup',end);
+  el.addEventListener('pointercancel',end); el.addEventListener('pointerleave',end);
+  el.addEventListener('contextmenu',e=>e.preventDefault());
+})();
+function copyRes(){
+  const t=$('#res').textContent; if(!t||$('#res').classList.contains('err')) return;
+  try{ NV&&NV.copy(t) }catch(e){}
+  try{ navigator.clipboard&&navigator.clipboard.writeText(t) }catch(e){}
+  if(window.__LOG) window.__LOG.push('copy:'+t);
+  toast('복사했어요');
+}
+
+/* ---------- 환율 ---------- */
+const CUR=[
+  {c:'USD',n:'미국 달러',u:'달러',j:false},
+  {c:'JPY',n:'일본 엔',u:'엔',j:true},
+  {c:'CNY',n:'중국 위안',u:'위안',j:false},
+  {c:'EUR',n:'유로',u:'유로',j:false},
+  {c:'VND',n:'베트남 동',u:'동',j:false},
+  {c:'THB',n:'태국 바트',u:'바트',j:false},
+  {c:'GBP',n:'영국 파운드',u:'파운드',j:false},
+  {c:'AUD',n:'호주 달러',u:'달러',j:false},
+  {c:'CAD',n:'캐나다 달러',u:'달러',j:false},
+  {c:'SGD',n:'싱가포르 달러',u:'달러',j:false},
+  {c:'HKD',n:'홍콩 달러',u:'달러',j:false},
+  {c:'TWD',n:'신 대만 달러',u:'달러',j:false},
+  {c:'PHP',n:'필리핀 페소',u:'페소',j:false},
+  {c:'IDR',n:'인도네시아 루피아',u:'루피아',j:false},
+  {c:'MYR',n:'말레이시아 링깃',u:'링깃',j:false},
+  {c:'INR',n:'인도 루피',u:'루피',j:false},
+  {c:'CHF',n:'스위스 프랑',u:'프랑',j:false},
+  {c:'NZD',n:'뉴질랜드 달러',u:'달러',j:false},
+  {c:'AED',n:'아랍에미리트 디르함',u:'디르함',j:false},
+  {c:'SAR',n:'사우디 리얄',u:'리얄',j:false},
+  {c:'MNT',n:'몽골 투그릭',u:'투그릭',j:false},
+  {c:'RUB',n:'러시아 루블',u:'루블',j:false}
+];
+const CURMAP=Object.fromEntries(CUR.map(x=>[x.c,x]));
+const MAIN=['USD','JPY','CNY','EUR','VND','THB'];
+let fxCode='USD', fxSide='krw', krwStr='0', fxStr='0', fxInfo=null, fxOffline=false, fxLoading=false;
+try{const sv=localStorage.getItem('nvc_fx_code'); if(sv&&CURMAP[sv]) fxCode=sv}catch(e){}
+try{const ch=J(localStorage.getItem('nvc_fx'),null); if(ch&&ch.krwPer) fxInfo=ch}catch(e){}
+
+function curOf(c){return CURMAP[c]||{c,n:c,u:c,j:false}}
+function krwPer(c){ if(!fxInfo||!fxInfo.krwPer) return null; const v=fxInfo.krwPer[c]; return v>0?v:null }
+function fmtAmt(n,code){
+  const x=typeof n==='object'?n:Dec.n(n);
+  const j=code==='JPY'||code==='VND'||code==='KRW'||code==='IDR'||code==='MNT';
+  /* 환율 계산 결과는 외화·원 모두 읽기 쉽게. 정수 통화는 소수 2자리까지 남기되 끝 0은 깎음 */
+  try{return fmtDec(x, j?2:4)}catch(e){return Dec.plain(x)}
+}
+function whenKo(ms, dayOnly){
+  if(!ms) return '';
+  const p=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Seoul',month:'numeric',day:'numeric',hour:'numeric',hourCycle:'h23'}).formatToParts(new Date(ms));
+  const g=t=>p.find(x=>x.type===t)?.value||'';
+  const mo=+g('month'), d=+g('day'), h=+g('hour');
+  return dayOnly?`${mo}월 ${d}일 기준`:`${mo}월 ${d}일 ${h}시 기준`;
+}
+function applyFx(fromSide){
+  const rate=krwPer(fxCode);
+  if(fromSide==='krw'){
+    const a=Dec.n(krwStr||'0');
+    if(!rate){ fxStr=krwStr==='0'||krwStr===''?'0':''; renderFx(); return; }
+    const v=Dec.div(a, Dec.n(String(rate)));
+    const j=fxCode==='JPY'||fxCode==='VND'||fxCode==='IDR'||fxCode==='MNT';
+    fxStr=fmtDec(v, j?2:6).replace(/,/g,'');
+  }else{
+    const a=Dec.n(fxStr||'0');
+    if(!rate){ krwStr=fxStr==='0'||fxStr===''?'0':''; renderFx(); return; }
+    const v=Dec.mul(a, Dec.n(String(rate)));
+    krwStr=fmtDec(v, 2).replace(/,/g,'');
+  }
+  renderFx();
+}
+function renderFx(){
+  const info=curOf(fxCode);
+  $('#fxPick').childNodes[0].textContent=`${info.n} · ${info.c} `;
+  $('#krwAmt').textContent=comma(trimDot(krwStr||'0'));
+  $('#fxAmt').textContent=comma(trimDot(dispSide(fxStr,fxCode)));
+  $('#cardKrw').classList.toggle('on',fxSide==='krw');
+  $('#cardFx').classList.toggle('on',fxSide==='fx');
+  const rate=krwPer(fxCode);
+  if(fxLoading && !rate){ $('#fxRate').textContent='환율을 받는 중…'; }
+  else if(!rate){ $('#fxRate').textContent=fxInfo?'이 통화 환율이 없어요':'환율을 받지 못했어요'; }
+  else {
+    if(info.j){ const won=fmtDec(Dec.mul(Dec.n(String(rate)),100),2); $('#fxRate').textContent=`100엔 = ${won}원`; }
+    else { const won=fmtDec(Dec.n(String(rate)),2); $('#fxRate').textContent=`1${info.u} = ${won}원`; }
+  }
+  let when=fxInfo?whenKo(fxInfo.t, !!fxInfo.dayOnly):'';
+  if(fxOffline&&when) when='저장된 환율 · '+when;
+  $('#fxWhen').textContent=when;
+  renderChips();
+}
+function trimDot(s){ s=String(s||'0'); if(s.endsWith('.')) return s; return s }
+function dispSide(s,code){
+  /* while typing, show raw; otherwise trim */
+  if(fxSide==='fx' && document.activeElement) return s||'0';
+  if(String(s).endsWith('.')) return s;
+  try{ return Dec.plain(Dec.n(s||'0')) }catch(e){return s||'0'}
+}
+function renderChips(){
+  const extra=MAIN.includes(fxCode)?'':fxCode;
+  const codes=extra?[...MAIN,extra]:MAIN;
+  $('#fxChips').innerHTML=codes.map(c=>`<button type="button" data-c="${c}" class="${c===fxCode?'on':''}">${c==='JPY'?'엔 (100엔)':curOf(c).u+' · '+c}</button>`).join('')
+    +`<button type="button" data-c="more">다른 통화</button>`;
+}
+$('#fxChips').onclick=e=>{
+  const b=e.target.closest('[data-c]'); if(!b) return; buzz();
+  if(b.dataset.c==='more'){ openSheet(); return; }
+  setCode(b.dataset.c);
+};
+function setCode(c){
+  if(!CURMAP[c]&&!(fxInfo&&fxInfo.krwPer&&fxInfo.krwPer[c])) return;
+  if(!CURMAP[c]) CURMAP[c]={c,n:c,u:c,j:c==='JPY'};
+  fxCode=c; try{localStorage.setItem('nvc_fx_code',c)}catch(e){}
+  if(fxSide==='krw') applyFx('krw'); else applyFx('fx');
+}
+function openSheet(){ $('#sheet').hidden=false; $('#fxQ').value=''; renderList(''); setTimeout(()=>{$('#fxQ').focus()},200); }
+function closeSheet(){ if($('#sheet').hidden) return false; $('#sheet').hidden=true; return true; }
+function renderList(q){
+  q=(q||'').trim().toLowerCase();
+  const rows=CUR.filter(x=>{
+    if(!q) return true;
+    return x.c.toLowerCase().includes(q)||x.n.includes(q)||x.u.includes(q);
+  });
+  $('#fxList').innerHTML=rows.length?rows.map(x=>`<button type="button" data-c="${x.c}" class="${x.c===fxCode?'on':''}"><span class="cn">${x.n}${x.j?' (100엔 기준)':''}</span><span class="cc">${x.c}</span></button>`).join(''):`<div class="empty" style="padding:20px;text-align:center;color:var(--dim)">찾는 통화가 없어요</div>`;
+}
+$('#fxQ').oninput=()=>renderList($('#fxQ').value);
+$('#fxList').onclick=e=>{const b=e.target.closest('[data-c]'); if(!b) return; setCode(b.dataset.c); closeSheet();};
+$('#shBd').onclick=()=>closeSheet();
+$('#cardKrw').onclick=()=>{fxSide='krw'; renderFx()};
+$('#cardFx').onclick=e=>{ if(e.target.closest('#fxPick')) return; fxSide='fx'; renderFx(); };
+$('#fxPick').onclick=e=>{e.preventDefault();e.stopPropagation(); openSheet();};
+$('#fxSwap').onclick=()=>{buzz(); fxSide=fxSide==='krw'?'fx':'krw'; renderFx();};
+
+function fxPress(k){
+  buzz();
+  let s=fxSide==='krw'?krwStr:fxStr;
+  if(k==='AC'){ s='0'; }
+  else if(k==='⌫'){ s=s.slice(0,-1); if(s===''||s==='-'||s==='-0') s='0'; }
+  else if(k==='.'){ if(s.includes('.')) return; s=(s===''||s==='0')?'0.':s+'.'; }
+  else if(k==='00'||/^\d$/.test(k)){
+    const body=s.replace(/^-/,'').replace('.','');
+    if(body.replace(/^0+/,'').length>=12 && s!=='0') return;
+    if(s==='0' && k==='00') return;
+    if(s==='0') s=k==='00'?'0':k;
+    else s+=k;
+  }else return;
+  if(fxSide==='krw') krwStr=s; else fxStr=s;
+  applyFx(fxSide);
+}
+$('#fxKeys').innerHTML=[
+  ['7',''],['8',''],['9',''],['⌫','fn'],
+  ['4',''],['5',''],['6',''],['AC','ac fn'],
+  ['1',''],['2',''],['3',''],['00','fn'],
+  ['0','wide'],['.','' ]
+].map(([k,c])=>`<button type="button" class="k ${c}" data-k="${k}" aria-label="${k==='⌫'?'한 칸 지우기':k}">${k==='⌫'?ic('back',2.4):k}</button>`).join('');
+$('#fxKeys').onclick=e=>{const b=e.target.closest('[data-k]'); if(b) fxPress(b.dataset.k)};
+
+function parseEr(j){
+  if(!j||j.result!=='success'||!j.rates) return null;
+  const krwPer={};
+  for(const [c,r] of Object.entries(j.rates)){ const n=Number(r); if(c!=='KRW'&&n>0) krwPer[c]=Number((1/n).toPrecision(12)); }
+  if(!krwPer.USD) return null;
+  return {krwPer, t:(j.time_last_update_unix||0)*1000, src:'open.er-api.com', dayOnly:false};
+}
+function parseFw(j){
+  const map=j&&(j.krw||j.KRW); if(!map) return null;
+  const krwPer={};
+  for(const [c,r] of Object.entries(map)){ const n=Number(r); const k=c.toUpperCase(); if(k!=='KRW'&&n>0) krwPer[k]=Number((1/n).toPrecision(12)); }
+  if(!krwPer.USD) return null;
+  const t=j.date?Date.parse(j.date+'T00:00:00+00:00'):Date.now();
+  return {krwPer, t, src:'currency-api', dayOnly:true};
+}
+async function httpGet(url){
+  if(typeof window.__FX_FETCH==='function') return await window.__FX_FETCH(url);
+  if(NV&&NV.httpGet){
+    const r=NV.httpGet(url);
+    if(typeof r==='string'&&r.startsWith('ERR:')) throw r;
+    return r;
+  }
+  const res=await fetch(url,{cache:'no-store'});
+  if(!res.ok) throw 'ERR:http '+res.status;
+  return await res.text();
+}
+async function loadRates(force){
+  fxLoading=true; fxOffline=false; renderFx();
+  const urls=['https://open.er-api.com/v6/latest/KRW','https://latest.currency-api.pages.dev/v1/currencies/krw.json'];
+  await new Promise(r=>setTimeout(r,20));
+  let lastErr=null;
+  for(const url of urls){
+    try{
+      const body=await httpGet(url);
+      const j=typeof body==='string'?J(body,null):body;
+      const parsed=url.includes('er-api')?parseEr(j):parseFw(j);
+      if(!parsed) throw 'ERR:parse';
+      fxInfo=parsed; fxOffline=false; fxLoading=false;
+      try{localStorage.setItem('nvc_fx',JSON.stringify(parsed))}catch(e){}
+      applyFx(fxSide); return parsed;
+    }catch(e){ lastErr=e }
+  }
+  fxLoading=false;
+  if(fxInfo&&fxInfo.krwPer){ fxOffline=true; applyFx(fxSide); if(force) toast('저장된 환율로 계산해요'); return fxInfo; }
+  renderFx(); if(force) toast('환율을 받지 못했어요'); return null;
+}
+$('#fxRef').onclick=()=>{if(!fxLoading) loadRates(true)};
+
+/* ---------- 탭 · 뒤로 ---------- */
+let tab='calc';
+function show(v){
+  tab=v; $('#toast').classList.remove('on'); $('#v-calc').hidden=v!=='calc'; $('#v-fx').hidden=v!=='fx';
+  $$('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  try{localStorage.setItem('nvc_tab',v)}catch(e){}
+  if(v==='fx' && (!fxInfo||!fxInfo.krwPer)) loadRates();
+}
+$('#tabs').onclick=e=>{const b=e.target.closest('button[data-v]'); if(b){buzz(); show(b.dataset.v)}};
+window.NV_back=()=>{ if(closeSheet()) return true; return false; };
+window.NV_resume=()=>{};
+
+/* ---------- 시험용 API ---------- */
+window.Calc={
+  eval(s){const r=tryEval(s); return {ok:r.ok,display:r.display||'',error:r.error||'',message:r.message||'',plain:r.value?Dec.plain(r.value):''}},
+  press, getRaw:()=>raw, justEq:()=>justEq, hist:()=>hist.slice(), setRaw, ac:()=>press('AC'),
+  fmt:s=>{try{return fmtDec(Dec.n(s))}catch(e){return String(e)}}
+};
+window.FX={
+  setRates(info){fxInfo=info; fxOffline=false; try{localStorage.setItem('nvc_fx',JSON.stringify(info))}catch(e){} applyFx(fxSide)},
+  setCode, convert(amount,from,to){
+    const a=Dec.n(String(amount).replace(/,/g,''));
+    if(from==='KRW'&&to!=='KRW'){ const r=krwPer(to); if(!r) return {ok:false}; const v=Dec.div(a,Dec.n(String(r))); const d=fmtAmt(v,to); return {ok:true,display:d,plain:d.replace(/,/g,'')}; }
+    if(to==='KRW'&&from!=='KRW'){ const r=krwPer(from); if(!r) return {ok:false}; const v=Dec.mul(a,Dec.n(String(r))); const d=fmtAmt(v,'KRW'); return {ok:true,display:d,plain:d.replace(/,/g,'')}; }
+    return {ok:false};
+  },
+  state:()=>({code:fxCode,side:fxSide,krw:krwStr,fx:fxStr,offline:fxOffline,src:fxInfo&&fxInfo.src,when:fxInfo&&whenKo(fxInfo.t,!!fxInfo.dayOnly),rateText:$('#fxRate').textContent,whenText:$('#fxWhen').textContent,hasRates:!!(fxInfo&&fxInfo.krwPer)}),
+  load:force=>loadRates(force),
+  setAmount(side,s){ if(side==='krw'){fxSide='krw';krwStr=String(s);applyFx('krw')} else {fxSide='fx';fxStr=String(s);applyFx('fx')} }
+};
+
+try{const t=localStorage.getItem('nvc_tab'); if(t==='fx'||t==='calc') tab=t}catch(e){}
+renderHist(); renderCalc(); renderFx(); show(tab);
+if(tab==='fx') loadRates();
+else if(fxInfo&&fxInfo.krwPer){ /* keep cache */ }
+else { /* 미리 받아 두기 */ setTimeout(()=>{if(!fxInfo) loadRates()},400); }
+</script>
+</body>
+</html>
