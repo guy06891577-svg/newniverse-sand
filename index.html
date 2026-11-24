@@ -603,7 +603,7 @@ let EDIT=false,DRAG=null,AUTO=false,NINIT=false,KNOWN=null;const WREG=new Map();
 const DOCK=[A('전화','📞','#34c759','#1f9d40'),A('메시지','💬','#5ac8fa','#2a86d9'),A('인터넷','🧭','#4f7cff','#2a4fd1')];   // v35: 주소록은 뉴니버스 전화의 탭이라 독에서 뺌
 // ---------- 안드로이드 런처 모드 (APK 안에서 실행될 때만): 실제 설치된 앱으로 홈/독/서랍 구성 ----------
 const NATIVE=!!(window.NVNative&&/native=1/.test(location.search));
-const NVPHONE='kr.newniverse.phone';
+const NVPHONE='kr.newniverse.phone',NVSMS='kr.newniverse.sms';
 const ROLE_GLYPH={'com.samsung.android.dialer':'phone','com.google.android.dialer':'phone','com.android.dialer':'phone',
  'com.samsung.android.messaging':'message','com.google.android.apps.messaging':'message','com.android.messaging':'message',
  'com.sec.android.app.camera':'camera','com.android.camera2':'camera','com.google.android.GoogleCamera':'camera','com.android.camera':'camera',
@@ -628,8 +628,8 @@ function nativeApps(){
     return {n:shortName(o.label),full:o.label,e:'',c1:c[0],c2:c[1],pkg:o.pkg,act:o.act,gk:ROLE_GLYPH[o.pkg]||null,img:null}});
   const by=p=>NAPPS.find(a=>a.pkg===p);
   const pick=(k,fb,label,gk)=>{let a=(roles[k]&&by(roles[k]))||fb.map(by).find(Boolean);if(!a)return null;return Object.assign(Object.create(a),{n:label,gk,__base:a})};
-  const nvp=by(NVPHONE);   // v33: 뉴니버스 전화가 깔려 있으면 독의 '전화'는 그 앱
-  const dock=[nvp?Object.assign(Object.create(nvp),{n:'전화',gk:'phone',__base:nvp}):pick('phone',['com.samsung.android.dialer','com.google.android.dialer'],'전화','phone'),pick('sms',['com.samsung.android.messaging','com.google.android.apps.messaging'],'메시지','message'),
+  const nvp=by(NVPHONE),nvs=by(NVSMS);   // v33: 뉴니버스 전화가 깔려 있으면 독의 '전화'는 그 앱 · v37: 뉴니버스 문자가 깔려 있으면 '메시지'는 그 앱 (기본 앱 지정과 상관없이)
+  const dock=[nvp?Object.assign(Object.create(nvp),{n:'전화',gk:'phone',__base:nvp}):pick('phone',['com.samsung.android.dialer','com.google.android.dialer'],'전화','phone'),nvs?Object.assign(Object.create(nvs),{n:'메시지',gk:'message',__base:nvs}):pick('sms',['com.samsung.android.messaging','com.google.android.apps.messaging'],'메시지','message'),
     pick('browser',['com.sec.android.app.sbrowser','com.android.chrome'],'인터넷','globe')].filter(Boolean);   // v35: 독은 전화·메시지·인터넷 3개
   if(!NINIT){NINIT=true;setTimeout(()=>{try{NV_onInsets()}catch(e){}},0);setTimeout(()=>{try{wRestoreCheck();wPlace()}catch(e){console.warn(e)}},0);
     const o=nvLoadState();
@@ -645,7 +645,7 @@ function nativeApps(){
       else if(nw.length)setTimeout(saveLayout,0);
     }
   }
-  nvPhoneDock(roles);dockNoContacts(roles);
+  nvPhoneDock(roles);nvSmsDock(roles);dockNoContacts(roles);
   setTimeout(loadNativeIcons,0);
 }
 // v33: 이미 쓰던 배치(저장된 독)에도 한 번 적용 · 뉴니버스 전화를 지우면 원래 전화 앱을 다시 독에 놓음
@@ -655,6 +655,17 @@ function nvPhoneDock(roles){try{
     const i=DOCK.findIndex(isDial);if(i<0)return;const old=DOCK[i];DOCK[i]=Object.assign(Object.create(nvp),{n:old.n||'전화',gk:'phone',__base:nvp});S.nvPhoneDock=1;setTimeout(()=>{try{saveS();saveLayout()}catch(_){}},0);   // v35: 처음 켤 때 저장이 빠지던 것 고침
     setTimeout(()=>{try{toast('독의 전화 아이콘이 뉴니버스 전화를 열어요')}catch(_){}},800)}
   else if(S.nvPhoneDock){S.nvPhoneDock=0;setTimeout(()=>{try{saveS()}catch(_){}},0)}
+}catch(e){}}
+// v37: 뉴니버스 문자도 전화와 같은 방식 · 저장된 독의 문자 칸(삼성 메시지 등)을 한 번만 뉴니버스 문자로 바꿈
+// 독에 문자 칸이 없으면(직접 뺀 경우) 아무것도 넣지 않음 · 그 뒤 직접 넣은 앱은 그대로 둠 · 뉴니버스 문자를 지우면 원래 문자 앱으로 되돌림
+function nvSmsDock(roles){try{
+  const by=p=>NAPPS.find(a=>a.pkg===p),nvs=by(NVSMS),isSms=a=>{const b=a&&(a.__base||a);return !!b&&b.pkg!==NVSMS&&(ROLE_GLYPH[b.pkg]==='message'||(roles&&roles.sms===b.pkg))};
+  if(nvs){if(S.nvSmsDock)return;S.nvSmsDock=1;
+    const i=DOCK.some(a=>(a.__base||a).pkg===NVSMS)?-1:DOCK.findIndex(isSms);
+    if(i>=0){const old=DOCK[i];DOCK[i]=Object.assign(Object.create(nvs),{n:old.n||'메시지',gk:'message',__base:nvs});setTimeout(()=>{try{saveS();saveLayout();relayoutSoon()}catch(_){}},0);
+      setTimeout(()=>{try{toast('독의 문자 아이콘이 뉴니버스 문자를 열어요')}catch(_){}},1400)}
+    else setTimeout(()=>{try{saveS()}catch(_){}},0)}
+  else if(S.nvSmsDock){S.nvSmsDock=0;setTimeout(()=>{try{saveS()}catch(_){}},0)}
 }catch(e){}}
 // v35: 이미 쓰던 배치의 독에서도 연락처(주소록)를 한 번만 뺌 · 앱은 앱 서랍에 그대로 · 나중에 직접 다시 넣으면 그대로 둠
 function dockNoContacts(roles){try{if(S.dockNoCon)return;
@@ -682,7 +693,8 @@ if(NATIVE){document.documentElement.classList.add('native');nativeApps();
     const before=new Set(NAPPS.map(akey));nativeApps();const now=new Set(NAPPS.map(akey)),gone=k=>!now.has(k);
     PAGES.forEach(P=>{P.apps=P.apps.filter(x=>{if(x.wg)return true;if(x.folder){x.items=x.items.filter(i=>!gone(akey(i)));return x.items.length>0}return !gone(akey(x))}).map(x=>x.folder&&x.items.length===1?x.items[0]:x)});
     for(let i=DOCK.length-1;i>=0;i--)if(gone(akey(DOCK[i]))){const was=(DOCK[i].__base||DOCK[i]).pkg;DOCK.splice(i,1);
-      if(was===NVPHONE){let rl={};try{rl=JSON.parse(NVNative.getRoles())}catch(_){}const d=NAPPS.find(a=>a.pkg===rl.phone)||NAPPS.find(a=>ROLE_GLYPH[a.pkg]==='phone');if(d&&!DOCK.some(x=>(x.__base||x).pkg===d.pkg))DOCK.splice(i,0,Object.assign(Object.create(d),{n:'전화',gk:'phone',__base:d}))}}
+      if(was===NVPHONE){let rl={};try{rl=JSON.parse(NVNative.getRoles())}catch(_){}const d=NAPPS.find(a=>a.pkg===rl.phone)||NAPPS.find(a=>ROLE_GLYPH[a.pkg]==='phone');if(d&&!DOCK.some(x=>(x.__base||x).pkg===d.pkg))DOCK.splice(i,0,Object.assign(Object.create(d),{n:'전화',gk:'phone',__base:d}))}
+      if(was===NVSMS){let rl={};try{rl=JSON.parse(NVNative.getRoles())}catch(_){}const d=NAPPS.find(a=>a.pkg===rl.sms&&a.pkg!==NVSMS)||NAPPS.find(a=>ROLE_GLYPH[a.pkg]==='message');if(d&&!DOCK.some(x=>(x.__base||x).pkg===d.pkg))DOCK.splice(i,0,Object.assign(Object.create(d),{n:'메시지',gk:'message',__base:d}))}}
     const added=NAPPS.filter(a=>!before.has(akey(a))&&!onHome(a));
     if(S.addNew!==false)added.forEach(a=>addToHome(a));
     q.forEach(([p,k])=>{if(k==='update'&&p)NAPPS.filter(a=>a.pkg===p).forEach(a=>{a.img=null;if(typeof ICACHE!=='undefined')ICACHE.clear()})});
@@ -2705,7 +2717,7 @@ DR.addEventListener('touchcancel',()=>{if(td&&td.m)setDR(1,true);td=null});
 setQP(0);setDR(0);
 window.__nv.panel=()=>({qp:qpP,dr:drP});window.__nv.S=S;window.__nv.layout=layout;window.__nv.buildDrawer=buildDrawer;
 // ---------- 설정 화면 (삼성 설정 구성을 참고한 뉴니버스 설정) ----------
-const VER='v36';
+const VER='v37';
 Object.assign(GLY,{
  wifi:'M2.5 9a14 14 0 0 1 19 0 M5.5 12.3a9.5 9.5 0 0 1 13 0 M8.6 15.5a5 5 0 0 1 6.8 0 M12 19h.01',
  devices:'M3.5 5h12v9h-12z M2 17h15 M18 8h3.5v11H18z',
@@ -3083,8 +3095,9 @@ function gridGeom(pi){const cols=4,pad=16,cw=(W-pad*2)/cols,top=gridTop(pi);let 
 function slotRect(G,i){const col=i%G.cols,row=(i/G.cols)|0;return {x:G.pad+col*G.cw+(G.cw-G.s)/2,y:G.top+row*G.rowH,w:G.s,h:G.s}}
 const PH={ph:true,n:''};
 function editItems(pi){const L=PAGES[pi].apps;if(!DRAG||!DRAG.hover||DRAG.hover.pi!==pi||DRAG.hover.kind!=='slot')return L;const o=L.slice();o.splice(Math.min(DRAG.hover.idx,o.length),0,DRAG.a&&DRAG.a.wg?{ph:true,n:'',cw:DRAG.a.cw,ch:DRAG.a.ch}:PH);return o}
-function dockItems(){if(!DRAG||!DRAG.hover||DRAG.hover.kind!=='dock')return DOCK;const o=DOCK.slice();o.splice(Math.min(DRAG.hover.idx,o.length),0,PH);return o}
-const DOCK_MAX=4;
+function dockItems(){if(!DRAG||!DRAG.hover||DRAG.hover.kind!=='dock'||DOCK.length>=DOCK_MAX)return DOCK;   // 꽉 차면 빈칸(자리 표시)을 만들지 않음
+  const o=DOCK.slice();o.splice(Math.min(DRAG.hover.idx,o.length),0,PH);return o}
+const DOCK_MAX=5;   // v37: 독은 최대 5개 (기본은 전화·메시지·인터넷 3개)
 // 넘치는 아이콘은 다음 페이지로 밀어내고, 필요하면 새 페이지를 만듦
 function normalizePages(){
   if(!W)return;
