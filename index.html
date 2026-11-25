@@ -508,9 +508,8 @@
   .nht .ic.act{background:linear-gradient(135deg,rgba(110,190,255,.28),rgba(160,120,255,.28));border:1px solid rgba(170,190,255,.35);color:#eaf0ff}
   .nht .ic.act .ni{width:24px;height:24px}
   .nht .nm{max-width:100%;font:600 12px/1.2 var(--nv-font,system-ui,sans-serif);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 2px;color:rgba(245,247,255,.95)}
-  .nht.in{animation:nhIn .42s cubic-bezier(.2,.9,.3,1) both}
-  @keyframes nhIn{from{opacity:0;transform:translateY(16px) scale(.92)}to{opacity:1;transform:none}}
-  .nht.out,#nhRes.out .nht{opacity:0;filter:blur(6px);transform:translateY(-6px) scale(.96)}
+  .nht.pre{opacity:0;pointer-events:none}   /* v39b: 등장·퇴장은 버스 카드와 같은 bfxBurst 모래(모이기/흩어지기), CSS 계단 등장 없음 */
+  .nht.out,#nhRes.out .nht{opacity:0;filter:blur(5px);transform:translateY(-6px) scale(.98)}
   .nht:active{transform:scale(.96)}
   #nhStars{position:absolute;inset:0;display:none;background:radial-gradient(120% 90% at 50% 40%,rgba(6,8,30,.15),rgba(3,4,16,.55));opacity:0;transition:opacity .3s}
   #nhStars.on{display:block}
@@ -3986,7 +3985,7 @@ window.__nv.setIcon=v=>{S.icon=v;layout()};
 // ===================== v38b 앱 없는 홈 (1단계) =====================
 // 잠금을 풀면 앱 격자·독 없이 우주와 「무엇을 하실 건가요?」만. 글씨와 말은 같은 한국어 의도 엔진을 씀.
 // 독은 없음(내비게이션 바만). 위로 밀면 최근에 쓴 앱이 별처럼, 아래로 밀면 빠른 설정, 길게 누르면 메뉴. 설정에서 예전 홈으로 되돌림.
-var NH={q:'',tiles:[],shown:new Set(),stars:false,listen:false,busUntil:0,roles:null,rolesAt:0,dT:0,dk:0,pt:null,lastTap:null,lpT:0,voice:false};
+var NH={q:'',tiles:[],shown:new Set(),stars:false,listen:false,busUntil:0,roles:null,rolesAt:0,dT:0,dk:0,pt:null,lastTap:null,lpT:0,voice:false,speechUi:false,hold:false,heard:'',cands:[],inT:0};
 function nhOn(){return S.nh!==false}
 function nhNow(){return window.__nhNow?new Date(window.__nhNow):new Date()}
 const NHEL=document.createElement('div');NHEL.id='nh';
@@ -4009,32 +4008,36 @@ const NH_BANK_PKG=['com.kbstar.kbbank','com.shinhan.sbanking','com.wooribank.sma
 // ---- 의도 표 (말·글씨 공통) ----
 const NHI=[
  {id:'bank',w:['입금','송금','이체','은행','계좌','돈보내','뱅킹','뱅크','잔액','통장'],hd:'은행 앱 모아보기',apps:()=>nhApps().filter(a=>NH_BANK_PKG.includes(a.pkg)||NH_BANK_RE.test(a.full||a.n||'')),none:'깔린 은행 앱을 찾지 못했어요'},
- {id:'cam',w:['사진','카메라','찍','촬영','셀카'],hd:'카메라',auto:1,apps:()=>nhUniq([nhRole('camera'),...nhLab(/카메라|camera/i),...nhLab(/갤러리|gallery|google 포토|photos/i)])},
- {id:'phone',w:['전화','통화','걸어','다이얼'],hd:'전화',auto:1,apps:()=>nhUniq([nhBy(NVPHONE),nhRole('phone')])},
- {id:'sms',w:['문자','메시지','sms'],hd:'문자',auto:1,apps:()=>nhUniq([nhBy(NVSMS),nhRole('sms')])},
+ {id:'cam',w:['사진','카메라','찍','촬영','셀카','찰칵','사진찍어'],hd:'카메라',auto:1,apps:()=>nhUniq([nhRole('camera'),...nhLab(/카메라|camera/i),...nhLab(/갤러리|gallery|google 포토|photos/i)])},
+ {id:'phone',w:['전화','통화','걸어','다이얼','전화걸어'],hd:'전화',auto:1,apps:()=>nhUniq([nhBy(NVPHONE),nhRole('phone')])},
+ {id:'sms',w:['문자','메시지','메세지','sms','문자보내'],hd:'문자',auto:1,apps:()=>nhUniq([nhBy(NVSMS),nhRole('sms')])},
  {id:'calc',w:['계산','계산기','더하기','곱하기','나누기'],hd:'계산기',auto:1,apps:()=>nhUniq([nhBy('kr.newniverse.calc'),...nhLab(/계산기|calculator/i)])},
  {id:'set',w:['설정','세팅','환경설정'],hd:'설정',auto:1,al:1,apps:()=>nhUniq([nhBy('kr.newniverse.settings')]),acts:[{t:'홈 화면 설정',ic:'gear',fn:()=>{nhClear(true);openSettings()}}],post:()=>nhUniq([nhRole('settings'),nhBy('com.android.settings')])},
- {id:'bus',w:['버스','정류장','버스도착','출근길'],hd:'버스',acts:[{t:'버스 도착 보기',ic:'bus',fn:()=>nhBusAsk()}]},
+ {id:'bus',w:['버스','정류장','버스도착','출근길','버스언제'],hd:'버스',acts:[{t:'버스 도착 보기',ic:'bus',fn:()=>nhBusAsk()}]},
  {id:'map',w:['길찾기','지도','내비','네비','길안내','집으로'],hd:'길찾기',apps:()=>nhLab(/지도|맵|map|내비|navi|티맵|tmap/i)},
- {id:'memo',w:['메모','노트','적어'],hd:'메모',auto:1,apps:()=>nhLab(/메모|노트|notes|keep|memo/i)},
+ {id:'memo',w:['메모','노트','적어','메모적어'],hd:'메모',auto:1,apps:()=>nhLab(/메모|노트|notes|keep|memo/i)},
  {id:'alarm',w:['알람','시계','타이머','깨워'],hd:'알람 · 시계',auto:1,apps:()=>nhLab(/시계|알람|clock/i)},
  {id:'web',w:['인터넷','브라우저','크롬','웹'],hd:'인터넷',apps:()=>nhUniq([nhRole('browser'),...nhLab(/인터넷|chrome|크롬|웨일|whale|firefox/i)])},
  {id:'all',w:['모든앱','전체앱','앱목록','앱서랍'],ex:['앱'],hd:'',acts:[{t:'모든 앱',ic:'widget',fn:()=>{nhClear(true);openDR()}}]},
  {id:'old',w:['예전홈','옛날홈','아이콘홈','원래홈','이전홈'],hd:'',acts:[{t:'예전 홈으로',ic:'undo',fn:()=>nhSet(false)}]},
  {id:'home',w:['홈설정','홈화면설정','런처설정','배경화면'],hd:'',acts:[{t:'홈 화면 설정',ic:'gear',fn:()=>{nhClear(true);openSettings()}}]}
 ];
-function nhNorm(s){return String(s||'').toLowerCase().replace(/[\s?!.,~·]+/g,'')}
-const NH_VERB=/(열어줘|열어|켜줘|켜|실행해줘|실행|해줘|줘|좀|보여줘|보여|해야겠다|해야지|할래|하자|해볼까|볼까|하고싶어|싶어|알려줘)$/;
-function nhScoreI(I,qn){if(I.ex&&I.ex.includes(qn))return 100;let best=0;const jamo=/^[ㄱ-ㅎ]+$/.test(qn);
-  for(const w0 of I.w){const w=nhNorm(w0);if(qn.includes(w))best=Math.max(best,100+w.length);else if(w.startsWith(qn))best=Math.max(best,70+Math.min(qn.length,5)*2);else if(jamo&&qn.length>=2&&cho(w).startsWith(qn))best=Math.max(best,66)}
+function nhNorm(s){return String(s||'').toLowerCase().replace(/[\s?!.,~·…'’"“”\-_/\\()\[\]{}]+/g,'')}
+const NH_VERB=/(찍어볼까|해야겠다|하고싶어|실행해줘|열어줘|보여줘|켜줘|걸어줘|보내줘|해줘|알려줘|해야지|할래|하자|해볼까|볼까|열어|실행|보여|싶어|켜|줘)$/;
+const NH_FILL=/그냥|그거|이제|지금|빨리|한번|해봐|주세요|좀/;
+const NH_ALIAS={카톡:'카카오톡',ㅋ톡:'카카오톡',인스타:'인스타그램',페북:'페이스북',유튜브:'youtube',유튭:'youtube',유투브:'youtube'};
+function nhStem(s){let q=nhNorm(s);for(let i=0;i<8;i++){const n=q.replace(NH_VERB,'').replace(NH_FILL,'');if(n===q)break;q=n}return q||nhNorm(s)}
+function nhForms(q){const qn=nhNorm(q),qs=nhStem(q),al=NH_ALIAS[qs]||NH_ALIAS[qn]||'';const o=[];[qn,qs,al].forEach(x=>{if(x&&!o.includes(x))o.push(x)});return o}
+function nhScoreI(I,qn){if(!qn)return 0;if(I.ex&&I.ex.includes(qn))return 100;let best=0;const jamo=/^[ㄱ-ㅎ]+$/.test(qn);
+  for(const w0 of I.w){const w=nhNorm(w0);if(!w)continue;if(qn===w)best=Math.max(best,120+w.length);else if(qn.includes(w))best=Math.max(best,100+w.length);else if(w.startsWith(qn))best=Math.max(best,70+Math.min(qn.length,5)*2);else if(jamo&&qn.length>=2&&cho(w).startsWith(qn))best=Math.max(best,66)}
   return best}
+function nhScoreIAll(I,forms){let b=0;forms.forEach(q=>b=Math.max(b,nhScoreI(I,q)));return b}
 // 결과: [{k:'app',a}|{k:'act',t,ic,fn}] · 첫 묶음의 제목
-function nhMatch(q){const qn=nhNorm(q);if(!qn)return {hd:'',tiles:[],top:null};
-  let qa=qn;for(let i=0;i<3;i++)qa=qa.replace(NH_VERB,'');qa=qa||qn;
+function nhMatch(q){const forms=nhForms(q),qn=forms[0];if(!qn)return {hd:'',tiles:[],top:null};
   const groups=[];
-  NHI.forEach(I=>{const sc=nhScoreI(I,qn);if(!sc)return;const t=[];const A=()=>(I.acts||[]).forEach(x=>t.push(Object.assign({k:'act'},x)));if(!I.al)A();(I.apps?I.apps():[]).forEach(a=>t.push({k:'app',a}));if(I.al)A();(I.post?I.post():[]).forEach(a=>t.push({k:'app',a}));
+  NHI.forEach(I=>{const sc=nhScoreIAll(I,forms);if(!sc)return;const t=[];const A=()=>(I.acts||[]).forEach(x=>t.push(Object.assign({k:'act'},x)));if(!I.al)A();(I.apps?I.apps():[]).forEach(a=>t.push({k:'app',a}));if(I.al)A();(I.post?I.post():[]).forEach(a=>t.push({k:'app',a}));
     groups.push({sc,I,tiles:t})});
-  const ap=[];nhApps().forEach(a=>{const n=nhNorm(a.full||a.n);if(!n)return;let sc=0;if(n.startsWith(qa))sc=92;else if(n.includes(qa))sc=82;else if(appMatch(a,qa))sc=74;if(sc)ap.push({sc,a})});
+  const ap=[];nhApps().forEach(a=>{const n=nhNorm(a.full||a.n);if(!n)return;let sc=0;forms.forEach(qa=>{if(!qa)return;if(n===qa)sc=Math.max(sc,96);else if(n.startsWith(qa))sc=Math.max(sc,92);else if(n.includes(qa))sc=Math.max(sc,82);else if(appMatch(a,qa))sc=Math.max(sc,74)});if(sc)ap.push({sc,a})});
   ap.sort((x,y)=>y.sc-x.sc||String(x.a.full||x.a.n).localeCompare(String(y.a.full||y.a.n),'ko'));
   if(ap.length)groups.push({sc:ap[0].sc,I:null,tiles:ap.map(x=>({k:'app',a:x.a})),scs:ap.map(x=>x.sc)});
   groups.sort((x,y)=>y.sc-x.sc);
@@ -4046,20 +4049,29 @@ function nhMatch(q){const qn=nhNorm(q);if(!qn)return {hd:'',tiles:[],top:null};
 function nhIconHTML(a){const b=a.__base||a;const im=a.img||b.img;if(im&&im.src)return `<img src="${im.src}" alt="">`;
   let h=null;try{h=iconHTML(a,44)}catch(_){}if(h)return h;return `<b style="background:linear-gradient(135deg,${a.c1||'#5b7cff'},${a.c2||'#3346c9'})">${esc(String(a.full||a.n||'?').slice(0,1))}</b>`}
 function nhTileHTML(x){if(x.k==='act')return `<span class="ic act">${ico(x.ic)}</span><span class="nm">${esc(x.t)}</span>`;return `<span class="ic">${nhIconHTML(x.a)}</span><span class="nm">${esc(x.a.full||x.a.n)}</span>`}
+function nhRect(el){const r=el.getBoundingClientRect(),p=phone.getBoundingClientRect();return {x:r.left-p.left,y:r.top-p.top,w:r.width,h:r.height}}
 function nhRender(){const r=nhMatch(NH.q);NH.tiles=r.tiles;NH.top=r.top;
   if(!NH.q){NHRES.classList.remove('on');NHGRID.innerHTML='';NH.shown.clear();NHSUG.classList.remove('hide');return}
+  const now=new Set(r.tiles.map(x=>x.key));
+  // 없어지는 칸은 버스 카드와 같이 모래로 흩어지게
+  if(NHGRID.children.length){[...NHGRID.children].forEach(b=>{if(b.classList.contains('nht')&&!now.has(b.dataset.k)){try{bfxBurst(nhRect(b),false)}catch(_){}}})}
   NHSUG.classList.add('hide');NHRES.classList.add('on');NHRES.classList.remove('out');NHRES.querySelector('.hd').textContent=r.hd||'';
-  NHGRID.innerHTML='';const now=new Set();let n=0;
+  const fresh=new Set(r.tiles.filter(x=>!NH.shown.has(x.key)).map(x=>x.key));
+  NHGRID.innerHTML='';
   if(!r.tiles.length){NHGRID.innerHTML=`<div class="msg" style="grid-column:1/-1">${esc(r.none||'맞는 앱을 찾지 못했어요 · 다른 낱말로 해 보세요')}</div>`;NH.shown.clear();return}
   if(r.none){const m=document.createElement('div');m.className='msg';m.style.gridColumn='1/-1';m.textContent=r.none;NHGRID.appendChild(m)}
-  r.tiles.forEach(x=>{const b=document.createElement('button');b.type='button';b.className='nht';b.innerHTML=nhTileHTML(x);b.dataset.k=x.key;
-    if(!NH.shown.has(x.key)){b.classList.add('in');b.style.animationDelay=(n++*55)+'ms'}   // 새로 나온 칸만 차례로(기울이지 않고 반듯하게)
-    now.add(x.key);b.onclick=e=>{e.stopPropagation();nhRun(x)};NHGRID.appendChild(b)});
-  NH.shown=now}
+  r.tiles.forEach(x=>{const b=document.createElement('button');b.type='button';b.className='nht'+(fresh.has(x.key)?' pre':'');b.innerHTML=nhTileHTML(x);b.dataset.k=x.key;
+    b.onclick=e=>{e.stopPropagation();nhRun(x,b)};NHGRID.appendChild(b)});
+  NH.shown=now;
+  // 새로 나온 칸: 모래가 모인 뒤(버스 카드와 같은 380ms) 모습이 드러남. 기울이거나 차례로 떠오르는 CSS 없음.
+  clearTimeout(NH.inT);
+  if(fresh.size)NH.inT=setTimeout(()=>{const els=[...NHGRID.querySelectorAll('.nht.pre')];els.forEach(b=>{try{bfxBurst(nhRect(b),true)}catch(_){}});
+    NH.inT=setTimeout(()=>els.forEach(b=>b.classList.remove('pre')),380)},0)}
 function nhSetQ(v,fromVoice){NH.q=String(v||'');if(NHQ.value!==NH.q)NHQ.value=NH.q;NH.voice=!!fromVoice;nhRender();try{busTick()}catch(_){}}
-function nhRun(x){if(!x)return;try{if(navigator.vibrate)navigator.vibrate(6)}catch(_){}
-  if(x.k==='act'){x.fn&&x.fn();return}
-  openApp(x.a);setTimeout(()=>nhClear(false),350)}
+function nhRun(x,el){if(!x)return;try{if(navigator.vibrate)navigator.vibrate(6)}catch(_){}
+  try{if(el){bfxBurst(nhRect(el),false);el.classList.add('out')}}catch(_){}
+  const go=()=>{if(x.k==='act'){x.fn&&x.fn();return}openApp(x.a);setTimeout(()=>nhClear(false),350)};
+  if(el)setTimeout(go,280);else go()}
 // 다 쓰면 모래처럼 흩어지며 우주로
 function nhClear(anim){NHQ.blur();nhListenStop();if(!NH.q&&!NHRES.classList.contains('on')){NHQ.value='';return}
   if(anim&&NHRES.classList.contains('on')&&NHGRID.children.length){try{const r=NHGRID.getBoundingClientRect(),p=phone.getBoundingClientRect();bfxBurst({x:r.left-p.left,y:r.top-p.top,w:r.width,h:r.height},false)}catch(_){}
@@ -4117,28 +4129,40 @@ NHQ.addEventListener('input',()=>nhSetQ(NHQ.value));
 NHQ.addEventListener('focus',()=>{$('nhBar').classList.add('f');if(NH.stars)nhStarsClose();try{busTick()}catch(_){}});
 NHQ.addEventListener('blur',()=>{$('nhBar').classList.remove('f')});
 NHQ.addEventListener('keydown',e=>{if(e.key==='Enter'&&!(e.nativeEvent||e).isComposing){e.preventDefault();const x=NH.tiles[0];if(x){NHQ.blur();nhRun(x)}}else if(e.key==='Escape'){nhClear(true)}});
-// ---- 마이크 (누른 동안만 듣기) ----
+// ---- 마이크: 폰의 음성 인식 화면을 열고, 돌아온 여러 후보 중 가장 맞는 뜻을 고름 ----
 const NHMIC=$('nhMic');
-function nhMicUI(){NHMIC.classList.toggle('on',NH.listen);NHQ.placeholder=NH.listen?'듣고 있어요…':'무엇을 하실 건가요?';try{busTick()}catch(_){}}
-function nhListenStop(){if(!NH.listen)return;NH.listen=false;nhMicUI();try{if(NATIVE&&NVNative.speechCancelJs)NVNative.speechCancelJs()}catch(_){}try{NH.web&&NH.web.abort()}catch(_){}NH.web=null}
-async function nhMic(){if(NH.listen){nhListenStop();return}
-  if(!S.nhMicOk){const ok=await ask('말로 찾기','마이크 버튼을 누른 동안만 들어요.<br>· 폰의 음성 인식(기기 안 인식이 있으면 그것)으로 말을 글자로 바꾸고, 뉴니버스는 그 글자로 앱만 찾아요<br>· 녹음하거나 저장하지 않아요<br>· 기기 안 인식이 없는 폰은 폰 음성 인식 서비스(삼성·구글)가 처리할 수 있어요',{ok:'마이크 쓰기'});if(!ok)return;S.nhMicOk=1;saveS()}
-  NHQ.blur();
+function nhMicUI(){NHMIC.classList.toggle('on',!!(NH.listen||NH.speechUi));NHQ.placeholder=(NH.listen||NH.speechUi)?'듣고 있어요…':'무엇을 하실 건가요?';try{busTick()}catch(_){}}
+function nhListenStop(){if(!NH.listen&&!NH.speechUi)return;if(NH.speechUi)return;NH.listen=false;nhMicUI();try{if(NATIVE&&NVNative.speechCancelJs)NVNative.speechCancelJs()}catch(_){}try{NH.web&&NH.web.abort()}catch(_){}NH.web=null}
+function nhSpeechErr(code){const M={perm:'마이크를 허락해야 말로 할 수 있어요 · 글자로도 돼요',nomatch:'잘 못 알아들었어요 · 다시 눌러 말해 주세요',none:'이 폰에서는 음성 인식을 쓸 수 없어요 · 글자로 입력해 주세요',network:'음성 인식이 인터넷을 못 찾았어요 · 글자로 입력해 주세요',cancel:'',audio:'마이크를 쓰지 못했어요 · 글자로 입력해 주세요',server:'음성 인식 서버에 문제가 있어요 · 글자로 입력해 주세요',client:'음성 인식을 시작하지 못했어요 · 다시 눌러 보세요',timeout:'말이 들리지 않았어요 · 다시 눌러 말해 주세요',busy:'음성 인식이 다른 일을 하고 있어요 · 잠시 후 다시 눌러 주세요',many:'요청이 너무 많아요 · 잠시 후 다시 눌러 주세요',lang:'이 폰의 음성 인식이 한국어를 지원하지 않아요 · 글자로 입력해 주세요',langun:'한국어 음성 인식을 쓸 수 없어요 · 글자로 입력해 주세요','e-start':'음성 인식을 시작하지 못했어요 · 글자로 입력해 주세요'};
+  if(M[code]!==undefined)return M[code];return '음성 인식이 멈췄어요 · 글자로도 돼요'}
+function nhPickHeard(cands){const list=(cands||[]).map(s=>String(s||'').trim()).filter(Boolean);if(!list.length)return {q:'',r:nhMatch(''),sc:-1,cands:[]};
+  let bestQ=list[0],bestSc=-1,bestR=nhMatch(list[0]);
+  list.forEach(c=>{const r=nhMatch(c),sc=r.top?r.top.sc:0;if(sc>bestSc){bestSc=sc;bestQ=c;bestR=r}});
+  return {q:bestQ,r:bestR,sc:bestSc,cands:list}}
+function nhHeard(cands,auto){const p=nhPickHeard(Array.isArray(cands)?cands:[cands]);NH.heard=p.q;NH.cands=p.cands;
+  if(!p.q){toast('잘 못 알아들었어요 · 다시 눌러 말해 주세요');return p}
+  nhSetQ(p.q,true);   // 들은 말을 입력칸에 보여 줌
+  if(auto){const t=NH.top;if(t&&t.I&&t.I.auto&&t.sc>=100&&NH.tiles[0]&&NH.tiles[0].k==='app'){const x=NH.tiles[0],el=NHGRID.querySelector('.nht');clearTimeout(NH.aT);NH.aT=setTimeout(()=>{if(NH.q===p.q)nhRun(x,el)},650)}}
+  return p}
+async function nhMic(){if(NH.listen&&!NH.speechUi){nhListenStop();return}
+  if(!S.nhMicOk){const ok=await ask('말로 찾기','마이크 단추를 누르면 <b>폰의 음성 인식 화면</b>이 열려요.<br>· 거기서 말한 뒤 끝나면, 뉴니버스가 그 말(여러 후보)로 앱을 찾아요<br>· 녹음하거나 저장하지 않아요<br>· 음성 인식 화면을 못 여는 폰만 앱 안에서 바로 들어요',{ok:'마이크 쓰기'});if(!ok)return;S.nhMicOk=1;saveS()}
+  NHQ.blur();NH.hold=true;
   if(NATIVE&&window.NVNative&&NVNative.speechStart){let r='';NH.listen=true;nhMicUI();try{r=NVNative.speechStart()}catch(_){r='none'}
-    if(r==='none'){NH.listen=false;nhMicUI();toast('이 폰에서는 음성 인식을 쓸 수 없어요 · 글자로 입력해 주세요')}return}
-  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){toast('여기서는 음성 인식을 쓸 수 없어요 · 글자로 입력해 주세요');return}
-  try{const r=new SR();r.lang='ko-KR';r.interimResults=true;r.maxAlternatives=1;NH.web=r;NH.listen=true;nhMicUI();
-    r.onresult=ev=>{let t='',fin=false;for(let i=ev.resultIndex;i<ev.results.length;i++){t+=ev.results[i][0].transcript;if(ev.results[i].isFinal)fin=true}window.NV_onSpeech(fin?'final':'partial',t)};
-    r.onerror=ev=>window.NV_onSpeech('error',ev.error==='not-allowed'?'perm':ev.error==='no-speech'?'nomatch':String(ev.error));r.onend=()=>{if(NH.listen){NH.listen=false;nhMicUI()}};r.start()}catch(e){NH.listen=false;nhMicUI();toast('음성 인식을 시작하지 못했어요')}}
+    if(r==='ui'){NH.speechUi=true;nhMicUI();return}
+    if(r==='perm')return;
+    if(r==='none'){NH.listen=false;NH.hold=false;nhMicUI();toast('이 폰에서는 음성 인식을 쓸 수 없어요 · 글자로 입력해 주세요')}return}
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){NH.hold=false;toast('여기서는 음성 인식을 쓸 수 없어요 · 글자로 입력해 주세요');return}
+  try{const r=new SR();r.lang='ko-KR';r.interimResults=true;r.maxAlternatives=5;NH.web=r;NH.listen=true;nhMicUI();
+    r.onresult=ev=>{const c=[];let fin=false,t='';for(let i=ev.resultIndex;i<ev.results.length;i++){const row=ev.results[i];t+=row[0].transcript;if(row.isFinal){fin=true;for(let j=0;j<row.length;j++)c.push(row[j].transcript)}}window.NV_onSpeech(fin?'finals':'partial',fin?(c.length?c:[t]):t)};
+    r.onerror=ev=>window.NV_onSpeech('error',ev.error==='not-allowed'?'perm':ev.error==='no-speech'?'nomatch':String(ev.error));r.onend=()=>{if(NH.listen){NH.listen=false;nhMicUI()}};r.start()}catch(e){NH.listen=false;NH.hold=false;nhMicUI();toast('음성 인식을 시작하지 못했어요')}}
 NHMIC.addEventListener('click',e=>{e.stopPropagation();nhMic()});
 window.NV_onSpeech=(type,text)=>{
+  if(type==='ui'){NH.speechUi=true;NH.hold=true;NH.listen=true;nhMicUI();return}
   if(type==='ready'){NH.listen=true;nhMicUI();return}
   if(type==='partial'){if(!NH.listen)return;nhSetQ(text,true);return}
-  if(type==='final'){NH.listen=false;nhMicUI();if(!text){toast('잘 못 알아들었어요 · 다시 눌러 말해 주세요');return}nhSetQ(text,true);
-    // 말로 「사진 찍어볼까?」처럼 한 가지를 분명히 말하면 바로 열고, 「입금」처럼 여러 앱이면 펼쳐 보여 줌
-    const t=NH.top;if(t&&t.I&&t.I.auto&&t.sc>=100&&NH.tiles[0]&&NH.tiles[0].k==='app'){const x=NH.tiles[0];clearTimeout(NH.aT);NH.aT=setTimeout(()=>{if(NH.q===text)nhRun(x)},650)}return}
+  if(type==='finals'||type==='final'){NH.listen=false;NH.speechUi=false;nhMicUI();const cands=Array.isArray(text)?text:(text==null||text==='')?[]:[text];if(!cands.length){toast('잘 못 알아들었어요 · 다시 눌러 말해 주세요');return}nhHeard(cands,true);return}
   if(type==='end')return;
-  if(type==='error'){NH.listen=false;nhMicUI();toast(text==='perm'?'마이크를 허락해야 말로 할 수 있어요 · 글자로도 돼요':text==='nomatch'?'잘 못 알아들었어요 · 다시 눌러 말해 주세요':text==='none'?'이 폰에서는 음성 인식을 쓸 수 없어요 · 글자로 입력해 주세요':text==='network'?'음성 인식이 인터넷을 못 찾았어요 · 글자로 입력해 주세요':'음성 인식이 멈췄어요 · 글자로도 돼요')}};
+  if(type==='error'){NH.listen=false;NH.speechUi=false;nhMicUI();const m=nhSpeechErr(text);if(m)toast(m)}};
 // ---- 우주: 거의 멈춰 있고 4초에 한 번 아주 조금만 흐름(화면이 꺼지거나 절전이면 멈춤) ----
 function nhStill(){if(S.lite===true||S.nhStill===true)return true;try{if(NATIVE&&NVNative.qsState){const q=JSON.parse(NVNative.qsState());if(q&&q.save)return true}}catch(_){}return false}
 function nhDrift(){clearInterval(NH.dT);NH.dT=0;if(!nhOn()||document.hidden||NH.still)return;
@@ -4153,12 +4177,13 @@ function nhReset(){clearTimeout(NH.aT);nhListenStop();if(NH.stars||NHST.classLis
 function nhBack(){if(NH.stars){nhStarsClose();return true}if(NH.listen){nhListenStop();return true}if(NH.q||document.activeElement===NHQ){nhClear(true);return true}return false}
 window.addEventListener('resize',()=>setTimeout(nhPlace,30));
 {const oi=window.NV_onInsets;window.NV_onInsets=()=>{try{oi&&oi()}catch(_){}nhPlace()}}
-{const orz=window.NV_onResume;window.NV_onResume=()=>{try{orz&&orz()}catch(_){}if(nhOn()){nhReset();NH.still=nhStill();nhDrift();nhPlace()}}}
+{const orz=window.NV_onResume;window.NV_onResume=()=>{try{orz&&orz()}catch(_){}if(nhOn()){if(NH.hold||NH.speechUi){NH.hold=false}else nhReset();NH.still=nhStill();nhDrift();nhPlace()}}}
 setInterval(()=>{if(nhOn()&&!document.hidden&&!NH.q)nhSug()},60000);
 nhApply();
 setTimeout(()=>{nhPlace();nhSug();if(nhOn()&&!S.nhTip){S.nhTip=1;saveS();setTimeout(()=>toast('위로 밀면 최근 앱 · 아래로 빠른 설정 · 길게 누르면 메뉴'),900)}},300);
 window.__nv.nh={on:nhOn,set:nhSet,q:v=>nhSetQ(v),tiles:()=>NH.tiles.map(x=>x.k==='act'?'act:'+x.t:(x.a.__base||x.a).pkg),hd:()=>NHRES.querySelector('.hd').textContent,sug:()=>[...NHSUG.querySelectorAll('button')].map(b=>b.textContent),
-  stars:()=>NH.stars,starsOpen:nhStarsOpen,recent:()=>nhRecent().map(a=>a.pkg),state:()=>({q:NH.q,listen:NH.listen,stars:NH.stars,still:NH.still,drift:!!NH.dT,busUntil:NH.busUntil}),back:nhBack,reset:nhReset,place:nhPlace};
+  stars:()=>NH.stars,starsOpen:nhStarsOpen,recent:()=>nhRecent().map(a=>a.pkg),state:()=>({q:NH.q,listen:NH.listen,stars:NH.stars,still:NH.still,drift:!!NH.dT,busUntil:NH.busUntil,heard:NH.heard||'',ui:!!NH.speechUi,hold:!!NH.hold}),back:nhBack,reset:nhReset,place:nhPlace,
+  stem:nhStem,match:q=>{const r=nhMatch(q);return {hd:r.hd,tiles:(r.tiles||[]).map(x=>x.k==='act'?'act:'+x.t:(x.a.__base||x.a).pkg),sc:r.top?r.top.sc:0}},pick:c=>nhPickHeard(c),heard:c=>{nhHeard(c,false);return {q:NH.q,hd:NHRES.querySelector('.hd').textContent,tiles:window.__nv.nh.tiles()}}};
 
 })();
 </script>
