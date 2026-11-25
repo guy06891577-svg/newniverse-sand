@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:">
+<title>뉴니버스 설정</title>
+<style>
+:root{--sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);--a1:#6fd3ff;--a2:#8f6bff;--acc:linear-gradient(135deg,var(--a1),var(--a2));--red:#ff4d6d;--fg:#f3f1ff;--sub:rgba(226,222,255,.66);--dim:rgba(226,222,255,.42);
+ --glass:rgba(255,255,255,.075);--line:rgba(255,255,255,.14);
+ --font:"Pretendard","Noto Sans KR","Apple SD Gothic Neo",system-ui,-apple-system,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{height:100%;background:#04030c;color:var(--fg);font-family:var(--font);overflow:hidden}
+button,input{font-family:inherit;color:inherit}
+button{background:none;border:none;cursor:pointer;text-align:left}
+svg{display:block}
+#app{position:fixed;inset:0;overflow:hidden;background:#05040f}
+#neb{position:absolute;inset:0;width:100%;height:100%}
+#scroll{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;padding:calc(var(--sat) + 8px) 14px calc(var(--sab) + 24px);z-index:1;overscroll-behavior:contain}
+#scroll::-webkit-scrollbar{display:none}
+#satcover{position:absolute;left:0;right:0;top:0;height:calc(var(--sat) + 4px);z-index:7;pointer-events:none;background:linear-gradient(180deg,rgba(5,4,15,.97) calc(100% - 16px),rgba(5,4,15,0))}
+.glass{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(18px) saturate(1.2);-webkit-backdrop-filter:blur(18px) saturate(1.2)}
+.ico{width:24px;height:24px;flex:none}
+.ico svg{width:100%;height:100%}
+
+/* 머리글 */
+#top{display:flex;align-items:center;min-height:52px;padding:0 4px 0 8px}
+#top h1{flex:1;font-size:28px;font-weight:800;letter-spacing:-.6px}
+#btnAll{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--fg)}
+#btnAll:active{background:rgba(143,107,255,.2)}
+
+/* 위쪽 카드: 배터리 · 저장공간 */
+#status{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:4px 0 10px}
+.scard{border-radius:22px;padding:12px 14px;min-height:84px;display:flex;flex-direction:column;justify-content:space-between;gap:8px}
+.scard .srow{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--sub)}
+.scard .srow .ico{width:20px;height:20px;color:var(--a1)}
+.scard .val{font-size:24px;font-weight:800;letter-spacing:-.6px;font-variant-numeric:tabular-nums;line-height:1.1;white-space:nowrap}
+.scard .val small{font-size:13px;font-weight:700;color:var(--sub);letter-spacing:0;margin-left:6px}
+.bar{height:8px;border-radius:6px;background:rgba(255,255,255,.1);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--acc);border-radius:6px;transition:width .4s}
+
+/* 검색 */
+#sbar{position:sticky;top:var(--sat);z-index:6;margin:0 -14px 12px;padding:6px 14px}
+#sbar::before{content:"";position:absolute;left:0;right:0;top:-12px;bottom:-8px;background:linear-gradient(180deg,rgba(5,4,15,0) 0,rgba(5,4,15,.97) 12px,rgba(5,4,15,.97) calc(100% - 14px),rgba(5,4,15,0));pointer-events:none;z-index:-1}
+#sfield{display:flex;align-items:center;gap:8px;height:52px;border-radius:26px;padding:0 6px 0 16px;background:rgba(26,22,56,.92)}
+#sfield .ico{color:var(--dim);width:22px;height:22px}
+#q{flex:1;min-width:0;height:100%;background:none;border:none;outline:none;font-size:17px;font-weight:600}
+#q::-webkit-search-cancel-button,#q::-webkit-search-decoration{-webkit-appearance:none;display:none}
+#q::placeholder{color:var(--dim)}
+#qx{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--sub)}
+#qx svg{width:20px;height:20px}
+#qx:active{background:rgba(143,107,255,.2)}
+
+/* 빠른 설정 */
+.sec{font-size:14px;font-weight:800;color:var(--sub);letter-spacing:.1px;padding:6px 6px 8px}
+#tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.tile{position:relative;border-radius:22px;min-height:92px;padding:12px 12px 10px;display:flex;flex-direction:column;justify-content:space-between;gap:6px;overflow:hidden}
+.tile .ico{width:28px;height:28px;color:var(--fg)}
+.tile .tl{font-size:15px;font-weight:800;line-height:1.2;word-break:keep-all}
+.tile .ts{font-size:12px;font-weight:700;color:var(--dim);line-height:1.2;margin-top:2px}
+.tile .ext{position:absolute;right:10px;top:10px;width:16px;height:16px;color:var(--dim)}
+.tile .ext svg{width:100%;height:100%}
+.tile.on{border-color:rgba(111,211,255,.5);background:linear-gradient(145deg,rgba(111,211,255,.20),rgba(143,107,255,.20))}
+.tile.on .ico{color:var(--a1)}
+.tile.on .ts{color:var(--a1)}
+.tile:active{background:rgba(143,107,255,.22)}
+.card{border-radius:24px;padding:12px 14px;margin-top:10px}
+.card .hd{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:800;min-height:32px}
+.card .hd .ico{width:22px;height:22px;color:var(--a1)}
+.card .hd .grow{flex:1}
+.card .hd .val{font-size:15px;font-weight:800;color:var(--a1);font-variant-numeric:tabular-nums}
+#ringer .seg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px}
+.sbtn{height:56px;border-radius:18px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:16px;font-weight:800;color:var(--sub);background:rgba(255,255,255,.06);border:1px solid var(--line)}
+.sbtn .ico{width:22px;height:22px}
+.sbtn.on{color:#0a0820;background:var(--acc);border:none}
+.sbtn:active{filter:brightness(1.1)}
+.chipb{height:44px;padding:0 16px;border-radius:22px;font-size:14px;font-weight:800;color:var(--sub);background:rgba(255,255,255,.06);border:1px solid var(--line);display:flex;align-items:center;justify-content:center}
+.chipb.on{color:#0a0820;background:var(--acc);border:none}
+#bright .sl{position:relative;height:56px;display:flex;align-items:center;margin-top:2px}
+#bright input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:56px;background:transparent;outline:none;touch-action:pan-x;--v:50%}
+#bright input[type=range]::-webkit-slider-runnable-track{height:16px;border-radius:10px;background:linear-gradient(90deg,var(--a1),var(--a2)) 0/var(--v) 100% no-repeat,rgba(255,255,255,.12)}
+#bright input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:36px;height:36px;margin-top:-10px;border-radius:50%;background:#fff;border:6px solid #8f6bff;box-shadow:0 2px 12px rgba(111,211,255,.5)}
+#bright.lock input[type=range]{opacity:.55}
+#bright .hint{font-size:12px;font-weight:700;color:var(--dim);padding:0 2px 2px}
+
+/* 뉴니버스 앱 · 목록 */
+.group{margin-top:14px}
+.group .gt{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800;color:var(--sub);padding:4px 8px 8px}
+.group .gt .ico{width:18px;height:18px;color:var(--a1)}
+.rows{border-radius:22px;overflow:hidden}
+.row{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;padding:10px 14px;border-top:1px solid rgba(255,255,255,.08)}
+.row:first-child{border-top:none}
+.row:active{background:rgba(143,107,255,.16)}
+.row .ib{width:40px;height:40px;border-radius:14px;background:rgba(255,255,255,.07);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--a1);flex:none}
+.row .ib .ico{width:22px;height:22px}
+.row .tx{flex:1;min-width:0}
+.row .t{font-size:16px;font-weight:800;line-height:1.25;word-break:keep-all}
+.row .s{font-size:13px;font-weight:600;color:var(--sub);line-height:1.35;margin-top:2px;word-break:keep-all}
+.row .go{width:20px;height:20px;color:var(--dim);flex:none}
+.openb{min-width:72px;height:44px;padding:0 14px;border-radius:22px;font-size:15px;font-weight:800;color:#0a0820;background:var(--acc);display:flex;align-items:center;justify-content:center;flex:none}
+.openb.off{background:rgba(255,255,255,.06);color:var(--dim);border:1px solid var(--line);font-weight:700;font-size:13px}
+.nvrow{cursor:default}
+#empty{margin-top:6px;border-radius:22px;padding:18px 16px;text-align:center}
+#empty b{display:block;font-size:17px;font-weight:800;margin-bottom:6px}
+#empty p{font-size:14px;color:var(--sub);line-height:1.5;word-break:keep-all}
+#empty .openb{margin:14px auto 0;width:100%;max-width:280px;height:52px;border-radius:26px;font-size:16px}
+#allBtn{margin-top:16px;width:100%;height:56px;border-radius:28px;font-size:16px;font-weight:800;justify-content:center;gap:8px}
+#foot{margin-top:14px;text-align:center;font-size:12px;color:var(--dim);line-height:1.6}
+
+/* 시트 · 토스트 */
+#sheet{position:absolute;inset:0;z-index:20}
+#sheet .bd{position:absolute;inset:0;background:rgba(4,3,12,.6)}
+#sheet .box{position:absolute;left:0;right:0;bottom:0;border-radius:26px 26px 0 0;padding:18px 18px calc(var(--sab) + 16px);background:rgba(18,15,40,.94)}
+#sheet h2{font-size:20px;font-weight:800;letter-spacing:-.3px;margin-bottom:8px}
+#sheet p{font-size:15px;color:var(--sub);line-height:1.55;word-break:keep-all}
+#sheet ol{margin:10px 0 4px 20px;font-size:15px;color:var(--fg);line-height:1.6}
+#sheet ol li{margin:2px 0;word-break:keep-all}
+#sheet .acts{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+#sheet .go{height:56px;border-radius:28px;font-size:17px;font-weight:800;color:#0a0820;background:var(--acc);display:flex;align-items:center;justify-content:center}
+#sheet .later{height:48px;border-radius:24px;font-size:15px;font-weight:700;color:var(--sub);display:flex;align-items:center;justify-content:center}
+#toast{position:absolute;left:50%;bottom:calc(var(--sab) + 28px);transform:translateX(-50%) translateY(20px);opacity:0;z-index:40;padding:12px 18px;border-radius:20px;font-size:15px;font-weight:700;max-width:88%;text-align:center;transition:all .2s;pointer-events:none;background:rgba(24,20,52,.96);border:1px solid var(--line);line-height:1.4;word-break:keep-all}
+#toast.on{opacity:1;transform:translateX(-50%)}
+@media (max-width:359px){.tile .tl{font-size:14px}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <linearGradient id="gacc" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6fd3ff"/><stop offset="1" stop-color="#8f6bff"/></linearGradient>
+</defs></svg>
+<div id="app">
+  <canvas id="neb"></canvas>
+  <div id="satcover"></div>
+  <div id="scroll">
+    <header id="top">
+      <h1>설정</h1>
+      <button type="button" id="btnAll" aria-label="안드로이드 전체 설정 열기"></button>
+    </header>
+    <section id="status">
+      <button type="button" class="scard glass" id="cBat" aria-label="배터리 설정 열기">
+        <span class="srow"><span class="ico" data-i="battery"></span>배터리</span>
+        <span class="val" id="batVal">—</span>
+        <span class="bar"><i id="batBar"></i></span>
+      </button>
+      <button type="button" class="scard glass" id="cSto" aria-label="저장공간 설정 열기">
+        <span class="srow"><span class="ico" data-i="storage"></span>저장공간</span>
+        <span class="val" id="stoVal">—</span>
+        <span class="bar"><i id="stoBar"></i></span>
+      </button>
+    </section>
+    <div id="sbar">
+      <label id="sfield" class="glass">
+        <span class="ico" data-i="search"></span>
+        <input id="q" type="search" placeholder="설정 검색 (예: 와이파이, 밝기)" enterkeyhint="search" autocomplete="off" aria-label="설정 검색">
+        <button type="button" id="qx" aria-label="검색어 지우기" hidden></button>
+      </label>
+    </div>
+    <section id="quick">
+      <div class="sec">빠른 설정</div>
+      <div id="tiles"></div>
+      <div class="card glass" id="ringer">
+        <div class="hd"><span class="ico" data-i="sound"></span><span class="grow">소리 모드</span></div>
+        <div class="seg" id="seg"></div>
+      </div>
+      <div class="card glass" id="bright">
+        <div class="hd"><span class="ico" data-i="sun"></span><span class="grow">밝기</span><span class="val" id="brVal">50%</span><button type="button" class="chipb" id="brAuto">자동</button></div>
+        <div class="sl"><input id="br" type="range" min="0" max="100" step="1" value="50" aria-label="화면 밝기"></div>
+        <div class="hint" id="brHint"></div>
+      </div>
+    </section>
+    <section id="nv"></section>
+    <section id="list"></section>
+    <div id="empty" class="glass" hidden>
+      <b>찾는 설정이 없어요</b>
+      <p>다른 말로 검색해 보시거나, 안드로이드 전체 설정에서 찾아 보세요.</p>
+      <button type="button" class="openb" id="emptyAll">전체 설정 열기</button>
+    </div>
+    <button type="button" class="openb glass" id="allBtn" style="color:var(--fg);background:var(--glass)"><span class="ico" data-i="gear"></span>안드로이드 전체 설정 열기</button>
+    <div id="foot"></div>
+  </div>
+  <div id="sheet" hidden>
+    <div class="bd" id="shBd"></div>
+    <div class="box glass">
+      <h2 id="shT"></h2>
+      <p id="shP"></p>
+      <ol id="shO"></ol>
+      <div class="acts">
+        <button type="button" class="go" id="shGo">허용하러 가기</button>
+        <button type="button" class="later" id="shNo">나중에 할게요</button>
+      </div>
+    </div>
+  </div>
+  <div id="toast"></div>
+</div>
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+
+/* ---------- 안드로이드 다리 (모든 호출은 여기서 감싼다: 없거나 실패해도 화면은 멀쩡) ---------- */
+function bridge(){ try{ return window.NVSet||null }catch(e){ return null } }
+function call(name,...args){
+  try{ const b=bridge(); if(b && typeof b[name]==='function'){ const r=b[name](...args); return r===undefined?null:r; } }catch(e){}
+  return null;
+}
+function jcall(name,def,...args){
+  const r=call(name,...args); if(r==null||r==='') return def;
+  try{ const o=JSON.parse(r); return (o&&typeof o==='object')?o:def }catch(e){ return def }
+}
+const hasBridge=()=>{ try{ const b=bridge(); return !!(b&&typeof b.state==='function') }catch(e){ return false } };
+const buzz=()=>call('vibrate',12);
+
+/* ---------- 배경 ---------- */
+function nebula(){const c=$('#neb'),r=c.getBoundingClientRect();if(!r.width)return;const d=Math.min(2,devicePixelRatio||1);c.width=r.width*d;c.height=r.height*d;const x=c.getContext('2d');x.scale(d,d);const W=r.width,H=r.height;
+ x.fillStyle='#05040f';x.fillRect(0,0,W,H);let s=11;const rnd=()=>(s=(s*16807)%2147483647)/2147483647;
+ const blob=(cx,cy,rr,col)=>{const g=x.createRadialGradient(cx,cy,0,cx,cy,rr);g.addColorStop(0,col);g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(0,0,W,H)};
+ blob(W*.15,H*.1,W*.9,'rgba(60,120,220,.30)');blob(W*.95,H*.4,W*.85,'rgba(130,80,230,.30)');blob(W*.3,H*.85,W*.9,'rgba(90,60,200,.22)');blob(W*.7,H*.98,W*.6,'rgba(60,170,240,.14)');
+ for(let i=0;i<14;i++)blob(W*rnd(),H*rnd(),W*(.1+rnd()*.25),`rgba(${110+rnd()*60|0},${110+rnd()*60|0},255,.07)`);
+ for(let i=0;i<170;i++){const a=rnd()*.7+.1,rr=rnd()*1.1+.2;x.fillStyle=`rgba(230,235,255,${a})`;x.beginPath();x.arc(W*rnd(),H*rnd(),rr,0,7);x.fill()}
+ x.fillStyle='rgba(5,4,15,.25)';x.fillRect(0,0,W,H)}
+let nebT;nebula();addEventListener('resize',()=>{clearTimeout(nebT);nebT=setTimeout(nebula,200)});
+
+/* ---------- 선 아이콘 ---------- */
+const P={
+ wifi:'<path d="M2 9a15 15 0 0 1 20 0"/><path d="M5 12.5a10.5 10.5 0 0 1 14 0"/><path d="M8.5 16a5.5 5.5 0 0 1 7 0"/><path d="M12 19.5h.01"/>',
+ bluetooth:'<path d="M7 7l10 10-5 4V3l5 4L7 17"/>',
+ data:'<path d="M8 20V4M8 4L4.5 7.5M8 4l3.5 3.5"/><path d="M16 4v16M16 20l-3.5-3.5M16 20l3.5-3.5"/>',
+ nfc:'<path d="M9 8a5 5 0 0 1 0 8"/><path d="M13 5.5a9 9 0 0 1 0 13"/><path d="M17 3a13 13 0 0 1 0 18"/><path d="M5.5 12h.01"/>',
+ airplane:'<path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/>',
+ pin:'<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><path d="M12 12a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/>',
+ rotate:'<path d="M5 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2z"/><path d="M8 5h6a6 6 0 0 1 6 6"/><path d="M17.5 8.5L20 11l2.2-2.5"/>',
+ flash:'<path d="M13 2L5 14h6l-1 8 8-12h-6l1-8z"/>',
+ moon:'<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+ hotspot:'<path d="M12 12.5h.01"/><path d="M8 8a5.5 5.5 0 0 0 0 8"/><path d="M16 8a5.5 5.5 0 0 1 0 8"/><path d="M5 5a9.5 9.5 0 0 0 0 14"/><path d="M19 5a9.5 9.5 0 0 1 0 14"/>',
+ usage:'<path d="M5 20V10M12 20V4M19 20v-7"/>',
+ globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+ sound:'<path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 9a4 4 0 0 1 0 6"/><path d="M19 6.5a8 8 0 0 1 0 11"/>',
+ vibrate:'<path d="M8 4h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M3 8v8M21 8v8"/>',
+ mute:'<path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9.5l5 5M22 9.5l-5 5"/>',
+ bell:'<path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4l2-2z"/><path d="M10 21h4"/>',
+ music:'<path d="M9 18V6l10-2v12"/><path d="M9 18a3 3 0 1 1-3-3"/><path d="M19 16a3 3 0 1 1-3-3"/>',
+ sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+ eye:'<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+ text:'<path d="M4 19L9 5l5 14M5.8 14h6.4M16 19l2.5-7 2.5 7M17 17h3"/>',
+ image:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/><path d="M15.5 9.5h.01"/>',
+ planet:'<circle cx="12" cy="12" r="4.5"/><path d="M3.2 15.5c-1.2-2.8 3.6-7 8.8-9.2"/><path d="M20.8 8.5c1.2 2.8-3.6 7-8.8 9.2"/>',
+ battery:'<rect x="2" y="8" width="17" height="8" rx="2"/><path d="M21.5 11v2M5 11v2M8 11v2"/>',
+ leaf:'<path d="M12 21c-4 0-7-3-7-7 0-5 5-9 14-10 0 9-3 17-7 17z"/><path d="M5 21c2-5 5-8 9-10"/>',
+ clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+ storage:'<path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4H4V6z"/><path d="M4 14h16v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4z"/><path d="M8 7.5h.01M8 17h.01"/>',
+ apps:'<rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/>',
+ key:'<path d="M8 14a4 4 0 1 1 3.5-6H21v3h-2v2h-3v-2h-4.5A4 4 0 0 1 8 14z"/><path d="M7.5 10h.01"/>',
+ check:'<circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/>',
+ home:'<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',
+ phone:'<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/>',
+ message:'<path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-5 4V6a1 1 0 0 1 1-1z"/>',
+ calc:'<rect x="5" y="3" width="14" height="18" rx="3"/><path d="M8 7h8"/><path d="M12 11.5v6M9 14.5h6"/>',
+ shield:'<path d="M12 3l7 3v5c0 5-3 8.5-7 10-4-1.5-7-5-7-10V6l7-3z"/>',
+ lock:'<rect x="6" y="11" width="12" height="9" rx="2"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3M12 15v2"/>',
+ access:'<circle cx="12" cy="5.5" r="1.6"/><path d="M4 9l8 1.5L20 9M12 10.5V15M9 21l3-6 3 6"/>',
+ info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5h.01"/>',
+ update:'<path d="M12 3v12M7 11l5 5 5-5M5 21h14"/>',
+ keyboard:'<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/>',
+ search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
+ x:'<path d="M6 6l12 12M18 6L6 18"/>',
+ chev:'<path d="M9 6l6 6-6 6"/>',
+ ext:'<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
+ bolt:'<path d="M13 2L5 14h6l-1 8 8-12h-6l1-8z"/>',
+ gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'
+};
+const ic=(n,sw=1.9)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]||''}</svg>`;
+const ico=(n,sw)=>`<span class="ico">${ic(n,sw)}</span>`;
+function icons(root){(root||document).querySelectorAll('[data-i]').forEach(e=>{if(!e.querySelector('svg'))e.insertAdjacentHTML('afterbegin',ic(e.dataset.i))})}
+
+/* ---------- 상태 ---------- */
+let ST={}, INFO={}, NVA=[];
+let toastT;
+function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('on'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('on'),2600); }
+const NOAPP='이 기능은 폰에 설치한 앱에서만 쓸 수 있어요';
+
+function fmtGB(b){ const g=b/1e9; return g>=100?Math.round(g)+'GB':(Math.round(g*10)/10)+'GB'; }
+function renderInfo(){
+  const bat=INFO.bat;
+  if(typeof bat==='number'){
+    $('#batVal').innerHTML=bat+'%'+(INFO.charging?'<small>충전 중</small>':'');
+    $('#batBar').style.width=Math.max(2,Math.min(100,bat))+'%';
+  }else{ $('#batVal').innerHTML='—<small>읽을 수 없어요</small>'; $('#batBar').style.width='0%'; }
+  if(typeof INFO.stTotal==='number'&&INFO.stTotal>0){
+    const pct=Math.round(INFO.stUsed*100/INFO.stTotal);
+    $('#stoVal').innerHTML=pct+'%<small>'+fmtGB(INFO.stUsed)+' 사용</small>';
+    $('#stoBar').style.width=Math.max(2,Math.min(100,pct))+'%';
+  }else{ $('#stoVal').innerHTML='—<small>읽을 수 없어요</small>'; $('#stoBar').style.width='0%'; }
+  const m=INFO.model?INFO.model:'', v=INFO.android?('안드로이드 '+INFO.android):'';
+  $('#foot').textContent=['뉴니버스 설정 v'+(call('version')||'1-test'),v,m].filter(Boolean).join(' · ');
+}
+
+/* ---------- 빠른 설정 타일 ---------- */
+function tileDefs(){
+  const flash=ST.hasFlash===true;
+  const t=[
+    {id:'wifi',l:'Wi-Fi',i:'wifi',open:'wifi',st:ST.wifi},
+    {id:'bluetooth',l:'블루투스',i:'bluetooth',open:'bluetooth',st:ST.bt},
+    {id:'data',l:'모바일 데이터',i:'data',open:'data'},
+    {id:'nfc',l:'NFC',i:'nfc',open:'nfc'},
+    {id:'airplane',l:'비행기 모드',i:'airplane',open:'airplane',st:ST.airplane},
+    {id:'location',l:'위치',i:'pin',open:'location',st:ST.loc},
+    {id:'rotate',l:'자동 회전',i:'rotate',direct:'rotate'},
+    flash?{id:'flash',l:'손전등',i:'flash',direct:'flash'}:{id:'hotspot',l:'핫스팟',i:'hotspot',open:'hotspot'},
+    {id:'dnd',l:'방해 금지',i:'moon',open:'dnd',st:ST.dnd}
+  ];
+  return t;
+}
+function tileState(d){
+  if(d.direct==='rotate'){
+    if(ST.canWrite!==true) return {on:false,s:'허용 필요'};
+    return ST.rotate?{on:true,s:'켜짐'}:{on:false,s:'세로 고정'};
+  }
+  if(d.direct==='flash') return ST.flash?{on:true,s:'켜짐'}:{on:false,s:'꺼짐'};
+  if(d.st===1) return {on:true,s:'켜짐'};
+  if(d.st===0) return {on:false,s:'꺼짐'};
+  return {on:false,s:'열기'};
+}
+function renderTiles(){
+  $('#tiles').innerHTML=tileDefs().map(d=>{
+    const s=tileState(d);
+    return `<button type="button" class="tile glass ${s.on?'on':''}" data-t="${d.id}" aria-label="${d.l} ${s.s}">
+      ${d.open?`<span class="ext">${ic('ext',2)}</span>`:''}
+      ${ico(d.i,1.8)}
+      <span><span class="tl">${d.l}</span><br><span class="ts">${s.s}</span></span></button>`;
+  }).join('');
+}
+$('#tiles').onclick=e=>{
+  const b=e.target.closest('[data-t]'); if(!b) return; buzz();
+  const d=tileDefs().find(x=>x.id===b.dataset.t); if(!d) return;
+  if(d.open){ openKey(d.open); return; }
+  if(d.direct==='rotate'){
+    if(!hasBridge()){ toast(NOAPP); return; }
+    if(ST.canWrite!==true){ openSheet('write'); return; }
+    const want=!ST.rotate; const r=call('setRotate',want);
+    if(r==='ok'){ ST.rotate=want; renderTiles(); }
+    else if(r==='nowrite'){ ST.canWrite=false; openSheet('write'); }
+    else toast('자동 회전을 바꾸지 못했어요');
+  }else if(d.direct==='flash'){
+    const want=!ST.flash; const r=call('setFlash',want);
+    if(r==='ok'){ ST.flash=want; renderTiles(); }
+    else toast('이 폰에서는 손전등을 켜지 못했어요');
+  }
+};
+
+/* ---------- 소리 모드 ---------- */
+const RING=[{k:'sound',l:'소리',i:'sound'},{k:'vibrate',l:'진동',i:'vibrate'},{k:'silent',l:'무음',i:'mute'}];
+function renderRinger(){
+  $('#seg').innerHTML=RING.map(r=>`<button type="button" class="sbtn ${ST.ringer===r.k?'on':''}" data-r="${r.k}" aria-pressed="${ST.ringer===r.k}">${ico(r.i,2)}${r.l}</button>`).join('');
+}
+$('#seg').onclick=e=>{
+  const b=e.target.closest('[data-r]'); if(!b) return; buzz();
+  if(!hasBridge()){ toast(NOAPP); return; }
+  const k=b.dataset.r; const r=call('setRinger',k);
+  if(r==='ok'){ ST.ringer=k; renderRinger(); }
+  else if(r==='needdnd'){ openSheet('dnd',k); }
+  else toast('소리 모드를 바꾸지 못했어요');
+};
+
+/* ---------- 밝기 ---------- */
+let brSend=0, brLast=-1;
+function setRangeFill(v){ $('#br').style.setProperty('--v',v+'%'); }
+function renderBright(){
+  const lock=!(ST.canWrite===true);
+  $('#bright').classList.toggle('lock',lock);
+  const v=typeof ST.bright==='number'?ST.bright:50;
+  if(document.activeElement!==$('#br')){ $('#br').value=v; setRangeFill(v); $('#brVal').textContent=v+'%'; }
+  $('#brAuto').classList.toggle('on',ST.autoBright===true);
+  $('#brAuto').setAttribute('aria-pressed',String(ST.autoBright===true));
+  $('#brHint').textContent=lock?'밝기를 바꾸려면 한 번 허용이 필요해요. 막대를 누르면 안내해 드려요.':'';
+  $('#brHint').style.display=lock?'':'none';
+}
+const brEl=$('#br');
+brEl.addEventListener('pointerdown',e=>{
+  if(!hasBridge()){ e.preventDefault(); toast(NOAPP); return; }
+  if(ST.canWrite!==true){ e.preventDefault(); openSheet('write'); }
+});
+brEl.addEventListener('input',()=>{
+  const v=+brEl.value; setRangeFill(v); $('#brVal').textContent=v+'%';
+  if(ST.canWrite!==true) return;
+  const now=Date.now(); if(now-brSend<50) return; brSend=now; brLast=v;
+  const r=call('setBrightness',v);
+  if(r==='nowrite'){ ST.canWrite=false; renderBright(); openSheet('write'); }
+  else if(r==='ok'){ ST.bright=v; ST.autoBright=false; $('#brAuto').classList.remove('on'); }
+});
+brEl.addEventListener('change',()=>{
+  const v=+brEl.value; if(ST.canWrite===true && v!==brLast){ call('setBrightness',v); ST.bright=v; ST.autoBright=false; $('#brAuto').classList.remove('on'); }
+});
+$('#brAuto').onclick=()=>{
+  buzz();
+  if(!hasBridge()){ toast(NOAPP); return; }
+  if(ST.canWrite!==true){ openSheet('write'); return; }
+  const want=!(ST.autoBright===true); const r=call('setAutoBrightness',want);
+  if(r==='ok'){ ST.autoBright=want; renderBright(); } else toast('자동 밝기를 바꾸지 못했어요');
+};
+
+/* ---------- 허용 안내 시트 ---------- */
+let shMode='', shRinger='';
+function openSheet(mode,extra){
+  shMode=mode; shRinger=extra||''; $('#toast').classList.remove('on');
+  if(mode==='write'){
+    $('#shT').textContent='밝기·자동 회전은 한 번 허용이 필요해요';
+    $('#shP').textContent='안드로이드가 앱이 화면 설정을 바꾸지 못하게 막아 두었어요. 아래 순서로 허용하면 이 화면에서 바로 바꿀 수 있어요.';
+    $('#shO').innerHTML='<li>아래 버튼을 누르세요.</li><li>목록에서 <b>뉴니버스 설정</b>을 찾아 누르세요.</li><li><b>시스템 설정 수정 허용</b>을 켜세요.</li><li>뒤로 돌아오면 바로 쓸 수 있어요.</li>';
+    $('#shGo').textContent='허용하러 가기';
+  }else{
+    $('#shT').textContent=(shRinger==='silent'?'무음은':'소리 모드는')+' 방해 금지 허용이 필요해요';
+    $('#shP').textContent='안드로이드는 무음이나 방해 금지가 켜진 상태의 소리 모드를 앱이 바꾸려면 ‘방해 금지 접근’ 허용을 요구해요. 소리·진동은 허용 없이도 바꿀 수 있어요.';
+    $('#shO').innerHTML='<li>아래 버튼을 누르세요.</li><li><b>뉴니버스 설정</b>을 찾아 누르세요.</li><li><b>방해 금지 접근 허용</b>을 켜세요.</li><li>뒤로 돌아오면 다시 눌러 주세요.</li>';
+    $('#shGo').textContent='허용하러 가기';
+  }
+  $('#sheet').hidden=false;
+}
+function closeSheet(){ if($('#sheet').hidden) return false; $('#sheet').hidden=true; return true; }
+$('#shBd').onclick=closeSheet; $('#shNo').onclick=closeSheet;
+$('#shGo').onclick=()=>{
+  buzz(); const m=shMode; closeSheet();
+  if(!hasBridge()){ toast(NOAPP); return; }
+  const r=call(m==='write'?'requestWrite':'requestDnd');
+  if(r!=='ok'&&r!=='fallback') toast('설정 화면을 열지 못했어요. 설정 › 앱에서 직접 찾아 주세요');
+};
+
+/* ---------- 시스템 설정 열기 ---------- */
+function openKey(key){
+  buzz();
+  if(!hasBridge()){ toast(NOAPP); return 'nobridge'; }
+  const r=call('open',key);
+  if(r==='fallback') toast('이 폰에는 해당 화면이 없어 설정 첫 화면을 열었어요');
+  else if(r!=='ok') toast('설정 화면을 열지 못했어요');
+  return r;
+}
+function doAction(a){
+  const [kind,arg]=a.split(':');
+  if(kind==='open') return openKey(arg);
+  buzz();
+  if(!hasBridge()){ toast(NOAPP); return; }
+  if(kind==='def'){
+    const r=call('setDefault',arg);
+    if(r==='notinstalled') toast('먼저 해당 뉴니버스 앱을 설치해 주세요');
+    else if(r==='fallback') toast('기본 앱 설정 화면을 열었어요. 거기서 골라 주세요');
+    else if(r!=='ok') toast('설정 화면을 열지 못했어요');
+  }else if(kind==='app'){
+    const r=call('openApp',arg);
+    if(r==='notinstalled') toast('설치되어 있지 않아요');
+    else if(r!=='ok') toast('앱을 열지 못했어요');
+  }
+}
+
+/* ---------- 목록 ---------- */
+const GROUPS=[
+ {t:'연결',i:'wifi',items:[
+  {t:'Wi-Fi',s:'연결할 Wi-Fi 고르기',i:'wifi',a:'open:wifi',kw:'와이파이 wifi 무선 인터넷'},
+  {t:'블루투스',s:'이어폰·차량 등 기기 연결',i:'bluetooth',a:'open:bluetooth',kw:'bluetooth 이어폰 블루투스 연결'},
+  {t:'모바일 데이터',s:'데이터 켜기·모바일 네트워크',i:'data',a:'open:data',kw:'데이터 lte 5g 모바일 네트워크 통신사'},
+  {t:'NFC',s:'교통카드·결제 태그',i:'nfc',a:'open:nfc',kw:'nfc 비접촉 결제 교통카드'},
+  {t:'비행기 모드',s:'모든 무선 연결 끄기',i:'airplane',a:'open:airplane',kw:'비행기 airplane 항공'},
+  {t:'핫스팟·테더링',s:'내 폰 인터넷 나눠 쓰기',i:'hotspot',a:'open:hotspot',kw:'핫스팟 hotspot 테더링 공유'},
+  {t:'데이터 사용량',s:'얼마나 썼는지 보기',i:'usage',a:'open:datausage',kw:'데이터 사용량 요금 절약'},
+  {t:'VPN',s:'보안 연결',i:'globe',a:'open:vpn',kw:'vpn 가상 사설망'}
+ ]},
+ {t:'소리·진동',i:'sound',items:[
+  {t:'소리·진동 설정',s:'벨소리·알림음·진동 세기',i:'sound',a:'open:sound',kw:'소리 진동 음량 볼륨 벨소리'},
+  {t:'볼륨 조절',s:'미디어·벨소리·알림 크기',i:'sound',a:'open:volume',kw:'볼륨 음량 소리 크기'},
+  {t:'벨소리 고르기',s:'전화 벨소리 바꾸기',i:'music',a:'open:ringtone',kw:'벨소리 ringtone 전화음'},
+  {t:'방해 금지',s:'정해진 시간에 조용히',i:'moon',a:'open:dnd',kw:'방해 금지 무음 조용 dnd 수면'}
+ ]},
+ {t:'디스플레이',i:'sun',items:[
+  {t:'화면 설정',s:'밝기·화면 모드·화면 꺼짐 시간',i:'sun',a:'open:display',kw:'화면 밝기 디스플레이 다크 어두운 화면 꺼짐 시간 주사율'},
+  {t:'눈 보호',s:'화면을 따뜻한 색으로',i:'eye',a:'open:night',kw:'눈 보호 야간 블루라이트 눈 피로'}
+ ]},
+ {t:'배경화면·테마',i:'image',items:[
+  {t:'배경화면 바꾸기',s:'홈·잠금 화면 사진 고르기',i:'image',a:'open:wallpaper',kw:'배경화면 배경 바탕화면 월페이퍼 wallpaper'},
+  {t:'뉴니버스 런처 꾸미기',s:'런처에서 테마·위젯 바꾸기',i:'planet',a:'app:kr.newniverse.launcher',kw:'런처 테마 위젯 꾸미기 홈 화면'}
+ ]},
+ {t:'알림',i:'bell',items:[
+  {t:'앱별 알림',s:'앱마다 알림 켜고 끄기',i:'bell',a:'open:notif',kw:'알림 notification 앱 알림'},
+  {t:'알림 읽기 허용 앱',s:'알림을 읽을 수 있는 앱',i:'bell',a:'open:notiflisten',kw:'알림 접근 알림 읽기 listener'}
+ ]},
+ {t:'배터리',i:'battery',items:[
+  {t:'배터리 사용량',s:'어떤 앱이 배터리를 쓰는지',i:'battery',a:'open:battery',kw:'배터리 사용량 전력 소모'},
+  {t:'절전 모드',s:'배터리 오래 쓰기',i:'leaf',a:'open:batsaver',kw:'절전 배터리 세이버 saver 아끼기'},
+  {t:'배터리 최적화 제외',s:'백그라운드 제한 풀기',i:'clock',a:'open:batopt',kw:'배터리 최적화 백그라운드 제한 제외'}
+ ]},
+ {t:'저장공간',i:'storage',items:[
+  {t:'저장공간 확인',s:'사진·앱이 차지하는 용량',i:'storage',a:'open:storage',kw:'저장공간 용량 메모리 정리 사진 저장소'}
+ ]},
+ {t:'앱',i:'apps',items:[
+  {t:'모든 앱',s:'설치된 앱 보기·삭제·강제 종료',i:'apps',a:'open:apps',kw:'앱 애플리케이션 삭제 설치 강제 종료'},
+  {t:'앱 권한 관리',s:'카메라·위치 등 권한 보기',i:'key',a:'open:perms',kw:'권한 permission 카메라 마이크 위치 허용'}
+ ]},
+ {t:'기본 앱 설정',i:'check',items:[
+  {t:'뉴니버스 런처를 기본 홈으로',s:'홈 버튼을 누르면 뉴니버스가 열려요',i:'home',a:'def:home',kw:'기본 앱 홈 런처 뉴니버스 홈 화면'},
+  {t:'뉴니버스 전화를 기본 전화로',s:'전화 걸고 받을 때 뉴니버스 전화 사용',i:'phone',a:'def:phone',kw:'기본 앱 전화 뉴니버스 통화 다이얼러'},
+  {t:'뉴니버스 문자를 기본 문자로',s:'문자 보내고 받을 때 뉴니버스 문자 사용',i:'message',a:'def:sms',kw:'기본 앱 문자 sms 뉴니버스 메시지'},
+  {t:'기본 앱 전체 보기',s:'브라우저·사진 등 기본 앱 고르기',i:'check',a:'open:defaults',kw:'기본 앱 브라우저 인터넷 default'}
+ ]},
+ {t:'보안·개인정보',i:'shield',items:[
+  {t:'보안',s:'화면 잠금·생체 인식·보안 점검',i:'shield',a:'open:security',kw:'보안 security 지문 얼굴 생체'},
+  {t:'화면 잠금 바꾸기',s:'비밀번호·패턴·PIN',i:'lock',a:'open:lock',kw:'잠금 비밀번호 패턴 pin 화면 잠금'},
+  {t:'개인정보 보호',s:'권한 사용 기록·광고 ID',i:'eye',a:'open:privacy',kw:'개인정보 프라이버시 privacy 광고'},
+  {t:'위치',s:'위치 켜기·앱별 위치 허용',i:'pin',a:'open:location',kw:'위치 gps location 지도'}
+ ]},
+ {t:'접근성',i:'access',items:[
+  {t:'접근성',s:'화면 읽기·확대·보조 기능',i:'access',a:'open:access',kw:'접근성 talkback 확대 보조 장애 큰 글씨'},
+  {t:'글자 크기·화면 확대',s:'글자를 크게 보기',i:'text',a:'open:fontsize',kw:'글자 크기 큰 글씨 폰트 확대 font'}
+ ]},
+ {t:'휴대전화 정보',i:'info',items:[
+  {t:'휴대전화 정보',s:'기종·전화번호·소프트웨어 정보',i:'info',a:'open:about',kw:'휴대전화 정보 about 모델 전화번호 버전'},
+  {t:'소프트웨어 업데이트',s:'새 버전 확인',i:'update',a:'open:update',kw:'업데이트 update 소프트웨어 시스템'},
+  {t:'언어',s:'표시 언어 바꾸기',i:'globe',a:'open:locale',kw:'언어 language 한국어'},
+  {t:'날짜 및 시간',s:'시간 자동 맞추기',i:'clock',a:'open:date',kw:'날짜 시간 date time 시계'},
+  {t:'키보드',s:'키보드 종류·입력 방법',i:'keyboard',a:'open:ime',kw:'키보드 입력 ime 자판 음성 입력'}
+ ]}
+];
+const NVDEF=[
+  {id:'launcher',i:'planet',kw:'런처 홈 뉴니버스 launcher'},
+  {id:'phone',i:'phone',kw:'전화 뉴니버스 phone'},
+  {id:'sms',i:'message',kw:'문자 sms 뉴니버스 메시지'},
+  {id:'calc',i:'calc',kw:'계산기 환율 뉴니버스 calculator'}
+];
+function norm(s){ return String(s||'').toLowerCase().replace(/[\s\-·.,_]/g,''); }
+function rowHtml(it,idx){
+  return `<button type="button" class="row" data-a="${it.a}" data-n="${idx}"><span class="ib">${ic(it.i,1.9)}</span><span class="tx"><span class="t" style="display:block">${it.t}</span><span class="s" style="display:block">${it.s}</span></span><span class="go">${ic('chev',2)}</span></button>`;
+}
+function renderList(q){
+  const nq=norm(q); let html='', total=0;
+  GROUPS.forEach(g=>{
+    const items=g.items.filter(it=>!nq||norm(it.t+it.s+it.kw+g.t).includes(nq));
+    if(!items.length) return; total+=items.length;
+    html+=`<div class="group"><div class="gt">${ico(g.i,2)}${g.t}</div><div class="rows glass">${items.map(rowHtml).join('')}</div></div>`;
+  });
+  $('#list').innerHTML=html;
+  return total;
+}
+$('#list').onclick=e=>{ const b=e.target.closest('[data-a]'); if(b) doAction(b.dataset.a); };
+
+/* 뉴니버스 앱 */
+function renderNv(q){
+  const nq=norm(q);
+  const rows=NVA.filter(a=>{ const d=NVDEF.find(x=>x.id===a.id)||{kw:''}; return !nq||norm(a.name+d.kw+'뉴니버스앱').includes(nq); });
+  if(!rows.length){ $('#nv').innerHTML=''; return 0; }
+  $('#nv').innerHTML=`<div class="group"><div class="gt">${ico('planet',2)}뉴니버스 앱</div><div class="rows glass">`+rows.map(a=>{
+    const d=NVDEF.find(x=>x.id===a.id)||{i:'apps'};
+    const sub=a.installed?('설치됨'+(a.ver?' · v'+a.ver:'')):'설치되어 있지 않아요';
+    return `<div class="row nvrow"><span class="ib">${ic(d.i,1.9)}</span><span class="tx"><span class="t" style="display:block">${a.name}</span><span class="s" style="display:block">${sub}</span></span>${a.installed?`<button type="button" class="openb" data-app="${a.pkg}" aria-label="${a.name} 열기">열기</button>`:`<span class="openb off">없음</span>`}</div>`;
+  }).join('')+`</div></div>`;
+  return rows.length;
+}
+$('#nv').onclick=e=>{ const b=e.target.closest('[data-app]'); if(b) doAction('app:'+b.dataset.app); };
+
+/* ---------- 검색 ---------- */
+function applyFilter(){
+  const q=$('#q').value; const searching=norm(q).length>0;
+  $('#qx').hidden=!searching;
+  if(searching&&!applyFilter.s){ $('#scroll').scrollTop=0; } applyFilter.s=searching;
+  $('#quick').hidden=searching;
+  $('#status').hidden=searching;
+  const n=renderList(q)+renderNv(q);
+  $('#empty').hidden=!(searching&&n===0);
+  $('#allBtn').hidden=searching&&n===0;
+  if(searching) $('#scroll').scrollTop=Math.min($('#scroll').scrollTop,0);
+}
+$('#q').addEventListener('input',applyFilter);
+$('#q').addEventListener('keydown',e=>{ if(e.key==='Enter') $('#q').blur(); });
+$('#qx').onclick=()=>{ $('#q').value=''; applyFilter(); $('#q').focus(); };
+$('#btnAll').onclick=()=>openKey('all');
+$('#allBtn').onclick=()=>openKey('all');
+$('#emptyAll').onclick=()=>openKey('all');
+$('#cBat').onclick=()=>openKey('battery');
+$('#cSto').onclick=()=>openKey('storage');
+
+/* ---------- 폴링 / 생애주기 ---------- */
+function refresh(initial){
+  const was=ST.canWrite;
+  const s=jcall('state',null); if(s) ST=s; else if(initial) ST={};
+  const i=jcall('info',null); if(i) INFO=i;
+  renderInfo(); renderTiles(); renderRinger(); renderBright();
+  if(was===false&&ST.canWrite===true) toast('허용됐어요. 이제 밝기와 자동 회전을 바꿀 수 있어요');
+}
+function loadNv2(){
+  const r=call('nvApps'); let arr=[];
+  try{ const o=r?JSON.parse(r):[]; if(Array.isArray(o)) arr=o; }catch(e){}
+  if(!arr.length) arr=NVDEF.map(d=>({id:d.id,name:{launcher:'뉴니버스 런처',phone:'뉴니버스 전화',sms:'뉴니버스 문자',calc:'뉴니버스 계산기'}[d.id],pkg:'kr.newniverse.'+d.id,installed:false}));
+  NVA=arr;
+}
+window.NV_resume=()=>{ try{ refresh(false); loadNv2(); applyFilter(); }catch(e){} };
+window.NV_back=()=>{
+  if(closeSheet()) return true;
+  if($('#q').value){ $('#q').value=''; applyFilter(); return true; }
+  return false;
+};
+let pollT=setInterval(()=>{ if(document.hidden||!$('#sheet').hidden) return; try{ refresh(false); }catch(e){} },3000);
+
+icons();
+$('#btnAll').innerHTML=ic('gear',1.9);
+$('#qx').innerHTML=ic('x',2.2);
+loadNv2();
+refresh(true);
+applyFilter();
+window.NVS={refresh,state:()=>ST,info:()=>INFO,openSheet,closeSheet,applyFilter,tiles:()=>tileDefs().map(d=>d.id),groups:()=>GROUPS.map(g=>g.t)};
+</script>
+</body>
+</html>
