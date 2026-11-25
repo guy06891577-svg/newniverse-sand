@@ -473,6 +473,59 @@
   #bus.cp .cr span{font-size:12.5px;font-weight:700;padding:3px 7px;border-radius:8px;background:var(--nv-glass2);border:1px solid var(--nv-line);white-space:nowrap}
   #bus.cp .cr span.d{padding:2px 7px 3px;line-height:1.25}
   #bus.cp .cr span i{display:block;font-style:normal;font-size:10px;font-weight:600;color:var(--nv-sub);max-width:92px;overflow:hidden;text-overflow:ellipsis}
+  /* ===== v38b 앱 없는 홈 (1단계) ===== */
+  #nh{position:absolute;inset:0;z-index:4;display:none;overflow:hidden;background:#05061a;touch-action:none;color:#fff;font-family:var(--nv-font,system-ui,sans-serif);-webkit-user-select:none;user-select:none}
+  #phone.nh #nh{display:block}
+  #phone.nh #dots,#phone.nh #hint,#phone.nh #gear,#phone.nh #fixed,#phone.nh #dkp,#phone.nh #edbar{visibility:hidden!important}
+  #nh .cos{position:absolute;inset:-3%;background:#05061a url(wallpapers/nh_cosmos.jpg) center/cover no-repeat;will-change:transform;transform:scale(1.04)}
+  #nh .vig{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(3,4,16,.35) 0%,rgba(3,4,16,0) 18%,rgba(3,4,16,0) 55%,rgba(3,4,16,.55) 100%)}
+  #nhUI{position:absolute;left:16px;right:16px;bottom:88px;display:flex;flex-direction:column;gap:10px}
+  #nhBar{display:flex;align-items:center;gap:6px;height:56px;padding:0 6px 0 20px;border-radius:28px;background:rgba(255,255,255,.075);border:1px solid rgba(255,255,255,.18);
+    -webkit-backdrop-filter:blur(16px) saturate(1.2);backdrop-filter:blur(16px) saturate(1.2);box-shadow:0 10px 30px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.08);transition:border-color .25s,box-shadow .25s}
+  #nhBar.f{border-color:rgba(150,200,255,.45);box-shadow:0 10px 30px rgba(0,0,0,.35),0 0 0 4px rgba(127,170,255,.10)}
+  #nhQ{flex:1;min-width:0;height:100%;border:0;outline:0;background:transparent;color:#fff;font:500 17px/1 var(--nv-font,system-ui,sans-serif);letter-spacing:-.2px;-webkit-user-select:text;user-select:text}
+  #nhQ::placeholder{color:rgba(235,240,255,.78)}
+  #nhMic{flex:none;width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#dfe8ff;display:grid;place-items:center;padding:0;position:relative}
+  #nhMic .ni{width:21px;height:21px}
+  #nhMic.on{color:#fff;border-color:rgba(160,190,255,.7);background:linear-gradient(135deg,rgba(110,190,255,.35),rgba(160,120,255,.35))}
+  #nhMic.on::after{content:'';position:absolute;inset:-6px;border-radius:50%;border:2px solid rgba(150,180,255,.55);animation:nhPulse 1.2s ease-out infinite}
+  @keyframes nhPulse{0%{transform:scale(.85);opacity:.9}100%{transform:scale(1.35);opacity:0}}
+  #nhSug{display:flex;flex-wrap:wrap;gap:8px;padding-left:6px;min-height:30px;transition:opacity .25s}
+  #nhSug button{height:30px;padding:0 13px;border-radius:15px;border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.04);color:rgba(225,232,255,.62);font:500 13px/1 var(--nv-font,system-ui,sans-serif)}
+  #nhSug.hide{opacity:0;pointer-events:none}
+  #nhRes{display:none;flex-direction:column;gap:8px}
+  #nhRes.on{display:flex}
+  #nhRes .hd{font:600 13px/1.2 var(--nv-font,system-ui,sans-serif);color:rgba(230,236,255,.85);padding-left:6px;letter-spacing:-.1px}
+  #nhRes .hd:empty{display:none}
+  #nhRes .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+  #nhRes .msg{font-size:13px;color:rgba(225,232,255,.6);padding:4px 6px}
+  .nht{height:94px;border-radius:20px;border:1px solid rgba(255,255,255,.16);background:linear-gradient(160deg,rgba(255,255,255,.12),rgba(255,255,255,.04));
+    -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 8px 22px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.10);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:6px 4px;color:#fff;transform:none;transition:opacity .4s,filter .4s,transform .4s}
+  .nht .ic{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;overflow:hidden}
+  .nht .ic img{width:44px;height:44px;display:block}
+  .nht .ic b{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;font-size:20px}
+  .nht .ic.act{background:linear-gradient(135deg,rgba(110,190,255,.28),rgba(160,120,255,.28));border:1px solid rgba(170,190,255,.35);color:#eaf0ff}
+  .nht .ic.act .ni{width:24px;height:24px}
+  .nht .nm{max-width:100%;font:600 12px/1.2 var(--nv-font,system-ui,sans-serif);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 2px;color:rgba(245,247,255,.95)}
+  .nht.in{animation:nhIn .42s cubic-bezier(.2,.9,.3,1) both}
+  @keyframes nhIn{from{opacity:0;transform:translateY(16px) scale(.92)}to{opacity:1;transform:none}}
+  .nht.out,#nhRes.out .nht{opacity:0;filter:blur(6px);transform:translateY(-6px) scale(.96)}
+  .nht:active{transform:scale(.96)}
+  #nhStars{position:absolute;inset:0;display:none;background:radial-gradient(120% 90% at 50% 40%,rgba(6,8,30,.15),rgba(3,4,16,.55));opacity:0;transition:opacity .3s}
+  #nhStars.on{display:block}
+  #nhStars .hd{position:absolute;left:0;right:0;top:64px;text-align:center;font:600 13px/1 var(--nv-font,system-ui,sans-serif);color:rgba(230,236,255,.7);letter-spacing:.2px}
+  #nhStars svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+  #nhStars .sa{position:absolute;width:84px;margin-left:-42px;display:flex;flex-direction:column;align-items:center;gap:7px;border:0;background:none;color:#fff;padding:0}
+  #nhStars .orb{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;overflow:hidden;background:radial-gradient(circle,rgba(255,255,255,.22),rgba(255,255,255,.04) 70%);border:1px solid rgba(190,210,255,.35);
+    box-shadow:0 0 18px rgba(130,190,255,.45),0 0 44px rgba(150,120,255,.25)}
+  #nhStars .orb img{width:38px;height:38px;border-radius:50%}
+  #nhStars .orb b{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-size:17px}
+  #nhStars .sa span{font:600 11.5px/1.2 var(--nv-font,system-ui,sans-serif);color:rgba(240,244,255,.9);max-width:84px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 6px rgba(0,0,0,.8)}
+  #nhStars .sa.in{animation:nhStar .5s cubic-bezier(.2,.9,.3,1) both}
+  @keyframes nhStar{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:none}}
+  #nhStars .none{position:absolute;left:24px;right:24px;top:42%;text-align:center;font-size:14px;color:rgba(230,236,255,.75);line-height:1.6}
+  #nhStars .all{position:absolute;left:50%;transform:translateX(-50%);height:36px;padding:0 18px;border-radius:18px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:rgba(230,236,255,.8);font:600 13px/1 var(--nv-font,system-ui,sans-serif)}
 </style>
 </head>
 <body>
@@ -706,7 +759,7 @@ if(NATIVE){document.documentElement.classList.add('native');nativeApps();
   window.NV_onBack=()=>{try{navAct('back')}catch(e){}};
   window.NV_onResume=()=>{try{window.__busResume&&window.__busResume()}catch(_){}try{if(typeof updQP==='function')updQP()}catch(e){}try{const g=document.getElementById('a11yG');if(g&&g.classList.contains('on')&&NVNative.lockEnabled&&NVNative.lockEnabled()){window.__nv_off.hide();window.__nv_toast&&window.__nv_toast('이제 빈 곳을 두 번 톡톡 누르면 화면이 꺼져요')}}catch(e){}}}
 function openApp(a){
-  if(!a)return;pushRecent(a.__base||a);
+  if(!a)return;pushRecent(a.__base||a);try{nhNote(a)}catch(_){}
   if(NATIVE&&a.pkg){if(!NVNative.launch(a.pkg,a.act))toast(`${a.full||a.n} 앱을 열 수 없어요`);return}
   if(a.n==='설정'){toggleSheet(true);return}
   toast(`${a.n} · 시제품이라 아직 열리지 않아요`)}
@@ -1373,8 +1426,9 @@ function navAct(k){
   if(k==='back'){
     if($('a11yG').classList.contains('on'))return hideA11yGuide();if($('off').classList.contains('on'))return wakeUp();
     if(open.rec)return closeRecents();if(open.fold)return closeFolder();if(open.sheet)return settingsBack();if(open.edit)return setMeEdit(false);if(pd)return closeDR();if(pq)return closeQP();
+    if(nhOn()){nhBack();return}
     if(anim)return;if(cur>0)go(cur-1,1);else toast('첫 화면이에요');return}
-  if(k==='home'){closeRecents();if(pd)closeDR();if(pq)closeQP();if(open.fold)closeFolder();if(open.sheet)toggleSheet(false);if(open.edit)setMeEdit(false);if(!anim&&cur!==0)go(0,1);return}
+  if(k==='home'){if(nhOn())nhReset();closeRecents();if(pd)closeDR();if(pq)closeQP();if(open.fold)closeFolder();if(open.sheet)toggleSheet(false);if(open.edit)setMeEdit(false);if(!anim&&cur!==0)go(0,1);return}
   if(k==='recent'){if(pd)closeDR();if(pq)closeQP();if(open.fold)closeFolder();if(open.sheet)toggleSheet(false);open.rec?closeRecents():openRecents()}
 }
 
@@ -1854,7 +1908,9 @@ LIVE_SCENES.space=(g)=>{
 };
 let snapReq=null;
 let spW=0,spH=0,sceneName='',scene=null,bgSkip=0;const sceneCache={};
+var SPIDLE=false;function spaceKick(){if(SPIDLE){SPIDLE=false;requestAnimationFrame(spaceFrame)}}
 function spaceFrame(ts){
+  if(nhOn()&&!snapReq){SPIDLE=true;return}   // v38b 앱 없는 홈: 뒤 배경은 그리지 않음(우주 그림 한 장)
   requestAnimationFrame(spaceFrame);
   const w=curWp();
   if(!SG||!W||document.hidden||w.type!=='live')return;
@@ -2497,7 +2553,7 @@ function up(e){
 phone.addEventListener('pointerup',up);phone.addEventListener('pointercancel',up);
 
 // v25: 독 아이콘 누를 때 은은한 빛 + 눌림
-function dockPress(e){const el=$('dkp');if(!el||EDIT||(S.ui&&S.ui!=='classic')||phone.classList.contains('locked'))return;
+function dockPress(e){const el=$('dkp');if(nhOn())return;if(!el||EDIT||(S.ui&&S.ui!=='classic')||phone.classList.contains('locked'))return;
   if(e.target.closest('#settings,#qp,#qpbd,#drawer,#recents,#fold,#lpm,#nvm,#wpk,#navbtns,#navgest'))return;
   const r=phone.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
   const h=(hitRects[cur]||[]).find(o=>o.src==='dock'&&x>=o.x-6&&x<=o.x+o.w+6&&y>=o.y-8&&y<=o.y+o.h+8);if(!h)return;
@@ -2839,6 +2895,7 @@ function buildMain(){
   const pg=mk('div','pg'),sc=mk('div','scroll');pg.appendChild(sc);sc.appendChild(mk('h1',null,'설정'));
   const prof=mk('div','card prof','<div class="av">장</div><div><b>장지환</b><small>백업으로 데이터 보호</small></div>');prof.style.cursor='pointer';prof.onclick=()=>settingsPush('prof');sc.appendChild(prof);
   if(NATIVE){const c=mk('div','card');const r1=infoRow('휴대전화 설정 열기','와이파이·소리·앱 등 안드로이드 설정',()=>NVNative.openSettings(''));const r2=infoRow('기본 홈 앱','홈 버튼을 누르면 뜰 앱 고르기 (뉴니버스 / 원래 홈)',()=>NVNative.openSettings('home'));c.append(r1,r2);sc.appendChild(c)}
+  sc.appendChild(sCard(swRow('앱 없는 홈 (우주)','잠금을 풀면 우주와 「무엇을 하실 건가요?」만 보여요 · 끄면 예전 아이콘 홈(독·위젯·여러 쪽)',nhOn(),false,on=>nhSet(on))));
   SETG.forEach(g=>{const c=mk('div','card');c.dataset.g=1;g.forEach(i=>{const r=mk('div','it',`<img alt="" src="${setImg(i)}"><div><b>${i.n}</b><small>${i.sub}</small></div>`);r.dataset.k=(i.n+' '+i.sub+' '+i.kw).toLowerCase();r.dataset.id=i.id;r.onclick=()=>settingsPush(i.id);c.appendChild(r)});sc.appendChild(c)});
   {const c=mk('div','card');c.dataset.g=1;const i={n:'내비게이션 바',sub:'디스플레이 › 내비게이션 바',key:'§disp',c1:'#48c774',c2:'#2a9550'};const r=mk('div','it',`<img alt="" src="${setImg(i)}"><div><b>${i.n}</b><small>${i.sub}</small></div>`);r.dataset.k='내비게이션 바 네비게이션 내비 navigation 버튼 제스처 뒤로 홈 최근 스와이프';r.dataset.id='disp';r.dataset.so=1;r.onclick=()=>{settingsPush('disp');setTimeout(()=>settingsPush('navbar'),60)};c.appendChild(r);
    const i2={n:'두 번 눌러 화면 끄기',sub:'유용한 기능 › 두 번 눌러 화면 끄기',key:'§adv',c1:'#ffb340',c2:'#e07b00'};const r2=mk('div','it',`<img alt="" src="${setImg(i2)}"><div><b>${i2.n}</b><small>${i2.sub}</small></div>`);r2.dataset.k='두 번 눌러 화면 끄기 화면 끄기 더블탭 톡톡 두번 잠금';r2.dataset.id='adv';r2.dataset.so=1;r2.onclick=()=>settingsPush('adv');c.appendChild(r2);
@@ -3035,7 +3092,7 @@ function cssGrad(x,css,ow,oh){const m=css.match(/linear-gradient\(\s*([\d.]+)deg
 async function renderStill(ow){
   const oh=Math.round(ow*H/W),cv2=document.createElement('canvas');cv2.width=ow;cv2.height=oh;const x=cv2.getContext('2d');
   x.fillStyle='#0b0a1c';x.fillRect(0,0,ow,oh);const w=curWp();
-  if(w.type==='live'){const ok=await new Promise(res=>{snapReq=src=>{try{x.drawImage(src,0,0,ow,oh)}catch(_){}res(true)};setTimeout(()=>{if(snapReq){snapReq=null;res(false)}},1500)});
+  if(w.type==='live'){const ok=await new Promise(res=>{setTimeout(()=>{try{spaceKick()}catch(_){}},0);snapReq=src=>{try{x.drawImage(src,0,0,ow,oh)}catch(_){}res(true)};setTimeout(()=>{if(snapReq){snapReq=null;res(false)}},1500)});
     if(!ok)try{x.drawImage($('bg'),0,0,ow,oh)}catch(_){}
     if(w.scene==='space'&&dunecv.style.display!=='none')try{x.drawImage(dunecv,0,0,ow,oh)}catch(_){}}
   else if(w.type==='css')cssGrad(x,w.css,ow,oh);
@@ -3398,7 +3455,7 @@ function awList(){const out=[];if(!NATIVE||(S.ui&&S.ui!=='classic'&&!EDIT))retur
 function wPlace(){if(!NATIVE||!window.NVNative||!NVNative.widgetPlace)return;const L=awList();WHOLES=L;
   const j=JSON.stringify({dpr:window.devicePixelRatio||1,list:L});if(j!==WSENT){WSENT=j;try{NVNative.widgetPlace(j)}catch(_){}setTimeout(wSnapAll,700)}wSync()}
 function overlayOpen(){try{return $('settings').classList.contains('open')||qpP>0||drP>0||fOpen||lockOn||menuOpen()||wpkOpen||NVM.style.display==='flex'||$('off').classList.contains('on')||$('recents').classList.contains('on')||$('a11yG').classList.contains('on')||$('lwp').style.display==='flex'||(typeof meEditing!=='undefined'&&meEditing)}catch(_){return false}}
-function wWant(){if(!WHOLES.length||EDIT||DRAG||inTrans()||(dragging&&moved)||overlayOpen()||document.hidden)return -1;return WHOLES.some(w=>w.p===cur)?cur:-1}
+function wWant(){if(nhOn())return -1;if(!WHOLES.length||EDIT||DRAG||inTrans()||(dragging&&moved)||overlayOpen()||document.hidden)return -1;return WHOLES.some(w=>w.p===cur)?cur:-1}
 function wSync(){if(!NATIVE||!window.NVNative||!NVNative.widgetVis)return;const want=wWant();
   if(want!==WVSENT){WVSENT=want;if(want<0&&WVIS){WVIS=false;if(!anim)draw()}try{NVNative.widgetVis(want)}catch(_){}}}
 window.NV_onWidgetVis=p=>{const v=p>=0&&p===WVSENT;if(v!==WVIS){WVIS=v;if(!anim)draw()}};
@@ -3567,6 +3624,7 @@ function busGaps(){const lo=38,hi=dockTop()-2,iv=(hitRects[cur]||[]).filter(h=>h
   const g=[];let y=lo;iv.forEach(([a,b])=>{if(a>y)g.push([y,Math.min(a,hi)]);y=Math.max(y,b)});if(hi>y)g.push([y,hi]);return g.filter(x=>x[1]>x[0])}
 function busFit(h){const g=busGaps().filter(x=>x[1]-x[0]>=h);return g.length?g[g.length-1][1]-h:null}
 function busPlace(){
+  if(nhOn()){BEL.classList.add('pin','top');if(!BUS.cp&&!BUS.expand){BUS.cp=true;BUS.html='';busRender()}BEL.style.bottom='';BEL.style.top=(BUS_TOPY+14)+'px';return}   // v38b 앱 없는 홈: 위쪽에 떠오름
   if(busPinOn()){BEL.classList.add('pin');BEL.classList.toggle('top',busPos()==='top');
     if(!BUS.cp){BUS.cp=true;BUS.html='';busRender()}
     if(busPos()==='top'){BEL.style.bottom='';BEL.style.top=BUS_TOPY+'px'}            // 상단: 아래로 펼침
@@ -3598,7 +3656,8 @@ function busShow(){if(BUS.shown)return;BUS.shown=true;BUS.plk='';busRender();BEL
 function busHide(quick){if(!BUS.shown)return;BUS.shown=false;clearTimeout(BUS.hT);
   if(quick){BEL.classList.remove('on');BEL.style.display='none';return}
   const R=busRect();BEL.classList.remove('on');BEL.classList.add('out');bfxBurst(R,false);BUS.hT=setTimeout(()=>{BEL.style.display='none';BEL.classList.remove('out')},600)}
-function busWant(){const pin=busPinOn();if(!busOn())return 0;if(BUS.paused)return BUS.shown?3:0;if(!pin&&(!BUS.stop||busDis()))return 0;if(document.hidden)return -1;
+function busWant(){const w=busWant0();try{return nhBusGate(w)}catch(_){return w}}
+function busWant0(){const pin=busPinOn();if(!busOn())return 0;if(BUS.paused)return BUS.shown?3:0;if(!pin&&(!BUS.stop||busDis()))return 0;if(document.hidden)return -1;
   try{if(busCovered()||EDIT||(!pin&&inTrans())||lockOn||phone.classList.contains('locked'))return -1}catch(_){}
   return BUS.stop&&!busDis()?1:2}
 // 화면 전체를 덮는 창(설정·서랍·폴더·빠른 설정 등)일 때만 숨김. 길게 누르기 메뉴·확인 창은 카드 위에 떠서 그대로 둠
@@ -3924,6 +3983,183 @@ window.__nv.iconSheet=(names,sets0,T0)=>{const sets=sets0||['basic','orb','pebbl
     apps.forEach((a,j)=>{const x=lw+cs*j+cs/2;if(st==='basic')drawIconRaw(c,a,x-29,y-29,58);else (a.folder?drawSetFolder:drawSetIcon)(c,a,x,y,64,st)})});
   return cv.toDataURL()};
 window.__nv.setIcon=v=>{S.icon=v;layout()};
+// ===================== v38b 앱 없는 홈 (1단계) =====================
+// 잠금을 풀면 앱 격자·독 없이 우주와 「무엇을 하실 건가요?」만. 글씨와 말은 같은 한국어 의도 엔진을 씀.
+// 독은 없음(내비게이션 바만). 위로 밀면 최근에 쓴 앱이 별처럼, 아래로 밀면 빠른 설정, 길게 누르면 메뉴. 설정에서 예전 홈으로 되돌림.
+var NH={q:'',tiles:[],shown:new Set(),stars:false,listen:false,busUntil:0,roles:null,rolesAt:0,dT:0,dk:0,pt:null,lastTap:null,lpT:0,voice:false};
+function nhOn(){return S.nh!==false}
+function nhNow(){return window.__nhNow?new Date(window.__nhNow):new Date()}
+const NHEL=document.createElement('div');NHEL.id='nh';
+NHEL.innerHTML=`<div class="cos"></div><div class="vig"></div>
+<div id="nhUI"><div id="nhRes"><div class="hd"></div><div class="grid"></div></div>
+<div id="nhBar"><input id="nhQ" type="text" enterkeyhint="go" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="무엇을 하실 건가요?" aria-label="무엇을 하실 건가요?"><button id="nhMic" type="button" aria-label="말로 하기">${ico('mic')}</button></div>
+<div id="nhSug"></div></div>
+<div id="nhStars"><div class="hd">최근에 쓴 앱</div><svg aria-hidden="true"></svg><div class="st"></div><button class="all" type="button">모든 앱</button></div>`;
+phone.appendChild(NHEL);
+const NHQ=$('nhQ'),NHRES=$('nhRes'),NHGRID=NHRES.querySelector('.grid'),NHSUG=$('nhSug'),NHST=$('nhStars'),NHUI=$('nhUI'),NHCOS=NHEL.querySelector('.cos');
+// ---- 앱 목록·역할 ----
+function nhApps(){if(NAPPS.length)return NAPPS;const o=[];try{PAGES.forEach(P=>P.apps.forEach(a=>{if(a.folder)a.items.forEach(b=>o.push(b));else if(!a.wg&&!a.card)o.push(a)}));DOCK.forEach(a=>o.push(a))}catch(_){}return o}
+function nhRoles(){if(NH.roles&&Date.now()-NH.rolesAt<15000)return NH.roles;let r={};try{if(NATIVE&&NVNative.getRoles)r=JSON.parse(NVNative.getRoles())||{}}catch(_){}NH.roles=r;NH.rolesAt=Date.now();return r}
+const nhBy=p=>p?nhApps().find(a=>a.pkg===p):null;
+const nhRole=k=>nhBy(nhRoles()[k]);
+const nhLab=re=>nhApps().filter(a=>re.test(a.full||a.n||''));
+function nhUniq(l){const s=new Set(),o=[];l.forEach(a=>{if(!a)return;const b=a.__base||a,k=(b.pkg||b.n)+'/'+(b.act||'');if(s.has(k))return;s.add(k);o.push(b)});return o}
+const NH_BANK_RE=/은행|뱅크|뱅킹|bank|토스|쏠|원큐|nh스마트|올원|i-one|아이원|새마을|우체국|신협|저축|우리won|won뱅킹|하나원/i;
+const NH_BANK_PKG=['com.kbstar.kbbank','com.shinhan.sbanking','com.wooribank.smart.npib','com.kebhana.hanapush','nh.smart.banking','nh.smart.nhallonepay','com.kakaobank.channel','viva.republica.toss','com.ibk.neobanking','com.kbankwith.smartbank','com.epost.psf.sdsi','kr.co.kfcc.mobilebank','com.scbank.ma30','kr.co.busanbank.mbp','kr.co.dgb.dgbm','com.knbank.mbank','kr.co.jbbank.privatebank','com.kjbank.asb.pbanking','kr.co.cu.onbank','com.suhyup.pesmb','com.kbank.smartbank'];
+// ---- 의도 표 (말·글씨 공통) ----
+const NHI=[
+ {id:'bank',w:['입금','송금','이체','은행','계좌','돈보내','뱅킹','뱅크','잔액','통장'],hd:'은행 앱 모아보기',apps:()=>nhApps().filter(a=>NH_BANK_PKG.includes(a.pkg)||NH_BANK_RE.test(a.full||a.n||'')),none:'깔린 은행 앱을 찾지 못했어요'},
+ {id:'cam',w:['사진','카메라','찍','촬영','셀카'],hd:'카메라',auto:1,apps:()=>nhUniq([nhRole('camera'),...nhLab(/카메라|camera/i),...nhLab(/갤러리|gallery|google 포토|photos/i)])},
+ {id:'phone',w:['전화','통화','걸어','다이얼'],hd:'전화',auto:1,apps:()=>nhUniq([nhBy(NVPHONE),nhRole('phone')])},
+ {id:'sms',w:['문자','메시지','sms'],hd:'문자',auto:1,apps:()=>nhUniq([nhBy(NVSMS),nhRole('sms')])},
+ {id:'calc',w:['계산','계산기','더하기','곱하기','나누기'],hd:'계산기',auto:1,apps:()=>nhUniq([nhBy('kr.newniverse.calc'),...nhLab(/계산기|calculator/i)])},
+ {id:'set',w:['설정','세팅','환경설정'],hd:'설정',auto:1,al:1,apps:()=>nhUniq([nhBy('kr.newniverse.settings')]),acts:[{t:'홈 화면 설정',ic:'gear',fn:()=>{nhClear(true);openSettings()}}],post:()=>nhUniq([nhRole('settings'),nhBy('com.android.settings')])},
+ {id:'bus',w:['버스','정류장','버스도착','출근길'],hd:'버스',acts:[{t:'버스 도착 보기',ic:'bus',fn:()=>nhBusAsk()}]},
+ {id:'map',w:['길찾기','지도','내비','네비','길안내','집으로'],hd:'길찾기',apps:()=>nhLab(/지도|맵|map|내비|navi|티맵|tmap/i)},
+ {id:'memo',w:['메모','노트','적어'],hd:'메모',auto:1,apps:()=>nhLab(/메모|노트|notes|keep|memo/i)},
+ {id:'alarm',w:['알람','시계','타이머','깨워'],hd:'알람 · 시계',auto:1,apps:()=>nhLab(/시계|알람|clock/i)},
+ {id:'web',w:['인터넷','브라우저','크롬','웹'],hd:'인터넷',apps:()=>nhUniq([nhRole('browser'),...nhLab(/인터넷|chrome|크롬|웨일|whale|firefox/i)])},
+ {id:'all',w:['모든앱','전체앱','앱목록','앱서랍'],ex:['앱'],hd:'',acts:[{t:'모든 앱',ic:'widget',fn:()=>{nhClear(true);openDR()}}]},
+ {id:'old',w:['예전홈','옛날홈','아이콘홈','원래홈','이전홈'],hd:'',acts:[{t:'예전 홈으로',ic:'undo',fn:()=>nhSet(false)}]},
+ {id:'home',w:['홈설정','홈화면설정','런처설정','배경화면'],hd:'',acts:[{t:'홈 화면 설정',ic:'gear',fn:()=>{nhClear(true);openSettings()}}]}
+];
+function nhNorm(s){return String(s||'').toLowerCase().replace(/[\s?!.,~·]+/g,'')}
+const NH_VERB=/(열어줘|열어|켜줘|켜|실행해줘|실행|해줘|줘|좀|보여줘|보여|해야겠다|해야지|할래|하자|해볼까|볼까|하고싶어|싶어|알려줘)$/;
+function nhScoreI(I,qn){if(I.ex&&I.ex.includes(qn))return 100;let best=0;const jamo=/^[ㄱ-ㅎ]+$/.test(qn);
+  for(const w0 of I.w){const w=nhNorm(w0);if(qn.includes(w))best=Math.max(best,100+w.length);else if(w.startsWith(qn))best=Math.max(best,70+Math.min(qn.length,5)*2);else if(jamo&&qn.length>=2&&cho(w).startsWith(qn))best=Math.max(best,66)}
+  return best}
+// 결과: [{k:'app',a}|{k:'act',t,ic,fn}] · 첫 묶음의 제목
+function nhMatch(q){const qn=nhNorm(q);if(!qn)return {hd:'',tiles:[],top:null};
+  let qa=qn;for(let i=0;i<3;i++)qa=qa.replace(NH_VERB,'');qa=qa||qn;
+  const groups=[];
+  NHI.forEach(I=>{const sc=nhScoreI(I,qn);if(!sc)return;const t=[];const A=()=>(I.acts||[]).forEach(x=>t.push(Object.assign({k:'act'},x)));if(!I.al)A();(I.apps?I.apps():[]).forEach(a=>t.push({k:'app',a}));if(I.al)A();(I.post?I.post():[]).forEach(a=>t.push({k:'app',a}));
+    groups.push({sc,I,tiles:t})});
+  const ap=[];nhApps().forEach(a=>{const n=nhNorm(a.full||a.n);if(!n)return;let sc=0;if(n.startsWith(qa))sc=92;else if(n.includes(qa))sc=82;else if(appMatch(a,qa))sc=74;if(sc)ap.push({sc,a})});
+  ap.sort((x,y)=>y.sc-x.sc||String(x.a.full||x.a.n).localeCompare(String(y.a.full||y.a.n),'ko'));
+  if(ap.length)groups.push({sc:ap[0].sc,I:null,tiles:ap.map(x=>({k:'app',a:x.a})),scs:ap.map(x=>x.sc)});
+  groups.sort((x,y)=>y.sc-x.sc);
+  const seen=new Set(),tiles=[];const key=x=>x.k==='act'?'act:'+x.t:((x.a.__base||x.a).pkg||x.a.n)+'/'+((x.a.__base||x.a).act||'');
+  groups.forEach(g=>g.tiles.forEach(x=>{const k=key(x);if(seen.has(k))return;seen.add(k);x.key=k;tiles.push(x)}));
+  const top=groups[0]||null;
+  return {hd:top&&top.I?top.I.hd:'',tiles:tiles.slice(0,8),top,none:top&&top.I&&!top.tiles.length?top.I.none||'':''}}
+// ---- 그리기 ----
+function nhIconHTML(a){const b=a.__base||a;const im=a.img||b.img;if(im&&im.src)return `<img src="${im.src}" alt="">`;
+  let h=null;try{h=iconHTML(a,44)}catch(_){}if(h)return h;return `<b style="background:linear-gradient(135deg,${a.c1||'#5b7cff'},${a.c2||'#3346c9'})">${esc(String(a.full||a.n||'?').slice(0,1))}</b>`}
+function nhTileHTML(x){if(x.k==='act')return `<span class="ic act">${ico(x.ic)}</span><span class="nm">${esc(x.t)}</span>`;return `<span class="ic">${nhIconHTML(x.a)}</span><span class="nm">${esc(x.a.full||x.a.n)}</span>`}
+function nhRender(){const r=nhMatch(NH.q);NH.tiles=r.tiles;NH.top=r.top;
+  if(!NH.q){NHRES.classList.remove('on');NHGRID.innerHTML='';NH.shown.clear();NHSUG.classList.remove('hide');return}
+  NHSUG.classList.add('hide');NHRES.classList.add('on');NHRES.classList.remove('out');NHRES.querySelector('.hd').textContent=r.hd||'';
+  NHGRID.innerHTML='';const now=new Set();let n=0;
+  if(!r.tiles.length){NHGRID.innerHTML=`<div class="msg" style="grid-column:1/-1">${esc(r.none||'맞는 앱을 찾지 못했어요 · 다른 낱말로 해 보세요')}</div>`;NH.shown.clear();return}
+  if(r.none){const m=document.createElement('div');m.className='msg';m.style.gridColumn='1/-1';m.textContent=r.none;NHGRID.appendChild(m)}
+  r.tiles.forEach(x=>{const b=document.createElement('button');b.type='button';b.className='nht';b.innerHTML=nhTileHTML(x);b.dataset.k=x.key;
+    if(!NH.shown.has(x.key)){b.classList.add('in');b.style.animationDelay=(n++*55)+'ms'}   // 새로 나온 칸만 차례로(기울이지 않고 반듯하게)
+    now.add(x.key);b.onclick=e=>{e.stopPropagation();nhRun(x)};NHGRID.appendChild(b)});
+  NH.shown=now}
+function nhSetQ(v,fromVoice){NH.q=String(v||'');if(NHQ.value!==NH.q)NHQ.value=NH.q;NH.voice=!!fromVoice;nhRender();try{busTick()}catch(_){}}
+function nhRun(x){if(!x)return;try{if(navigator.vibrate)navigator.vibrate(6)}catch(_){}
+  if(x.k==='act'){x.fn&&x.fn();return}
+  openApp(x.a);setTimeout(()=>nhClear(false),350)}
+// 다 쓰면 모래처럼 흩어지며 우주로
+function nhClear(anim){NHQ.blur();nhListenStop();if(!NH.q&&!NHRES.classList.contains('on')){NHQ.value='';return}
+  if(anim&&NHRES.classList.contains('on')&&NHGRID.children.length){try{const r=NHGRID.getBoundingClientRect(),p=phone.getBoundingClientRect();bfxBurst({x:r.left-p.left,y:r.top-p.top,w:r.width,h:r.height},false)}catch(_){}
+    NHRES.classList.add('out');clearTimeout(NH.cT);NH.cT=setTimeout(()=>{NHRES.classList.remove('out');nhSetQ('')},380);NH.q='';NHQ.value='';return}
+  nhSetQ('')}
+// ---- 상황 제안어 (시간대) ----
+function nhSugWords(){const h=nhNow().getHours();let w=h>=21||h<5?['알람','메모','문자']:h<10?['버스','문자','전화']:h<17?['전화','문자','계산']:['버스','길찾기','전화'];
+  const ok=x=>{const r=nhMatch(x);return r.tiles.length>0};const out=w.filter(ok);['전화','문자','사진','계산'].forEach(x=>{if(out.length<3&&!out.includes(x)&&ok(x))out.push(x)});return out.slice(0,3)}
+function nhSug(){const w=nhSugWords(),k=w.join('|');if(NHSUG.dataset.k===k)return;NHSUG.dataset.k=k;NHSUG.innerHTML=w.map(x=>`<button type="button" data-w="${esc(x)}">${esc(x)}</button>`).join('')}
+NHSUG.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;e.stopPropagation();nhSetQ(b.dataset.w)});
+// ---- 버스 카드: 아침 출근 시간(6:00~9:30)이나 「버스」라고 했을 때만 ----
+function nhBusWindow(){const d=nhNow(),h=d.getHours()+d.getMinutes()/60;return h>=6&&h<9.5}
+function nhBusAsk(){nhClear(true);if(!busOn()){busEnable(true);return}NH.busUntil=Date.now()+5*60e3;try{BUS.html=''}catch(_){}try{busCycle()}catch(_){}setTimeout(()=>{try{busTick()}catch(_){}},60)}
+function nhBusGate(w){if(!nhOn()||w<=0||w===3)return w;if(NH.q||NH.stars||NH.listen)return -1;if(Date.now()<NH.busUntil)return w;return w===1&&nhBusWindow()?1:0}
+// ---- 최근에 쓴 앱 = 별 ----
+function nhNote(a){if(!a)return;const b=a.__base||a;if(!b.pkg)return;const k=b.pkg+'/'+(b.act||'');S.nhRec=[k].concat((S.nhRec||[]).filter(x=>x!==k)).slice(0,8);try{saveS()}catch(_){}}
+function nhRecent(){const A=nhApps();return (S.nhRec||[]).map(k=>A.find(a=>a.pkg+'/'+(a.act||'')===k)).filter(Boolean).slice(0,7)}
+const NH_POS=[[50,.16],[24,.34],[76,.30],[40,.55],[70,.62],[18,.74],[82,.86]];
+function nhStarsBuild(){const L=nhRecent(),st=NHST.querySelector('.st'),sv=NHST.querySelector('svg');st.innerHTML='';sv.innerHTML='';
+  const top=104,bot=Math.max(top+200,navY()-150),hh=bot-top;
+  NHST.querySelector('.all').style.top=(bot+44)+'px';
+  if(!L.length){st.innerHTML='<div class="none">아직 여기서 연 앱이 없어요<br>「무엇을 하실 건가요?」에서 앱을 열면 별로 떠올라요</div>';return}
+  const pts=[];L.forEach((a,i)=>{const [px,py]=NH_POS[i];const x=W*px/100,y=top+hh*py;pts.push([x,y+27]);const b=document.createElement('button');b.type='button';b.className='sa in';b.style.left=x+'px';b.style.top=y+'px';b.style.animationDelay=(i*60)+'ms';
+    b.innerHTML=`<span class="orb">${nhIconHTML(a)}</span><span>${esc(a.full||a.n)}</span>`;b.onclick=e=>{e.stopPropagation();nhStarsClose();openApp(a)};st.appendChild(b)});
+  sv.setAttribute('viewBox',`0 0 ${W} ${H}`);sv.innerHTML=pts.slice(1).map((p,i)=>`<line x1="${pts[i][0]}" y1="${pts[i][1]}" x2="${p[0]}" y2="${p[1]}" stroke="rgba(170,195,255,.22)" stroke-width="1" stroke-dasharray="2 5"/>`).join('')}
+function nhStarsProg(p){if(p>0&&!NHST.classList.contains('on')){nhStarsBuild();NHST.classList.add('on')}NHST.style.transition='none';NHST.style.opacity=Math.min(1,p);NHUI.style.opacity=1-Math.min(1,p)}
+function nhStarsOpen(){if(!NHST.classList.contains('on'))nhStarsBuild();NH.stars=true;NHQ.blur();NHST.classList.add('on');NHST.style.transition='opacity .3s';void NHST.offsetWidth;NHST.style.opacity=1;NHUI.style.transition='opacity .3s';NHUI.style.opacity=0;NHUI.style.pointerEvents='none';try{busTick()}catch(_){}}
+function nhStarsClose(){NH.stars=false;NHST.style.transition='opacity .3s';NHST.style.opacity=0;NHUI.style.transition='opacity .3s';NHUI.style.opacity=1;NHUI.style.pointerEvents='';setTimeout(()=>{if(!NH.stars)NHST.classList.remove('on')},320)}
+NHST.querySelector('.all').addEventListener('click',e=>{e.stopPropagation();nhStarsClose();openDR()});
+// ---- 손짓: 위로 = 별, 아래로 = 빠른 설정, 두 번 톡톡 = 화면 끄기, 길게 = 메뉴 ----
+NHEL.addEventListener('pointerdown',e=>{e.stopPropagation();if(e.target.closest('#nhBar,#nhSug,.nht,.sa,.all'))return;
+  if(menuOpen()){closeMenu();return}
+  const r=phone.getBoundingClientRect();NH.pt={id:e.pointerId,x:e.clientX,y:e.clientY,px:e.clientX-r.left,py:e.clientY-r.top,t:e.timeStamp,m:false,ax:null,vy:0,ly:e.clientY,lt:e.timeStamp,lp:false};
+  try{NHEL.setPointerCapture(e.pointerId)}catch(_){}
+  clearTimeout(NH.lpT);NH.lpT=setTimeout(()=>{const p=NH.pt;if(!p||p.m)return;p.lp=true;try{if(navigator.vibrate)navigator.vibrate(12)}catch(_){}nhMenu(p.px,p.py)},560)});
+NHEL.addEventListener('pointermove',e=>{const p=NH.pt;if(!p||e.pointerId!==p.id)return;const dx=e.clientX-p.x,dy=e.clientY-p.y;
+  if(!p.m&&Math.hypot(dx,dy)>10){p.m=true;clearTimeout(NH.lpT);p.ax=Math.abs(dy)>Math.abs(dx)*1.1?(dy>0?'down':'up'):'h'}
+  const dt=e.timeStamp-p.lt;if(dt>0)p.vy=.7*p.vy+.3*((e.clientY-p.ly)/dt);p.ly=e.clientY;p.lt=e.timeStamp;
+  if(p.ax==='down'&&!NH.stars){setQP(Math.max(0,dy)/(QP.offsetHeight||500))}
+  else if(p.ax==='up'&&!NH.stars){nhStarsProg(Math.max(0,-dy)/(H*.35))}
+  else if(p.ax==='down'&&NH.stars){NHST.style.transition='none';NHST.style.opacity=Math.max(0,1-dy/(H*.35))}});
+function nhUp(e){const p=NH.pt;if(!p||e.pointerId!==p.id)return;NH.pt=null;clearTimeout(NH.lpT);if(p.lp)return;const dy=e.clientY-p.y;
+  if(p.ax==='down'&&!NH.stars){if(qpP>.3||p.vy>.4){updQP();setQP(1,true)}else setQP(0,true);return}
+  if(p.ax==='up'&&!NH.stars){if(-dy>60||p.vy<-.4)nhStarsOpen();else{nhStarsClose()}return}
+  if(p.ax==='down'&&NH.stars){if(dy>60||p.vy>.4)nhStarsClose();else nhStarsOpen();return}
+  if(p.m)return;
+  // 톡 누름
+  if(NH.stars){nhStarsClose();return}
+  if(document.activeElement===NHQ||NH.q){nhClear(true);return}
+  if(S.dt2off!==false&&p.py>40&&p.py<navY()-4){const now=performance.now();if(NH.lastTap&&now-NH.lastTap.t<380&&Math.hypot(p.px-NH.lastTap.x,p.py-NH.lastTap.y)<56){NH.lastTap=null;screenOff();return}NH.lastTap={t:now,x:p.px,y:p.py}}}
+NHEL.addEventListener('pointerup',nhUp);NHEL.addEventListener('pointercancel',e=>{const p=NH.pt;if(p&&e.pointerId===p.id){NH.pt=null;clearTimeout(NH.lpT);if(qpP>0&&qpP<1)setQP(0,true);if(!NH.stars&&NHST.classList.contains('on'))nhStarsClose()}});
+function nhMenu(x,y){showMenu([{ic:'⚙️',t:'홈 화면 설정',fn:()=>openSettings()},{ic:'🧩',t:'모든 앱',fn:()=>openDR()},{ic:'↩️',t:'예전 홈으로',fn:()=>nhSet(false)}],{x:x-20,y:y-10,w:40,h:20})}
+// ---- 입력창 ----
+NHQ.addEventListener('input',()=>nhSetQ(NHQ.value));
+NHQ.addEventListener('focus',()=>{$('nhBar').classList.add('f');if(NH.stars)nhStarsClose();try{busTick()}catch(_){}});
+NHQ.addEventListener('blur',()=>{$('nhBar').classList.remove('f')});
+NHQ.addEventListener('keydown',e=>{if(e.key==='Enter'&&!(e.nativeEvent||e).isComposing){e.preventDefault();const x=NH.tiles[0];if(x){NHQ.blur();nhRun(x)}}else if(e.key==='Escape'){nhClear(true)}});
+// ---- 마이크 (누른 동안만 듣기) ----
+const NHMIC=$('nhMic');
+function nhMicUI(){NHMIC.classList.toggle('on',NH.listen);NHQ.placeholder=NH.listen?'듣고 있어요…':'무엇을 하실 건가요?';try{busTick()}catch(_){}}
+function nhListenStop(){if(!NH.listen)return;NH.listen=false;nhMicUI();try{if(NATIVE&&NVNative.speechCancelJs)NVNative.speechCancelJs()}catch(_){}try{NH.web&&NH.web.abort()}catch(_){}NH.web=null}
+async function nhMic(){if(NH.listen){nhListenStop();return}
+  if(!S.nhMicOk){const ok=await ask('말로 찾기','마이크 버튼을 누른 동안만 들어요.<br>· 폰의 음성 인식(기기 안 인식이 있으면 그것)으로 말을 글자로 바꾸고, 뉴니버스는 그 글자로 앱만 찾아요<br>· 녹음하거나 저장하지 않아요<br>· 기기 안 인식이 없는 폰은 폰 음성 인식 서비스(삼성·구글)가 처리할 수 있어요',{ok:'마이크 쓰기'});if(!ok)return;S.nhMicOk=1;saveS()}
+  NHQ.blur();
+  if(NATIVE&&window.NVNative&&NVNative.speechStart){let r='';NH.listen=true;nhMicUI();try{r=NVNative.speechStart()}catch(_){r='none'}
+    if(r==='none'){NH.listen=false;nhMicUI();toast('이 폰에서는 음성 인식을 쓸 수 없어요 · 글자로 입력해 주세요')}return}
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){toast('여기서는 음성 인식을 쓸 수 없어요 · 글자로 입력해 주세요');return}
+  try{const r=new SR();r.lang='ko-KR';r.interimResults=true;r.maxAlternatives=1;NH.web=r;NH.listen=true;nhMicUI();
+    r.onresult=ev=>{let t='',fin=false;for(let i=ev.resultIndex;i<ev.results.length;i++){t+=ev.results[i][0].transcript;if(ev.results[i].isFinal)fin=true}window.NV_onSpeech(fin?'final':'partial',t)};
+    r.onerror=ev=>window.NV_onSpeech('error',ev.error==='not-allowed'?'perm':ev.error==='no-speech'?'nomatch':String(ev.error));r.onend=()=>{if(NH.listen){NH.listen=false;nhMicUI()}};r.start()}catch(e){NH.listen=false;nhMicUI();toast('음성 인식을 시작하지 못했어요')}}
+NHMIC.addEventListener('click',e=>{e.stopPropagation();nhMic()});
+window.NV_onSpeech=(type,text)=>{
+  if(type==='ready'){NH.listen=true;nhMicUI();return}
+  if(type==='partial'){if(!NH.listen)return;nhSetQ(text,true);return}
+  if(type==='final'){NH.listen=false;nhMicUI();if(!text){toast('잘 못 알아들었어요 · 다시 눌러 말해 주세요');return}nhSetQ(text,true);
+    // 말로 「사진 찍어볼까?」처럼 한 가지를 분명히 말하면 바로 열고, 「입금」처럼 여러 앱이면 펼쳐 보여 줌
+    const t=NH.top;if(t&&t.I&&t.I.auto&&t.sc>=100&&NH.tiles[0]&&NH.tiles[0].k==='app'){const x=NH.tiles[0];clearTimeout(NH.aT);NH.aT=setTimeout(()=>{if(NH.q===text)nhRun(x)},650)}return}
+  if(type==='end')return;
+  if(type==='error'){NH.listen=false;nhMicUI();toast(text==='perm'?'마이크를 허락해야 말로 할 수 있어요 · 글자로도 돼요':text==='nomatch'?'잘 못 알아들었어요 · 다시 눌러 말해 주세요':text==='none'?'이 폰에서는 음성 인식을 쓸 수 없어요 · 글자로 입력해 주세요':text==='network'?'음성 인식이 인터넷을 못 찾았어요 · 글자로 입력해 주세요':'음성 인식이 멈췄어요 · 글자로도 돼요')}};
+// ---- 우주: 거의 멈춰 있고 4초에 한 번 아주 조금만 흐름(화면이 꺼지거나 절전이면 멈춤) ----
+function nhStill(){if(S.lite===true||S.nhStill===true)return true;try{if(NATIVE&&NVNative.qsState){const q=JSON.parse(NVNative.qsState());if(q&&q.save)return true}}catch(_){}return false}
+function nhDrift(){clearInterval(NH.dT);NH.dT=0;if(!nhOn()||document.hidden||NH.still)return;
+  NH.dT=setInterval(()=>{if(document.hidden||!nhOn()){clearInterval(NH.dT);NH.dT=0;return}NH.dk=(NH.dk+1)%120;const a=NH.dk/120*Math.PI*2;NHCOS.style.transform=`scale(1.04) translate3d(${(Math.sin(a)*1.1).toFixed(3)}%,${(Math.cos(a*.7)*.7).toFixed(3)}%,0)`},4000)}
+document.addEventListener('visibilitychange',()=>{if(document.hidden){clearInterval(NH.dT);NH.dT=0;nhListenStop()}else if(nhOn()){NH.still=nhStill();nhDrift()}});
+// ---- 자리 맞추기·켜고 끄기 ----
+function nhPlace(){if(!nhOn()||!W)return;NHUI.style.bottom=Math.round(H-navY()+12)+'px'}
+function nhApply(){const on=nhOn();phone.classList.toggle('nh',on);if(on){nhPlace();nhSug();NH.still=nhStill();nhDrift();try{closeRecents()}catch(_){}}else{clearInterval(NH.dT);NH.dT=0;nhReset()}
+  try{wSync()}catch(_){}try{BUS.plk='';BUS.html='';busPlace();busTick()}catch(_){}}
+function nhSet(on){S.nh=!!on;saveS();nhApply();if(!on){try{spaceKick()}catch(_){}try{relayoutSoon()}catch(_){}toast('예전 아이콘 홈으로 바꿨어요 · 설정에서 다시 켤 수 있어요')}else toast('앱 없는 홈 켜짐 · 무엇을 하실 건가요?')}
+function nhReset(){clearTimeout(NH.aT);nhListenStop();if(NH.stars||NHST.classList.contains('on')){NH.stars=false;NHST.classList.remove('on');NHST.style.opacity=0;NHUI.style.opacity=1;NHUI.style.pointerEvents=''}NHQ.blur();if(NH.q||NHQ.value)nhSetQ('');if(nhOn())nhSug()}
+function nhBack(){if(NH.stars){nhStarsClose();return true}if(NH.listen){nhListenStop();return true}if(NH.q||document.activeElement===NHQ){nhClear(true);return true}return false}
+window.addEventListener('resize',()=>setTimeout(nhPlace,30));
+{const oi=window.NV_onInsets;window.NV_onInsets=()=>{try{oi&&oi()}catch(_){}nhPlace()}}
+{const orz=window.NV_onResume;window.NV_onResume=()=>{try{orz&&orz()}catch(_){}if(nhOn()){nhReset();NH.still=nhStill();nhDrift();nhPlace()}}}
+setInterval(()=>{if(nhOn()&&!document.hidden&&!NH.q)nhSug()},60000);
+nhApply();
+setTimeout(()=>{nhPlace();nhSug();if(nhOn()&&!S.nhTip){S.nhTip=1;saveS();setTimeout(()=>toast('위로 밀면 최근 앱 · 아래로 빠른 설정 · 길게 누르면 메뉴'),900)}},300);
+window.__nv.nh={on:nhOn,set:nhSet,q:v=>nhSetQ(v),tiles:()=>NH.tiles.map(x=>x.k==='act'?'act:'+x.t:(x.a.__base||x.a).pkg),hd:()=>NHRES.querySelector('.hd').textContent,sug:()=>[...NHSUG.querySelectorAll('button')].map(b=>b.textContent),
+  stars:()=>NH.stars,starsOpen:nhStarsOpen,recent:()=>nhRecent().map(a=>a.pkg),state:()=>({q:NH.q,listen:NH.listen,stars:NH.stars,still:NH.still,drift:!!NH.dT,busUntil:NH.busUntil}),back:nhBack,reset:nhReset,place:nhPlace};
+
 })();
 </script>
 </body>

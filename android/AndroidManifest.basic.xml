@@ -16,12 +16,17 @@
   <uses-permission android:name="android.permission.WRITE_SETTINGS"/>
   <!-- v29: 통합 검색에서 연락처 찾기 (기능을 켤 때만 물어봄) -->
   <uses-permission android:name="android.permission.READ_CONTACTS"/>
+  <!-- v38b: 앱 없는 홈의 마이크 버튼 (처음 누를 때만 물어봄 · 누른 동안만 들음) -->
+  <uses-permission android:name="android.permission.RECORD_AUDIO"/>
   <queries>
     <intent><action android:name="android.appwidget.action.APPWIDGET_UPDATE"/></intent>
     <intent><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent>
     <intent><action android:name="android.intent.action.DIAL"/></intent>
     <package android:name="kr.newniverse.phone"/>
     <package android:name="kr.newniverse.sms"/>
+    <package android:name="kr.newniverse.calc"/>
+    <package android:name="kr.newniverse.settings"/>
+    <intent><action android:name="android.speech.RecognitionService"/></intent>
     <intent><action android:name="android.intent.action.SENDTO"/><data android:scheme="smsto"/></intent>
     <intent><action android:name="android.media.action.IMAGE_CAPTURE"/></intent>
     <intent><action android:name="android.intent.action.VIEW"/><data android:scheme="https"/></intent>

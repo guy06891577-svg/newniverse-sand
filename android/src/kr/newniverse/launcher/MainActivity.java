@@ -109,9 +109,9 @@ public class MainActivity extends Activity {
   }
   @Override public void onWindowFocusChanged(boolean h){ super.onWindowFocusChanged(h); if(h) applyBars(); }
   @Override protected void onResume(){ super.onResume(); applyBars(); js("window.NV_onResume&&NV_onResume()"); }
-  @Override protected void onPause(){ super.onPause(); js("window.NV_onPause&&NV_onPause()"); }
+  @Override protected void onPause(){ super.onPause(); speechCancel(); js("window.NV_onPause&&NV_onPause()"); }
   static final int REQ_LOC=7301;
-  static final int REQ_EXP=7302, REQ_IMP=7303, REQ_CON=7304;
+  static final int REQ_EXP=7302, REQ_IMP=7303, REQ_CON=7304, REQ_MIC=7305;
   String pendExport=null;
   // v29 홈 배치 백업: 저장소 접근 권한 없이 안드로이드 파일 고르기(SAF) 창으로 내보내기/가져오기
   void bakResult(int req,int res,Intent data){
@@ -151,6 +151,7 @@ public class MainActivity extends Activity {
     return a.toString(); }
   @Override public void onRequestPermissionsResult(int req,String[] p,int[] g){ super.onRequestPermissionsResult(req,p,g);
     if(req==REQ_LOC) js("window.NV_onBusPerm&&NV_onBusPerm('"+BusInfo.perm(this)+"')");
+    if(req==REQ_MIC){ if(checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)==PackageManager.PERMISSION_GRANTED) speechGo(true); else spJs("error","perm"); }
     if(req==REQ_CON) js("window.NV_onConPerm&&NV_onConPerm('"+(checkSelfPermission(android.Manifest.permission.READ_CONTACTS)==PackageManager.PERMISSION_GRANTED?"yes":"no")+"')"); }
 
   @Override protected void onNewIntent(Intent i){ super.onNewIntent(i);
@@ -230,6 +231,44 @@ public class MainActivity extends Activity {
       if(a!=insNav||b!=insGest||c!=insMand){ insNav=a; insGest=b; insMand=c; js("window.NV_onInsets&&NV_onInsets()"); }
     }catch(Throwable e){}
   }
+  // ===================== v38b 앱 없는 홈: 말로 찾기 =====================
+  // 마이크 버튼을 누른 동안만 듣고, 폰의 음성 인식(가능하면 기기 안 인식)으로 글자만 받아 웹 화면의 같은 의도 엔진에 넘김. 녹음·저장 없음.
+  android.speech.SpeechRecognizer sr=null; boolean srOnDev=false;
+  void spJs(String type,String text){ js("window.NV_onSpeech&&NV_onSpeech("+JSONObject.quote(type)+","+JSONObject.quote(text==null?"":text)+")"); }
+  void speechCancel(){ ui.post(()->{ if(sr!=null){ try{ sr.cancel(); sr.destroy(); }catch(Exception e){} sr=null; } }); }
+  void speechGo(final boolean allowOnDev){ ui.post(()->{ try{
+      if(sr!=null){ try{ sr.cancel(); sr.destroy(); }catch(Exception e){} sr=null; }
+      srOnDev=false;
+      if(allowOnDev&&Build.VERSION.SDK_INT>=31){ try{ if(android.speech.SpeechRecognizer.isOnDeviceRecognitionAvailable(MainActivity.this)){ sr=android.speech.SpeechRecognizer.createOnDeviceSpeechRecognizer(MainActivity.this); srOnDev=true; } }catch(Exception e){ sr=null; srOnDev=false; } }
+      if(sr==null){ if(!android.speech.SpeechRecognizer.isRecognitionAvailable(MainActivity.this)){ spJs("error","none"); return; }
+        sr=android.speech.SpeechRecognizer.createSpeechRecognizer(MainActivity.this); }
+      final boolean od=srOnDev;
+      sr.setRecognitionListener(new android.speech.RecognitionListener(){
+        public void onReadyForSpeech(Bundle b){ spJs("ready",od?"device":"service"); }
+        public void onBeginningOfSpeech(){}
+        public void onRmsChanged(float v){}
+        public void onBufferReceived(byte[] b){}
+        public void onEndOfSpeech(){ spJs("end",""); }
+        public void onError(int e){
+          // 기기 안 인식에 한국어가 없으면 폰 기본 음성 인식으로 한 번만 다시
+          if(od&&(e==12||e==13||e==android.speech.SpeechRecognizer.ERROR_CLIENT)){ speechGo(false); return; }
+          String c=e==android.speech.SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS?"perm":(e==android.speech.SpeechRecognizer.ERROR_NO_MATCH||e==android.speech.SpeechRecognizer.ERROR_SPEECH_TIMEOUT)?"nomatch":(e==android.speech.SpeechRecognizer.ERROR_NETWORK||e==android.speech.SpeechRecognizer.ERROR_NETWORK_TIMEOUT)?"network":"e"+e;
+          spJs("error",c); }
+        public void onResults(Bundle b){ ArrayList<String> r=b.getStringArrayList(android.speech.SpeechRecognizer.RESULTS_RECOGNITION); spJs("final",r!=null&&!r.isEmpty()?r.get(0):""); }
+        public void onPartialResults(Bundle b){ ArrayList<String> r=b.getStringArrayList(android.speech.SpeechRecognizer.RESULTS_RECOGNITION); if(r!=null&&!r.isEmpty()&&r.get(0)!=null&&r.get(0).length()>0) spJs("partial",r.get(0)); }
+        public void onEvent(int t,Bundle b){}
+      });
+      Intent i=new Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+      i.putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL,android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+      i.putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE,"ko-KR");
+      i.putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE,"ko-KR");
+      i.putExtra(android.speech.RecognizerIntent.EXTRA_PARTIAL_RESULTS,true);
+      i.putExtra(android.speech.RecognizerIntent.EXTRA_PREFER_OFFLINE,true);
+      i.putExtra(android.speech.RecognizerIntent.EXTRA_MAX_RESULTS,1);
+      i.putExtra(android.speech.RecognizerIntent.EXTRA_CALLING_PACKAGE,getPackageName());
+      sr.startListening(i);
+    }catch(Exception e){ spJs("error","e-start"); } }); }
+
   class Bridge {
     // v29 알림 배지·미리보기
     @JavascriptInterface public boolean notifAccess(){ return notifGranted(); }
@@ -491,6 +530,14 @@ public class MainActivity extends Activity {
         Intent i=new Intent(Intent.ACTION_DELETE,Uri.parse("package:"+pkg)); i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(i); return "ok";
       }catch(Exception e){ return "fail"; } }
     @JavascriptInterface public boolean isSystem(String pkg){ try{ ApplicationInfo ai=getPackageManager().getApplicationInfo(pkg,0); return (ai.flags&ApplicationInfo.FLAG_SYSTEM)!=0; }catch(Exception e){ return false; } }
+    @JavascriptInterface public String speechAvail(){ try{ boolean od=Build.VERSION.SDK_INT>=31&&android.speech.SpeechRecognizer.isOnDeviceRecognitionAvailable(MainActivity.this); if(od) return "device"; return android.speech.SpeechRecognizer.isRecognitionAvailable(MainActivity.this)?"service":"none"; }catch(Exception e){ return "none"; } }
+    @JavascriptInterface public String micPerm(){ return checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)==PackageManager.PERMISSION_GRANTED?"yes":"no"; }
+    @JavascriptInterface public String speechStart(){ try{
+        if(!android.speech.SpeechRecognizer.isRecognitionAvailable(MainActivity.this)&&!(Build.VERSION.SDK_INT>=31&&android.speech.SpeechRecognizer.isOnDeviceRecognitionAvailable(MainActivity.this))) return "none";
+        if(checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED){ ui.post(()->{ try{ requestPermissions(new String[]{android.Manifest.permission.RECORD_AUDIO},REQ_MIC);}catch(Exception e){ spJs("error","perm"); } }); return "perm"; }
+        speechGo(true); return "ok"; }catch(Exception e){ return "none"; } }
+    @JavascriptInterface public void speechStop(){ ui.post(()->{ if(sr!=null){ try{ sr.stopListening(); }catch(Exception e){} } }); }
+    @JavascriptInterface public void speechCancelJs(){ speechCancel(); }
     @JavascriptInterface public boolean isDefaultHome(){ Intent i=new Intent(Intent.ACTION_MAIN); i.addCategory(Intent.CATEGORY_HOME); ResolveInfo r=getPackageManager().resolveActivity(i,PackageManager.MATCH_DEFAULT_ONLY); return r!=null&&r.activityInfo!=null&&getPackageName().equals(r.activityInfo.packageName); }
   }
 }
