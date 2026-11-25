@@ -104,30 +104,45 @@ body.sci #keys{padding-top:2px}
 .sk.on{background:var(--acc);color:#0a0820;border:none}
 .sk.ang{color:var(--a1);font-size:13px;font-weight:800;letter-spacing:-.2px}
 #v-unit{padding-top:calc(var(--sat) + 6px)}
-#uHead{display:flex;align-items:center;padding:6px 8px 4px;gap:4px}
+#uHead{display:flex;align-items:center;padding:4px 8px 2px;gap:4px;flex:none}
 #uHead h1{flex:1;font-size:22px;font-weight:800;letter-spacing:-.4px}
-#uCats{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:6px 12px 8px;flex:none}
-#uCats::-webkit-scrollbar{display:none}
-#uCats button{flex:none;padding:8px 12px;border-radius:16px;font-size:13px;font-weight:700;color:var(--sub);background:rgba(255,255,255,.06);border:1px solid var(--line)}
+#uCats{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(2,minmax(44px,auto));gap:6px;padding:6px 14px 6px;flex:none;overflow:visible}
+#uCats button{min-height:44px;height:100%;padding:4px 2px;border-radius:14px;font-size:14px;font-weight:700;color:var(--sub);background:rgba(255,255,255,.06);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.15;white-space:normal;word-break:keep-all}
+#uCats button.long{font-size:13px;letter-spacing:-.3px}
 #uCats button.on{color:#0a0820;background:var(--acc);border:none}
-#uBody{flex:1;min-height:0;display:flex;flex-direction:column;gap:10px;padding:0 14px 0}
-#uLeft{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;overflow-y:auto;scrollbar-width:none}
-#uLeft::-webkit-scrollbar{display:none}
-#uLeft .uOut{margin-top:auto;flex:none;display:flex;flex-direction:column;gap:10px}
-.ucard{border-radius:20px;padding:12px 14px;text-align:left;width:100%}
+#uBody{flex:1;min-height:0;display:flex;flex-direction:column;gap:8px;padding:0 14px 0}
+#uLeft{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;gap:8px;overflow:hidden}
+#uLeft .uOut{margin-top:0;flex:1;min-height:0;display:flex;flex-direction:column}
+.ucard{border-radius:20px;padding:10px 16px 12px;text-align:left;width:100%;flex:1;min-height:0;display:flex;flex-direction:column}
 .ucard.on{border-color:rgba(111,211,255,.45);box-shadow:0 0 0 1px rgba(111,211,255,.25)}
-.ulab{display:flex;align-items:center;gap:4px;font-size:14px;font-weight:700;color:var(--a1)}
-.ulab svg{width:16px;height:16px}
-.uamt{display:block;margin-top:6px;font-size:24px;font-weight:800;letter-spacing:-.6px;font-variant-numeric:tabular-nums;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ulab{display:inline-flex;align-items:center;gap:6px;min-height:40px;font-size:17px;font-weight:800;color:var(--a1);padding:0 2px;align-self:flex-start;border-radius:12px;flex:none}
+.ulab svg{width:22px;height:22px;flex:none}
+.uamt{flex:1;min-height:0;width:100%;display:flex;align-items:center;font-size:48px;font-weight:800;letter-spacing:-1px;font-variant-numeric:tabular-nums;line-height:1.1;white-space:nowrap;overflow:hidden}
+.uSwap{flex:none;width:40px;height:40px;margin:-2px auto;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(20,16,44,.92);border:1px solid var(--line);color:var(--fg);z-index:2}
+.uSwap svg{width:20px;height:20px}
+.uSwap:active{background:rgba(143,107,255,.24)}
 #uKeys{width:auto;max-width:none;flex:none;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;align-content:start;padding:6px 0 calc(var(--sab) + 14px)}
 #uKeys .k{height:52px;font-size:22px}
 #uMeta{font-size:13px;color:var(--sub);line-height:1.45;padding:0 4px;word-break:keep-all}
-.umbox{border-radius:18px;padding:12px 14px}
+.uHint{flex:none;padding:0 2px 2px;font-size:12px;color:var(--sub);line-height:1.35;word-break:keep-all}
+.umbox{border-radius:20px;padding:12px 16px;flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;width:100%}
 #uMeta b{color:var(--fg);font-weight:800}
-.ufield{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-radius:16px;width:100%;text-align:left;border:1px solid var(--line);background:rgba(255,255,255,.06)}
+.ures-head{display:flex;flex-direction:column;flex:1;min-height:0;width:100%}
+.ures-lab{font-size:14px;font-weight:700;color:var(--dim);flex:none}
+.ures-amt{flex:1;min-height:0;width:100%;display:flex;align-items:center;font-weight:800;letter-spacing:-1px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;line-height:1.1;color:var(--fg);font-size:40px}
+.ures-sub{font-size:14px;color:var(--sub);font-weight:600;line-height:1.4;word-break:keep-all;flex:none}
+.ures-note{font-size:12px;color:var(--dim);margin-top:4px;flex:none}
+.ufield{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:4px;padding:10px 14px;border-radius:18px;width:100%;text-align:left;border:1px solid var(--line);background:rgba(255,255,255,.06);flex:1;min-height:0}
 .ufield.on{border-color:rgba(111,211,255,.45);box-shadow:0 0 0 1px rgba(111,211,255,.25)}
-.ufield .fn{font-size:13px;font-weight:700;color:var(--dim)}
-.ufield .fv{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}
+.ufield .fn{font-size:14px;font-weight:700;color:var(--dim);flex:none}
+.ufield .fv{flex:1;min-height:0;width:100%;display:flex;align-items:center;font-size:36px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.8px;white-space:nowrap;overflow:hidden;line-height:1.1}
+.uPair{flex:1;min-height:0;display:flex;gap:8px}
+.uPair .ufield{flex:1}
+.uRound{flex:none;display:flex;align-items:center;gap:6px}
+.uRoundLab{flex:none;font-size:13px;font-weight:700;color:var(--dim)}
+.uRound .chip{flex:1;min-height:44px;padding:0 8px;display:flex;align-items:center;justify-content:center;text-align:center}
+.umodes{flex:none;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.umodes .chip{min-height:44px;padding:6px 4px;white-space:normal;line-height:1.2;font-size:13px;display:flex;align-items:center;justify-content:center;text-align:center;word-break:keep-all}
 .urow{display:flex;gap:8px}
 .chip{padding:8px 10px;border-radius:14px;font-size:13px;font-weight:700;color:var(--sub);background:rgba(255,255,255,.06);border:1px solid var(--line);white-space:nowrap}
 .urow{flex-wrap:wrap}
@@ -135,8 +150,15 @@ body.sci #keys{padding-top:2px}
 .chip.on{color:#0a0820;background:var(--acc);border:none}
 #hSheet .box{max-height:78%}
 #hList{flex:1;overflow-y:auto;min-height:0;padding:4px 0}
+@media (min-height:800px){
+  .ulab{min-height:48px;font-size:20px}
+  .ulab svg{width:24px;height:24px}
+  .uSwap{width:44px;height:44px}
+  .uSwap svg{width:22px;height:22px}
+  .ufield .fn,.ures-lab{font-size:16px}
+}
 @media (max-height:700px){
-  /* 짧은 화면: 계산 키 높이(58)는 유지하고, 여백·표시칸만 줄여 탭 바와 겹치지 않게 */
+  /* 짧은 화면: 계산 키 높이(58)와 단위 키 높이(52)는 유지하고, 여백·표시칸만 줄여 겹치지 않게 */
   #res{font-size:36px;padding:0}
   #expr{min-height:20px;font-size:16px}
   #disp{padding:0 22px 2px}
@@ -144,17 +166,16 @@ body.sci #keys{padding-top:2px}
   #hist{padding:0 16px}
   #keys,#fxKeys{gap:4px;padding:2px 14px calc(var(--sab) + 86px)}
   .fxamt{font-size:28px}
-  #uBody{gap:6px}
-  #uCats{padding:4px 12px 4px}
-  #uCats button{padding:6px 10px}
-  #uLeft{gap:6px}
-  #uLeft .uOut{gap:6px}
-  .ufield{padding:6px 12px}
-  .ufield .fv{font-size:18px}
-  .chip{padding:4px 8px;font-size:12px}
-  .ucard{padding:8px 12px}
-  .umbox{padding:8px 12px}
-  #uHead{padding:4px 8px 2px}
+  .ucard{flex-direction:row;align-items:center;gap:8px;padding:6px 14px;overflow:hidden}
+  .ulab{min-height:36px;font-size:16px}
+  .ulab svg{width:20px;height:20px}
+  .uamt{justify-content:flex-end;min-height:36px;width:auto;min-width:0;font-size:28px}
+  .ufield{overflow:hidden;padding:6px 12px}
+  .ures-head{flex-direction:row;align-items:center;flex:1;min-height:0}
+  .ures-amt{justify-content:flex-end;min-height:28px;min-width:0;font-size:26px}
+  .umbox{padding:8px 12px;overflow:hidden}
+  .ures-note{display:none}
+  .ures-sub{font-size:12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 }
 @media (orientation:landscape){
   body.sci #v-calc{flex-wrap:nowrap}
@@ -1188,46 +1209,73 @@ function setCat(id){
 }
 function unitName(cat,id){ const l=UDEF[cat]||[]; return (l.find(x=>x.id===id)||{n:id}).n; }
 
+function swapUnitSides(){
+  try{
+    const other=uSide==='from'?unitConvert(uCat,uFrom,uTo,uStr||'0'):unitConvert(uCat,uTo,uFrom,uStr||'0');
+    const tmp=uFrom; uFrom=uTo; uTo=tmp;
+    uStr=Dec.plain(other);
+  }catch(e){ const tmp=uFrom; uFrom=uTo; uTo=tmp; }
+  renderUnit();
+}
+function fitUnitNums(){
+  $$('.uamt, .fv, .ures-amt').forEach(el=>{
+    if(!el) return;
+    const min=16, w=el.clientWidth||0, h=el.clientHeight||0;
+    if(w<8) return;
+    let cap=72;
+    if(h>=10) cap=Math.min(cap, Math.max(min, Math.floor(h*0.9)));
+    else cap=Math.min(cap, 28);
+    let s=cap, guard=80;
+    el.style.fontSize=s+'px';
+    while(guard-- && s>min && (el.scrollWidth>w+1 || (el.clientHeight>=10 && el.scrollHeight>el.clientHeight+2))){
+      s-=1; el.style.fontSize=s+'px';
+    }
+  });
+}
+function afterUnitLayout(){ requestAnimationFrame(()=>{ fitUnitNums(); requestAnimationFrame(fitUnitNums); }); }
 function renderUnit(){
   $('#uTitle').textContent=uCat==='nbbang'?'N빵':uCat==='tax'?'세금·할인':'단위 계산기';
-  $('#uCats').innerHTML=UCATS.map(c=>`<button type="button" data-cat="${c.id}" class="${c.id===uCat?'on':''}">${c.n}</button>`).join('');
+  $('#uCats').innerHTML=UCATS.map(c=>`<button type="button" data-cat="${c.id}" class="${c.id===uCat?'on':''}${c.n.length>4?' long':''}">${c.n}</button>`).join('');
   const left=$('#uLeft');
   if(uCat==='nbbang'){
     const r=nbbangCalc(nb.total,nb.people,nb.step);
     const stepLab=nb.step===0?'안 함':(nb.step===100?'100원':'1,000원');
     left.innerHTML=`
-      <button type="button" class="ufield ${nb.focus==='total'?'on':''}" data-nf="total"><span class="fn">총액 (원)</span><span class="fv">${comma(nb.total||'0')}</span></button>
-      <button type="button" class="ufield ${nb.focus==='people'?'on':''}" data-nf="people"><span class="fn">인원 (명)</span><span class="fv">${comma(nb.people||'0')}</span></button>
-      <div style="font-size:13px;font-weight:700;color:var(--dim);padding:0 4px">올림 단위</div>
-      <div class="urow">
+      <div class="uPair">
+        <button type="button" class="ufield ${nb.focus==='total'?'on':''}" data-nf="total"><span class="fn">총액 (원)</span><span class="fv">${comma(nb.total||'0')}</span></button>
+        <button type="button" class="ufield ${nb.focus==='people'?'on':''}" data-nf="people"><span class="fn">인원 (명)</span><span class="fv">${comma(nb.people||'0')}</span></button>
+      </div>
+      <div class="uRound">
+        <span class="uRoundLab">올림</span>
         <button type="button" class="chip ${nb.step===0?'on':''}" data-st="0">안 함</button>
         <button type="button" class="chip ${nb.step===100?'on':''}" data-st="100">100원</button>
         <button type="button" class="chip ${nb.step===1000?'on':''}" data-st="1000">1,000원</button>
       </div>
       <div class="uOut"><div id="uMeta" class="glass umbox">${r.ok? (
         r.mode==='remain'
-          ? `<b>1인당 ${r.perD}원</b><br>인원으로 나누고 ${r.rem===0?'남는 돈이 없어요':r.remD+'원이 남아요'}`
-          : `<b>1인당 ${r.perD}원</b><br>${r.people}명이면 합계 ${r.sumD}원, 총액보다 ${r.extraD}원 더 나와요`
-      ):'총액과 인원을 넣어 주세요'}</div></div>`;
+          ? `<div class="ures-head"><span class="ures-lab">1인당</span><span class="ures-amt">${r.perD}원</span></div><span class="ures-sub">${r.rem===0?'인원으로 나누고 남는 돈이 없어요': '인원으로 나누고 '+r.remD+'원이 남아요'}</span>`
+          : `<div class="ures-head"><span class="ures-lab">1인당</span><span class="ures-amt">${r.perD}원</span></div><span class="ures-sub">${r.people}명이면 합계 ${r.sumD}원, 총액보다 ${r.extraD}원 더 나와요</span>`
+      ):'<div class="ures-head"><span class="ures-lab">1인당</span><span class="ures-amt">—</span></div><span class="ures-sub">총액과 인원을 넣어 주세요</span>'}</div></div>`;
   }else if(uCat==='tax'){
     const inc=tx.mode!=='disc' && tx.mode==='inc'?taxInc(tx.amt||'0'):null;
     const ext=tx.mode==='ext'?taxExt(tx.amt||'0'):null;
     const disc=tx.mode==='disc'?taxDisc(tx.price||'0',tx.rate||'0'):null;
     const show=inc||ext;
     left.innerHTML=`
-      <div class="urow" style="flex-direction:column;align-items:stretch">
+      <div class="umodes">
         <button type="button" class="chip ${tx.mode==='inc'?'on':''}" data-tm="inc">공급가 → 포함가</button>
         <button type="button" class="chip ${tx.mode==='ext'?'on':''}" data-tm="ext">포함가 → 공급가</button>
         <button type="button" class="chip ${tx.mode==='disc'?'on':''}" data-tm="disc">할인</button>
       </div>
       ${tx.mode!=='disc'?`
         <button type="button" class="ufield ${tx.focus==='amt'?'on':''}" data-tf="amt"><span class="fn">${tx.mode==='inc'?'공급가 (원)':'부가세 포함가 (원)'}</span><span class="fv">${comma(tx.amt||'0')}</span></button>
-        <div class="uOut"><div id="uMeta" class="glass umbox">${show?`<b>공급가 ${show.supply}원</b><br>부가세(10%) ${show.vat}원<br>포함가 ${show.incl}원`:'금액을 넣어 주세요'}
-        <div style="margin-top:6px;color:var(--dim);font-size:12px">부가세 10% 기준이에요</div></div></div>
+        <div class="uOut"><div id="uMeta" class="glass umbox">${show?`<div class="ures-head"><span class="ures-lab">${tx.mode==='inc'?'포함가':'공급가'}</span><span class="ures-amt">${tx.mode==='inc'?show.incl:show.supply}원</span></div><span class="ures-sub">공급가 ${show.supply}원 · 부가세(10%) ${show.vat}원 · 포함가 ${show.incl}원</span><span class="ures-note">부가세 10% 기준이에요</span>`:'<div class="ures-head"><span class="ures-lab">결과</span><span class="ures-amt">—</span></div><span class="ures-sub">금액을 넣어 주세요</span><span class="ures-note">부가세 10% 기준이에요</span>'}</div></div>
       `:`
-        <button type="button" class="ufield ${tx.focus==='price'?'on':''}" data-tf="price"><span class="fn">정가 (원)</span><span class="fv">${comma(tx.price||'0')}</span></button>
-        <button type="button" class="ufield ${tx.focus==='rate'?'on':''}" data-tf="rate"><span class="fn">할인율 (%)</span><span class="fv">${comma(tx.rate||'0')}</span></button>
-        <div class="uOut"><div id="uMeta" class="glass umbox">${disc?`<b>할인가 ${disc.sale}원</b><br>할인액 ${disc.off}원`:'정가와 할인율을 넣어 주세요'}</div></div>
+        <div class="uPair">
+          <button type="button" class="ufield ${tx.focus==='price'?'on':''}" data-tf="price"><span class="fn">정가 (원)</span><span class="fv">${comma(tx.price||'0')}</span></button>
+          <button type="button" class="ufield ${tx.focus==='rate'?'on':''}" data-tf="rate"><span class="fn">할인율 (%)</span><span class="fv">${comma(tx.rate||'0')}</span></button>
+        </div>
+        <div class="uOut"><div id="uMeta" class="glass umbox">${disc?`<div class="ures-head"><span class="ures-lab">할인가</span><span class="ures-amt">${disc.sale}원</span></div><span class="ures-sub">할인액 ${disc.off}원</span>`:'<div class="ures-head"><span class="ures-lab">할인가</span><span class="ures-amt">—</span></div><span class="ures-sub">정가와 할인율을 넣어 주세요</span>'}</div></div>
       `}`;
   }else{
     let topAmt, botAmt;
@@ -1237,22 +1285,24 @@ function renderUnit(){
     }catch(e){ topAmt=uSide==='from'?comma(trimDot(uStr||'0')):'—'; botAmt=uSide==='to'?comma(trimDot(uStr||'0')):'—'; }
     const hint=uCat==='area'&&((uFrom==='pyeong'&&uTo==='m2')||(uFrom==='m2'&&uTo==='pyeong'))?'<div id="uMeta">1평 = 400/121 ㎡ (약 3.305785 ㎡)</div>':
       (uCat==='len'&&(uFrom==='ja'||uTo==='ja'||uFrom==='chi'||uTo==='chi')?'<div id="uMeta">1자 = 10/33 m, 1치 = 1/10자</div>':'');
+    const hintHtml=hint?`<div id="uMeta" class="uHint">${hint.replace(/^<div id="uMeta">/,'').replace(/<\/div>$/,'')}</div>`:'';
     left.innerHTML=`
       <button type="button" class="ucard glass ${uSide==='from'?'on':''}" data-side="from">
-        <span class="ulab" data-pick="from">${unitName(uCat,uFrom)} ${ic('chev',2)}</span>
+        <span class="ulab" data-pick="from">${unitName(uCat,uFrom)} ${ic('chev',2.4)}</span>
         <span class="uamt" id="uFromAmt">${topAmt}</span>
       </button>
-      <div class="uOut">
+      <button type="button" class="uSwap" data-uswap="1" aria-label="위아래 바꾸기">${ic('swap',2.1)}</button>
       <button type="button" class="ucard glass ${uSide==='to'?'on':''}" data-side="to">
-        <span class="ulab" data-pick="to">${unitName(uCat,uTo)} ${ic('chev',2)}</span>
+        <span class="ulab" data-pick="to">${unitName(uCat,uTo)} ${ic('chev',2.4)}</span>
         <span class="uamt" id="uToAmt">${botAmt}</span>
       </button>
-      ${hint}
-      </div>`;
+      ${hintHtml}`;
   }
+  afterUnitLayout();
 }
 $('#uCats').onclick=e=>{const b=e.target.closest('[data-cat]'); if(b){buzz(); setCat(b.dataset.cat);}};
 $('#uLeft').onclick=e=>{
+  const sw=e.target.closest('[data-uswap]'); if(sw){ buzz(); swapUnitSides(); return; }
   const st=e.target.closest('[data-st]'); if(st){ nb.step=+st.dataset.st; renderUnit(); return; }
   const tm=e.target.closest('[data-tm]'); if(tm){ tx.mode=tm.dataset.tm; tx.focus=tx.mode==='disc'?'price':'amt'; renderUnit(); return; }
   const nf=e.target.closest('[data-nf]'); if(nf){ nb.focus=nf.dataset.nf; renderUnit(); return; }
@@ -1401,7 +1451,7 @@ window.FX={
 };
 window.Unit={
   convert:(cat,from,to,amt)=>{ const v=unitConvert(cat,from,to,String(amt).replace(/,/g,'')); return {ok:true,display:fmtUnit(v),plain:Dec.plain(v)}; },
-  setCat, setPair:(a,b)=>{uFrom=a;uTo=b;renderUnit();},
+  setCat, setPair:(a,b)=>{uFrom=a;uTo=b;renderUnit();}, swap:swapUnitSides,
   state:()=>({cat:uCat,from:uFrom,to:uTo,side:uSide,str:uStr,fromName:unitName(uCat,uFrom),toName:unitName(uCat,uTo)}),
   press:uPress, move:uMove
 };
@@ -1409,6 +1459,7 @@ window.Nbbang={ calc:nbbangCalc, set:(t,p,st)=>{nb.total=String(t);nb.people=Str
 window.Tax={ vatInc:taxInc, vatExt:taxExt, discount:taxDisc };
 
 try{const t=localStorage.getItem('nvc_tab'); if(t==='fx'||t==='calc') tab=t}catch(e){}
+window.addEventListener('resize',()=>{ if(tab==='unit') afterUnitLayout(); });
 renderSci(); renderHist(); renderCalc(); renderFx(); show(tab);
 if(tab==='fx') loadRates();
 else if(fxInfo&&fxInfo.krwPer){ /* keep cache */ }
