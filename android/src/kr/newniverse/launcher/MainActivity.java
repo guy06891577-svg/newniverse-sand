@@ -75,7 +75,12 @@ public class MainActivity extends Activity {
   }
   static final String SMSPKG="kr.newniverse.sms", SMS_PERM="kr.newniverse.permission.SMS_FEED";
   boolean openSms(boolean calPerm){ try{ Intent i=getPackageManager().getLaunchIntentForPackage(SMSPKG); if(i==null) return false; if(calPerm) i.putExtra("calperm",true); i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(i); return true; }catch(Exception e){ return false; } }
-  Bundle feedCall(String m,String arg){ try{ return getContentResolver().call(Uri.parse("content://kr.newniverse.sms.feed"),m,arg,null); }catch(Throwable e){ return null; } }
+  // v45b: 문자 연결이 실패하면 이유를 기억해 화면(JS)에 알려 줌: sec=서명·권한이 달라 막힘 / none=문자 앱에 연결 창구가 없음(옛 버전) / fail=그 밖의 오류
+  volatile String feedErr="";
+  Bundle feedCall(String m,String arg){ try{ Bundle b=getContentResolver().call(Uri.parse("content://kr.newniverse.sms.feed"),m,arg,null); if(b==null) feedErr="none"; else feedErr=""; return b; }
+    catch(SecurityException e){ feedErr="sec"; android.util.Log.w("NVSms","feed security: "+e.getMessage()); return null; }
+    catch(IllegalArgumentException e){ feedErr="none"; android.util.Log.w("NVSms","feed missing: "+e.getMessage()); return null; }
+    catch(Throwable e){ feedErr="fail"; android.util.Log.w("NVSms","feed fail: "+e); return null; } }
   final BroadcastReceiver smsRx=new BroadcastReceiver(){ @Override public void onReceive(Context c,Intent i){ js("window.NV_onSms&&NV_onSms()"); } };
   /** 뉴니버스 문자가 보내는 '새 문자 왔음' 신호(내용 없음). 같은 서명 앱만 보낼 수 있음 */
   void regSms(){ try{ IntentFilter f=new IntentFilter("kr.newniverse.sms.action.NEW");
@@ -481,7 +486,7 @@ public class MainActivity extends Activity {
       Intent q=new Intent(Intent.ACTION_MAIN); q.addCategory(Intent.CATEGORY_LAUNCHER);
       List<ResolveInfo> l=pm.queryIntentActivities(q,0);
       for(ResolveInfo r:l){ if(r.activityInfo==null)continue; if(getPackageName().equals(r.activityInfo.packageName))continue;
-        try{ JSONObject o=new JSONObject(); o.put("pkg",r.activityInfo.packageName); o.put("act",r.activityInfo.name); o.put("label",String.valueOf(r.loadLabel(pm))); arr.put(o);}catch(Exception e){} }
+        try{ JSONObject o=new JSONObject(); o.put("pkg",r.activityInfo.packageName); o.put("act",r.activityInfo.name); o.put("label",String.valueOf(r.loadLabel(pm))); int fl=r.activityInfo.applicationInfo.flags; o.put("sys",(fl&ApplicationInfo.FLAG_SYSTEM)!=0&&(fl&ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)==0); arr.put(o);}catch(Exception e){} }
       return arr.toString();
     }
     @JavascriptInterface public String getRoles(){
@@ -700,9 +705,10 @@ public class MainActivity extends Activity {
     @JavascriptInterface public String smsStatus(){ JSONObject o=new JSONObject();
       try{ boolean inst=false; try{ getPackageManager().getPackageInfo(SMSPKG,0); inst=true; }catch(Exception e){}
         o.put("installed",inst); o.put("def",false); o.put("perm",false); o.put("ok",false);
+        String dsp=""; try{ dsp=Telephony.Sms.getDefaultSmsPackage(MainActivity.this); }catch(Exception e){} o.put("isdef",SMSPKG.equals(dsp)); // 연결과 상관없이 폰이 아는 기본 문자 앱
         if(inst){ Bundle b=feedCall("status",null);
           if(b!=null){ o.put("ok",b.getBoolean("ok",false)); o.put("def",b.getBoolean("def",false)); o.put("perm",b.getBoolean("perm",false)); o.put("ver",b.getInt("ver",0)); }
-          else { String d=""; try{ d=Telephony.Sms.getDefaultSmsPackage(MainActivity.this); }catch(Exception e){} o.put("def",SMSPKG.equals(d)); o.put("old",true); } }
+          else { o.put("def",SMSPKG.equals(dsp)); o.put("old",true); o.put("err",feedErr.isEmpty()?"fail":feedErr); } }
       }catch(Exception e){}
       return o.toString(); }
     // v43b: 애니메이션 배율(0이면 '애니메이션 끔') → 우주 반짝임·흐름을 멈춤
@@ -712,6 +718,8 @@ public class MainActivity extends Activity {
     @JavascriptInterface public boolean smsOpenApp(){ return openSms(false); }
     @JavascriptInterface public boolean smsOpenCalPerm(){ return openSms(true); }
     @JavascriptInterface public String smsRecent(String days){ Bundle b=feedCall("recent",days); String j=b==null?null:b.getString("json"); return j==null?"[]":j; }
+    /** v45: 마지막 문자 연결 실패 이유 ("sec" 서명 권한 없음 / "none" 옛 문자 앱 / "fail" 그 밖 / "" 정상) — 화면이 말없이 넘기지 않고 카드로 알려 줌 */
+    @JavascriptInterface public String smsErr(){ return feedErr; }
     // 인증번호 복사 (미리보기에 안 보이게 민감 표시)
     @JavascriptInterface public boolean clipCopy(final String text){
       try{ android.content.ClipboardManager cm=(android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
