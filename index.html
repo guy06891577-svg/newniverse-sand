@@ -518,6 +518,24 @@
   .nht .ic.act{background:linear-gradient(135deg,rgba(110,190,255,.28),rgba(160,120,255,.28));border:1px solid rgba(170,190,255,.35);color:#eaf0ff}
   .nht .ic.act .ni{width:24px;height:24px}
   .nht .nm{max-width:100%;font:600 12px/1.2 var(--nv-font,system-ui,sans-serif);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 2px;color:rgba(245,247,255,.95)}
+  /* v42b 날씨 카드: 유리·선 아이콘, 하늘→보라 */
+  #nhWx{display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:4px 12px;padding:14px 14px 12px;border-radius:22px;border:1px solid rgba(255,255,255,.18);background:linear-gradient(160deg,rgba(255,255,255,.13),rgba(255,255,255,.045));-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 10px 28px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.1);color:#fff;transition:opacity .4s,filter .4s}
+  #nhWx.pre{opacity:0;pointer-events:none}
+  #nhWx.out{opacity:0;filter:blur(5px)}
+  #nhWx .ic{grid-row:1/span 2;width:44px;height:44px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(135deg,rgba(110,190,255,.30),rgba(160,120,255,.30));border:1px solid rgba(170,190,255,.38);color:#eaf0ff}
+  #nhWx .ic .ni{width:24px;height:24px}
+  #nhWx .tx{min-width:0;display:flex;flex-direction:column;gap:3px}
+  #nhWx .tx b{font:700 16px/1.25 var(--nv-font,system-ui,sans-serif);letter-spacing:-.2px;color:#fff}
+  #nhWx .tx small{font:500 12px/1.35 var(--nv-font,system-ui,sans-serif);color:rgba(225,232,255,.7)}
+  #nhWx .sp{width:40px;height:40px;border-radius:20px;border:1px solid rgba(170,190,255,.4);background:rgba(140,170,255,.14);color:#e6edff;display:grid;place-items:center}
+  #nhWx .sp .ni{width:20px;height:20px}
+  #nhWx .sp:active{transform:scale(.96)}
+  #nhWx.talk .sp{background:linear-gradient(135deg,rgba(110,190,255,.45),rgba(160,120,255,.45))}
+  #nhWx .meta{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:2px;font:500 11px/1.3 var(--nv-font,system-ui,sans-serif);color:rgba(225,232,255,.52)}
+  #nhWx .note{display:inline-flex;align-items:center;gap:4px;color:rgba(225,232,255,.62)}
+  #nhWx .note .ni{width:13px;height:13px}
+  #nhWx.muted .note{color:rgba(225,232,255,.7)}
+  .nht .ic.act .ni{width:24px;height:24px}
   /* v41b 설정 결과 카드: 유리·하늘→보라 단일 포인트, 선 아이콘 */
   #nhCard{display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:4px 12px;padding:12px 14px;border-radius:22px;border:1px solid rgba(255,255,255,.18);background:linear-gradient(160deg,rgba(255,255,255,.13),rgba(255,255,255,.045));-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 10px 28px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.1);color:#fff;transition:opacity .4s,filter .4s}
   #nhCard.pre{opacity:0;pointer-events:none}
@@ -535,6 +553,11 @@
   .nht.pre{opacity:0;pointer-events:none}   /* v39b: 등장·퇴장은 버스 카드와 같은 bfxBurst 모래(모이기/흩어지기), CSS 계단 등장 없음 */
   .nht.out,#nhRes.out .nht{opacity:0;filter:blur(5px);transform:translateY(-6px) scale(.98)}
   .nht:active{transform:scale(.96)}
+  .nht.row{grid-column:1/-1;height:56px;flex-direction:row;justify-content:flex-start;gap:12px;padding:0 16px;text-align:left}
+  .nht.row .ic{width:36px;height:36px;border-radius:11px;flex:none}
+  .nht.row .ic.act .ni{width:20px;height:20px}
+  .nht.row .nm{flex:1;max-width:none;font:600 14px/1.3 var(--nv-font,system-ui,sans-serif);text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0}
+
   #nhStars{position:absolute;inset:0;display:none;background:radial-gradient(120% 90% at 50% 40%,rgba(6,8,30,.15),rgba(3,4,16,.55));opacity:0;transition:opacity .3s}
   #nhStars.on{display:block}
   #nhStars .hd{position:absolute;left:0;right:0;top:64px;text-align:center;font:600 13px/1 var(--nv-font,system-ui,sans-serif);color:rgba(230,236,255,.7);letter-spacing:.2px}
@@ -3757,7 +3780,7 @@ async function airCycle(force){clearTimeout(AIR.tm);AIR.tm=0;if(!airOn()||AIR.bu
     if(!L||L.err){L={lat:ANDONG.lat,lng:ANDONG.lng};AIR.place='안동';AIR.locFall=1}else{AIR.place=AIR.place||'';AIR.locFall=0}
     const q=`lat=${L.lat.toFixed(2)}&lng=${L.lng.toFixed(2)}`;   // 약 1km 단위로만 보냄. 위치를 못 읽으면 안동(실제 기상청 값)
     const [j,w]=await Promise.all([busRelay(`/v1/air?${q}`),busRelay(`/v1/weather?${q}`)]);
-    if(w&&!w.err&&isFinite(w.temp)){AIR.w={temp:w.temp,text:w.text||'',reh:w.reh,rn1:w.rn1,base:w.base};AIR.wat=Date.now();AIR.wst='ok';AIR.werr=''}
+    if(w&&!w.err&&isFinite(w.temp)){AIR.w={temp:w.temp,text:w.text||'',reh:w.reh,rn1:w.rn1,base:w.base,wsd:w.wsd,vec:w.vec,tmax:w.tmax,tmin:w.tmin,pty:w.pty};AIR.wat=Date.now();AIR.wst='ok';AIR.werr=''}
     else{AIR.wst='err';AIR.werr=(w&&w.err)||'날씨를 받지 못했어요'}
     if(j.err){AIR.st='err';AIR.err=j.err}
     else{AIR.d={station:j.station,dataTime:j.dataTime,pm10:j.pm10,pm25:j.pm25};AIR.at=Date.now();AIR.st='ok';AIR.err=''}
@@ -4130,13 +4153,16 @@ function nhMatch(q){const forms=nhForms(q),qn=forms[0];if(!qn)return {hd:'',tile
   const groups=[];
   NHI.forEach(I=>{const sc=nhScoreIAll(I,forms);if(!sc)return;const t=[];const A=()=>(I.acts||[]).forEach(x=>t.push(Object.assign({k:'act'},x)));if(!I.al)A();(I.apps?I.apps():[]).forEach(a=>t.push({k:'app',a}));if(I.al)A();(I.post?I.post():[]).forEach(a=>t.push({k:'app',a}));
     groups.push({sc,I,tiles:t})});
+  try{const wg=nhWxGroup(q);if(wg)groups.push(wg)}catch(_){}
   try{const cg=nhCtlGroup(q);if(cg)groups.push(cg)}catch(_){}
+  try{const sg=nhWebGroup(q);if(sg)groups.push(sg)}catch(_){}
   const ap=[];nhApps().forEach(a=>{const sc=nhScoreApp(a,forms);if(sc)ap.push({sc,a})});
   ap.sort((x,y)=>y.sc-x.sc||String(x.a.full||x.a.n).localeCompare(String(y.a.full||y.a.n),'ko'));
   if(ap.length)groups.push({sc:ap[0].sc,I:null,tiles:ap.map(x=>({k:'app',a:x.a})),scs:ap.map(x=>x.sc)});
   groups.sort((x,y)=>y.sc-x.sc);
   const seen=new Set(),tiles=[];const key=x=>x.k==='act'?'act:'+x.t:((x.a.__base||x.a).pkg||x.a.n)+'/'+((x.a.__base||x.a).act||'');
   groups.forEach(g=>g.tiles.forEach(x=>{const k=key(x);if(seen.has(k))return;seen.add(k);x.key=k;tiles.push(x)}));
+  if(!groups.length){try{const sg=nhWebSuggest(q,[]);if(sg){groups.push(sg);sg.tiles.forEach(x=>{x.key='act:'+x.t;tiles.push(x)})}}catch(_){}}
   const top=groups[0]||null;
   return {hd:top&&top.I?top.I.hd:'',tiles:tiles.slice(0,8),top,none:top&&top.I&&!top.tiles.length?top.I.none||'':''}}
 // ---- 그리기 ----
@@ -4154,14 +4180,14 @@ function nhRender(){const r=nhMatch(NH.q);NH.tiles=r.tiles;NH.top=r.top;
   NHGRID.innerHTML='';
   if(!r.tiles.length){NHGRID.innerHTML=`<div class="msg" style="grid-column:1/-1">${esc(r.none||'맞는 앱을 찾지 못했어요 · 다른 낱말로 해 보세요')}</div>`;NH.shown.clear();return}
   if(r.none){const m=document.createElement('div');m.className='msg';m.style.gridColumn='1/-1';m.textContent=r.none;NHGRID.appendChild(m)}
-  r.tiles.forEach(x=>{const b=document.createElement('button');b.type='button';b.className='nht'+(fresh.has(x.key)?' pre':'');b.innerHTML=nhTileHTML(x);b.dataset.k=x.key;
+  r.tiles.forEach(x=>{const b=document.createElement('button');b.type='button';b.className='nht'+(x.web?' row':'')+(fresh.has(x.key)?' pre':'');b.innerHTML=nhTileHTML(x);b.dataset.k=x.key;
     b.onclick=e=>{e.stopPropagation();nhRun(x,b)};NHGRID.appendChild(b)});
   NH.shown=now;
   // 새로 나온 칸: 모래가 모인 뒤(버스 카드와 같은 380ms) 모습이 드러남. 기울이거나 차례로 떠오르는 CSS 없음.
   clearTimeout(NH.inT);
   if(fresh.size)NH.inT=setTimeout(()=>{const els=[...NHGRID.querySelectorAll('.nht.pre')];els.forEach(b=>{try{bfxBurst(nhRect(b),true)}catch(_){}});
     NH.inT=setTimeout(()=>els.forEach(b=>b.classList.remove('pre')),380)},0)}
-function nhSetQ(v,fromVoice){NH.q=String(v||'');if(NH.q&&NHCARD)nhCardOff(false);if(NHQ.value!==NH.q)NHQ.value=NH.q;NH.voice=!!fromVoice;nhRender();try{busTick()}catch(_){}}
+function nhSetQ(v,fromVoice){NH.q=String(v||'');if(NH.q&&NHCARD)nhCardOff(false);if(NH.q&&NHWX)nhWxOff(false);if(NHQ.value!==NH.q)NHQ.value=NH.q;NH.voice=!!fromVoice;nhRender();try{busTick()}catch(_){}}
 function nhRun(x,el){if(!x)return;try{if(navigator.vibrate)navigator.vibrate(6)}catch(_){}
   try{if(el){bfxBurst(nhRect(el),false);el.classList.add('out')}}catch(_){}
   const go=()=>{if(x.k==='act'){x.fn&&x.fn();return}openApp(x.a);setTimeout(()=>nhClear(false),350)};
@@ -4196,7 +4222,7 @@ function nhStarsOpen(){if(!NHST.classList.contains('on'))nhStarsBuild();NH.stars
 function nhStarsClose(){NH.stars=false;NHST.style.transition='opacity .3s';NHST.style.opacity=0;NHUI.style.transition='opacity .3s';NHUI.style.opacity=1;NHUI.style.pointerEvents='';setTimeout(()=>{if(!NH.stars)NHST.classList.remove('on')},320)}
 NHST.querySelector('.all').addEventListener('click',e=>{e.stopPropagation();nhStarsClose();openDR()});
 // ---- 손짓: 위로 = 별, 아래로 = 빠른 설정, 두 번 톡톡 = 말로 찾기, 길게 = 메뉴 ----
-NHEL.addEventListener('pointerdown',e=>{e.stopPropagation();if(e.target.closest('#nhBar,#nhSug,.nht,.sa,.all,#nhCard'))return;if(NHCARD)nhCardOff(true);
+NHEL.addEventListener('pointerdown',e=>{e.stopPropagation();if(e.target.closest('#nhBar,#nhSug,.nht,.sa,.all,#nhCard,#nhWx'))return;if(NHCARD)nhCardOff(true);if(NHWX)nhWxOff(true);
   if(menuOpen()){closeMenu();return}
   const r=phone.getBoundingClientRect();NH.pt={id:e.pointerId,x:e.clientX,y:e.clientY,px:e.clientX-r.left,py:e.clientY-r.top,t:e.timeStamp,m:false,ax:null,vy:0,ly:e.clientY,lt:e.timeStamp,lp:false};
   try{NHEL.setPointerCapture(e.pointerId)}catch(_){}
@@ -4239,7 +4265,7 @@ function nhPickHeard(cands){const list=(cands||[]).map(s=>String(s||'').trim()).
 function nhHeard(cands,auto){const p=nhPickHeard(Array.isArray(cands)?cands:[cands]);NH.heard=p.q;NH.cands=p.cands;
   if(!p.q){toast('잘 못 알아들었어요 · 다시 눌러 말해 주세요');return p}
   nhSetQ(p.q,true);   // 들은 말을 입력칸에 보여 줌
-  if(auto){const t=NH.top;if(t&&t.I&&t.I.auto&&t.sc>=100&&NH.tiles[0]&&(NH.tiles[0].k==='app'||(NH.tiles[0].k==='act'&&NH.tiles[0].ctl))){const x=NH.tiles[0],el=NHGRID.querySelector('.nht');clearTimeout(NH.aT);NH.aT=setTimeout(()=>{if(NH.q===p.q)nhRun(x,el)},650)}}
+  if(auto){const t=NH.top;if(t&&t.I&&t.I.auto&&t.sc>=100&&NH.tiles[0]){const x=NH.tiles[0],el=NHGRID.querySelector('.nht');clearTimeout(NH.aT);NH.aT=setTimeout(()=>{if(NH.q===p.q)nhRun(x,el)},650)}}
   return p}
 async function nhMic(){if(NH.listen&&!NH.speechUi){nhListenStop();return}
   if(!S.nhMicOk){const ok=await ask('말로 찾기','마이크 단추를 누르면 <b>폰의 음성 인식 화면</b>이 열려요.<br>· 거기서 말한 뒤 끝나면, 뉴니버스가 그 말(여러 후보)로 앱을 찾아요<br>· 녹음하거나 저장하지 않아요<br>· 음성 인식 화면을 못 여는 폰만 앱 안에서 바로 들어요',{ok:'마이크 쓰기'});if(!ok)return;S.nhMicOk=1;saveS()}
@@ -4366,6 +4392,159 @@ function nhCardTimer(ms){clearTimeout(NHCT);NHCT=setTimeout(()=>nhCardOff(true),
 function nhCardOff(anim){clearTimeout(NHCT);const el=NHCARD;if(!el)return;NHCARD=null;
   const done=()=>{el.remove();if(!NH.q&&!NHCARD)NHSUG.classList.remove('hide')};
   if(anim){try{bfxBurst(nhRect(el),false)}catch(_){}el.classList.add('out');setTimeout(done,380)}else done()}
+// ===== v42b 날씨 카드·읽어 주기 + 웹 검색 (우주 홈 같은 입력칸) =====
+Object.assign(GLY,{cloud:'M7 19.5h11a3.5 3.5 0 0 0 0-7 5 5 0 0 0-9.6 1.2A3 3 0 0 0 7 19.5z',rain:'M7 16.5h11a3.5 3.5 0 0 0 0-7 5 5 0 0 0-9.6 1.2A3 3 0 0 0 7 16.5z M8.5 19.5v2 M12 19.5v2.5 M15.5 19.5v2',snow:'M7 16.5h11a3.5 3.5 0 0 0 0-7 5 5 0 0 0-9.6 1.2A3 3 0 0 0 7 16.5z M12 18.2v3.3 M10.2 19.3l3.6 1.6 M10.2 20.9l3.6-1.6',wind:'M3.5 10h11a2.5 2.5 0 1 0-2-4 M3.5 14h13.5a2.5 2.5 0 1 1-2 4',stop:'M7 7h10v10H7z'});
+function wxDir(deg){if(!isFinite(deg))return '';const N=['북','북북동','북동','동북동','동','동남동','남동','남남동','남','남남서','남서','서남서','서','서북서','북서','북북서'];return N[Math.round((((+deg)%360)+360)%360/22.5)%16]}
+function wxIcon(text,pty){const t=String(text||'');if(pty===1||pty===5||/비|빗방울/.test(t))return 'rain';if(pty===3||pty===7||/^눈|눈날림/.test(t))return 'snow';if(pty===2||pty===6||/진눈깨비|비\/눈/.test(t))return 'rain';if(/맑/.test(t))return 'sun';if(/구름|흐림/.test(t))return 'cloud';return 'weather'}
+function wxJosa(word,pair){const c=word.charCodeAt(word.length-1);return word+((c>=0xAC00&&c<=0xD7A3&&(c-0xAC00)%28?pair[0]:pair[1]))}
+function wxWmo(c){c=+c;if(c<=1)return '맑음';if(c<=3)return '구름많음';if(c<=48)return '흐림';if((c>=51&&c<=67)||(c>=80&&c<=82)||c>=95)return '비';if((c>=71&&c<=77)||(c>=85&&c<=86))return '눈';return ''}
+// 날씨로 알아들을 말. 설정(눈부셔·밝기)이나 「날씨 검색」은 빼 둠.
+function nhWx(raw){const s=nhNorm(raw);if(!s)return null;
+  if(/검색|찾아줘|찾아봐|찾아줄래|찾아볼|알아봐/.test(s))return null;
+  if(/눈부시|눈부셔|눈부신|너무밝|밝기/.test(s))return null;
+  const hit=/^(오늘|지금|현재|오늘아침|오늘저녁)?날씨(는|가|좀|요|인가요|인지|알려줘|알려|보여줘|보여|어때|어떠|어떻|봐|볼래|확인|알려줄래)?$/.test(s)
+    ||/^(오늘|지금|현재)날씨/.test(s)||/날씨(어때|어떠|어떻|알려|보여|좀|확인)/.test(s)
+    ||/밖에(날씨|추워|더워|춥|덥|비|눈)/.test(s)
+    ||/비가\s?(오|와)|비오냐|비와|비오니|비오겠|비올까|비오려|오늘비/.test(s)
+    ||(/눈(이|가)?(오|와|올)|눈와|눈오냐|눈오겠/.test(s)&&!/눈부/.test(s))
+    ||/우산(필요|챙|가져|갖고|쓸|있나|필요해|필요하)/.test(s)
+    ||/^(오늘)?(많이)?(추워|더워|춥냐|덥냐|쌀쌀|더울까|추울까)$/.test(s);
+  if(!hit)return null;
+  let ask='';if(/우산/.test(s))ask='umbrella';else if(/비|우산/.test(s)&&!/눈/.test(s))ask='rain';else if(/눈/.test(s)&&!/눈부/.test(s))ask='snow';
+  return {id:'wx',sc:140,auto:true,ask,label:'오늘 날씨'}}
+function nhWxTiles(c){return [{k:'act',t:'오늘 날씨',ic:'weather',wx:c,fn:()=>nhWxDo(c)}]}
+function nhWxGroup(q){const c=nhWx(q);if(!c)return null;return {sc:c.sc,I:{id:'wx',hd:'날씨',auto:true,none:''},tiles:nhWxTiles(c),wx:true}}
+function wxRainy(w){const t=String((w&&w.text)||'');return !!(w&&(w.pty>0||/비|눈|빗방울|진눈깨비|눈날림/.test(t)))}
+function wxWhen(ts){if(!ts)return '';const d=new Date(ts),now=Date.now(),m=Math.max(0,Math.round((now-ts)/60e3));
+  const p=n=>String(n).padStart(2,'0');const clock=p(d.getHours())+':'+p(d.getMinutes());
+  if(m<1)return '방금 받음';if(m<60)return m+'분 전 받음';return clock+' 받음'}
+function wxAdj(text){const t=String(text||'').trim();if(!t)return '';if(/^(비|빗방울)$/.test(t))return '비가 오고';if(/^(눈|눈날림)$/.test(t))return '눈이 오고';if(/^(비\/눈|진눈깨비)$/.test(t))return t+'가 오고';if(t.endsWith('음'))return t.slice(0,-1)+'고';return t+'고'}
+function wxSp(v){if(!isFinite(v))return null;return Math.round(v)}
+function wxLineS(w,ask){if(!w||!isFinite(w.temp))return '날씨를 받지 못했어요';
+  const place=w.place||'여기',cond=w.text||'',t=Math.round(w.temp);
+  let s='지금 '+wxJosa(place,'은는')+' '+(cond?wxAdj(cond)+' ':'')+'기온 '+t+'도';
+  const extra=[];if(w.reh!=null&&isFinite(w.reh))extra.push('습도 '+Math.round(w.reh)+'퍼센트');
+  const dir=w.dir||wxDir(w.vec);const sp=wxSp(w.wsd);
+  if(dir&&sp!=null)extra.push(dir+'풍 초속 '+sp+'미터');
+  else if(sp!=null)extra.push('바람 초속 '+(sp%1?sp:Math.round(sp))+'미터');
+  s+=extra.length?', '+extra.join(', ')+'예요.':'예요.';
+  if(isFinite(w.tmax)&&isFinite(w.tmin))s+=' 오늘은 최고 '+Math.round(w.tmax)+'도, 최저 '+Math.round(w.tmin)+'도예요.';
+  if(ask==='rain')s+=wxRainy(w)?' 비가 오고 있어요. 우산을 챙기세요.':' 비는 오지 않아요.';
+  if(ask==='snow')s+=/눈/.test(w.text||'')||w.pty===3||w.pty===7?' 눈이 오고 있어요.':' 눈은 오지 않아요.';
+  if(ask==='umbrella')s+=wxRainy(w)?' 우산을 챙기는 게 좋겠어요.':' 우산은 필요 없어 보여요.';
+  return s}
+async function wxLoc(){let L=null;
+  try{if(NATIVE&&window.NVNative&&NVNative.busPerm){let p='none';try{p=NVNative.busPerm()}catch(_){}if(p!=='none')L=await busCall('loc')}
+    else if(typeof busWebLoc==='function')L=await busWebLoc()}catch(_){}
+  if(!L||L.err||!isFinite(L.lat))return {lat:ANDONG.lat,lng:ANDONG.lng,place:'안동',fall:1};
+  return {lat:L.lat,lng:L.lng,place:'',fall:0}}
+function wxNearAndong(lat,lng){if(!isFinite(lat)||!isFinite(lng))return false;const x=(lat-ANDONG.lat)*111,y=(lng-ANDONG.lng)*88;return x*x+y*y<15*15}
+async function wxPlace(lat,lng,fall){if(fall||wxNearAndong(lat,lng))return '안동';
+  const key='nv_wx_place_'+lat.toFixed(2)+'_'+lng.toFixed(2);
+  try{const c=sessionStorage.getItem(key);if(c)return c}catch(_){}
+  try{const r=await fetch('https://api.bigdatacloud.net/data/reverse-geocode-client?latitude='+lat+'&longitude='+lng+'&localityLanguage=ko',{cache:'no-store'});
+    const j=await r.json();let n=j.city||j.locality||j.principalSubdivision||'';n=String(n).replace(/광역시|특별시|특별자치시|특별자치도|자치시/g,'').replace(/(시|군)$/,'').trim();
+    if(n){try{sessionStorage.setItem(key,n)}catch(_){}return n}}catch(_){}
+  return '여기'}
+async function wxOpenMeteo(lat,lng){const u='https://api.open-meteo.com/v1/forecast?latitude='+lat.toFixed(3)+'&longitude='+lng.toFixed(3)+'&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m,precipitation&daily=temperature_2m_max,temperature_2m_min&timezone=Asia%2FSeoul&wind_speed_unit=ms';
+  const r=await fetch(u,{cache:'no-store'});const j=await r.json();const c=j.current||{},d=j.daily||{};
+  return {temp:c.temperature_2m,reh:c.relative_humidity_2m,wsd:c.wind_speed_10m,vec:c.wind_direction_10m,tmax:(d.temperature_2m_max||[])[0],tmin:(d.temperature_2m_min||[])[0],text:wxWmo(c.weather_code),src:'open-meteo',pty:c.precipitation>0?1:0}}
+function wxMerge(a,b){const o=Object.assign({},a||{});
+  if(b){['tmax','tmin','vec','wsd','reh'].forEach(k=>{if(!isFinite(o[k])&&isFinite(b[k]))o[k]=b[k]});
+    if(!isFinite(o.temp)&&isFinite(b.temp))o.temp=b.temp;if(!o.text&&b.text)o.text=b.text;if(o.pty==null&&b.pty!=null)o.pty=b.pty}
+  o.dir=wxDir(o.vec);return o}
+async function wxGet(force){
+  const loc=await wxLoc();AIR.locFall=loc.fall;
+  const fresh=AIR.w&&isFinite(AIR.w.temp)&&AIR.wat&&Date.now()-AIR.wat<29*60e3;
+  let kma=null,om=null,w=null;
+  if(fresh&&!force)w=Object.assign({},AIR.w);
+  else{try{const r=await busRelay('/v1/weather?lat='+loc.lat.toFixed(2)+'&lng='+loc.lng.toFixed(2));
+    if(r&&!r.err&&isFinite(r.temp))kma={temp:r.temp,text:r.text||'',reh:r.reh,rn1:r.rn1,base:r.base,wsd:r.wsd,vec:r.vec,tmax:r.tmax,tmin:r.tmin,pty:r.pty,src:'kma'}}catch(_){}}
+  w=w||kma;
+  if(!w||!isFinite(w.tmax)||!isFinite(w.tmin)||!isFinite(w.vec)){try{om=await wxOpenMeteo(loc.lat,loc.lng)}catch(_){}}
+  w=wxMerge(w,om);
+  if(!isFinite(w.temp))w=AIR.w&&isFinite(AIR.w.temp)?Object.assign({},AIR.w,{stale:1}):null;
+  if(!w)return null;
+  if(!w.place)w.place=await wxPlace(loc.lat,loc.lng,loc.fall);
+  AIR.place=w.place;w.dir=wxDir(w.vec);w.at=w.at||AIR.wat||Date.now();
+  w.src=(w.src==='kma'||(kma||(fresh&&AIR.w&&AIR.w.src==='kma'))||(fresh&&AIR.w&&AIR.w.base))?'kma':(om||w.src==='open-meteo'?'open-meteo':(w.src||''));
+  if(kma||(fresh&&AIR.w&&(AIR.w.src==='kma'||AIR.w.base)))w.src='kma';
+  AIR.w={temp:w.temp,text:w.text||'',reh:w.reh,rn1:w.rn1,base:w.base,wsd:w.wsd,vec:w.vec,tmax:w.tmax,tmin:w.tmin,pty:w.pty,place:w.place,src:w.src};
+  if(!fresh||force)AIR.wat=Date.now(),w.at=AIR.wat;
+  AIR.wst='ok';AIR.werr='';try{airSave()}catch(_){}return w}
+function nhTtsMute(){try{if(NATIVE&&NVNative.qsState){const q=JSON.parse(NVNative.qsState()||'{}');if(q.dnd)return 'dnd';if(q.ring===0||q.ring===1||q.sound===false)return 'ring'}}catch(_){}
+  try{if(NATIVE&&NVNative.ttsState){const s=NVNative.ttsState();if(s==='mute')return 'ring'}}catch(_){}
+  return ''}
+function nhTts(text,force){if(!text)return 'fail';
+  if(!force&&nhTtsMute())return 'mute';
+  try{if(NATIVE&&NVNative.ttsSpeak)return NVNative.ttsSpeak(text,force?'1':'0')||'ok'}catch(_){}
+  try{if(window.speechSynthesis){window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='ko-KR';u.onend=()=>window.NV_onTts&&NV_onTts('done');window.speechSynthesis.speak(u);return 'ok'}}catch(_){}
+  return 'fail'}
+function nhTtsStop(){try{if(NATIVE&&NVNative.ttsStop)NVNative.ttsStop()}catch(_){}try{if(window.speechSynthesis)window.speechSynthesis.cancel()}catch(_){}}
+window.NV_onTts=type=>{const el=document.getElementById('nhWx');if(!el)return;el.classList.toggle('talk',type==='start');const b=el.querySelector('.sp');if(b){b.setAttribute('aria-label',type==='start'?'읽기 멈추기':'다시 읽기');b.innerHTML=ico(type==='start'?'stop':'sound')}};
+var NHWX=null,NHWXT=0;
+function nhWxDo(c){nhClear(false);nhWxShow(c||{ask:''})}
+function nhWxShow(c){nhCardOff(false);nhWxOff(false);const el=document.createElement('div');el.id='nhWx';el.className='pre load';
+  el.innerHTML=`<span class="ic">${ico('weather')}</span><div class="tx"><b>날씨를 가져오는 중</b><small>잠시만요</small></div><button class="sp" type="button" aria-label="읽어 주기">${ico('sound')}</button><div class="meta"></div>`;
+  NHUI.insertBefore(el,$('nhBar'));NHWX=el;NHSUG.classList.add('hide');
+  el.addEventListener('pointerdown',e=>e.stopPropagation());
+  requestAnimationFrame(()=>{try{bfxBurst(nhRect(el),true)}catch(_){}setTimeout(()=>{if(NHWX===el)el.classList.remove('pre')},380)});
+  wxGet(false).then(w=>{if(NHWX!==el)return;if(!w){el.classList.remove('load');el.querySelector('b').textContent='날씨를 받지 못했어요';el.querySelector('small').textContent='잠시 후 다시 말해 주세요';el.querySelector('.sp').style.display='none';nhWxTimer(3600);return}
+    nhWxFill(el,w,c);const line=wxLineS(w,c&&c.ask),mu=nhTtsMute();el.dataset.line=line;
+    if(mu){el.classList.add('muted');const n=el.querySelector('.note');if(n)n.innerHTML=ico('mute')+'<span>'+(mu==='dnd'?'방해 금지가 켜져 있어 읽지 않았어요':'무음·진동이라 읽지 않았어요')+'</span>'}
+    else{const r=nhTts(line,false);if(r==='mute'){el.classList.add('muted');const n=el.querySelector('.note');if(n)n.innerHTML=ico('mute')+'<span>무음·진동이라 읽지 않았어요</span>'}}
+    nhWxTimer(8000)}).catch(()=>{if(NHWX===el){el.querySelector('b').textContent='날씨를 받지 못했어요';nhWxTimer(3600)}})}
+function nhWxFill(el,w,c){el.classList.remove('load');const ic=wxIcon(w.text,w.pty);
+  el.querySelector('.ic').innerHTML=ico(ic);
+  const t=Math.round(w.temp),cond=w.text||'날씨',place=w.place||'여기';
+  el.querySelector('b').textContent=place+' · '+cond+' '+t+'°';
+  const bits=[];if(isFinite(w.tmax)&&isFinite(w.tmin))bits.push('최고 '+Math.round(w.tmax)+'° · 최저 '+Math.round(w.tmin)+'°');
+  if(w.reh!=null&&isFinite(w.reh))bits.push('습도 '+Math.round(w.reh)+'%');
+  const dir=w.dir||wxDir(w.vec),sp=isFinite(w.wsd)?(Math.round(w.wsd*10)/10):null;
+  if(dir&&sp!=null)bits.push(dir+'풍 초속 '+(sp%1?sp:Math.round(sp))+'m');
+  else if(sp!=null)bits.push('바람 초속 '+(sp%1?sp:Math.round(sp))+'m');
+  if(c&&c.ask==='umbrella')bits.push(wxRainy(w)?'우산을 챙기세요':'우산은 없어도 돼요');
+  else if(c&&c.ask==='rain')bits.push(wxRainy(w)?'비가 오고 있어요':'비는 오지 않아요');
+  el.querySelector('small').textContent=bits.join(' · ');
+  const src=w.src==='kma'||!w.src?'기상청 초단기실황':w.src==='open-meteo'?'Open-Meteo':'기상청';
+  const age=wxWhen(w.at||AIR.wat);const late=(w.at&&Date.now()-w.at>3*3600e3)||w.stale;
+  el.querySelector('.meta').innerHTML=`<span class="src">${esc(src)}${age?' · '+age:''}${late?' · 예전 값일 수 있어요':''}</span><span class="note"></span>`;
+  const spb=el.querySelector('.sp');
+  spb.onclick=e=>{e.stopPropagation();if(el.classList.contains('talk')){nhTtsStop();el.classList.remove('talk');spb.innerHTML=ico('sound');spb.setAttribute('aria-label','다시 읽기');return}
+    const line=el.dataset.line||wxLineS(w,c&&c.ask);nhTts(line,true);nhWxTimer(9000)}}
+function nhWxTimer(ms){clearTimeout(NHWXT);NHWXT=setTimeout(()=>nhWxOff(true),ms)}
+function nhWxOff(anim){clearTimeout(NHWXT);nhTtsStop();const el=NHWX;if(!el)return;NHWX=null;
+  const done=()=>{el.remove();if(!NH.q&&!NHCARD&&!NHWX)NHSUG.classList.remove('hide')};
+  if(anim){try{bfxBurst(nhRect(el),false)}catch(_){}el.classList.add('out');setTimeout(done,380)}else done()}
+
+// ---- 웹 검색: 「○○ 검색해줘」「구글에서 ○○」는 바로, 모르는 말은 제안만(자동으로 검색하지 않음) ----
+function nhWebClean(s){return String(s||'').trim().replace(/[\s?!.,~·…'’"“”]+$/g,'').replace(/^(을|를|이|가|은|는|좀)\s*/,'').replace(/\s*(을|를|이|가|은|는|좀)$/,'').trim()}
+function nhWeb(raw){const q=String(raw||'').trim();if(!q)return null;let s=q.replace(/\s+/g,' ').trim();
+  let engine='naver',auto=false,text='';
+  const isG=/구글/.test(s),isN=/네이버/.test(s);if(isG)engine='google';
+  const verb=/(을|를|이|가|은|는|좀)?\s*(검색해줘|검색해줄래|검색해봐|검색해볼래|검색하자|검색할래|검색하기|검색해|검색|찾아줘|찾아줄래|찾아봐|찾아볼래|찾아보자|찾아볼까|좀\s*찾아|알아봐줘|알아봐)$/;
+  const head=/^(구글|네이버)(에서|로|에)\s*(.+)$/;
+  const mid=/^(.+?)\s*(을|를)?\s*(구글|네이버)?\s*(에서|로)?\s*(검색해줘|검색해줄래|검색해봐|검색해볼래|검색하자|검색할래|검색하기|검색해|검색|찾아줘|찾아줄래|찾아봐|찾아볼래|찾아보자|찾아볼까)$/;
+  let m=s.match(head);
+  if(m){engine=m[1]==='구글'?'google':'naver';text=nhWebClean(m[3].replace(verb,''));auto=true}
+  else if((m=s.match(mid))){if(/구글/.test(s))engine='google';if(/네이버/.test(s)&&!isG)engine='naver';text=nhWebClean(m[1]);auto=true}
+  if(!text||text.length<1)return null;
+  if(/^(구글|네이버)$/.test(text))return null;
+  const engN=engine==='google'?'구글':'네이버';
+  return {id:'webq',sc:135,auto:true,engine,q:text,label:engN+'에서 "'+text+'" 검색'}}
+function nhWebUrl(c){const q=encodeURIComponent(c.q);return c.engine==='google'?'https://www.google.com/search?q='+q+'&hl=ko':'https://m.search.naver.com/search.naver?query='+q}
+function nhWebGo(c){const u=nhWebUrl(c);let ok=false;
+  try{if(NATIVE&&NVNative.openUrl)ok=!!NVNative.openUrl(u)}catch(_){}
+  if(!ok){try{window.open(u,'_blank')}catch(_){}}
+  nhClear(true)}
+function nhWebTiles(c){const engN=c.engine==='google'?'구글':'네이버';
+  return [{k:'act',t:engN+'에서 "'+c.q+'" 검색',ic:'search',web:c,fn:()=>nhWebGo(c)}]}
+function nhWebGroup(q){const c=nhWeb(q);if(!c)return null;return {sc:c.sc,I:{id:'webq',hd:'검색',auto:true,none:''},tiles:nhWebTiles(c),web:true}}
+function nhWebSuggest(q,tiles){if(tiles&&tiles.length)return null;const t=String(q||'').trim();if(!t||t.length<2)return null;
+  if(/^[ㄱ-ㅎ]+$/.test(nhNorm(t)))return null;
+  const c={engine:'naver',q:t,auto:false,label:'네이버에서 "'+t+'" 검색'};
+  return {sc:20,I:{id:'webq',hd:'검색해 볼까요?',auto:false,none:''},tiles:nhWebTiles(c),web:true}}
+
 // ---- 우주: 거의 멈춰 있고 4초에 한 번 아주 조금만 흐름(화면이 꺼지거나 절전이면 멈춤) ----
 function nhStill(){if(S.lite===true||S.nhStill===true)return true;try{if(NATIVE&&NVNative.qsState){const q=JSON.parse(NVNative.qsState());if(q&&q.save)return true}}catch(_){}return false}
 function nhDrift(){clearInterval(NH.dT);NH.dT=0;if(!nhOn()||document.hidden||NH.still)return;
@@ -4376,8 +4555,8 @@ function nhPlace(){if(!nhOn()||!W)return;NHUI.style.bottom=Math.round(H-navY()+1
 function nhApply(){const on=nhOn();phone.classList.toggle('nh',on);if(on){nhPlace();nhSug();NH.still=nhStill();nhDrift();try{closeRecents()}catch(_){}}else{clearInterval(NH.dT);NH.dT=0;nhReset()}
   try{wSync()}catch(_){}try{BUS.plk='';BUS.html='';busPlace();busTick()}catch(_){}}
 function nhSet(on){S.nh=!!on;saveS();nhApply();if(!on){try{spaceKick()}catch(_){}try{relayoutSoon()}catch(_){}toast('예전 아이콘 홈으로 바꿨어요 · 설정에서 다시 켤 수 있어요')}else toast('앱 없는 홈 켜짐 · 무엇을 하실 건가요?')}
-function nhReset(){clearTimeout(NH.aT);nhCardOff(false);nhListenStop();if(NH.stars||NHST.classList.contains('on')){NH.stars=false;NHST.classList.remove('on');NHST.style.opacity=0;NHUI.style.opacity=1;NHUI.style.pointerEvents=''}NHQ.blur();if(NH.q||NHQ.value)nhSetQ('');if(nhOn())nhSug()}
-function nhBack(){if(NHCARD){nhCardOff(true);return true}if(NH.stars){nhStarsClose();return true}if(NH.listen){nhListenStop();return true}if(NH.q||document.activeElement===NHQ){nhClear(true);return true}return false}
+function nhReset(){clearTimeout(NH.aT);nhCardOff(false);nhWxOff(false);nhListenStop();if(NH.stars||NHST.classList.contains('on')){NH.stars=false;NHST.classList.remove('on');NHST.style.opacity=0;NHUI.style.opacity=1;NHUI.style.pointerEvents=''}NHQ.blur();if(NH.q||NHQ.value)nhSetQ('');if(nhOn())nhSug()}
+function nhBack(){if(NHCARD){nhCardOff(true);return true}if(NHWX){nhWxOff(true);return true}if(NH.stars){nhStarsClose();return true}if(NH.listen){nhListenStop();return true}if(NH.q||document.activeElement===NHQ){nhClear(true);return true}return false}
 window.addEventListener('resize',()=>setTimeout(nhPlace,30));
 {const oi=window.NV_onInsets;window.NV_onInsets=()=>{try{oi&&oi()}catch(_){}nhPlace()}}
 {const orz=window.NV_onResume;window.NV_onResume=()=>{try{orz&&orz()}catch(_){}try{if(NH.pend){const c=NH.pend;NH.pend=null;setTimeout(()=>{try{nhCtlDo(c,true)}catch(_){}},450)}}catch(_){}if(nhOn()){if(NH.hold||NH.speechUi){NH.hold=false}else nhReset();NH.still=nhStill();nhDrift();nhPlace()}}}
@@ -4386,6 +4565,9 @@ nhApply();
 setTimeout(()=>{nhPlace();nhSug();if(nhOn()&&!S.nhTip){S.nhTip=1;saveS();setTimeout(()=>toast('빈 곳을 두 번 톡톡하면 말로 찾기 · 위로 밀면 최근 앱 · 아래로 빠른 설정'),900)}},300);
 window.__nv.nh={on:nhOn,set:nhSet,q:v=>nhSetQ(v),tiles:()=>NH.tiles.map(x=>x.k==='act'?'act:'+x.t:(x.a.__base||x.a).pkg),hd:()=>NHRES.querySelector('.hd').textContent,sug:()=>[...NHSUG.querySelectorAll('button')].map(b=>b.textContent),
   stars:()=>NH.stars,starsOpen:nhStarsOpen,recent:()=>nhRecent().map(a=>a.pkg),state:()=>({q:NH.q,listen:NH.listen,stars:NH.stars,still:NH.still,drift:!!NH.dT,busUntil:NH.busUntil,heard:NH.heard||'',ui:!!NH.speechUi,hold:!!NH.hold,cue:!!(document.getElementById('nhCue')&&document.getElementById('nhCue').classList.contains('go')),listening:!!(NH.listen||NH.speechUi||NHEL.classList.contains('listen'))}),back:nhBack,reset:nhReset,place:nhPlace,
+  wx:q=>{const c=nhWx(q);return c?{id:c.id,ask:c.ask||'',auto:!!c.auto,label:c.label}:null},
+  web:q=>{const c=nhWeb(q);return c?{engine:c.engine,q:c.q,auto:!!c.auto,label:c.label}:null},
+  wxLine:wxLineS,wxDir:wxDir,
   ctl:q=>{const c=nhCtl(q);return c?{id:c.id,mode:c.mode||'',val:c.val===undefined?null:c.val,arg:c.arg||'',auto:!!c.auto,panel:!!c.panel,n:c.opts?c.opts.length:0,label:c.label||''}:null},
   stem:nhStem,match:q=>{const r=nhMatch(q);return {hd:r.hd,tiles:(r.tiles||[]).map(x=>x.k==='act'?'act:'+x.t:(x.a.__base||x.a).pkg),sc:r.top?r.top.sc:0}},pick:c=>nhPickHeard(c),heard:c=>{nhHeard(c,false);return {q:NH.q,hd:NHRES.querySelector('.hd').textContent,tiles:window.__nv.nh.tiles()}}};
 
