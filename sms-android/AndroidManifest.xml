@@ -57,13 +57,17 @@
     <receiver android:name=".SmsReceivedReceiver" android:exported="true" android:permission="android.permission.BROADCAST_SMS">
       <intent-filter android:priority="0"><action android:name="android.provider.Telephony.SMS_RECEIVED"/></intent-filter>
     </receiver>
-    <!-- 기본 문자 앱 자격: 사진·장문(MMS) 도착 신호 (WAP_PUSH_DELIVER) -->
+    <!-- 기본 문자 앱 자격: 사진·장문(MMS) 도착 신호 (WAP_PUSH_DELIVER) → v4: 내려받아 저장 -->
     <receiver android:name=".MmsReceiver" android:exported="true" android:permission="android.permission.BROADCAST_WAP_PUSH">
       <intent-filter>
         <action android:name="android.provider.Telephony.WAP_PUSH_DELIVER"/>
         <data android:mimeType="application/vnd.wap.mms-message"/>
       </intent-filter>
     </receiver>
+    <!-- v4: 장문 내려받기 결과 · 다시 받기 · ‘받았어요’ 응답 결과 (앱 안에서만) -->
+    <receiver android:name=".MmsResultReceiver" android:exported="false"/>
+    <!-- v4: 내려받은 장문 PDU 를 잠깐 담는 파일 통로. 밖에 안 열림, 내려받기 때 전화 앱에만 잠깐 쓰기 허락 -->
+    <provider android:name=".MmsFileProvider" android:authorities="kr.newniverse.sms.mmsfile" android:exported="false" android:grantUriPermissions="true"/>
     <receiver android:name=".SentReceiver" android:exported="false"/>
     <receiver android:name=".CalUndoReceiver" android:exported="false"/>
     <provider android:name=".FeedProvider" android:authorities="kr.newniverse.sms.feed" android:exported="true" android:permission="kr.newniverse.permission.SMS_FEED"/>

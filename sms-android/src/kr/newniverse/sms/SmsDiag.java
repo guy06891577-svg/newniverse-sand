@@ -10,6 +10,7 @@ import org.json.JSONObject;
 /**
  * v3: 설정 화면에 보여주는 짧은 저장 기록. 문자 본문·번호·비밀은 남기지 않음.
  * (시각, 저장 결과/예외 종류, 받은 편지함 개수, 기본 앱 여부, 권한, 런처의 마지막 조회)
+ * v4: 장문·사진(MMS) — 마지막 도착 신호 시각, 내려받기 결과·오류 번호·HTTP 상태, 저장 여부, ‘받았어요’ 응답, 못 받은 장문 수
  */
 final class SmsDiag {
   static final String PREF="nv_diag";
@@ -57,6 +58,22 @@ final class SmsDiag {
     }catch(Exception x){}
   }
 
+  /** v4: 장문 처리. at>0 이면 도착 신호 시각도 갱신. state = pending|retry|ok|dup|fail|parse|ignored */
+  static void mms(Context c,long at,String state,int code,int http,boolean saved,String err,Object unused){
+    try{
+      SharedPreferences.Editor e=p(c).edit();
+      if(at>0){ e.putLong("mms_at",at); e.putBoolean("mms_saved",false); e.putInt("mms_code",0); e.putInt("mms_http",0); e.putString("mms_err",""); e.putString("mms_ack",""); }
+      e.putLong("mms_upd",System.currentTimeMillis());
+      e.putString("mms_state",state==null?"":state);
+      if(at<=0||code!=0) e.putInt("mms_code",code);
+      if(http!=0) e.putInt("mms_http",http);
+      if(saved) e.putBoolean("mms_saved",true);
+      if(err!=null&&!err.isEmpty()) e.putString("mms_err",err);
+      e.apply();
+    }catch(Exception x){}
+  }
+  static void mmsAck(Context c,String st){ try{ p(c).edit().putString("mms_ack",st==null?"":st).apply(); }catch(Exception x){} }
+
   static JSONObject json(Context c){
     JSONObject o=new JSONObject();
     try{
@@ -78,6 +95,16 @@ final class SmsDiag {
       o.put("feedSeen",p.contains("feed_at")||p.getLong("feed_at",0)>0);
       o.put("feedRows",p.getInt("feed_rows",0));
       o.put("feedErr",p.getString("feed_err",""));
+      o.put("mmsAt",p.getLong("mms_at",0));
+      o.put("mmsUpd",p.getLong("mms_upd",0));
+      o.put("mmsState",p.getString("mms_state",""));
+      o.put("mmsCode",p.getInt("mms_code",0));
+      o.put("mmsCodeLabel",p.getInt("mms_code",0)==0?"":MmsLogic.errLabel(p.getInt("mms_code",0)));
+      o.put("mmsHttp",p.getInt("mms_http",0));
+      o.put("mmsSaved",p.getBoolean("mms_saved",false));
+      o.put("mmsErr",p.getString("mms_err",""));
+      o.put("mmsAck",p.getString("mms_ack",""));
+      o.put("mmsPending",MmsInbox.pendingCount(c));
       o.put("ver",Nv.VER);
     }catch(Exception e){}
     return o;

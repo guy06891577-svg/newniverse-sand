@@ -27,6 +27,7 @@ public class MainActivity extends Activity {
       @Override public void onChange(boolean selfChange,Uri u){ refresh(); }
     };
     try{ getContentResolver().registerContentObserver(Uri.parse("content://sms"),true,smsObs); }catch(Exception e){}
+    try{ getContentResolver().registerContentObserver(Uri.parse("content://mms"),true,smsObs); }catch(Exception e){}
   }
   /** smsto:번호, sms_body / 알림에서 열기 */
   private void take(Intent i){

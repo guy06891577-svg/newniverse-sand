@@ -89,6 +89,7 @@ em{font-style:normal;color:var(--a1);font-weight:700}
 .mimg{display:block;max-width:100%;width:220px;border-radius:14px;margin:2px 0 4px;background:rgba(255,255,255,.05);min-height:120px;object-fit:cover}
 .mimg.ok{min-height:0;background:none}
 .mbad{font-size:13px;color:var(--sub)}
+.msub{display:block;font-weight:700;margin-bottom:2px}
 #cBar{display:flex;align-items:flex-end;gap:8px;padding:8px 10px calc(var(--sab) + 10px)}
 .inw{flex:1;min-width:0;border-radius:22px;padding:4px 6px 4px 14px;display:flex;flex-direction:column}
 #cIn{width:100%;background:none;border:none;outline:none;resize:none;font-size:16px;line-height:1.4;max-height:120px;padding:7px 0;display:block}
@@ -314,6 +315,7 @@ function renderMsgs(scroll){const L=$('#cList'),all=MSGS.concat(PENDING);const a
   const first=!prev||prev.dir!==m.dir||startOf(prev.date)!==d||m.date-prev.date>120000;
   const last=!next||next.dir!==m.dir||startOf(next.date)!==d||next.date-m.date>120000||m.st!=='ok';
   let body='';(m.imgs||[]).forEach(p=>{body+=`<img class="mimg" data-p="${esc(p)}" alt="사진">`});
+  if(m.sub)body+=`<b class="msub">${esc(m.sub)}</b>`;
   if(m.body)body+=esc(m.body);else if(!(m.imgs||[]).length&&m.mms)body+='<span class="mbad">(멀티미디어 문자)</span>';
   const meta=m.st==='fail'?`<span class="f">전송 실패</span>`:m.st==='sending'?'보내는 중':(last?hm(m.date):'');
   h+=`<div class="m ${m.dir}${first?' g':''}${m.st!=='ok'?' '+m.st:''}" data-id="${esc(m.id)}"><div class="bb">${body}</div>${meta?`<div class="mt">${meta}</div>`:''}</div>`});
@@ -389,6 +391,7 @@ function act(k){menuClose();
  if(k==='perm'){permAsked=Date.now();NV&&NV.requestPerms()}
  else if(k==='role'){closeSheet();roleAsked=Date.now();NV&&NV.requestRole()}
  else if(k==='rolewarn')roleWarn();
+ else if(k==='mmsretry'){const n=NV&&NV.mmsRetry?NV.mmsRetry():0;toast(n?'장문을 다시 받고 있어요':'다시 받을 장문이 없어요');setTimeout(()=>{if(cur==='set')renderSettings()},1500)}
  else if(k==='appset'){NV&&NV.openAppSettings()}
  else if(k==='defapps'){NV&&NV.openDefaultApps()}
  else if(k==='settab'){closeSheet();show('set')}
@@ -401,7 +404,7 @@ function act(k){menuClose();
 /* 달력: 처음 한 번만 묻기 */
 function calAsk(){sheet(`<h3>문자 속 일정을 달력에 넣어 드릴까요?</h3><div class="steps2">병원·공공기관 <b>예약</b>과 <b>택배 도착 예정</b> 문자를 <b>‘뉴니버스’ 전용 달력</b>에 자동으로 넣어요.<ul><li>주소록에 있는 사람, 또는 병원·택배·공공기관 문자만 넣어요</li><li>광고 문자와 수상한 링크 문자는 넣지 않아요</li><li>넣을 때마다 알림이 오고, 알림에서 <b>취소</b>할 수 있어요</li><li>기본 달력은 건드리지 않고, 설정에서 언제든 끌 수 있어요</li></ul>다음 창에서 <b>달력 권한</b>을 한 번 물어봐요.</div><button class="opt pri" data-b="calon"><span data-i="check"></span>달력에 넣기</button><button class="opt" data-b="calno"><span data-i="x"></span>안 할래요</button>`)}
 window.NV_cal=()=>{calStatus();if(cur==='set')renderSettings();if(CAL.on)toast('이제 문자 속 일정을 달력에 넣어요')}
-function roleWarn(){sheet(`<h3>기본 문자 앱으로 바꾸기 전에</h3><div class="steps2">v1 시험판은 <b>사진·장문(MMS) 문자를 아직 받지 못해요</b>. 기본으로 바꾸면 그동안 오는 사진·장문 문자를 놓칠 수 있어요.<br>기본으로 바꾸지 않아도 <b>문자 보기 · 보내기 · 새 문자 알림</b>은 돼요.</div>
+function roleWarn(){sheet(`<h3>기본 문자 앱으로 바꾸기 전에</h3><div class="steps2">기본으로 바꾸면 받은 문자를 <b>뉴니버스 문자가 직접 받아 저장</b>해요. 병원·택배·카드 같은 <b>장문(LMS)·사진 문자</b>도 통신사에서 내려받아 보여 줘요.<br>사진·장문을 <b>보내기</b>는 아직 안 돼요(긴 글은 여러 개의 문자로 나눠 보내요). 장문을 못 받으면 ‘장문을 받지 못했어요’ 알림에서 <b>다시 받기</b>를 누르면 돼요.</div>
  <button class="opt pri" data-b="role"><span data-i="msg"></span>그래도 기본으로 설정</button><button class="opt" data-a="close"><span data-i="x"></span>나중에</button>`)}
 function restrictedSheet(kind){const perm=kind==='perm';
  sheet(`<h3>${perm?'문자 권한을 받지 못했어요':'기본 문자 앱으로 설정되지 않았어요'}</h3>
@@ -413,10 +416,13 @@ function restrictedSheet(kind){const perm=kind==='perm';
   <button class="opt" data-a="close"><span data-i="x"></span>닫기</button>`)}
 function fmtWhen(ms){ms=+ms||0;if(!ms)return '아직 없음';const d=new Date(ms),n=new Date();const same=d.toDateString()===n.toDateString();return (same?'오늘 ':d.getFullYear()+'. '+(d.getMonth()+1)+'. '+d.getDate()+'. ')+hm(ms)}
 function feedMethodLabel(m){return ({status:'상태 확인',recent:'최근 문자 조회',cal_status:'달력 상태',cal_add:'달력에 추가','' :''})[m]||m||'—'}
+function mmsDl(s){return ({ok:'받음',pending:'받는 중',retry:'다시 받는 중',fail:'받지 못함',dup:'이미 저장되어 있음',ignored:'받을 내용 아님',parse:'신호를 읽지 못함'})[s]||'아직 없음'}
+function mmsAckLab(s){if(!s)return '—';if(s==='ok')return '보냄';if(s==='sending')return '보내는 중';return '보내지 못함'}
 function diagView(){const d=(NV&&NV.diag)?J(NV.diag(),{}):{};const pe=d.perms||{};
  const ins=d.insert?`<span class="${/fail|parse/.test(d.insert)?'no2':'ok'}">${esc(InboxInsert(d.insert))}</span>`:'<span class="no2">아직 없음</span>';
  const feed=d.feedSeen||d.feedAt?`<span class="${d.feedOk?'ok':'no2'}">${d.feedOk?'도착':'실패'}</span>`:'<span class="no2">아직 없음</span>';
- return {d,pe,ins,feed}}
+ const mms=d.mmsState?`<span class="${/ok|dup/.test(d.mmsState)?'ok':'no2'}">${esc(mmsDl(d.mmsState))}</span>`:'<span class="no2">아직 없음</span>';
+ return {d,pe,ins,feed,mms}}
 function InboxInsert(s){return ({ok:'저장됨','retry-ok':'저장됨(다시 시도)',dup:'이미 저장되어 있음',fail:'저장 실패',parse:'문자를 읽지 못함'})[s]||'아직 없음'}
 function sourceLab(s){return s==='deliver'?'SMS_DELIVER':s==='received'?'안전망(SMS_RECEIVED)':'아직 없음'}
 function renderSettings(){status();calStatus();const p=ST.perms||{};const yes=b=>b?'<span class="ok">허용됨</span>':'<span class="no2">꺼짐</span>';const dv=diagView();
@@ -448,8 +454,15 @@ function renderSettings(){status();calStatus();const p=ST.perms||{};const yes=b=
   <div class="srow2"><div class="grow">런처의 마지막 조회<small>${dv.d.feedAt?esc(fmtWhen(dv.d.feedAt)+' · '+(feedMethodLabel(dv.d.feedMethod)||'조회')+(dv.d.feedMethod==='recent'?' · 넘긴 문자 '+(+dv.d.feedRows||0)+'통':''))+(dv.d.feedErr?' · '+dv.d.feedErr:''):'런처가 아직 이 앱에 물어보지 않았어요. 홈을 한 번 열면 기록이 생겨요.'}</small></div>${dv.feed}</div>
   <div class="steps">문자 본문과 번호는 이 기록에 남기지 않아요. 홈에 카드가 안 보이면 이 ‘런처의 마지막 조회’를 봐 주세요.</div>
  </div>
+ <div class="set glass" id="mmsBox"><h3>장문·사진(MMS) 받기 기록 (시험)</h3>
+  <div class="srow2"><div class="grow">마지막 도착 신호<small>통신사가 ‘장문이 있어요’ 신호를 보낸 때</small></div><span>${esc(fmtWhen(dv.d.mmsAt))}</span></div>
+  <div class="srow2"><div class="grow">내려받기 결과<small>${dv.d.mmsCode&&dv.d.mmsCode!==-1?('오류 '+(+dv.d.mmsCode)+' · '+esc(dv.d.mmsCodeLabel||'')):'통신사 MMS 서버에서 받기'}${dv.d.mmsHttp?' · HTTP '+(+dv.d.mmsHttp):''}${dv.d.mmsErr?' · '+esc(dv.d.mmsErr):''}</small></div>${dv.mms}</div>
+  <div class="srow2"><div class="grow">폰 저장소에 저장</div>${dv.d.mmsAt?(dv.d.mmsSaved?'<span class="ok">저장됨</span>':'<span class="no2">아니요</span>'):'<span class="no2">아직 없음</span>'}</div>
+  <div class="srow2"><div class="grow">통신사에 받았다고 알림<small>M-NotifyResp</small></div><span>${esc(mmsAckLab(dv.d.mmsAck))}</span></div>
+  <div class="srow2"><div class="grow">못 받은 장문<small>${(+dv.d.mmsPending||0)>0?'다시 받기를 누르면 통신사에서 다시 내려받아요':'없어요'}</small></div>${(+dv.d.mmsPending||0)>0?'<span class="no2">'+(+dv.d.mmsPending)+'통</span><button class="sbtn pri" data-b="mmsretry">다시 받기</button>':'<span class="ok">0</span>'}</div>
+ </div>
  <div class="set glass"><h3>알아 두기</h3>
-  <div class="steps">문자 내용은 폰 밖으로 나가지 않아요 (인터넷 권한 없음).<br>사진·장문(MMS)은 보기만 하고, 새로 받거나 보내지는 못해요. 긴 글은 여러 개의 문자로 나눠 보내요.<br>뉴니버스 문자 v3 시험판 · ${esc(ST.ver||'')} · 안드로이드 ${ST.sdk||'?'}</div>
+  <div class="steps">문자 내용은 폰 밖으로 나가지 않아요 (인터넷 권한 없음).<br>사진·장문(LMS/MMS)은 기본 문자 앱일 때 받아서 저장해요. 사진·장문 보내기는 아직 안 되고, 긴 글은 여러 개의 문자로 나눠 보내요.<br>뉴니버스 문자 v4 시험판 · ${esc(ST.ver||'')} · 안드로이드 ${ST.sdk||'?'}</div>
  </div>`;bindB($('#setList'))}
 $('#sBack').onclick=()=>{buzz();goList()};
 

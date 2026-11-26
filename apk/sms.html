@@ -1,6 +1,6 @@
 <!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
-<title>뉴니버스 문자 v3 (시험판) 설치</title>
+<title>뉴니버스 문자 v4 (시험판) 설치</title>
 <style>body{font-family:system-ui,"Noto Sans KR",sans-serif;background:#07061a;color:#fff;margin:0;padding:22px;line-height:1.7;font-size:18px}
 h1{font-size:26px;margin:0 0 6px}h2{font-size:20px;margin:28px 0 8px;color:#9fd8ff}.sub{opacity:.72;font-size:15px}
 a.dl{display:block;text-align:center;margin:18px 0;padding:18px;border-radius:22px;background:linear-gradient(135deg,#6fd3ff,#8f6bff);color:#0a0820;font-weight:800;font-size:21px;text-decoration:none}
@@ -9,8 +9,16 @@ a.dl{display:block;text-align:center;margin:18px 0;padding:18px;border-radius:22
 ol,ul{padding-left:22px}li{margin:7px 0}b{color:#c9b8ff}
 img.shot{width:31%;border-radius:14px;margin:1%;vertical-align:top}</style></head><body>
 <img src="sms-icon-512.png" width="88" height="88" alt="" style="border-radius:22px;float:right">
-<h1>뉴니버스 문자 v3 (시험판)</h1><div class="sub">버전 3-test · 뉴니버스 고정 서명(런처·전화와 같은 서명) · 따로 까는 앱 · 인터넷 권한 없음</div>
-<a class="dl" href="newniverse-sms-v3-test.apk" download>내려받기 · 뉴니버스 문자 v3 (약 0.13MB)</a>
+<h1>뉴니버스 문자 v4 (시험판)</h1><div class="sub">버전 4-test · 뉴니버스 고정 서명(런처·전화와 같은 서명) · 따로 까는 앱 · 인터넷 권한 없음</div>
+<a class="dl" href="newniverse-sms-v4-test.apk" download>내려받기 · 뉴니버스 문자 v4 (약 0.15MB)</a>
+
+<h2>v4에서 새로 된 것 · 장문(LMS)·사진 문자 받기</h2><ul>
+<li>병원·택배·카드 문자처럼 <b>긴 문자(장문, LMS)</b>와 <b>사진 문자(MMS)</b>를 기본 문자 앱일 때 <b>통신사에서 내려받아 저장</b>해요. 예전에는 ‘사진·장문 문자가 왔어요 — 아직 받지 못해요’ 알림만 떴어요.</li>
+<li>대화 화면에서 장문은 <b>제목과 글</b>로, 사진은 <b>작은 사진</b>으로 보여요. 짧은 문자와 <b>시간 순서대로</b> 섞여 나와요. 검색도 장문 글까지 찾아요.</li>
+<li>장문 속 <b>병원 예약·택배·카드·인증번호</b>도 런처 홈 카드와 달력 자동 넣기에 쓰여요.</li>
+<li>내려받지 못하면 <b>‘장문을 받지 못했어요’</b> 알림이 떠요. 알림의 <b>다시 받기</b>나 설정의 <b>장문·사진(MMS) 받기 기록 › 다시 받기</b>를 누르면 돼요. 잠깐 끊긴 거면 한 번은 저절로 다시 받아요.</li>
+<li>설정에 <b>장문·사진(MMS) 받기 기록</b>이 생겼어요. 마지막 도착 신호 시각, 내려받기 결과·오류 번호, 저장 여부, 통신사에 받았다고 알렸는지, 못 받은 장문 수가 보여요. 본문과 번호는 남기지 않아요.</li>
+<li>사진·장문 <b>보내기</b>는 아직 안 돼요. 긴 글은 지금처럼 여러 개의 문자로 나눠 보내요.</li></ul>
 
 <h2>v3에서 고친 점</h2><ul>
 <li>기본 문자 앱일 때 받은 문자를 폰 저장소에 <b>더 단단히 저장</b>해요. 저장이 안 되면 한 번 더 시도하고, 그래도 안 되면 ‘문자를 저장하지 못했어요’라고 알려 줘요(예전에는 알림만 뜨고 목록이 비어 있을 수 있었어요).</li>
@@ -32,12 +40,12 @@ img.shot{width:31%;border-radius:14px;margin:1%;vertical-align:top}</style></hea
 <li><b>대화 화면</b>: 말풍선, 보내기, 길게 누르면 복사, 실패하면 다시 보내기, 전화 단추.</li>
 <li><b>새 문자</b>: 오른쪽 아래 연필.</li>
 <li><b>새 문자 알림</b> (잠금 화면에는 ‘새 문자’만 보이고 내용은 숨김).</li>
-<li>예전에 받은 <b>사진 문자는 보기</b>만 돼요. 설정은 목록 오른쪽 위 <b>⋮</b> 안에 있어요.</li></ul>
-<div class="warn"><b>아직 안 되는 것 (다음 판)</b>: 사진 · 장문(MMS) 문자를 <b>새로 받기와 보내기</b>. 기본 문자 앱으로 쓰면 그동안 오는 사진·장문 문자를 놓칠 수 있어요.</div>
+<li><b>사진·장문 문자는 받기와 보기</b>가 돼요(v4). 설정은 목록 오른쪽 위 <b>⋮</b> 안에 있어요.</li></ul>
+<div class="warn"><b>아직 안 되는 것 (다음 판)</b>: 사진 · 장문(MMS) 문자 <b>보내기</b>. 받기는 v4부터 돼요. 장문 받기는 통신사 MMS 접속(모바일 데이터 망)이 필요해서, 와이파이만 켜져 있고 모바일 데이터가 막혀 있으면 못 받을 수 있어요.</div>
 
 <h2>1. 설치하기</h2><ol>
 <li><b>Play 프로텍트 검사 잠시 끄기</b>: Play 스토어 → 프로필 사진 → Play 프로텍트 → 톱니바퀴 → ‘Play 프로텍트로 앱 검사’ 끄기.</li>
-<li>이 폰의 크롬에서 위 <b>내려받기</b> → 내 파일 › 다운로드 › <b>newniverse-sms-v3-test.apk</b> → (출처 허용) → <b>설치</b>(이미 v2가 있으면 덮어 깔아요).</li>
+<li>이 폰의 크롬에서 위 <b>내려받기</b> → 내 파일 › 다운로드 › <b>newniverse-sms-v4-test.apk</b> → (출처 허용) → <b>설치</b>(이미 v3이 있으면 덮어 깔아요. 문자는 그대로예요).</li>
 <li>설치가 끝나면 <b>Play 프로텍트 검사를 다시 켜기</b>.</li></ol>
 
 <h2>2. 처음 켜기 (권한)</h2><ol>

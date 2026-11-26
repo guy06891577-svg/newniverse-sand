@@ -48,101 +48,104 @@ class Bridge {
   @JavascriptInterface public void calSkip(){ a.runOnUiThread(()->{ AutoCal.setOn(a,false); ((MainActivity)a).js("window.NV_cal&&NV_cal()"); }); }
   @JavascriptInterface public void calDelete(){ CalStore.deleteAll(a); }
   @JavascriptInterface public String diag(){ return SmsDiag.json(a).toString(); }
+  /** v4: 못 받은 장문 다시 받기 → 다시 시도한 개수 */
+  @JavascriptInterface public int mmsRetry(){ try{ return MmsInbox.retryAll(a.getApplicationContext()); }catch(Exception e){ return 0; } }
 
     @JavascriptInterface public void requestPerms(){ a.runOnUiThread(()->{ String[] m=missing(a); if(m.length>0) a.requestPermissions(m,MainActivity.RQ_PERM); else ((MainActivity)a).js("window.NV_resume&&NV_resume('perm')"); }); }
   @JavascriptInterface public void requestRole(){ a.runOnUiThread(()->{ Intent i=Nv.roleIntent(a); if(i==null){ openDefaultApps(); return; } try{ a.startActivityForResult(i,MainActivity.RQ_ROLE); }catch(Exception e){ openDefaultApps(); } }); }
   @JavascriptInterface public void openDefaultApps(){ a.runOnUiThread(()->{ try{ a.startActivity(new Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS)); }catch(Exception e){ try{ a.startActivity(new Intent(Settings.ACTION_SETTINGS)); }catch(Exception x){} } }); }
   @JavascriptInterface public void openAppSettings(){ a.runOnUiThread(()->{ try{ a.startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+a.getPackageName()))); }catch(Exception e){} }); }
 
-  /** 대화 목록. {ok, err, list} — 읽기 실패는 빈 목록이 아니라 err 로 구분 */
+  /** 대화 목록. {ok, err, list} — 읽기 실패는 빈 목록이 아니라 err 로 구분. v4: SMS+MMS 를 MsgMerge 로 합침 */
   @JavascriptInterface public String getThreads(){
     JSONObject o=new JSONObject(); JSONArray arr=new JSONArray();
     try{
       o.put("ok",true); o.put("err",""); o.put("list",arr);
       if(!canRead()){ o.put("needPerm",true); return o.toString(); }
-      LinkedHashMap<Long,JSONObject> map=new LinkedHashMap<>();
       ContentResolver cr=a.getContentResolver();
-      try(Cursor q=cr.query(SMS,new String[]{"thread_id","address","body","date","type","read"},"type!=3",null,"date DESC")){
+      List<MsgMerge.Item> sms=new ArrayList<>(), mms=new ArrayList<>();
+      Map<Long,String> addr=new HashMap<>();
+      try(Cursor q=cr.query(SMS,new String[]{"_id","thread_id","address","body","date","type","read"},"type!=3",null,"date DESC")){
         int n=0;
         while(q!=null&&q.moveToNext()&&n++<40000){
-          long th=q.getLong(0); JSONObject j=map.get(th);
-          if(j==null){ j=new JSONObject(); j.put("id",th); j.put("addr",nz(q.getString(1))); j.put("snip",nz(q.getString(2))); j.put("date",q.getLong(3));
-            int ty=q.getInt(4); j.put("out",ty!=1); j.put("fail",ty==5); j.put("unread",0); j.put("n",0); j.put("lastIn",0L); map.put(th,j); }
-          if(q.getInt(4)==1){ if(j.optLong("lastIn")==0) j.put("lastIn",q.getLong(3)); if(q.getInt(5)==0) j.put("unread",j.getInt("unread")+1); }
-          j.put("n",j.getInt("n")+1);
+          long th=q.getLong(1); int ty=q.getInt(5);
+          MsgMerge.Item it=new MsgMerge.Item(false,q.getLong(0),th,q.getLong(4),ty==1,q.getInt(6)==0).with(q.getString(2),n<=4000?q.getString(3):"");
+          it.box=ty; sms.add(it); if(!addr.containsKey(th)&&q.getString(2)!=null) addr.put(th,q.getString(2));
         }
       }
       try(Cursor q=cr.query(MMS,new String[]{"_id","thread_id","date","msg_box","read"},null,null,"date DESC")){
-        int n=0; Set<Long> done=new HashSet<>();
+        int n=0;
         while(q!=null&&q.moveToNext()&&n++<5000){
-          long id=q.getLong(0),th=q.getLong(1),d=q.getLong(2)*1000L; int box=q.getInt(3); boolean unread=box==1&&q.getInt(4)==0;
-          JSONObject j=map.get(th);
-          if(j==null){ j=new JSONObject(); j.put("id",th); j.put("addr",mmsAddr(id,box)); j.put("date",0L); j.put("unread",0); j.put("n",0); j.put("lastIn",0L); map.put(th,j); }
-          if(unread) j.put("unread",j.getInt("unread")+1);
-          if(box==1&&d>j.optLong("lastIn")) j.put("lastIn",d);
-          j.put("n",j.getInt("n")+1);
-          if(!done.contains(th)&&d>j.optLong("date")){ String[] tx=mmsText(id); j.put("snip",tx[0].isEmpty()?(tx[1].isEmpty()?"(멀티미디어 문자)":"사진"):tx[0]); j.put("date",d); j.put("out",box!=1); j.put("fail",false); j.put("mms",true); }
-          done.add(th);
+          int box=q.getInt(3);
+          MsgMerge.Item it=new MsgMerge.Item(true,q.getLong(0),q.getLong(1),MmsLogic.msFromMmsDate(q.getLong(2)),box==1,q.getInt(4)==0);
+          it.box=box; mms.add(it);
         }
       }
-      List<JSONObject> l=new ArrayList<>(map.values());
-      l.sort((x,y)->Long.compare(y.optLong("date"),x.optLong("date")));
-      for(JSONObject j:l) arr.put(j);
+      for(MsgMerge.Conv t:MsgMerge.threads(sms,mms)){
+        MsgMerge.Item L=t.last; JSONObject j=new JSONObject();
+        String ad=addr.get(t.id);
+        if(L.mms){
+          String[] tx=MmsInbox.text(cr,L.id); String sub=mmsSubject(cr,L.id);
+          String txt=MmsLogic.feedText(sub,tx[0]);
+          j.put("snip",txt.isEmpty()?(tx[1].isEmpty()?"(멀티미디어 문자)":"사진"):txt); j.put("mms",true);
+          j.put("out",L.box!=1); j.put("fail",L.box==5);
+          if(ad==null) ad=MmsInbox.from(cr,L.id,L.box);
+        } else { j.put("snip",L.text.isEmpty()?snipOf(cr,L.id):L.text); j.put("out",L.box!=1); j.put("fail",L.box==5); if(ad==null) ad=L.addr; }
+        j.put("id",t.id); j.put("addr",nz(ad)); j.put("date",L.date); j.put("unread",t.unread); j.put("n",t.n); j.put("lastIn",t.lastIn);
+        arr.put(j);
+      }
       o.put("list",arr);
     }catch(Exception e){
       try{ o.put("ok",false); o.put("err",InboxLogic.errClass(e)); o.put("list",new JSONArray()); }catch(Exception x){}
     }
     return o.toString();
   }
-  String mmsAddr(long id,int box){
-    // 받은 MMS: 보낸 사람(137), 보낸 MMS: 받는 사람(151)
-    try(Cursor q=a.getContentResolver().query(Uri.parse("content://mms/"+id+"/addr"),new String[]{"address","type"},null,null,null)){
-      String any="";
-      while(q!=null&&q.moveToNext()){ String ad=nz(q.getString(0)); int ty=q.getInt(1); if(ad.equals("insert-address-token")) continue;
-        if((box==1&&ty==137)||(box!=1&&ty==151)) return ad; if(any.isEmpty()) any=ad; }
-      return any;
-    }catch(Exception e){ return ""; }
+  String snipOf(ContentResolver cr,long id){
+    try(Cursor q=cr.query(SMS,new String[]{"body"},"_id=?",new String[]{String.valueOf(id)},null)){ if(q!=null&&q.moveToFirst()) return nz(q.getString(0)); }catch(Exception e){}
+    return "";
   }
-  /** [글, 첫 사진 part id] */
-  String[] mmsText(long id){
-    StringBuilder sb=new StringBuilder(); String img="";
-    try(Cursor q=a.getContentResolver().query(PART,new String[]{"_id","ct","text"},"mid=?",new String[]{String.valueOf(id)},"seq ASC")){
-      while(q!=null&&q.moveToNext()){ String ct=nz(q.getString(1));
-        if(ct.equals("text/plain")){ String t=q.getString(2); if(t!=null){ if(sb.length()>0) sb.append('\n'); sb.append(t);} }
-        else if(ct.startsWith("image/")&&img.isEmpty()) img=String.valueOf(q.getLong(0)); }
+  /** MMS 제목 (AOSP 식 ISO 저장 + sub_cs 풀기) */
+  static String mmsSubject(ContentResolver cr,long id){
+    try(Cursor q=cr.query(Uri.parse("content://mms/"+id),new String[]{"sub","sub_cs"},null,null,null)){
+      if(q!=null&&q.moveToFirst()) return MmsLogic.fromIso(q.getString(0),q.isNull(1)?0:q.getInt(1));
     }catch(Exception e){}
-    return new String[]{sb.toString(),img};
+    return "";
   }
 
-  /** 한 대화의 문자들 (오래된 → 최근) */
+  /** 한 대화의 문자들 (오래된 → 최근). v4: SMS+MMS 를 날짜 순으로 합침, MMS 는 글·제목·사진 */
   @JavascriptInterface public String getMessages(long thread,int limit){
     JSONArray arr=new JSONArray(); if(!canRead()||thread<=0) return arr.toString();
-    int lim=Math.max(20,Math.min(limit,2000)); List<JSONObject> l=new ArrayList<>();
+    int lim=Math.max(20,Math.min(limit,2000));
     ContentResolver cr=a.getContentResolver();
+    List<MsgMerge.Item> sms=new ArrayList<>(), mms=new ArrayList<>();
     try(Cursor q=cr.query(SMS,new String[]{"_id","body","date","type"},"thread_id=? AND type!=3",new String[]{String.valueOf(thread)},"date DESC")){
-      while(q!=null&&q.moveToNext()&&l.size()<lim){
-        JSONObject j=new JSONObject(); int ty=q.getInt(3);
-        j.put("id","s"+q.getLong(0)); j.put("body",nz(q.getString(1))); j.put("date",q.getLong(2)); j.put("dir",ty==1?"in":"out");
-        j.put("st",ty==5?"fail":(ty==4||ty==6)?"sending":"ok"); l.add(j);
-      }
+      while(q!=null&&q.moveToNext()&&sms.size()<lim){ int ty=q.getInt(3);
+        MsgMerge.Item it=new MsgMerge.Item(false,q.getLong(0),thread,q.getLong(2),ty==1,false).with("",nz(q.getString(1))); it.box=ty; sms.add(it); }
     }catch(Exception e){}
     try(Cursor q=cr.query(MMS,new String[]{"_id","date","msg_box"},"thread_id=?",new String[]{String.valueOf(thread)},"date DESC")){
-      int n=0;
-      while(q!=null&&q.moveToNext()&&n++<Math.min(lim,300)){
-        long id=q.getLong(0); JSONObject j=new JSONObject(); int box=q.getInt(2);
-        j.put("id","m"+id); j.put("date",q.getLong(1)*1000L); j.put("dir",box==1?"in":"out"); j.put("st",box==5?"fail":box==4?"sending":"ok"); j.put("mms",true);
-        StringBuilder sb=new StringBuilder(); JSONArray imgs=new JSONArray();
-        try(Cursor p=cr.query(PART,new String[]{"_id","ct","text"},"mid=?",new String[]{String.valueOf(id)},"seq ASC")){
-          while(p!=null&&p.moveToNext()){ String ct=nz(p.getString(1));
-            if(ct.equals("text/plain")){ String t=p.getString(2); if(t!=null){ if(sb.length()>0) sb.append('\n'); sb.append(t);} }
-            else if(ct.startsWith("image/")) imgs.put(String.valueOf(p.getLong(0))); }
-        }catch(Exception e){}
-        j.put("body",sb.toString()); j.put("imgs",imgs); l.add(j);
-      }
+      while(q!=null&&q.moveToNext()&&mms.size()<Math.min(lim,300)){ int box=q.getInt(2);
+        MsgMerge.Item it=new MsgMerge.Item(true,q.getLong(0),thread,MmsLogic.msFromMmsDate(q.getLong(1)),box==1,false); it.box=box; mms.add(it); }
     }catch(Exception e){}
-    l.sort((x,y)->Long.compare(x.optLong("date"),y.optLong("date")));
-    int from=Math.max(0,l.size()-lim);
-    for(int i=from;i<l.size();i++) arr.put(l.get(i));
+    for(MsgMerge.Item it:MsgMerge.conversation(sms,mms,lim)){
+      try{
+        JSONObject j=new JSONObject();
+        j.put("id",it.key()); j.put("date",it.date); j.put("dir",it.in?"in":"out");
+        if(!it.mms){ j.put("body",it.text); j.put("st",it.box==5?"fail":(it.box==4||it.box==6)?"sending":"ok"); }
+        else {
+          j.put("st",it.box==5?"fail":it.box==4?"sending":"ok"); j.put("mms",true);
+          StringBuilder sb=new StringBuilder(); JSONArray imgs=new JSONArray();
+          try(Cursor p=cr.query(PART,new String[]{"_id","ct","text"},"mid=?",new String[]{String.valueOf(it.id)},"seq ASC")){
+            while(p!=null&&p.moveToNext()){ String ct=nz(p.getString(1)).toLowerCase();
+              if(ct.equals("text/plain")){ String t=p.getString(2); if(t!=null&&!t.isEmpty()){ if(sb.length()>0) sb.append('\n'); sb.append(t);} }
+              else if(ct.startsWith("image/")) imgs.put(String.valueOf(p.getLong(0))); }
+          }catch(Exception e){}
+          String sub=mmsSubject(cr,it.id);
+          if(!sub.isEmpty()&&!MmsLogic.isNoSubject(sub)&&!sb.toString().contains(sub.trim())) j.put("sub",sub.trim());
+          j.put("body",sb.toString()); j.put("imgs",imgs);
+        }
+        arr.put(j);
+      }catch(Exception e){}
+    }
     return arr.toString();
   }
 
@@ -168,6 +171,14 @@ class Bridge {
     String like="%"+qs.trim().replace("\\","\\\\").replace("%","\\%").replace("_","\\_")+"%";
     try(Cursor q=a.getContentResolver().query(SMS,new String[]{"thread_id","address","body","date"},"body LIKE ? ESCAPE '\\' AND type!=3",new String[]{like},"date DESC")){
       while(q!=null&&q.moveToNext()&&arr.length()<60){ JSONObject j=new JSONObject(); j.put("thread",q.getLong(0)); j.put("addr",nz(q.getString(1))); j.put("body",nz(q.getString(2))); j.put("date",q.getLong(3)); arr.put(j); }
+    }catch(Exception e){}
+    // v4: 장문(MMS) 글도 찾기
+    try(Cursor q=a.getContentResolver().query(PART,new String[]{"mid","text"},"ct='text/plain' AND text LIKE ? ESCAPE '\\'",new String[]{like},"_id DESC")){
+      while(q!=null&&q.moveToNext()&&arr.length()<60){ long mid=q.getLong(0);
+        try(Cursor m=a.getContentResolver().query(Uri.parse("content://mms/"+mid),new String[]{"thread_id","date","msg_box"},null,null,null)){
+          if(m==null||!m.moveToFirst()) continue;
+          JSONObject j=new JSONObject(); j.put("thread",m.getLong(0)); j.put("addr",MmsInbox.from(a.getContentResolver(),mid,m.getInt(2))); j.put("body",nz(q.getString(1))); j.put("date",MmsLogic.msFromMmsDate(m.getLong(1))); arr.put(j); }
+      }
     }catch(Exception e){}
     return arr.toString();
   }
