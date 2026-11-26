@@ -56,5 +56,11 @@
         android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
       <intent-filter><action android:name="android.service.notification.NotificationListenerService"/></intent-filter>
     </service>
+    <!-- v44b 시험판: 전원 창만 띄우는 접근성 서비스(화면 내용 없음). Play 출시 전 제거 또는 접근성 선언 필요(./build.sh basic play). -->
+    <service android:name=".PowerService" android:exported="false" android:label="@string/pwr_a11y_label"
+        android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+      <intent-filter><action android:name="android.accessibilityservice.AccessibilityService"/></intent-filter>
+      <meta-data android:name="android.accessibilityservice" android:resource="@xml/power_service"/>
+    </service>
   </application>
 </manifest>

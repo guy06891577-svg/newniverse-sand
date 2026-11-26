@@ -557,6 +557,29 @@ public class MainActivity extends Activity {
       return lockEnabled()?"wait":"need";
     }
     @JavascriptInterface public String flavor(){ return Flavor.BASIC?"basic":"plus"; }
+    // v44b 시험판: 안드로이드 전원 창만 연다(GLOBAL_ACTION_POWER_DIALOG). 전원을 직접 끄지 않음.
+    // Play 출시 전 이 기능을 빼거나(./build.sh basic play) 접근성 선언 필요. Flavor.POWER=false 이면 없음.
+    @JavascriptInterface public boolean pwrAvail(){ return Flavor.POWER; }
+    @JavascriptInterface public boolean pwrEnabled(){
+      if(!Flavor.POWER) return false;
+      try{ if((Boolean)Class.forName(getPackageName()+".PowerService").getMethod("connected").invoke(null)) return true; }catch(Throwable e){}
+      try{ String v=Settings.Secure.getString(getContentResolver(),Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES); if(v==null) return false;
+        String p=getPackageName().toLowerCase(); String s=v.toLowerCase();
+        return s.contains(p+"/")&&(s.contains("powerservice")||s.contains("lockservice")); }catch(Exception e){ return false; } }
+    @JavascriptInterface public String pwrOpen(){
+      if(!Flavor.POWER) return "none";
+      try{ if((Boolean)Class.forName(getPackageName()+".PowerService").getMethod("dialog").invoke(null)) return "ok"; }catch(Throwable e){}
+      return pwrEnabled()?"wait":"need"; }
+    /** 뉴니버스 전원 창 접근성 설정으로. 안드로이드 11+는 해당 서비스 화면, 아니면 접근성 목록(해당 항목 강조). */
+    @JavascriptInterface public void pwrSettings(){
+      if(!Flavor.POWER) return;
+      final MainActivity a=MainActivity.this;
+      android.content.ComponentName cn=new android.content.ComponentName(a,a.getPackageName()+".PowerService");
+      try{ if(Build.VERSION.SDK_INT>=30){ Intent i=new Intent("android.settings.ACCESSIBILITY_DETAILS_SETTINGS"); i.putExtra(Intent.EXTRA_COMPONENT_NAME,cn); i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); a.startActivity(i); return; } }catch(Exception e){}
+      try{ Intent i=new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS); i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        String key=cn.flattenToString(); Bundle b=new Bundle(); b.putString(":settings:fragment_args_key",key);
+        i.putExtra(":settings:fragment_args_key",key); i.putExtra(":settings:show_fragment_args",b); a.startActivity(i); return; }catch(Exception e){}
+      try{ Intent i=new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS); i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); a.startActivity(i);}catch(Exception e){} }
     @JavascriptInterface public boolean lockEnabled(){
       if(Flavor.BASIC) return false;
       try{ String v=Settings.Secure.getString(getContentResolver(),Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v44b 시험판: 전원 창만 띄움. 화면 내용을 읽지 않음(canRetrieveWindowContent=false).
+     XML 스키마에 typeNone 이 없어 형식상 typeAnnouncement 를 적되, 서비스가 붙을 때 eventTypes=0 으로 덮어 씀(이벤트를 받지 않음).
+     Play 스토어 출시 전 이 서비스를 빼거나(./build.sh basic play) 접근성 선언이 필요. -->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/pwr_a11y_desc"
+    android:summary="@string/pwr_a11y_summary"
+    android:accessibilityEventTypes="typeAnnouncement"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:notificationTimeout="0"
+    android:canRetrieveWindowContent="false"
+    android:canRequestTouchExplorationMode="false"
+    android:canRequestFilterKeyEvents="false"
+    android:canPerformGestures="false"
+    android:accessibilityFlags="flagDefault"/>
