@@ -4,8 +4,8 @@ import java.util.*;
 
 /** v2: 달력에 넣기·고치기·빼기 규칙(순수 자바). 실제 달력 쓰기는 Store 가 함 (CalStore). */
 final class CalLogic {
-  static final class Entry { long id; String sender="", org="", title=""; long start; boolean allDay, undone;
-    Entry copy(){ Entry e=new Entry(); e.id=id; e.sender=sender; e.org=org; e.title=title; e.start=start; e.allDay=allDay; e.undone=undone; return e; } }
+  static final class Entry { long id; String sender="", org="", title="", location=""; long start, end; boolean allDay, undone;
+    Entry copy(){ Entry e=new Entry(); e.id=id; e.sender=sender; e.org=org; e.title=title; e.location=location; e.start=start; e.end=end; e.allDay=allDay; e.undone=undone; return e; } }
   interface Store { List<Entry> load(); void save(List<Entry> l); long insert(Entry e); void update(Entry e); void delete(Entry e); }
   static final class Out { String op="none"; Entry e, prev; }
 
@@ -23,8 +23,8 @@ final class CalLogic {
     for(Entry e:l) if(e.org.equals(r.org)&&e.start==start&&e.allDay==all){
       if(e.undone&&manual){ l.remove(e); break; }
       o.op="dup"; o.e=e; return o; }
-    Entry n=new Entry(); n.sender=sender==null?"":sender; n.org=r.org; n.title=r.title; n.start=start; n.allDay=all;
-    n.id=s.insert(n); if(n.id<=0) return o;
+    Entry n=new Entry(); n.sender=sender==null?"":sender; n.org=r.org; n.title=r.title; n.location=r.location==null?"":r.location; n.start=start; n.end=r.endMs; n.allDay=all;
+    n.id=s.insert(n); if(n.id<=0){ o.op="fail"; return o; }
     l.add(n); while(l.size()>300) l.remove(0); s.save(l); o.e=n; o.op="add"; return o;
   }
   /** 알림의 '취소' */

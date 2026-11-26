@@ -402,7 +402,7 @@ function act(k){menuClose();
  else if(k==='caldel')sheet(`<h3>뉴니버스 달력을 지울까요?</h3><div class="steps2">문자에서 자동으로 넣은 일정이 <b>모두</b> 지워져요. 다른 달력과 일정은 그대로예요.</div><button class="opt pri" data-b="caldel2"><span data-i="x"></span>지우기</button><button class="opt" data-a="close"><span data-i="x"></span>그만두기</button>`)
  else if(k==='caldel2'){closeSheet();NV&&NV.calDelete();toast('뉴니버스 달력을 지웠어요')}}
 /* 달력: 처음 한 번만 묻기 */
-function calAsk(){sheet(`<h3>문자 속 일정을 달력에 넣어 드릴까요?</h3><div class="steps2">병원·공공기관 <b>예약</b>과 <b>택배 도착 예정</b> 문자를 <b>‘뉴니버스’ 전용 달력</b>에 자동으로 넣어요.<ul><li>주소록에 있는 사람, 또는 병원·택배·공공기관 문자만 넣어요</li><li>광고 문자와 수상한 링크 문자는 넣지 않아요</li><li>넣을 때마다 알림이 오고, 알림에서 <b>취소</b>할 수 있어요</li><li>기본 달력은 건드리지 않고, 설정에서 언제든 끌 수 있어요</li></ul>다음 창에서 <b>달력 권한</b>을 한 번 물어봐요.</div><button class="opt pri" data-b="calon"><span data-i="check"></span>달력에 넣기</button><button class="opt" data-b="calno"><span data-i="x"></span>안 할래요</button>`)}
+function calAsk(){sheet(`<h3>문자 속 일정을 달력에 넣어 드릴까요?</h3><div class="steps2">병원·공공기관·학교의 <b>예약·행사 일정</b>과 <b>택배 도착 예정</b> 문자를 <b>‘뉴니버스’ 전용 달력</b>에 넣어요.<ul><li>주소록에 있는 사람, 또는 병원·학교·택배·공공기관 문자만 넣어요</li><li><b>신청·모집 안내</b>는 마음대로 넣지 않고 알림으로 <b>“달력에 넣을까요?”</b> 하고 물어요</li><li>광고 문자와 수상한 링크 문자는 넣지 않아요</li><li>넣을 때마다 알림이 오고, 알림에서 <b>취소</b>할 수 있어요</li><li>기본 달력은 건드리지 않고, 설정에서 언제든 끌 수 있어요</li></ul>다음 창에서 <b>달력 권한</b>을 한 번 물어봐요.</div><button class="opt pri" data-b="calon"><span data-i="check"></span>달력에 넣기</button><button class="opt" data-b="calno"><span data-i="x"></span>안 할래요</button>`)}
 window.NV_cal=()=>{calStatus();if(cur==='set')renderSettings();if(CAL.on)toast('이제 문자 속 일정을 달력에 넣어요')}
 function roleWarn(){sheet(`<h3>기본 문자 앱으로 바꾸기 전에</h3><div class="steps2">기본으로 바꾸면 받은 문자를 <b>뉴니버스 문자가 직접 받아 저장</b>해요. 병원·택배·카드 같은 <b>장문(LMS)·사진 문자</b>도 통신사에서 내려받아 보여 줘요.<br>사진·장문을 <b>보내기</b>는 아직 안 돼요(긴 글은 여러 개의 문자로 나눠 보내요). 장문을 못 받으면 ‘장문을 받지 못했어요’ 알림에서 <b>다시 받기</b>를 누르면 돼요.</div>
  <button class="opt pri" data-b="role"><span data-i="msg"></span>그래도 기본으로 설정</button><button class="opt" data-a="close"><span data-i="x"></span>나중에</button>`)}
@@ -421,8 +421,9 @@ function mmsAckLab(s){if(!s)return '—';if(s==='ok')return '보냄';if(s==='sen
 function diagView(){const d=(NV&&NV.diag)?J(NV.diag(),{}):{};const pe=d.perms||{};
  const ins=d.insert?`<span class="${/fail|parse/.test(d.insert)?'no2':'ok'}">${esc(InboxInsert(d.insert))}</span>`:'<span class="no2">아직 없음</span>';
  const feed=d.feedSeen||d.feedAt?`<span class="${d.feedOk?'ok':'no2'}">${d.feedOk?'도착':'실패'}</span>`:'<span class="no2">아직 없음</span>';
+ const cal=d.calSteps?`<span class="${d.calGood?'ok':'no2'}">${/^try>ok|ask>ok/.test(d.calSteps)?'성공':d.calSteps==='ask'?'묻는 중':d.calSteps==='skip'?'건너뜀':d.calSteps==='ask>no'?'아니요':'실패'}</span>`:'<span class="no2">아직 없음</span>';
  const mms=d.mmsState?`<span class="${/ok|dup/.test(d.mmsState)?'ok':'no2'}">${esc(mmsDl(d.mmsState))}</span>`:'<span class="no2">아직 없음</span>';
- return {d,pe,ins,feed,mms}}
+ return {d,pe,ins,feed,mms,cal}}
 function InboxInsert(s){return ({ok:'저장됨','retry-ok':'저장됨(다시 시도)',dup:'이미 저장되어 있음',fail:'저장 실패',parse:'문자를 읽지 못함'})[s]||'아직 없음'}
 function sourceLab(s){return s==='deliver'?'SMS_DELIVER':s==='received'?'안전망(SMS_RECEIVED)':'아직 없음'}
 function renderSettings(){status();calStatus();const p=ST.perms||{};const yes=b=>b?'<span class="ok">허용됨</span>':'<span class="no2">꺼짐</span>';const dv=diagView();
@@ -438,7 +439,7 @@ function renderSettings(){status();calStatus();const p=ST.perms||{};const yes=b=
   <div class="srow2"><div class="grow"><small>거절한 권한은 ‘앱 정보 › 권한’에서 다시 켤 수 있어요</small></div><button class="sbtn" data-b="perm">다시 묻기</button><button class="sbtn" data-b="appset">앱 정보</button></div>
  </div>
  <div class="set glass"><h3>달력</h3>
-  <div class="srow2"><div class="grow">문자 속 일정을 달력에 넣기<small>병원·공공기관 예약과 택배 도착 예정 문자를 ‘뉴니버스’ 전용 달력에 자동으로 넣어요. 주소록에 있는 사람이나 병원·택배·공공기관만, 광고·수상한 링크는 제외해요. 넣을 때마다 알림에서 취소할 수 있어요.</small></div><button class="sbtn${CAL.on?' pri':''}" data-b="${CAL.on?'caloff':'calon'}" aria-pressed="${CAL.on}">${CAL.on?'켜짐':'꺼짐'}</button></div>
+  <div class="srow2"><div class="grow">문자 속 일정을 달력에 넣기<small>병원·학교·공공기관의 예약·행사 일정과 택배 도착 예정 문자를 ‘뉴니버스’ 전용 달력에 넣어요. 확정된 예약은 자동으로, 신청·모집 안내는 “달력에 넣을까요?” 하고 물어요. 주소록에 있는 사람이나 병원·학교·택배·공공기관만, 광고·수상한 링크는 제외해요. 넣을 때마다 알림에서 취소할 수 있어요.</small></div><button class="sbtn${CAL.on?' pri':''}" data-b="${CAL.on?'caloff':'calon'}" aria-pressed="${CAL.on}">${CAL.on?'켜짐':'꺼짐'}</button></div>
   <div class="srow2"><div class="grow">뉴니버스 달력 지우기<small>자동으로 넣은 일정을 모두 지워요</small></div><button class="sbtn" data-b="caldel">지우기</button></div>
  </div>
  <div class="set glass"><h3>원래 문자 앱으로 돌아가려면</h3>
@@ -454,6 +455,12 @@ function renderSettings(){status();calStatus();const p=ST.perms||{};const yes=b=
   <div class="srow2"><div class="grow">런처의 마지막 조회<small>${dv.d.feedAt?esc(fmtWhen(dv.d.feedAt)+' · '+(feedMethodLabel(dv.d.feedMethod)||'조회')+(dv.d.feedMethod==='recent'?' · 넘긴 문자 '+(+dv.d.feedRows||0)+'통':''))+(dv.d.feedErr?' · '+dv.d.feedErr:''):'런처가 아직 이 앱에 물어보지 않았어요. 홈을 한 번 열면 기록이 생겨요.'}</small></div>${dv.feed}</div>
   <div class="steps">문자 본문과 번호는 이 기록에 남기지 않아요. 홈에 카드가 안 보이면 이 ‘런처의 마지막 조회’를 봐 주세요.</div>
  </div>
+ <div class="set glass" id="calBox"><h3>달력 등록 기록 (시험)</h3>
+  <div class="srow2"><div class="grow">마지막 일정 후보 문자<small>날짜가 있는 문자를 받았을 때만 기록해요</small></div><span>${esc(fmtWhen(dv.d.calAt))}</span></div>
+  <div class="srow2"><div class="grow">달력 등록<small>${esc(dv.d.calLabel||'아직 없음')}</small></div>${dv.cal}</div>
+  <div class="srow2"><div class="grow">자동 넣기<small>끄면 ‘달력에 넣을까요?’도 뜨지 않아요</small></div>${yes(!!dv.d.calOn)}</div>
+  <div class="srow2"><div class="grow">달력 권한</div>${yes(!!dv.d.calPerm)}</div>
+ </div>
  <div class="set glass" id="mmsBox"><h3>장문·사진(MMS) 받기 기록 (시험)</h3>
   <div class="srow2"><div class="grow">마지막 도착 신호<small>통신사가 ‘장문이 있어요’ 신호를 보낸 때</small></div><span>${esc(fmtWhen(dv.d.mmsAt))}</span></div>
   <div class="srow2"><div class="grow">내려받기 결과<small>${dv.d.mmsCode&&dv.d.mmsCode!==-1?('오류 '+(+dv.d.mmsCode)+' · '+esc(dv.d.mmsCodeLabel||'')):'통신사 MMS 서버에서 받기'}${dv.d.mmsHttp?' · HTTP '+(+dv.d.mmsHttp):''}${dv.d.mmsErr?' · '+esc(dv.d.mmsErr):''}</small></div>${dv.mms}</div>
@@ -462,7 +469,7 @@ function renderSettings(){status();calStatus();const p=ST.perms||{};const yes=b=
   <div class="srow2"><div class="grow">못 받은 장문<small>${(+dv.d.mmsPending||0)>0?'다시 받기를 누르면 통신사에서 다시 내려받아요':'없어요'}</small></div>${(+dv.d.mmsPending||0)>0?'<span class="no2">'+(+dv.d.mmsPending)+'통</span><button class="sbtn pri" data-b="mmsretry">다시 받기</button>':'<span class="ok">0</span>'}</div>
  </div>
  <div class="set glass"><h3>알아 두기</h3>
-  <div class="steps">문자 내용은 폰 밖으로 나가지 않아요 (인터넷 권한 없음).<br>사진·장문(LMS/MMS)은 기본 문자 앱일 때 받아서 저장해요. 사진·장문 보내기는 아직 안 되고, 긴 글은 여러 개의 문자로 나눠 보내요.<br>뉴니버스 문자 v4 시험판 · ${esc(ST.ver||'')} · 안드로이드 ${ST.sdk||'?'}</div>
+  <div class="steps">문자 내용은 폰 밖으로 나가지 않아요 (인터넷 권한 없음).<br>사진·장문(LMS/MMS)은 기본 문자 앱일 때 받아서 저장해요. 사진·장문 보내기는 아직 안 되고, 긴 글은 여러 개의 문자로 나눠 보내요.<br>뉴니버스 문자 v5 시험판 · ${esc(ST.ver||'')} · 안드로이드 ${ST.sdk||'?'}</div>
  </div>`;bindB($('#setList'))}
 $('#sBack').onclick=()=>{buzz();goList()};
 

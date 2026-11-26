@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""v4 UI: v3 checks + 장문(MMS) 대화 표시, 장문 받기 기록 패널, 다시 받기, v1 문구 없음."""
+"""v5 UI: v3 checks + 장문(MMS) 대화 표시, 장문 받기 기록 패널, 다시 받기, v1 문구 없음."""
 import asyncio, json, subprocess, time, os
 from playwright.async_api import async_playwright
 
-PORT = 18464
+PORT = 18465
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'assets'))
 U = f'http://localhost:{PORT}/www/index.html'
 res, errs = {}, []
@@ -20,7 +20,7 @@ const perms=Object.assign({read:true,send:true,recv:true,contacts:true,notif:tru
 const now=Date.now();
 const threads=cfg.threads||[];
 window.NVSms={
-  status:()=>JSON.stringify({def:!!cfg.def,canRole:true,perms,sdk:36,ver:cfg.ver||'4-test',now}),
+  status:()=>JSON.stringify({def:!!cfg.def,canRole:true,perms,sdk:36,ver:cfg.ver||'5-test',now}),
   calStatus:()=>JSON.stringify({on:false,perm:false,asked:true}),
   diag:()=>JSON.stringify(cfg.diag||{at:0,source:'',insert:'',err:'',inbox:0,def:!!cfg.def,perms,feedAt:0,feedMethod:'',feedOk:false,feedSeen:false,feedRows:0,feedErr:'',ver:'3-test'}),
   requestPerms:()=>__LOG.push('requestPerms'),requestRole:()=>__LOG.push('requestRole'),
@@ -157,12 +157,12 @@ async def main():
             ok('roleWarn says LMS is received', '장문' in sh and '내려받아' in sh)
             await ev("closeSheet();show('set');renderSettings()"); await pg.wait_for_timeout(250)
             st = await ev("document.querySelector('#setList').innerText")
-            ok('settings footer v4, no v1/v3', 'v4 시험판' in st and 'v1' not in st and 'v3' not in st)
+            ok('settings footer v4, no v1/v3', 'v5 시험판' in st and 'v1' not in st and 'v3' not in st and 'v4' not in st)
             ok('settings footer no longer says cannot receive', '새로 받거나 보내지는 못해요' not in st)
             await ctx.close()
 
             # 9. 장문 받기 기록 패널 — 실패 + 다시 받기 (본문·번호 없음)
-            dg={'at':0,'insert':'','inbox':3,'def':True,'perms':{'read':True,'recv':True,'send':True},'feedAt':0,'feedSeen':False,'ver':'4-test',
+            dg={'at':0,'insert':'','inbox':3,'def':True,'perms':{'read':True,'recv':True,'send':True},'feedAt':0,'feedSeen':False,'ver':'5-test',
                 'mmsAt':1764133200000,'mmsUpd':1764133230000,'mmsState':'fail','mmsCode':8,'mmsCodeLabel':'모바일 데이터 연결 없음','mmsHttp':0,'mmsSaved':False,'mmsErr':'','mmsAck':'','mmsPending':1}
             ctx,pg = await page(b, {'def':True,'threads':[],'diag':dg,'retryN':1})
             ev=pg.evaluate
@@ -187,6 +187,23 @@ async def main():
             box = await ev("document.querySelector('#mmsBox').innerText")
             ok('mms diag ok saved ack', '받음' in box and '저장됨' in box and '보냄' in box and '없어요' in box and '오류' not in box)
             await ctx.close()
+
+            # 11. 달력 등록 기록 — 단계별 문구 (본문·번호 없음)
+            for steps,label,reason,want in [('try>ok','시도 → 성공','', '성공'),('skip','건너뜀(자동 넣기가 꺼져 있음)','off','건너뜀'),('try>fail','시도 → 실패(달력 앱이 없음)','nocalapp','실패'),('ask','‘넣을까요?’ 알림을 띄움','','묻는 중')]:
+                d3=dict(dg2); d3.update({'calAt':1764133200000,'calSteps':steps,'calReason':reason,'calLabel':label,'calGood':steps in('try>ok','ask'),'calOn':steps!='skip','calPerm':True})
+                ctx,pg = await page(b, {'def':True,'threads':[],'diag':d3})
+                ev=pg.evaluate
+                await ev("show('set');renderSettings()"); await pg.wait_for_timeout(200)
+                cb = await ev("document.querySelector('#calBox')&&document.querySelector('#calBox').innerText")
+                ok('cal diag '+steps, cb and '달력 등록 기록' in cb and label in cb and want in cb and '마지막 일정 후보 문자' in cb)
+                ok('cal diag no body/number '+steps, cb and '010' not in cb and '길주' not in cb and '솜씨' not in cb)
+                await ctx.close()
+            ctx,pg = await page(b, {'def':True,'threads':[],'diag':{'at':0,'perms':{'read':True,'recv':True,'send':True},'ver':'5-test'}})
+            ev=pg.evaluate
+            await ev("show('set');renderSettings()"); await pg.wait_for_timeout(200)
+            cb = await ev("document.querySelector('#calBox').innerText")
+            ok('cal diag empty state', '아직 없음' in cb)
+            await ctx.close()
             await b.close()
     finally:
         srv.terminate()
@@ -197,7 +214,7 @@ async def main():
     else:
         ok('no page errors', True)
     failed=[k for k,v in res.items() if not v]
-    print(f"Playwright v4: {sum(res.values())} passed, {len(failed)} failed")
+    print(f"Playwright v5: {sum(res.values())} passed, {len(failed)} failed")
     if failed:
         print('FAILED', failed)
         raise SystemExit(1)

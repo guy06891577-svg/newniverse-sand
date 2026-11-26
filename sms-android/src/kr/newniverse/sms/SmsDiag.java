@@ -72,6 +72,10 @@ final class SmsDiag {
       e.apply();
     }catch(Exception x){}
   }
+  /** v5: 달력 등록 단계. steps = skip | try>ok | try>fail | ask | ask>ok | ask>no | ask>fail, reason = CalDecide 이유 코드 (본문·번호 없음) */
+  static void cal(Context c,String steps,String reason){
+    try{ p(c).edit().putLong("cal_at",System.currentTimeMillis()).putString("cal_steps",steps==null?"":steps).putString("cal_reason",reason==null?"":reason).apply(); }catch(Exception x){}
+  }
   static void mmsAck(Context c,String st){ try{ p(c).edit().putString("mms_ack",st==null?"":st).apply(); }catch(Exception x){} }
 
   static JSONObject json(Context c){
@@ -95,6 +99,10 @@ final class SmsDiag {
       o.put("feedSeen",p.contains("feed_at")||p.getLong("feed_at",0)>0);
       o.put("feedRows",p.getInt("feed_rows",0));
       o.put("feedErr",p.getString("feed_err",""));
+      String cs=p.getString("cal_steps",""), cr=p.getString("cal_reason","");
+      o.put("calAt",p.getLong("cal_at",0)); o.put("calSteps",cs); o.put("calReason",cr);
+      o.put("calLabel",CalDecide.stepsLabel(cs,cr.contains(":")?cr.substring(0,cr.indexOf(':')):cr)+(cr.contains(":")?" · "+cr.substring(cr.indexOf(':')+1):"")); o.put("calGood",CalDecide.isGood(cs));
+      o.put("calOn",AutoCal.on(c)); o.put("calPerm",AutoCal.perm(c));
       o.put("mmsAt",p.getLong("mms_at",0));
       o.put("mmsUpd",p.getLong("mms_upd",0));
       o.put("mmsState",p.getString("mms_state",""));

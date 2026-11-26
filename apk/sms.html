@@ -1,6 +1,6 @@
 <!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
-<title>뉴니버스 문자 v4 (시험판) 설치</title>
+<title>뉴니버스 문자 v5 (시험판) 설치</title>
 <style>body{font-family:system-ui,"Noto Sans KR",sans-serif;background:#07061a;color:#fff;margin:0;padding:22px;line-height:1.7;font-size:18px}
 h1{font-size:26px;margin:0 0 6px}h2{font-size:20px;margin:28px 0 8px;color:#9fd8ff}.sub{opacity:.72;font-size:15px}
 a.dl{display:block;text-align:center;margin:18px 0;padding:18px;border-radius:22px;background:linear-gradient(135deg,#6fd3ff,#8f6bff);color:#0a0820;font-weight:800;font-size:21px;text-decoration:none}
@@ -9,8 +9,15 @@ a.dl{display:block;text-align:center;margin:18px 0;padding:18px;border-radius:22
 ol,ul{padding-left:22px}li{margin:7px 0}b{color:#c9b8ff}
 img.shot{width:31%;border-radius:14px;margin:1%;vertical-align:top}</style></head><body>
 <img src="sms-icon-512.png" width="88" height="88" alt="" style="border-radius:22px;float:right">
-<h1>뉴니버스 문자 v4 (시험판)</h1><div class="sub">버전 4-test · 뉴니버스 고정 서명(런처·전화와 같은 서명) · 따로 까는 앱 · 인터넷 권한 없음</div>
-<a class="dl" href="newniverse-sms-v4-test.apk" download>내려받기 · 뉴니버스 문자 v4 (약 0.15MB)</a>
+<h1>뉴니버스 문자 v5 (시험판)</h1><div class="sub">버전 5-test · 뉴니버스 고정 서명(런처·전화와 같은 서명) · 따로 까는 앱 · 인터넷 권한 없음</div>
+<a class="dl" href="newniverse-sms-v5-test.apk" download>내려받기 · 뉴니버스 문자 v5 (약 0.16MB)</a>
+
+<h2>v5에서 고친 점 · 학교·행사 문자가 달력에 안 들어가던 문제</h2><ul>
+<li><b>왜 안 들어갔나</b>: ① 예전 규칙은 “예약 확정” 같은 말이 있는 문자만 일정으로 봤어요. 학교 안내문(“○ 일시: …”)은 일정으로 읽지 못했어요. ② “2026. 11. 27.(금) 16:00”처럼 날짜 끝에 점이 찍힌 모양에서 시각을 못 읽었어요. ③ 학교는 믿을 수 있는 보낸 곳으로 치지 않았어요. ④ 런처 안내로 달력 권한만 허용하고 앱 안에서 ‘켜기’를 누르지 않으면, 권한이 있어도 자동 넣기가 꺼진 채였어요. 이제는 끈 적이 없고 권한이 있으면 켜진 것으로 봐요.</li>
+<li><b>읽는 법</b>: <b>○ 일시:</b> 줄을 일정 시각으로, <b>○ 장소:</b> 줄을 장소로, <b>[학교 이름]</b>과 <b>○ 주제:</b> 줄을 제목으로 써요. <b>신청 기간</b>이나 <b>“11월 26일(목)까지”</b> 같은 마감 날짜는 일정으로 쓰지 않아요.</li>
+<li><b>믿는 보낸 곳</b>: 학교·학원·교육청 이름표([길주중학교])가 있고, 보낸 번호가 주소록에 있거나 일반 전화(0xx)면 믿어요. 병원·교육청·보건소는 그대로 믿어요.</li>
+<li><b>신청·모집 안내</b>(신청, 모집, 선착순, 폼 …)는 마음대로 넣지 않고 <b>“달력에 넣을까요?”</b> 알림으로 물어요(<b>넣기</b> / <b>아니요</b>). <b>예약 확정</b> 같은 건 지금처럼 자동으로 넣고 <b>취소</b> 단추가 와요.</li>
+<li>달력 앱이 없거나 달력에 쓰지 못하면 <b>알림으로 알려요</b>(없을 때는 한 번만). 설정에 <b>달력 등록 기록</b>이 생겼어요: 마지막 일정 후보 문자 시각, <b>시도 / 건너뜀(이유) / 성공 / 실패(이유)</b>, 자동 넣기 켜짐, 달력 권한. 본문과 번호는 남기지 않아요.</li></ul>
 
 <h2>v4에서 새로 된 것 · 장문(LMS)·사진 문자 받기</h2><ul>
 <li>병원·택배·카드 문자처럼 <b>긴 문자(장문, LMS)</b>와 <b>사진 문자(MMS)</b>를 기본 문자 앱일 때 <b>통신사에서 내려받아 저장</b>해요. 예전에는 ‘사진·장문 문자가 왔어요 — 아직 받지 못해요’ 알림만 떴어요.</li>
@@ -45,7 +52,7 @@ img.shot{width:31%;border-radius:14px;margin:1%;vertical-align:top}</style></hea
 
 <h2>1. 설치하기</h2><ol>
 <li><b>Play 프로텍트 검사 잠시 끄기</b>: Play 스토어 → 프로필 사진 → Play 프로텍트 → 톱니바퀴 → ‘Play 프로텍트로 앱 검사’ 끄기.</li>
-<li>이 폰의 크롬에서 위 <b>내려받기</b> → 내 파일 › 다운로드 › <b>newniverse-sms-v4-test.apk</b> → (출처 허용) → <b>설치</b>(이미 v3이 있으면 덮어 깔아요. 문자는 그대로예요).</li>
+<li>이 폰의 크롬에서 위 <b>내려받기</b> → 내 파일 › 다운로드 › <b>newniverse-sms-v5-test.apk</b> → (출처 허용) → <b>설치</b>(이미 v4가 있으면 덮어 깔아요. 문자는 그대로예요).</li>
 <li>설치가 끝나면 <b>Play 프로텍트 검사를 다시 켜기</b>.</li></ol>
 
 <h2>2. 처음 켜기 (권한)</h2><ol>

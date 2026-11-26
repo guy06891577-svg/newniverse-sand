@@ -18,6 +18,10 @@
   <permission android:name="kr.newniverse.permission.SMS_FEED" android:protectionLevel="signature"/>
   <uses-permission android:name="kr.newniverse.permission.SMS_FEED"/>
   <queries>
+    <!-- v5: 달력 앱이 있는지·달력을 보여 줄 앱이 있는지 확인 -->
+    <provider android:authorities="com.android.calendar"/>
+    <intent><action android:name="android.intent.action.VIEW"/><data android:scheme="content" android:host="com.android.calendar"/></intent>
+    <intent><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.APP_CALENDAR"/></intent>
     <intent><action android:name="android.intent.action.DIAL"/><data android:scheme="tel"/></intent>
   </queries>
   <application android:label="뉴니버스 문자" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher"

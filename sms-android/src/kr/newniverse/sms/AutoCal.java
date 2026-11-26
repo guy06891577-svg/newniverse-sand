@@ -3,6 +3,7 @@ package kr.newniverse.sms;
 import android.app.*;
 import android.content.*;
 import android.Manifest;
+import android.content.SharedPreferences;
 import java.util.Calendar;
 
 /**
@@ -12,35 +13,56 @@ import java.util.Calendar;
  */
 final class AutoCal {
   static final String PREF="nv_cal", CH="cal";
-  static boolean on(Context c){ return c.getSharedPreferences(PREF,Context.MODE_PRIVATE).getBoolean("on",false); }
+  /**
+   * v5: 끈 적이 없고 달력 권한이 있으면 켜진 것으로 본다. (v4까지는 런처 안내로 권한만 허용하고 앱 안에서 ‘켜기’를 안 누르면
+   * 권한이 있어도 조용히 꺼져 있었음.) 사용자가 설정에서 끄거나 ‘안 할래요’를 누르면 그 선택이 우선.
+   */
+  static boolean on(Context c){ SharedPreferences p=c.getSharedPreferences(PREF,Context.MODE_PRIVATE); return p.contains("on")?p.getBoolean("on",false):perm(c); }
   static void setOn(Context c,boolean v){ c.getSharedPreferences(PREF,Context.MODE_PRIVATE).edit().putBoolean("on",v).putBoolean("asked",true).apply(); }
   static boolean asked(Context c){ return c.getSharedPreferences(PREF,Context.MODE_PRIVATE).getBoolean("asked",false); }
   static boolean perm(Context c){ return Nv.has(c,Manifest.permission.READ_CALENDAR)&&Nv.has(c,Manifest.permission.WRITE_CALENDAR); }
 
-  /** 새 문자 받을 때(기본 문자 앱) */
+  static String contactName(Context c,String addr){ try{ return Nv.lookupName(c,addr); }catch(Exception e){ return null; } }
+
+  /** 새 문자·장문을 받을 때(기본 문자 앱). 결과는 설정 › 달력 등록 진단에 남김 */
   static void onSms(Context c,String addr,String body,long at){
-    try{ if(!on(c)||!perm(c)) return;
-      if(SmsSafety.isAd(body)||SmsSafety.suspicious(body)) return;
-      String name=null; try{ name=Nv.lookupName(c,addr); }catch(Exception e){}
-      ApptParser.R r=ApptParser.parse(body,at,name); if(r==null||!r.trusted) return;
-      CalLogic.Out o=CalLogic.apply(new CalStore(c),r,addr,false); notifyOut(c,o);
-    }catch(Exception e){}
+    try{
+      CalDecide.D d=CalDecide.decide(on(c),perm(c),body,at,contactName(c,addr),addr);
+      if("nodate".equals(d.reason)&&d.r==null) return; // 날짜 없는 일상 문자는 기록하지 않음
+      if("skip".equals(d.act)){ SmsDiag.cal(c,"skip",d.reason); return; }
+      if("ask".equals(d.act)){ SmsDiag.cal(c,"ask",""); notifyAsk(c,d.r,addr,body,at); return; }
+      insertAuto(c,d.r,addr);
+    }catch(Exception e){ try{ SmsDiag.cal(c,"try>fail","insert:"+InboxLogic.errClass(e)); }catch(Exception x){} }
   }
-  /** 카드의 「달력에 추가」: ok / dup / perm / unsafe / none */
+  private static void insertAuto(Context c,ApptParser.R r,String addr){
+    if(!CalStore.hasProvider(c)){ SmsDiag.cal(c,"try>fail","nocalapp"); warnNoCalendar(c,true); return; }
+    CalStore st=new CalStore(c);
+    CalLogic.Out o=CalLogic.apply(st,r,addr,false);
+    if("fail".equals(o.op)){ SmsDiag.cal(c,"try>fail","insert"+(st.err.isEmpty()?"":":"+st.err)); noticeFail(c); return; }
+    if("dup".equals(o.op)){ SmsDiag.cal(c,"skip","dup"); return; }
+    if("none".equals(o.op)){ SmsDiag.cal(c,"skip","noparse"); return; }
+    SmsDiag.cal(c,"try>ok",""); notifyOut(c,o);
+    if(!CalStore.hasViewer(c)) warnNoCalendar(c,false);
+  }
+  /** 카드의 「달력에 추가」·‘넣기’ 단추: ok / dup / perm / unsafe / none / fail */
   static String manual(Context c,String addr,String body,long at){
     try{ if(!perm(c)) return "perm";
       if(SmsSafety.isAd(body)||SmsSafety.suspicious(body)) return "unsafe";
-      String name=null; try{ name=Nv.lookupName(c,addr); }catch(Exception e){}
-      ApptParser.R r=ApptParser.parse(body,at,name); if(r==null) return "none";
+      ApptParser.R r=ApptParser.parse(body,at,contactName(c,addr),addr); if(r==null) return "none";
       if(r.org.isEmpty()) r.title="예약";
-      CalLogic.Out o=CalLogic.apply(new CalStore(c),r,addr,true); notifyOut(c,o);
+      if(!CalStore.hasProvider(c)){ warnNoCalendar(c,true); return "fail"; }
+      CalStore st=new CalStore(c);
+      CalLogic.Out o=CalLogic.apply(st,r,addr,true);
+      if("fail".equals(o.op)){ noticeFail(c); return "fail"; }
+      notifyOut(c,o);
+      if(!"dup".equals(o.op)&&!"none".equals(o.op)&&!CalStore.hasViewer(c)) warnNoCalendar(c,false);
       return "dup".equals(o.op)?"dup":"none".equals(o.op)?"none":"ok";
     }catch(Exception e){ return "none"; }
   }
   /** 이미 달력에 넣은 일정인지(카드의 단추 모양 결정) */
   static boolean has(Context c,String addr,String body,long at){
-    try{ if(!perm(c)) return false; String name=null; try{ name=Nv.lookupName(c,addr); }catch(Exception e){}
-      ApptParser.R r=ApptParser.parse(body,at,name); if(r==null||r.kind==ApptParser.CANCEL) return false;
+    try{ if(!perm(c)) return false; String name=contactName(c,addr);
+      ApptParser.R r=ApptParser.parse(body,at,name,addr); if(r==null||r.kind==ApptParser.CANCEL) return false;
       boolean all=!r.hasTime||r.kind==ApptParser.PARCEL;
       for(CalLogic.Entry e:new CalStore(c).load()) if(!e.undone&&e.org.equals(r.org)&&e.start==r.when&&e.allDay==all) return true;
     }catch(Exception e){}
@@ -53,7 +75,7 @@ final class AutoCal {
     return s;
   }
   static void notifyOut(Context c,CalLogic.Out o){
-    if(o==null||"none".equals(o.op)||"dup".equals(o.op)) return;
+    if(o==null||"none".equals(o.op)||"dup".equals(o.op)||"fail".equals(o.op)) return;
     try{ NotificationManager nm=c.getSystemService(NotificationManager.class); if(nm==null) return;
       nm.createNotificationChannel(new NotificationChannel(CH,"달력에 넣은 일정",NotificationManager.IMPORTANCE_LOW));
       CalLogic.Entry e=o.e!=null?o.e:o.prev; if(e==null) return;
@@ -67,6 +89,40 @@ final class AutoCal {
         .setVisibility(Notification.VISIBILITY_PRIVATE).addAction(new Notification.Action.Builder(null,"취소",pi).build());
       nm.notify(id,b.build());
     }catch(Exception x){}
+  }
+  static final String CH_ASK="calask";
+  static final String ACT_ASK_ADD="kr.newniverse.sms.CAL_ASK_ADD", ACT_ASK_NO="kr.newniverse.sms.CAL_ASK_NO";
+  static NotificationManager nm(Context c){ NotificationManager n=c.getSystemService(NotificationManager.class); if(n!=null){ try{ n.createNotificationChannel(new NotificationChannel(CH,"달력에 넣은 일정",NotificationManager.IMPORTANCE_LOW)); n.createNotificationChannel(new NotificationChannel(CH_ASK,"달력에 넣을까요?",NotificationManager.IMPORTANCE_DEFAULT)); }catch(Exception e){} } return n; }
+
+  /** 신청·모집 안내는 자동으로 넣지 않고 물어봄: 「달력에 넣을까요?」 [넣기] [아니요] */
+  static void notifyAsk(Context c,ApptParser.R r,String addr,String body,long at){
+    NotificationManager nm=nm(c); if(nm==null) return;
+    String x=body==null?"":body.trim(); if(x.length()>1500) x=x.substring(0,1500);
+    int id=0x500000|((r.title+r.when).hashCode()&0xfffff);
+    Intent add=new Intent(c,CalUndoReceiver.class).setAction(ACT_ASK_ADD).putExtra("addr",addr==null?"":addr).putExtra("body",x).putExtra("at",at).putExtra("nid",id);
+    Intent no=new Intent(c,CalUndoReceiver.class).setAction(ACT_ASK_NO).putExtra("nid",id);
+    int fl=PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT;
+    String line=r.title+" · "+when(r.when,!r.hasTime)+(r.location.isEmpty()?"":" · "+r.location);
+    Notification.Builder b=new Notification.Builder(c,CH_ASK).setSmallIcon(R.drawable.ic_msg).setColor(0xFF8F6BFF)
+      .setContentTitle("달력에 넣을까요?").setContentText(line).setStyle(new Notification.BigTextStyle().bigText(line))
+      .setAutoCancel(true).setCategory(Notification.CATEGORY_EVENT).setVisibility(Notification.VISIBILITY_PRIVATE).setTimeoutAfter(24*3600*1000L)
+      .addAction(new Notification.Action.Builder(null,"넣기",PendingIntent.getBroadcast(c,id,add,fl)).build())
+      .addAction(new Notification.Action.Builder(null,"아니요",PendingIntent.getBroadcast(c,id+1,no,fl)).build());
+    try{ nm.notify(id,b.build()); }catch(Exception e){}
+  }
+  /** 달력 앱이 없으면(또는 보여 줄 앱이 없으면) 한 번만 알림 */
+  static void warnNoCalendar(Context c,boolean cannotInsert){
+    SharedPreferences p=c.getSharedPreferences(PREF,Context.MODE_PRIVATE); if(p.getBoolean("warned_noapp",false)&&!cannotInsert) return;
+    if(!cannotInsert) p.edit().putBoolean("warned_noapp",true).apply();
+    NotificationManager nm=nm(c); if(nm==null) return;
+    String t=cannotInsert?"이 폰에 달력 앱이 없어서 일정을 넣지 못했어요":"일정은 넣었지만 달력을 보여 줄 앱이 없어요";
+    String d=cannotInsert?"삼성 달력 같은 달력 앱을 켜거나 설치한 뒤 다시 시도해 주세요. 뉴니버스는 폰의 달력 저장소에 일정을 넣어요.":"삼성 달력이나 구글 캘린더 같은 달력 앱을 설치하면 ‘뉴니버스’ 달력의 일정이 보여요.";
+    try{ nm.notify(0x5F0001,new Notification.Builder(c,CH).setSmallIcon(R.drawable.ic_msg).setColor(0xFF8F6BFF).setContentTitle(t).setContentText(d).setStyle(new Notification.BigTextStyle().bigText(d)).setAutoCancel(true).build()); }catch(Exception e){}
+  }
+  static void noticeFail(Context c){
+    NotificationManager nm=nm(c); if(nm==null) return;
+    String d="달력에 쓰지 못했어요. 설정 › 달력 등록 기록에서 이유를 볼 수 있어요.";
+    try{ nm.notify(0x5F0002,new Notification.Builder(c,CH).setSmallIcon(R.drawable.ic_msg).setColor(0xFF8F6BFF).setContentTitle("일정을 달력에 넣지 못했어요").setContentText(d).setAutoCancel(true).build()); }catch(Exception e){}
   }
   static void put(Intent i,String p,CalLogic.Entry e){ i.putExtra(p+"id",e.id).putExtra(p+"s",e.sender).putExtra(p+"o",e.org).putExtra(p+"t",e.title).putExtra(p+"st",e.start).putExtra(p+"ad",e.allDay); }
   static CalLogic.Entry get(Intent i,String p){ if(!i.hasExtra(p+"id")) return null; CalLogic.Entry e=new CalLogic.Entry();
