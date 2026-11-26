@@ -308,6 +308,7 @@ public class MainActivity extends Activity {
       sr.startListening(i);
     }catch(Exception e){ spJs("error","e-start"); } }); }
 
+  boolean tryStart(Intent i){ try{ i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(i); return true; }catch(Exception e){ return false; } }
   class Bridge {
     // v29 알림 배지·미리보기
     @JavascriptInterface public boolean notifAccess(){ return notifGranted(); }
@@ -578,6 +579,72 @@ public class MainActivity extends Activity {
         speechGo(true); return "ok"; }catch(Exception e){ return "none"; } }
     @JavascriptInterface public void speechStop(){ ui.post(()->{ if(sr!=null){ try{ sr.stopListening(); }catch(Exception e){} } }); }
     @JavascriptInterface public void speechCancelJs(){ speechCancel(); }
+    // ===== v41b 말·글씨로 설정 바꾸기 (앱 없는 홈의 같은 입력칸) =====
+    // 런처가 직접 바꿀 수 있는 것: 밝기·자동밝기·자동회전(시스템 설정 변경 허용), 무음·진동·소리, 방해 금지(방해 금지 접근 허용), 손전등, 미디어 볼륨(허용 불필요).
+    // 안드로이드가 막은 것(와이파이·데이터·NFC·블루투스·비행기·위치·핫스팟)은 알맞은 시스템 창만 열어 줌.
+    // 반환: {"r":"ok|needWrite|needDnd|panel|settings|nocam|fail", "v":새 값, "prev":이전 값}
+    @JavascriptInterface public String ctl(String cmd,String arg){
+      JSONObject o=new JSONObject(); String r="ok";
+      try{
+        AudioManager am=(AudioManager)getSystemService(AUDIO_SERVICE); ContentResolver cr=getContentResolver();
+        android.app.NotificationManager nm=(android.app.NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+        String a=arg==null?"":arg;
+        if("get".equals(cmd)){
+          try{ o.put("bright",Settings.System.getInt(cr,Settings.System.SCREEN_BRIGHTNESS,128)/255.0); }catch(Exception e){}
+          try{ o.put("auto",Settings.System.getInt(cr,Settings.System.SCREEN_BRIGHTNESS_MODE,0)==1); }catch(Exception e){}
+          o.put("ring",am.getRingerMode()); o.put("dnd",nm.getCurrentInterruptionFilter()>android.app.NotificationManager.INTERRUPTION_FILTER_ALL);
+          o.put("dndAccess",nm.isNotificationPolicyAccessGranted()); o.put("torch",torchState); o.put("writeSettings",Settings.System.canWrite(MainActivity.this));
+          try{ o.put("rot",Settings.System.getInt(cr,Settings.System.ACCELEROMETER_ROTATION,0)!=0); }catch(Exception e){}
+          o.put("vol",am.getStreamVolume(AudioManager.STREAM_MUSIC)/(double)Math.max(1,am.getStreamMaxVolume(AudioManager.STREAM_MUSIC)));
+          o.put("r","ok"); return o.toString(); }
+        if("bright".equals(cmd)){
+          if(!Settings.System.canWrite(MainActivity.this)){ o.put("r","needWrite"); return o.toString(); }
+          double prev=Settings.System.getInt(cr,Settings.System.SCREEN_BRIGHTNESS,128)/255.0; double v=Double.parseDouble(a);
+          v=Math.max(0.03,Math.min(1.0,v)); sysBright((float)v); o.put("v",v); o.put("prev",prev); o.put("r","ok"); return o.toString(); }
+        if("auto".equals(cmd)){
+          if(!Settings.System.canWrite(MainActivity.this)){ o.put("r","needWrite"); return o.toString(); }
+          boolean prev=Settings.System.getInt(cr,Settings.System.SCREEN_BRIGHTNESS_MODE,0)==1; boolean on="t".equals(a)?!prev:"1".equals(a);
+          Settings.System.putInt(cr,Settings.System.SCREEN_BRIGHTNESS_MODE,on?1:0);
+          ui.post(()->{ WindowManager.LayoutParams lp=getWindow().getAttributes(); lp.screenBrightness=-1f; getWindow().setAttributes(lp); });
+          o.put("v",on); o.put("prev",prev); o.put("r","ok"); return o.toString(); }
+        if("rot".equals(cmd)){
+          if(!Settings.System.canWrite(MainActivity.this)){ o.put("r","needWrite"); return o.toString(); }
+          boolean prev=Settings.System.getInt(cr,Settings.System.ACCELEROMETER_ROTATION,0)!=0; boolean on="t".equals(a)?!prev:"1".equals(a);
+          Settings.System.putInt(cr,Settings.System.ACCELEROMETER_ROTATION,on?1:0); o.put("v",on); o.put("prev",prev); o.put("r","ok"); return o.toString(); }
+        if("ring".equals(cmd)){
+          int prev=am.getRingerMode(); int mode=prev;
+          if("normal".equals(a)) mode=AudioManager.RINGER_MODE_NORMAL; else if("vibrate".equals(a)) mode=AudioManager.RINGER_MODE_VIBRATE; else if("silent".equals(a)) mode=AudioManager.RINGER_MODE_SILENT;
+          else if("int0".equals(a)||"int1".equals(a)||"int2".equals(a)) mode=a.charAt(3)-'0';
+          try{ am.setRingerMode(mode); }catch(SecurityException se){ o.put("r","needDnd"); return o.toString(); }
+          o.put("v",am.getRingerMode()); o.put("prev",prev); o.put("r","ok"); return o.toString(); }
+        if("dnd".equals(cmd)){
+          if(!nm.isNotificationPolicyAccessGranted()){ o.put("r","needDnd"); return o.toString(); }
+          boolean prev=nm.getCurrentInterruptionFilter()>android.app.NotificationManager.INTERRUPTION_FILTER_ALL; boolean on="t".equals(a)?!prev:"1".equals(a);
+          nm.setInterruptionFilter(on?android.app.NotificationManager.INTERRUPTION_FILTER_PRIORITY:android.app.NotificationManager.INTERRUPTION_FILTER_ALL);
+          o.put("v",on); o.put("prev",prev); o.put("r","ok"); return o.toString(); }
+        if("torch".equals(cmd)){
+          boolean prev=torchState; boolean on="t".equals(a)?!prev:"1".equals(a);
+          if(!torch(on)){ o.put("r","nocam"); return o.toString(); } torchState=on; o.put("v",on); o.put("prev",prev); o.put("r","ok"); return o.toString(); }
+        if("vol".equals(cmd)){
+          int mx=Math.max(1,am.getStreamMaxVolume(AudioManager.STREAM_MUSIC)); int cur=am.getStreamVolume(AudioManager.STREAM_MUSIC); double prev=cur/(double)mx; int n=cur;
+          int step=Math.max(1,Math.round(mx*0.15f));
+          if("+".equals(a)) n=cur+step; else if("-".equals(a)) n=cur-step; else n=(int)Math.round(Double.parseDouble(a)*mx);
+          n=Math.max(0,Math.min(mx,n)); am.setStreamVolume(AudioManager.STREAM_MUSIC,n,0);
+          o.put("v",am.getStreamVolume(AudioManager.STREAM_MUSIC)/(double)mx); o.put("prev",prev); o.put("r","ok"); return o.toString(); }
+        if("panel".equals(cmd)){
+          Intent i=null; String kind="panel";
+          if("wifi".equals(a)){ i=new Intent(Build.VERSION.SDK_INT>=29?Settings.Panel.ACTION_WIFI:Settings.ACTION_WIFI_SETTINGS); }
+          else if("data".equals(a)||"air".equals(a)){ i=new Intent(Build.VERSION.SDK_INT>=29?Settings.Panel.ACTION_INTERNET_CONNECTIVITY:Settings.ACTION_WIRELESS_SETTINGS); }
+          else if("nfc".equals(a)){ i=new Intent(Build.VERSION.SDK_INT>=29?Settings.Panel.ACTION_NFC:Settings.ACTION_NFC_SETTINGS); }
+          else if("bt".equals(a)){ i=new Intent(Settings.ACTION_BLUETOOTH_SETTINGS); kind="settings"; }
+          else if("loc".equals(a)){ i=new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS); kind="settings"; }
+          else if("hot".equals(a)){ i=new Intent(); i.setClassName("com.android.settings","com.android.settings.TetherSettings"); kind="settings"; }
+          else { o.put("r","fail"); return o.toString(); }
+          if(!tryStart(i)){ Intent j=new Intent("hot".equals(a)?Settings.ACTION_WIRELESS_SETTINGS:Settings.ACTION_SETTINGS); if(!tryStart(j)){ o.put("r","fail"); return o.toString(); } kind="settings"; }
+          o.put("r",kind); return o.toString(); }
+        o.put("r","fail");
+      }catch(Exception e){ try{ o.put("r","fail"); }catch(Exception e2){} }
+      return o.toString(); }
     @JavascriptInterface public boolean isDefaultHome(){ Intent i=new Intent(Intent.ACTION_MAIN); i.addCategory(Intent.CATEGORY_HOME); ResolveInfo r=getPackageManager().resolveActivity(i,PackageManager.MATCH_DEFAULT_ONLY); return r!=null&&r.activityInfo!=null&&getPackageName().equals(r.activityInfo.packageName); }
   }
 }

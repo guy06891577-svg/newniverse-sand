@@ -518,6 +518,20 @@
   .nht .ic.act{background:linear-gradient(135deg,rgba(110,190,255,.28),rgba(160,120,255,.28));border:1px solid rgba(170,190,255,.35);color:#eaf0ff}
   .nht .ic.act .ni{width:24px;height:24px}
   .nht .nm{max-width:100%;font:600 12px/1.2 var(--nv-font,system-ui,sans-serif);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 2px;color:rgba(245,247,255,.95)}
+  /* v41b 설정 결과 카드: 유리·하늘→보라 단일 포인트, 선 아이콘 */
+  #nhCard{display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:4px 12px;padding:12px 14px;border-radius:22px;border:1px solid rgba(255,255,255,.18);background:linear-gradient(160deg,rgba(255,255,255,.13),rgba(255,255,255,.045));-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 10px 28px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.1);color:#fff;transition:opacity .4s,filter .4s}
+  #nhCard.pre{opacity:0;pointer-events:none}
+  #nhCard.out{opacity:0;filter:blur(5px)}
+  #nhCard .ic{grid-row:1;width:44px;height:44px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(135deg,rgba(110,190,255,.30),rgba(160,120,255,.30));border:1px solid rgba(170,190,255,.38);color:#eaf0ff}
+  #nhCard .ic .ni{width:24px;height:24px}
+  #nhCard .tx{min-width:0;display:flex;flex-direction:column;gap:3px}
+  #nhCard .tx b{font:700 16px/1.2 var(--nv-font,system-ui,sans-serif);letter-spacing:-.2px;color:#fff}
+  #nhCard .tx small{font:500 12px/1.3 var(--nv-font,system-ui,sans-serif);color:rgba(225,232,255,.66)}
+  #nhCard .un{height:34px;padding:0 14px;border-radius:17px;border:1px solid rgba(170,190,255,.4);background:rgba(140,170,255,.12);color:#e6edff;font:600 13px/1 var(--nv-font,system-ui,sans-serif)}
+  #nhCard .un:active{transform:scale(.96)}
+  #nhCard .rg{grid-column:1/-1;-webkit-appearance:none;appearance:none;height:30px;margin:4px 0 0;background:transparent;width:100%}
+  #nhCard .rg::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:linear-gradient(90deg,#7cc4ff,#9a86ff) 0 0/var(--p,50%) 100% no-repeat,rgba(255,255,255,.16)}
+  #nhCard .rg::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;margin-top:-8px;border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.4),0 0 0 4px rgba(150,170,255,.25)}
   .nht.pre{opacity:0;pointer-events:none}   /* v39b: 등장·퇴장은 버스 카드와 같은 bfxBurst 모래(모이기/흩어지기), CSS 계단 등장 없음 */
   .nht.out,#nhRes.out .nht{opacity:0;filter:blur(5px);transform:translateY(-6px) scale(.98)}
   .nht:active{transform:scale(.96)}
@@ -4116,6 +4130,7 @@ function nhMatch(q){const forms=nhForms(q),qn=forms[0];if(!qn)return {hd:'',tile
   const groups=[];
   NHI.forEach(I=>{const sc=nhScoreIAll(I,forms);if(!sc)return;const t=[];const A=()=>(I.acts||[]).forEach(x=>t.push(Object.assign({k:'act'},x)));if(!I.al)A();(I.apps?I.apps():[]).forEach(a=>t.push({k:'app',a}));if(I.al)A();(I.post?I.post():[]).forEach(a=>t.push({k:'app',a}));
     groups.push({sc,I,tiles:t})});
+  try{const cg=nhCtlGroup(q);if(cg)groups.push(cg)}catch(_){}
   const ap=[];nhApps().forEach(a=>{const sc=nhScoreApp(a,forms);if(sc)ap.push({sc,a})});
   ap.sort((x,y)=>y.sc-x.sc||String(x.a.full||x.a.n).localeCompare(String(y.a.full||y.a.n),'ko'));
   if(ap.length)groups.push({sc:ap[0].sc,I:null,tiles:ap.map(x=>({k:'app',a:x.a})),scs:ap.map(x=>x.sc)});
@@ -4146,7 +4161,7 @@ function nhRender(){const r=nhMatch(NH.q);NH.tiles=r.tiles;NH.top=r.top;
   clearTimeout(NH.inT);
   if(fresh.size)NH.inT=setTimeout(()=>{const els=[...NHGRID.querySelectorAll('.nht.pre')];els.forEach(b=>{try{bfxBurst(nhRect(b),true)}catch(_){}});
     NH.inT=setTimeout(()=>els.forEach(b=>b.classList.remove('pre')),380)},0)}
-function nhSetQ(v,fromVoice){NH.q=String(v||'');if(NHQ.value!==NH.q)NHQ.value=NH.q;NH.voice=!!fromVoice;nhRender();try{busTick()}catch(_){}}
+function nhSetQ(v,fromVoice){NH.q=String(v||'');if(NH.q&&NHCARD)nhCardOff(false);if(NHQ.value!==NH.q)NHQ.value=NH.q;NH.voice=!!fromVoice;nhRender();try{busTick()}catch(_){}}
 function nhRun(x,el){if(!x)return;try{if(navigator.vibrate)navigator.vibrate(6)}catch(_){}
   try{if(el){bfxBurst(nhRect(el),false);el.classList.add('out')}}catch(_){}
   const go=()=>{if(x.k==='act'){x.fn&&x.fn();return}openApp(x.a);setTimeout(()=>nhClear(false),350)};
@@ -4157,7 +4172,7 @@ function nhClear(anim){NHQ.blur();nhListenStop();if(!NH.q&&!NHRES.classList.cont
     NHRES.classList.add('out');clearTimeout(NH.cT);NH.cT=setTimeout(()=>{NHRES.classList.remove('out');nhSetQ('')},380);NH.q='';NHQ.value='';return}
   nhSetQ('')}
 // ---- 상황 제안어 (시간대) ----
-function nhSugWords(){const h=nhNow().getHours();let w=h>=21||h<5?['알람','메모','문자']:h<10?['버스','문자','전화']:h<17?['전화','문자','계산']:['버스','길찾기','전화'];
+function nhSugWords(){const h=nhNow().getHours();let w=h>=21||h<5?['알람','무음','밝기']:h<10?['버스','문자','전화']:h<17?['전화','문자','계산']:['버스','길찾기','전화'];
   const ok=x=>{const r=nhMatch(x);return r.tiles.length>0};const out=w.filter(ok);['전화','문자','사진','계산'].forEach(x=>{if(out.length<3&&!out.includes(x)&&ok(x))out.push(x)});return out.slice(0,3)}
 function nhSug(){const w=nhSugWords(),k=w.join('|');if(NHSUG.dataset.k===k)return;NHSUG.dataset.k=k;NHSUG.innerHTML=w.map(x=>`<button type="button" data-w="${esc(x)}">${esc(x)}</button>`).join('')}
 NHSUG.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;e.stopPropagation();nhSetQ(b.dataset.w)});
@@ -4181,7 +4196,7 @@ function nhStarsOpen(){if(!NHST.classList.contains('on'))nhStarsBuild();NH.stars
 function nhStarsClose(){NH.stars=false;NHST.style.transition='opacity .3s';NHST.style.opacity=0;NHUI.style.transition='opacity .3s';NHUI.style.opacity=1;NHUI.style.pointerEvents='';setTimeout(()=>{if(!NH.stars)NHST.classList.remove('on')},320)}
 NHST.querySelector('.all').addEventListener('click',e=>{e.stopPropagation();nhStarsClose();openDR()});
 // ---- 손짓: 위로 = 별, 아래로 = 빠른 설정, 두 번 톡톡 = 말로 찾기, 길게 = 메뉴 ----
-NHEL.addEventListener('pointerdown',e=>{e.stopPropagation();if(e.target.closest('#nhBar,#nhSug,.nht,.sa,.all'))return;
+NHEL.addEventListener('pointerdown',e=>{e.stopPropagation();if(e.target.closest('#nhBar,#nhSug,.nht,.sa,.all,#nhCard'))return;if(NHCARD)nhCardOff(true);
   if(menuOpen()){closeMenu();return}
   const r=phone.getBoundingClientRect();NH.pt={id:e.pointerId,x:e.clientX,y:e.clientY,px:e.clientX-r.left,py:e.clientY-r.top,t:e.timeStamp,m:false,ax:null,vy:0,ly:e.clientY,lt:e.timeStamp,lp:false};
   try{NHEL.setPointerCapture(e.pointerId)}catch(_){}
@@ -4224,7 +4239,7 @@ function nhPickHeard(cands){const list=(cands||[]).map(s=>String(s||'').trim()).
 function nhHeard(cands,auto){const p=nhPickHeard(Array.isArray(cands)?cands:[cands]);NH.heard=p.q;NH.cands=p.cands;
   if(!p.q){toast('잘 못 알아들었어요 · 다시 눌러 말해 주세요');return p}
   nhSetQ(p.q,true);   // 들은 말을 입력칸에 보여 줌
-  if(auto){const t=NH.top;if(t&&t.I&&t.I.auto&&t.sc>=100&&NH.tiles[0]&&NH.tiles[0].k==='app'){const x=NH.tiles[0],el=NHGRID.querySelector('.nht');clearTimeout(NH.aT);NH.aT=setTimeout(()=>{if(NH.q===p.q)nhRun(x,el)},650)}}
+  if(auto){const t=NH.top;if(t&&t.I&&t.I.auto&&t.sc>=100&&NH.tiles[0]&&(NH.tiles[0].k==='app'||(NH.tiles[0].k==='act'&&NH.tiles[0].ctl))){const x=NH.tiles[0],el=NHGRID.querySelector('.nht');clearTimeout(NH.aT);NH.aT=setTimeout(()=>{if(NH.q===p.q)nhRun(x,el)},650)}}
   return p}
 async function nhMic(){if(NH.listen&&!NH.speechUi){nhListenStop();return}
   if(!S.nhMicOk){const ok=await ask('말로 찾기','마이크 단추를 누르면 <b>폰의 음성 인식 화면</b>이 열려요.<br>· 거기서 말한 뒤 끝나면, 뉴니버스가 그 말(여러 후보)로 앱을 찾아요<br>· 녹음하거나 저장하지 않아요<br>· 음성 인식 화면을 못 여는 폰만 앱 안에서 바로 들어요',{ok:'마이크 쓰기'});if(!ok)return;S.nhMicOk=1;saveS()}
@@ -4245,6 +4260,112 @@ window.NV_onSpeech=(type,text)=>{
   if(type==='finals'||type==='final'){NH.listen=false;NH.speechUi=false;nhMicUI();const cands=Array.isArray(text)?text:(text==null||text==='')?[]:[text];if(!cands.length){toast('잘 못 알아들었어요 · 다시 눌러 말해 주세요');return}nhHeard(cands,true);return}
   if(type==='end')return;
   if(type==='error'){NH.listen=false;NH.speechUi=false;nhMicUI();const m=nhSpeechErr(text);if(m)toast(m)}};
+// ===== v41b 말·글씨로 설정 바꾸기: 같은 입력칸(우주 홈)에서 밝기·무음·손전등… =====
+Object.assign(GLY,{mute:'M4 9.5h3.5L12 5.5v13l-4.5-4H4z M16 9.5l5 5 M21 9.5l-5 5',vib:'M9 5.5h6v13H9z M5.5 8.5v7 M18.5 8.5v7 M2.5 10.5v3 M21.5 10.5v3',nfc:'M6 5.5h12v13H6z M9.5 9.5a3.5 3.5 0 0 1 0 5 M12.5 8a6 6 0 0 1 0 8',cut:'M8 3.5h8v3l-2 3v11h-4v-11l-2-3z'});
+var NHC_INFO={bright:{ic:'sun',n:'밝기'},auto:{ic:'sun',n:'자동 밝기'},ring:{ic:'bell',n:'소리'},dnd:{ic:'moon',n:'방해 금지'},torch:{ic:'flash',n:'손전등'},rot:{ic:'rotate',n:'자동 회전'},vol:{ic:'sound',n:'볼륨'},
+  wifi:{ic:'wifi',n:'와이파이',k:'p'},data:{ic:'data',n:'모바일 데이터',k:'p'},nfc:{ic:'nfc',n:'NFC',k:'p'},bt:{ic:'bt',n:'블루투스',k:'s'},air:{ic:'plane',n:'비행기 모드',k:'p'},loc:{ic:'pin',n:'위치',k:'s'},hot:{ic:'hotspot',n:'핫스팟',k:'s'}};
+// 한글 수(일·이·삼…십·백) → 숫자
+function nhKo(s){const D={영:0,공:0,일:1,이:2,삼:3,사:4,오:5,육:6,칠:7,팔:8,구:9};if(s==='백')return 100;let n=0,m=s.match(/^([일이삼사오육칠팔구])?십([일이삼사오육칠팔구])?$/);if(m){n=(m[1]?D[m[1]]:1)*10+(m[2]?D[m[2]]:0);return n}if(/^[일이삼사오육칠팔구]$/.test(s))return D[s];return null}
+function nhPct(s){let m=s.match(/(\d{1,3})(?:\.\d+)?(?:%|퍼센트|프로|퍼|으로|까지|정도)?/);if(m)return Math.max(0,Math.min(100,+m[1]));
+  m=s.match(/(백|[이삼사오육칠팔구]?십[일이삼사오육칠팔구]?|[일이삼사오육칠팔구])(?:%|퍼센트|프로|퍼)/);if(m){const v=nhKo(m[1]);if(v!=null)return v}
+  m=s.match(/(?:밝기|볼륨|음량|소리)(?:를|은|는|이|가)?(백|[이삼사오육칠팔구]?십[일이삼사오육칠팔구]?)(?:으로|로|까지|$)/);if(m){const v=nhKo(m[1]);if(v!=null)return v}
+  if(/(반|절반|중간)(으로|쯤|정도|만|$)/.test(s))return 50;return null}
+var NHC_UP=/올려|올리|올라|높여|높이|높게|키워|키우|크게|세게|밝게|밝혀|환하게|환히|더밝|많이|업$/,NHC_DN=/내려|내리|낮춰|낮추|낮게|줄여|줄이|작게|어둡게|어둡|어둑|약하게|덜|다운$/,NHC_ON=/켜|켬|켜기|켜라|켜자|활성|사용|시작|on$/,NHC_OFF=/꺼|끄|끔|끄기|끄자|해제|중지|그만|오프|off$/;
+// 문장 → 설정 명령. 못 알아들으면 null. 방향이 없으면 선택지(opts) 여러 개.
+function nhCtl(raw){const s=nhNorm(raw);if(!s||s.length<2)return null;
+  const up=NHC_UP.test(s),dn=NHC_DN.test(s),on=NHC_ON.test(s),off=NHC_OFF.test(s),pct=nhPct(s);
+  const mx=/최대|가장크|제일크|최고|풀로|끝까지|가득|꽉|풀밝|가장밝|제일밝/.test(s),mn=/최소|가장작|제일작|최저|가장낮|제일낮|가장어둡|제일어둡/.test(s);
+  const tg=on?'1':off?'0':'t',C=(id,o)=>Object.assign({id,sc:130,auto:true},o);
+  // 자동 밝기
+  if(/자동밝기|밝기자동|적응형밝기|밝기를자동|자동으로밝기|자동밝/.test(s))return C('auto',{arg:tg,label:'자동 밝기 '+(off?'끄기':on?'켜기':'바꾸기'),sc:on||off?130:115,auto:on||off});
+  // 볼륨 (벨 소리 모드보다 먼저)
+  if(/볼륨|음량|미디어소리|음악소리|소리(?=.*(크게|작게|키워|줄여|높여|낮춰|올려|내려|최대|최소|퍼센트|%|\d))|(크게|작게|키워|줄여)소리/.test(s)&&!/소리모드|벨소리모드/.test(s)){
+    if(mx)return C('vol',{mode:'set',val:1,label:'볼륨 최대'});if(mn||(off&&!up))return C('vol',{mode:'set',val:0,label:'볼륨 최소'});
+    if(pct!=null)return C('vol',{mode:'set',val:pct/100,label:'볼륨 '+pct+'%'});if(up&&!dn)return C('vol',{mode:'step',val:'+',label:'볼륨 키우기'});if(dn)return C('vol',{mode:'step',val:'-',label:'볼륨 줄이기'});
+    return C('vol',{sc:115,auto:false,opts:[{mode:'step',val:'+',label:'볼륨 키우기'},{mode:'step',val:'-',label:'볼륨 줄이기'},{mode:'set',val:0,label:'볼륨 최소'},{mode:'set',val:1,label:'볼륨 최대'}]})}
+  // 무음·진동·소리 모드
+  if(/무음|조용히|소리없이|사일런트|매너모드(?!진동)/.test(s)){if(off||/해제/.test(s))return C('ring',{arg:'normal',label:'소리 모드'});return C('ring',{arg:'silent',label:'무음'})}
+  if(/진동|바이브|매너모드/.test(s)){if(off||/해제/.test(s))return C('ring',{arg:'normal',label:'소리 모드'});return C('ring',{arg:'vibrate',label:'진동'})}
+  if(/소리모드|벨소리|소리로|소리켜|소리나게|소리를켜/.test(s)||s==='소리'){if(s==='소리')return C('ring',{sc:115,auto:false,opts:[{arg:'normal',label:'소리 모드',id:'ring'},{arg:'vibrate',label:'진동',id:'ring'},{arg:'silent',label:'무음',id:'ring'},{id:'vol',mode:'step',val:'+',label:'볼륨 키우기'}]});return C('ring',{arg:'normal',label:'소리 모드'})}
+  if(/소리(꺼|끄|끔|없애)/.test(s))return C('ring',{arg:'silent',label:'무음'});
+  // 방해 금지 · 손전등 · 자동 회전
+  if(/방해금지|디엔디|dnd|방해받|집중모드/.test(s))return C('dnd',{arg:tg,label:'방해 금지 '+(off?'끄기':on?'켜기':'바꾸기')});
+  if(/손전등|손전|플래시|플래쉬|랜턴|후레쉬|후레시|toch|torch|라이트(?!룸)/.test(s))return C('torch',{arg:tg,label:'손전등 '+(off?'끄기':on?'켜기':'바꾸기')});
+  if(/회전잠금|회전고정|세로고정/.test(s)){const a=on?'0':off?'1':'t';return C('rot',{arg:a,label:'자동 회전 '+(a==='0'?'끄기':a==='1'?'켜기':'바꾸기')})}
+  if(/자동회전|화면회전|자동으로회전|회전/.test(s))return C('rot',{arg:tg,label:'자동 회전 '+(off?'끄기':on?'켜기':'바꾸기')});
+  // 밝기
+  const bs=/밝기|밝게|어둡|환하게|환히|밝혀|눈부|너무밝|화면(?:을|이|좀|너무)*(?:밝|어두|환)|어두워/.test(s);
+  if(bs){let v=null;
+    if(/너무밝|눈부|밝아서|밝아요|너무환/.test(s)&&!up)v='dn';else if(/너무어두|어두워|어둡다|안보여/.test(s)&&!dn)v='up';
+    if(mx&&!dn)return C('bright',{mode:'set',val:1,label:'밝기 최대'});if(mn||/가장어둡|제일어둡/.test(s))return C('bright',{mode:'set',val:.05,label:'밝기 최소'});
+    if(pct!=null)return C('bright',{mode:'set',val:Math.max(3,pct)/100,label:'밝기 '+pct+'%'});
+    if(v==='dn'||dn)return C('bright',{mode:'step',val:-.2,label:'밝기 내리기'});if(v==='up'||up)return C('bright',{mode:'step',val:.2,label:'밝기 올리기'});
+    return C('bright',{sc:115,auto:false,opts:[{mode:'step',val:.2,label:'밝기 올리기'},{mode:'step',val:-.2,label:'밝기 내리기'},{mode:'set',val:1,label:'밝기 최대'},{mode:'set',val:.05,label:'밝기 최소'}]})}
+  // 시스템 화면으로 열어 주는 것들
+  const P=(id,label)=>C(id,{label,panel:true,sc:125});
+  if(/와이파이|와이파|wifi|와이-파이|무선인터넷|와이퐈/.test(s))return P('wifi','와이파이 열기');
+  if(/nfc|엔에프씨|엔에프시|엔에프/.test(s))return P('nfc','NFC 열기');
+  if(/블루투스|블루투쓰|bluetooth|블투/.test(s))return P('bt','블루투스 열기');
+  if(/비행기|에어플레인|비행모드|airplane/.test(s))return P('air','비행기 모드 열기');
+  if(/핫스팟|핫스폿|테더링|hotspot/.test(s))return P('hot','핫스팟 열기');
+  if(/(모바일)?데이터(?!베이스|백업)|mobiledata|인터넷설정/.test(s)&&!/데이터(절약|사용량|삭제|지워)/.test(s))return P('data','모바일 데이터 열기');
+  if(/(?<!내|현재|이)(?:위치|gps|지피에스)(?:설정|켜|꺼|서비스|를|좀|끄|$)/.test(s)&&!/찾|알려|어디|공유|보내|주소|지도|길/.test(s))return P('loc','위치 열기');
+  return null}
+// ---- 안내 문구·결과 카드 ----
+var NHCARD=null,NHCT=0;
+function nhCtlTiles(c){const list=c.opts?c.opts:[c];
+  return list.map(o=>{const ctl=Object.assign({},c,o,{opts:null}),inf=NHC_INFO[ctl.id]||{ic:'sun'};
+    const x={k:'act',t:o.label,ic:/^무음/.test(o.label)?'mute':/^진동/.test(o.label)?'vib':inf.ic,ctl};x.fn=()=>nhCtlDo(ctl);return x})}
+function nhCtlGroup(q){const c=nhCtl(q);if(!c)return null;const I=NHC_INFO[c.id]||{};return {sc:c.sc,I:{id:'ctl',hd:c.opts?(I.n||'설정')+' · 어떻게 할까요?':'설정 바꾸기',auto:!!c.auto&&!c.opts,none:''},tiles:nhCtlTiles(c),ctl:true}}
+function nhPlan(c,cur){const id=c.id;
+  if(id==='bright'){const b=typeof cur.bright==='number'?cur.bright:.5;return {cmd:'bright',arg:String(c.mode==='step'?Math.max(.03,Math.min(1,b+c.val)):c.val)}}
+  if(id==='vol'){return {cmd:'vol',arg:c.mode==='step'?c.val:String(c.val)}}
+  if(id==='ring')return {cmd:'ring',arg:c.arg};
+  if(id==='auto'||id==='rot'||id==='dnd'||id==='torch')return {cmd:id,arg:c.arg};
+  return {cmd:'panel',arg:id}}
+function nhCtlApi(cmd,arg){try{return JSON.parse(NVNative.ctl(cmd,arg))}catch(_){return {r:'fail'}}}
+function nhCtlDo(c,retry){
+  if(!NATIVE||!window.NVNative||!NVNative.ctl){nhClear(false);toast('이 기능은 폰에 설치한 뉴니버스에서만 돼요');return}
+  const cur=nhCtlApi('get','');const op=nhPlan(c,cur);const r=nhCtlApi(op.cmd,op.arg);
+  if(r.r==='needWrite'||r.r==='needDnd'){
+    nhClear(false);if(retry){toast('허용이 꺼져 있어요 · 설정에서 다시 켜 주세요');return}
+    const w=r.r==='needWrite';
+    ask(w?'시스템 설정 변경 허용':'방해 금지 접근 허용',w?'밝기·자동 회전을 <b>말이나 글씨로 바로</b> 바꾸려면 뉴니버스에 ‘시스템 설정 변경’을 한 번 허용해야 해요.<br>· 허용 화면에서 <b>뉴니버스</b>를 눌러 켜 주세요<br>· 돌아오면 방금 하려던 일을 이어서 해 드려요':'무음·방해 금지를 <b>말이나 글씨로 바로</b> 바꾸려면 ‘방해 금지 접근’에서 뉴니버스를 한 번 허용해야 해요.<br>· 허용 화면에서 <b>뉴니버스</b>를 눌러 켜 주세요<br>· 돌아오면 방금 하려던 일을 이어서 해 드려요',{ok:'허용하러 가기'}).then(ok=>{if(!ok)return;NH.pend=c;NH.hold=true;NVNative.qsGrant(w?'write':'dnd')});return}
+  if(r.r==='nocam'){nhClear(false);toast('이 폰에서는 손전등을 켤 수 없어요');return}
+  if(r.r==='fail'){nhClear(false);toast('이 폰에서는 바꿀 수 없어요');return}
+  nhClear(false);nhCardShow(c,r,cur,op)}
+function nhPctS(v){return Math.round(Math.max(0,Math.min(1,v))*100)+'%'}
+function nhCardInfo(c,r,cur){const I=NHC_INFO[c.id]||{ic:'sun',n:'설정'},v=r.v;
+  if(c.id==='bright')return {ic:'sun',t:'밝기 '+nhPctS(v),s:cur.auto?'자동 밝기는 꺼졌어요':'',sl:'bright'};
+  if(c.id==='vol')return {ic:v<=0?'mute':'sound',t:'볼륨 '+nhPctS(v),s:'미디어 소리',sl:'vol'};
+  if(c.id==='auto')return {ic:'sun',t:'자동 밝기 '+(v?'켜짐':'꺼짐'),s:v?'주변 빛에 맞춰요':'직접 정한 밝기로 둬요'};
+  if(c.id==='ring'){const m=v===0?['mute','무음','소리·진동이 울리지 않아요']:v===1?['vib','진동','소리 대신 진동으로 알려요']:['bell','소리 모드','벨소리가 울려요'];return {ic:m[0],t:m[1],s:m[2]}}
+  if(c.id==='dnd')return {ic:'moon',t:'방해 금지 '+(v?'켜짐':'꺼짐'),s:v?'중요한 알림만 와요':'알림이 다시 울려요'};
+  if(c.id==='torch')return {ic:'flash',t:'손전등 '+(v?'켜짐':'꺼짐'),s:''};
+  if(c.id==='rot')return {ic:'rotate',t:'자동 회전 '+(v?'켜짐':'꺼짐'),s:''};
+  return {ic:I.ic,t:I.n+(I.k==='s'?' 설정을 열었어요':' 창을 열었어요'),s:'거기서 켜고 끌 수 있어요',panel:true}}
+function nhCardShow(c,r,cur,op){nhCardOff(false);const f=nhCardInfo(c,r,cur);
+  const el=document.createElement('div');el.id='nhCard';el.className='pre';
+  el.innerHTML=`<span class="ic">${ico(f.ic)}</span><div class="tx"><b></b><small></small></div>${f.panel?'':'<button class="un" type="button">되돌리기</button>'}${f.sl?'<input class="rg" type="range" min="3" max="100" step="1" aria-label="'+(f.sl==='vol'?'볼륨':'밝기')+'">':''}`;
+  el.querySelector('b').textContent=f.t;el.querySelector('small').textContent=f.s||'';if(!f.s)el.querySelector('small').style.display='none';
+  NHUI.insertBefore(el,$('nhBar'));NHCARD=el;NHSUG.classList.add('hide');
+  const rg=el.querySelector('.rg');
+  if(rg){rg.value=Math.max(3,Math.round(r.v*100));rangeFill(rg);
+    rg.addEventListener('input',()=>{const v=+rg.value/100,q=nhCtlApi(f.sl==='vol'?'vol':'bright',String(v));rangeFill(rg);if(q.r==='ok'){el.querySelector('b').textContent=(f.sl==='vol'?'볼륨 ':'밝기 ')+nhPctS(q.v)}nhCardTimer(7000)});
+    rg.addEventListener('pointerdown',e=>{e.stopPropagation();nhCardTimer(9000)})}
+  const un=el.querySelector('.un');
+  if(un)un.onclick=e=>{e.stopPropagation();let q={r:'fail'};
+    if(c.id==='bright'){q=nhCtlApi('bright',String(r.prev));if(cur.auto)nhCtlApi('auto','1')}else if(c.id==='vol')q=nhCtlApi('vol',String(r.prev));else if(c.id==='ring')q=nhCtlApi('ring','int'+r.prev);else q=nhCtlApi(c.id,r.prev?'1':'0');
+    if(q.r==='ok'){const f2=nhCardInfo(c,Object.assign({},q,{v:c.id==='auto'||c.id==='dnd'||c.id==='torch'||c.id==='rot'?!!r.prev:q.v}),{auto:false});
+      el.querySelector('b').textContent=f2.t;el.querySelector('small').textContent='되돌렸어요';el.querySelector('small').style.display='';if(rg){rg.value=Math.max(3,Math.round(q.v*100));rangeFill(rg)}un.remove();nhCardTimer(1800)}else toast('되돌리지 못했어요')};
+  el.addEventListener('pointerdown',e=>e.stopPropagation());
+  // 모래가 모이며 나타남 → 잠시 뒤 모래로 흩어지며 우주로
+  requestAnimationFrame(()=>{try{bfxBurst(nhRect(el),true)}catch(_){}setTimeout(()=>{if(NHCARD===el)el.classList.remove('pre')},380)});
+  nhCardTimer(f.sl?5200:3600)}
+function nhCardTimer(ms){clearTimeout(NHCT);NHCT=setTimeout(()=>nhCardOff(true),ms)}
+function nhCardOff(anim){clearTimeout(NHCT);const el=NHCARD;if(!el)return;NHCARD=null;
+  const done=()=>{el.remove();if(!NH.q&&!NHCARD)NHSUG.classList.remove('hide')};
+  if(anim){try{bfxBurst(nhRect(el),false)}catch(_){}el.classList.add('out');setTimeout(done,380)}else done()}
 // ---- 우주: 거의 멈춰 있고 4초에 한 번 아주 조금만 흐름(화면이 꺼지거나 절전이면 멈춤) ----
 function nhStill(){if(S.lite===true||S.nhStill===true)return true;try{if(NATIVE&&NVNative.qsState){const q=JSON.parse(NVNative.qsState());if(q&&q.save)return true}}catch(_){}return false}
 function nhDrift(){clearInterval(NH.dT);NH.dT=0;if(!nhOn()||document.hidden||NH.still)return;
@@ -4255,16 +4376,17 @@ function nhPlace(){if(!nhOn()||!W)return;NHUI.style.bottom=Math.round(H-navY()+1
 function nhApply(){const on=nhOn();phone.classList.toggle('nh',on);if(on){nhPlace();nhSug();NH.still=nhStill();nhDrift();try{closeRecents()}catch(_){}}else{clearInterval(NH.dT);NH.dT=0;nhReset()}
   try{wSync()}catch(_){}try{BUS.plk='';BUS.html='';busPlace();busTick()}catch(_){}}
 function nhSet(on){S.nh=!!on;saveS();nhApply();if(!on){try{spaceKick()}catch(_){}try{relayoutSoon()}catch(_){}toast('예전 아이콘 홈으로 바꿨어요 · 설정에서 다시 켤 수 있어요')}else toast('앱 없는 홈 켜짐 · 무엇을 하실 건가요?')}
-function nhReset(){clearTimeout(NH.aT);nhListenStop();if(NH.stars||NHST.classList.contains('on')){NH.stars=false;NHST.classList.remove('on');NHST.style.opacity=0;NHUI.style.opacity=1;NHUI.style.pointerEvents=''}NHQ.blur();if(NH.q||NHQ.value)nhSetQ('');if(nhOn())nhSug()}
-function nhBack(){if(NH.stars){nhStarsClose();return true}if(NH.listen){nhListenStop();return true}if(NH.q||document.activeElement===NHQ){nhClear(true);return true}return false}
+function nhReset(){clearTimeout(NH.aT);nhCardOff(false);nhListenStop();if(NH.stars||NHST.classList.contains('on')){NH.stars=false;NHST.classList.remove('on');NHST.style.opacity=0;NHUI.style.opacity=1;NHUI.style.pointerEvents=''}NHQ.blur();if(NH.q||NHQ.value)nhSetQ('');if(nhOn())nhSug()}
+function nhBack(){if(NHCARD){nhCardOff(true);return true}if(NH.stars){nhStarsClose();return true}if(NH.listen){nhListenStop();return true}if(NH.q||document.activeElement===NHQ){nhClear(true);return true}return false}
 window.addEventListener('resize',()=>setTimeout(nhPlace,30));
 {const oi=window.NV_onInsets;window.NV_onInsets=()=>{try{oi&&oi()}catch(_){}nhPlace()}}
-{const orz=window.NV_onResume;window.NV_onResume=()=>{try{orz&&orz()}catch(_){}if(nhOn()){if(NH.hold||NH.speechUi){NH.hold=false}else nhReset();NH.still=nhStill();nhDrift();nhPlace()}}}
+{const orz=window.NV_onResume;window.NV_onResume=()=>{try{orz&&orz()}catch(_){}try{if(NH.pend){const c=NH.pend;NH.pend=null;setTimeout(()=>{try{nhCtlDo(c,true)}catch(_){}},450)}}catch(_){}if(nhOn()){if(NH.hold||NH.speechUi){NH.hold=false}else nhReset();NH.still=nhStill();nhDrift();nhPlace()}}}
 setInterval(()=>{if(nhOn()&&!document.hidden&&!NH.q)nhSug()},60000);
 nhApply();
 setTimeout(()=>{nhPlace();nhSug();if(nhOn()&&!S.nhTip){S.nhTip=1;saveS();setTimeout(()=>toast('빈 곳을 두 번 톡톡하면 말로 찾기 · 위로 밀면 최근 앱 · 아래로 빠른 설정'),900)}},300);
 window.__nv.nh={on:nhOn,set:nhSet,q:v=>nhSetQ(v),tiles:()=>NH.tiles.map(x=>x.k==='act'?'act:'+x.t:(x.a.__base||x.a).pkg),hd:()=>NHRES.querySelector('.hd').textContent,sug:()=>[...NHSUG.querySelectorAll('button')].map(b=>b.textContent),
   stars:()=>NH.stars,starsOpen:nhStarsOpen,recent:()=>nhRecent().map(a=>a.pkg),state:()=>({q:NH.q,listen:NH.listen,stars:NH.stars,still:NH.still,drift:!!NH.dT,busUntil:NH.busUntil,heard:NH.heard||'',ui:!!NH.speechUi,hold:!!NH.hold,cue:!!(document.getElementById('nhCue')&&document.getElementById('nhCue').classList.contains('go')),listening:!!(NH.listen||NH.speechUi||NHEL.classList.contains('listen'))}),back:nhBack,reset:nhReset,place:nhPlace,
+  ctl:q=>{const c=nhCtl(q);return c?{id:c.id,mode:c.mode||'',val:c.val===undefined?null:c.val,arg:c.arg||'',auto:!!c.auto,panel:!!c.panel,n:c.opts?c.opts.length:0,label:c.label||''}:null},
   stem:nhStem,match:q=>{const r=nhMatch(q);return {hd:r.hd,tiles:(r.tiles||[]).map(x=>x.k==='act'?'act:'+x.t:(x.a.__base||x.a).pkg),sc:r.top?r.top.sc:0}},pick:c=>nhPickHeard(c),heard:c=>{nhHeard(c,false);return {q:NH.q,hd:NHRES.querySelector('.hd').textContent,tiles:window.__nv.nh.tiles()}}};
 
 })();
