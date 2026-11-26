@@ -9,18 +9,23 @@ package kr.newniverse.sms;
 final class CalDecide {
   static final class D { String act="skip", reason=""; ApptParser.R r; }
 
-  static D decide(boolean on,boolean perm,String body,long at,String contact,String addr){
+  static D decide(boolean on,boolean perm,String body,long at,String contact,String addr){ return decide(on,perm,body,at,contact,addr,false); }
+  /** force: ‘마지막 문자 다시 읽기’(시험) — 보낸 곳을 못 믿어도 자동이 아니라 ‘넣을까요?’로 물어봄 */
+  static D decide(boolean on,boolean perm,String body,long at,String contact,String addr,boolean force){
     D d=new D();
+    if(body!=null&&body.length()>ApptParser.MAXLEN) body=body.substring(0,ApptParser.MAXLEN);
     if(body==null||body.trim().isEmpty()){ d.reason="nodate"; return d; }
     if(SmsSafety.isAd(body)){ d.reason="ad"; return d; }
     if(SmsSafety.suspicious(body)){ d.reason="suspicious"; return d; }
     ApptParser.R r=ApptParser.parse(body,at,contact,addr);
     if(r==null){ d.reason=ApptParser.hasDate(body,at)?"noparse:"+ApptParser.why(body,at):"nodate"; return d; }
     d.r=r;
-    if(!r.trusted){ d.reason="untrusted"; return d; }
+    boolean forced=!r.trusted&&force;
+    if(!r.trusted&&!force){ d.reason="untrusted"; return d; }
+    if(!perm){ d.reason="noperm"; return d; } // 권한이 없으면 ‘꺼짐’이 아니라 ‘권한 없음’으로 말함
     if(!on){ d.reason="off"; return d; }
-    if(!perm){ d.reason="noperm"; return d; }
-    d.act=r.ask?"ask":"auto";
+    d.act=(r.ask||forced)?"ask":"auto";
+    if(forced) d.reason="forced";
     return d;
   }
 
@@ -49,7 +54,7 @@ final class CalDecide {
       case "skip": return "건너뜀"+why;
       case "try>ok": return "시도 → 성공";
       case "try>fail": return "시도 → 실패"+why;
-      case "ask": return "‘넣을까요?’ 알림을 띄움";
+      case "ask": return "‘넣을까요?’ 알림을 띄움"+("forced".equals(reason)?"(시험: 보낸 곳 확인은 건너뜀)":"");
       case "ask>ok": return "‘넣을까요?’ → 넣기 → 성공";
       case "ask>no": return "‘넣을까요?’ → 아니요";
       case "ask>fail": return "‘넣을까요?’ → 넣기 → 실패"+why;

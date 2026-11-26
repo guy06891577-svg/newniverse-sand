@@ -48,8 +48,20 @@ class Bridge {
   @JavascriptInterface public void calSkip(){ a.runOnUiThread(()->{ AutoCal.setOn(a,false); ((MainActivity)a).js("window.NV_cal&&NV_cal()"); }); }
   @JavascriptInterface public void calDelete(){ CalStore.deleteAll(a); }
   @JavascriptInterface public String diag(){ return SmsDiag.json(a).toString(); }
-  /** v6(시험): 마지막 문자로 달력 단계를 다시 돌려 보기 → {ok, steps, label} */
-  @JavascriptInterface public String calReread(){ try{ return AutoCal.reread(a.getApplicationContext()); }catch(Exception e){ return "{\"ok\":false,\"label\":\"다시 읽지 못했어요 ("+InboxLogic.errClass(e)+")\"}"; } }
+  /**
+   * v7(시험): 마지막 문자로 달력 단계를 다시 돌려 보기. 화면이 멈추지 않게 다른 스레드에서 돌리고 바로 {"started":true} 를 돌려줌.
+   * 끝나면 화면의 window.NV_reread({ok,steps,stage,type,len,sms,mms,label}) 를 부름 (어떤 오류든 label 이 옴).
+   */
+  @JavascriptInterface public String calRereadStart(){
+    final Context app=a.getApplicationContext();
+    SmsDiag.rrPhase(app,"start"); // 이 함수가 불렸다는 흔적(요청 시각)을 바로 남김
+    new Thread(()->{
+      String r;
+      try{ r=AutoCal.reread(app); }catch(Throwable e){ r="{\"ok\":false,\"label\":\"다시 읽다가 오류가 났어요 ("+AutoCal.jq(AutoCal.errDesc(e))+")\"}"; }
+      if(a instanceof MainActivity) ((MainActivity)a).js("window.NV_reread&&NV_reread("+r+")");
+    },"nv-reread").start();
+    return "{\"started\":true}";
+  }
   /** v4: 못 받은 장문 다시 받기 → 다시 시도한 개수 */
   @JavascriptInterface public int mmsRetry(){ try{ return MmsInbox.retryAll(a.getApplicationContext()); }catch(Exception e){ return 0; } }
 

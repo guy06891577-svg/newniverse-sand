@@ -1,6 +1,6 @@
 <!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
-<title>뉴니버스 문자 v6 (시험판) 설치</title>
+<title>뉴니버스 문자 v7 (시험판) 설치</title>
 <style>body{font-family:system-ui,"Noto Sans KR",sans-serif;background:#07061a;color:#fff;margin:0;padding:22px;line-height:1.7;font-size:18px}
 h1{font-size:26px;margin:0 0 6px}h2{font-size:20px;margin:28px 0 8px;color:#9fd8ff}.sub{opacity:.72;font-size:15px}
 a.dl{display:block;text-align:center;margin:18px 0;padding:18px;border-radius:22px;background:linear-gradient(135deg,#6fd3ff,#8f6bff);color:#0a0820;font-weight:800;font-size:21px;text-decoration:none}
@@ -9,8 +9,15 @@ a.dl{display:block;text-align:center;margin:18px 0;padding:18px;border-radius:22
 ol,ul{padding-left:22px}li{margin:7px 0}b{color:#c9b8ff}
 img.shot{width:31%;border-radius:14px;margin:1%;vertical-align:top}</style></head><body>
 <img src="sms-icon-512.png" width="88" height="88" alt="" style="border-radius:22px;float:right">
-<h1>뉴니버스 문자 v6 (시험판)</h1><div class="sub">버전 6-test · 뉴니버스 고정 서명(런처·전화와 같은 서명) · 따로 까는 앱 · 인터넷 권한 없음</div>
-<a class="dl" href="newniverse-sms-v6-test.apk" download>내려받기 · 뉴니버스 문자 v6 (약 0.16MB)</a>
+<h1>뉴니버스 문자 v7 (시험판)</h1><div class="sub">버전 7-test · 뉴니버스 고정 서명(런처·전화와 같은 서명) · 따로 까는 앱 · 인터넷 권한 없음</div>
+<a class="dl" href="newniverse-sms-v7-test.apk" download>내려받기 · 뉴니버스 문자 v7 (약 0.16MB)</a>
+
+<h2>v7에서 고친 점 · ‘다시 읽기’가 아무 일도 안 하는 것처럼 보이던 문제</h2><ul>
+<li>v6에서 <b>다시 읽기</b>를 눌러도 화면이 그대로였고 <b>예전(v5) 기록</b>이 계속 보였어요. v7은 <b>누르는 순간 “마지막 문자를 읽는 중…”</b>을 보여 주고, 읽기는 화면이 멈추지 않게 <b>따로</b> 돌려요. <b>10초 안에 응답이 없으면</b> 그렇게 알려 줘요.</li>
+<li>설정 › <b>달력 등록 기록</b>에 매번 <b>새 기록</b>이 남아요: <b>요청한 때</b>, <b>찾은 문자</b>(SMS/MMS · 받은 때 · 글자 수 — 내용·번호는 저장 안 해요), <b>확인한 문자함</b>(받은 SMS·MMS 몇 통), <b>일정 읽기 단계</b>(<code>parse:ok</code>, <code>parse:no-date</code>, <code>parse:deadline-only</code>, <code>parse:no-datetime-line</code> …), <b>달력 넣기 결과</b>.</li>
+<li>기록이 <b>예전 버전</b>이 남긴 것이면 그렇게 적고, <b>v7 기록이 없으면 “v7 기록 없음”</b>이라고 보여 줘요. 읽다가 멈추거나 오류가 나면 <b>어느 단계에서 멈췄는지</b>(SMS 읽기 / MMS 읽기 / 일정 읽기 …)와 오류 이름을 보여 줘요.</li>
+<li><b>학교 문자</b>는 보낸 번호가 주소록에 없어도 <b>“달력에 넣을까요?”</b>로 물어요(자동으로는 넣지 않아요). 다시 읽기에서는 보낸 곳을 못 믿는 문자도 자동이 아니라 <b>묻는 알림</b>으로 시험해 줘요.</li>
+<li>아주 긴 문자(수만 자)를 읽다가 오래 걸리던 것을 고쳤어요(5000자까지만 읽고 공백은 하나로). 글이 파일로 저장된 장문도 읽어요. 달력 권한이 없으면 “자동 넣기 꺼짐”이 아니라 “달력 권한 없음”으로 말해요.</li></ul>
 
 <h2>v6에서 고친 점 · 실제 폰에서 온 글자 모양 읽기</h2><ul>
 <li>v5는 실제 폰에서 온 학교 장문을 일정으로 읽지 못했어요. 폰이 보내는 글자는 겉보기와 달리 <b>특수 공백(NBSP 등)</b>, <b>전각 글자(：～０-９)</b>, <b>다른 동그라미(ㅇ ⚬ ◯)</b>, <b>줄바꿈 없는 한 줄</b> 같은 모양이 섞여 있을 수 있는데, 이전 규칙은 보통 공백과 ‘○’만 알아봤어요.</li>
@@ -58,7 +65,7 @@ img.shot{width:31%;border-radius:14px;margin:1%;vertical-align:top}</style></hea
 
 <h2>1. 설치하기</h2><ol>
 <li><b>Play 프로텍트 검사 잠시 끄기</b>: Play 스토어 → 프로필 사진 → Play 프로텍트 → 톱니바퀴 → ‘Play 프로텍트로 앱 검사’ 끄기.</li>
-<li>이 폰의 크롬에서 위 <b>내려받기</b> → 내 파일 › 다운로드 › <b>newniverse-sms-v6-test.apk</b> → (출처 허용) → <b>설치</b>(이미 v5가 있으면 덮어 깔아요. 문자는 그대로예요).</li>
+<li>이 폰의 크롬에서 위 <b>내려받기</b> → 내 파일 › 다운로드 › <b>newniverse-sms-v7-test.apk</b> → (출처 허용) → <b>설치</b>(이미 v6가 있으면 덮어 깔아요. 문자는 그대로예요).</li>
 <li>설치가 끝나면 <b>Play 프로텍트 검사를 다시 켜기</b>.</li></ol>
 
 <h2>2. 처음 켜기 (권한)</h2><ol>

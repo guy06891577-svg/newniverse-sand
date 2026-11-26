@@ -74,7 +74,17 @@ final class SmsDiag {
   }
   /** v5: 달력 등록 단계. steps = skip | try>ok | try>fail | ask | ask>ok | ask>no | ask>fail, reason = CalDecide 이유 코드 (본문·번호 없음) */
   static void cal(Context c,String steps,String reason){
-    try{ p(c).edit().putLong("cal_at",System.currentTimeMillis()).putString("cal_steps",steps==null?"":steps).putString("cal_reason",reason==null?"":reason).apply(); }catch(Exception x){}
+    try{ p(c).edit().putLong("cal_at",System.currentTimeMillis()).putString("cal_steps",steps==null?"":steps).putString("cal_reason",reason==null?"":reason).putString("cal_ver",Nv.VER).apply(); }catch(Exception x){}
+  }
+  /** v7: 다시 읽기 진행 표시 — 각 단계에 들어가기 *전에* 남겨서, 멈추거나 죽어도 어느 단계였는지 남음. phase=start 면 요청 시각도 갱신 */
+  static void rrPhase(Context c,String phase){
+    try{ SharedPreferences.Editor e=p(c).edit(); if("start".equals(phase)) e.putLong("rr_start",System.currentTimeMillis()); e.putString("rr_phase",phase==null?"":phase).apply(); }catch(Exception x){}
+  }
+  /** v7: ‘마지막 문자 다시 읽기’ 기록. 문자 종류·시각·글자 수·확인한 개수·읽기 단계·결과만 (본문·번호 없음) */
+  static void rr(Context c,String type,long msgAt,int len,int nSms,int nMms,String qerr,String stage,String steps,String reason){
+    try{ p(c).edit().putLong("rr_at",System.currentTimeMillis()).putString("rr_type",type==null?"":type).putLong("rr_msg_at",msgAt).putInt("rr_len",len)
+      .putInt("rr_sms",nSms).putInt("rr_mms",nMms).putString("rr_qerr",qerr==null?"":qerr).putString("rr_stage",stage==null?"":stage)
+      .putString("rr_steps",steps==null?"":steps).putString("rr_reason",reason==null?"":reason).putString("rr_ver",Nv.VER).putString("rr_phase","done").apply(); }catch(Exception x){}
   }
   static void mmsAck(Context c,String st){ try{ p(c).edit().putString("mms_ack",st==null?"":st).apply(); }catch(Exception x){} }
 
@@ -101,7 +111,14 @@ final class SmsDiag {
       o.put("feedErr",p.getString("feed_err",""));
       String cs=p.getString("cal_steps",""), cr=p.getString("cal_reason","");
       o.put("calAt",p.getLong("cal_at",0)); o.put("calSteps",cs); o.put("calReason",cr);
-      o.put("calLabel",CalDecide.stepsLabel(cs,cr.contains(":")?cr.substring(0,cr.indexOf(':')):cr)+(cr.contains(":")?" · "+cr.substring(cr.indexOf(':')+1):"")); o.put("calGood",CalDecide.isGood(cs));
+      o.put("calLabel",cs.isEmpty()?"":AutoCal.labelOf(cs,cr)); o.put("calGood",CalDecide.isGood(cs));
+      String cv=p.getString("cal_ver","");
+      o.put("calVer",cv); o.put("calCurrent",cv.equals(Nv.VER)); // 이 버전이 남긴 기록인지(아니면 예전 버전 기록)
+      String rs=p.getString("rr_steps",""), rr=p.getString("rr_reason","");
+      o.put("rrAt",p.getLong("rr_at",0)); o.put("rrType",p.getString("rr_type","")); o.put("rrMsgAt",p.getLong("rr_msg_at",0)); o.put("rrLen",p.getInt("rr_len",0));
+      o.put("rrSms",p.getInt("rr_sms",0)); o.put("rrMms",p.getInt("rr_mms",0)); o.put("rrQerr",p.getString("rr_qerr","")); o.put("rrStage",p.getString("rr_stage",""));
+      o.put("rrStart",p.getLong("rr_start",0)); o.put("rrPhase",p.getString("rr_phase",""));
+      o.put("rrSteps",rs); o.put("rrReason",rr); o.put("rrLabel",rs.isEmpty()?"":AutoCal.labelOf(rs,rr)); o.put("rrGood",CalDecide.isGood(rs));
       o.put("calOn",AutoCal.on(c)); o.put("calPerm",AutoCal.perm(c));
       o.put("mmsAt",p.getLong("mms_at",0));
       o.put("mmsUpd",p.getLong("mms_upd",0));

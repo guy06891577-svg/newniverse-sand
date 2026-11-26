@@ -101,15 +101,17 @@ final class ApptParser {
    * 줄바꿈(CRLF·CR·U+2028)·모든 유니코드 공백(NBSP 등)·0폭 글자·전각 글자(：～．（）０-９)·물결표(〜～∼)·여러 동그라미(⚬◯◦●◎ㅇ)를 한 모양으로.
    * 동그라미나 ‘일시:’ ‘장소:’ 앞에서 줄을 나눠, 줄바꿈이 사라진 한 줄짜리 문자도 줄 단위로 읽게 함. 여러 번 해도 같은 결과.
    */
+  static final int MAXLEN=5000;
   static String norm(String s){
     if(s==null) return "";
+    if(s.length()>MAXLEN) s=s.substring(0,MAXLEN); // v7: 아주 긴 글에서 정규식이 오래 걸리지 않게
     String t=s.replace("\r\n","\n").replace('\r','\n').replace('\u2028','\n').replace('\u2029','\n').replace('\u0085','\n').replace('\u000B','\n').replace('\u000C','\n');
     StringBuilder sb=new StringBuilder(t.length());
     for(int k=0;k<t.length();k++){
       char ch=t.charAt(k);
       if(ch=='\n'){ sb.append(ch); continue; }
       if((ch>=0x200B&&ch<=0x200F)||ch==0x2060||ch==0xFEFF||ch==0x00AD||(ch>=0x202A&&ch<=0x202E)||ch==0x180E) continue;
-      if(ch=='\t'||Character.getType(ch)==Character.SPACE_SEPARATOR){ sb.append(' '); continue; }
+      if(ch=='\t'||Character.getType(ch)==Character.SPACE_SEPARATOR){ if(sb.length()>0&&sb.charAt(sb.length()-1)==' ') continue; sb.append(' '); continue; } // 공백은 하나로
       if(ch>=0xFF01&&ch<=0xFF5E){ ch=(char)(ch-0xFEE0); }
       if(ch=='\u301C'||ch=='\u223C'||ch=='\u02DC'||ch=='\u223E') ch='~';
       else if(ch=='\u2013'||ch=='\u2014'||ch=='\u2012'||ch=='\u2212'||ch=='\u2015') ch='-';
@@ -180,14 +182,14 @@ final class ApptParser {
     if(topic.length()>60) topic=topic.substring(0,60);
     boolean school=!tg.isEmpty()&&SCH_W.matcher(tg).find(), hosp=!tg.isEmpty()&&HOSP_W.matcher(tg).find(), agen=!tg.isEmpty()&&AGEN_W.matcher(tg).find();
     r.org=tg;
-    boolean inContacts=contact!=null&&!contact.isEmpty();
+    boolean inContacts=contact!=null&&!contact.isEmpty(); boolean schoolAsk=false;
     if(hosp||agen){ r.trusted=true; r.src=agen&&!hosp?"agency":"hosp"; }
-    else if(school){ r.trusted=inContacts||isLandline(addr); r.src="school"; }
+    else if(school){ r.trusted=true; r.src="school"; schoolAsk=!(inContacts||isLandline(addr)); } // v7: 학교 문자는 번호가 주소록에 없어도 ‘달력에 넣을까요?’로 물어봄(자동으로는 안 넣음)
     else if(inContacts){ r.trusted=true; r.src="contact"; if(r.org.isEmpty()) r.org=contact; }
     else r.trusted=false;
     String base=r.org.isEmpty()?"일정":r.org;
     r.title=topic.isEmpty()?(school||!hosp&&!agen?base+" 일정":base+" 예약"):base+" · "+topic;
-    r.ask=APPLY.matcher(n).find()&&!CONFIRM.matcher(n).find();
+    r.ask=(APPLY.matcher(n).find()&&!CONFIRM.matcher(n).find())||schoolAsk;
     return r;
   }
   static int endOfFirst(String when){ Matcher m=DT_RX.matcher(when); return m.find()?m.end():when.length(); }
@@ -198,6 +200,10 @@ final class ApptParser {
    * v6: parse()가 null 을 돌려줬을 때 어느 단계에서 막혔는지 (진단용, 본문·번호 없음)
    *  parse:no-date · parse:deadline-only(마감·신청기간 날짜뿐) · parse:no-datetime-line(일시 줄도 예약 확정 말도 없음) · parse:past(이미 지난 일정) · parse:other
    */
+  /** v7: 진단용 ‘읽기 단계’ — 읽었으면 parse:ok, 못 읽었으면 why() */
+  static String stage(String b,long at,String contact,String addr){
+    try{ return parse(b,at,contact,addr)!=null?"parse:ok":why(b,at); }catch(RuntimeException e){ return "parse:error"; }
+  }
   static String why(String b,long at){
     String n=norm(b);
     if(rawDates(n)==0) return "parse:no-date";

@@ -28,35 +28,78 @@ final class AutoCal {
   static void onSms(Context c,String addr,String body,long at){ process(c,addr,body,at,false); }
 
   /** 처리하고 {단계, 이유} 를 돌려줌. recordNoDate: 날짜 없는 문자도 기록(‘다시 읽기’ 때) */
-  static String[] process(Context c,String addr,String body,long at,boolean recordNoDate){
+  static String[] process(Context c,String addr,String body,long at,boolean recordNoDate){ return process(c,addr,body,at,recordNoDate,false); }
+  /** force: 시험용 다시 읽기 — 보낸 곳을 못 믿어도 자동 대신 ‘넣을까요?’ 알림 */
+  static String[] process(Context c,String addr,String body,long at,boolean recordNoDate,boolean force){
     try{
-      CalDecide.D d=CalDecide.decide(on(c),perm(c),body,at,contactName(c,addr),addr);
+      CalDecide.D d=CalDecide.decide(on(c),perm(c),body,at,contactName(c,addr),addr,force);
       if("nodate".equals(d.reason)&&d.r==null){ if(recordNoDate) SmsDiag.cal(c,"skip","nodate"); return new String[]{"skip","nodate"}; }
       if("skip".equals(d.act)){ SmsDiag.cal(c,"skip",d.reason); return new String[]{"skip",d.reason}; }
-      if("ask".equals(d.act)){ SmsDiag.cal(c,"ask",""); notifyAsk(c,d.r,addr,body,at); return new String[]{"ask",""}; }
+      if("ask".equals(d.act)){ SmsDiag.cal(c,"ask",d.reason); notifyAsk(c,d.r,addr,body,at); return new String[]{"ask",d.reason}; }
       return insertAuto(c,d.r,addr);
-    }catch(Exception e){ String why="insert:"+InboxLogic.errClass(e); try{ SmsDiag.cal(c,"try>fail",why); }catch(Exception x){} return new String[]{"try>fail",why}; }
+    }catch(Throwable e){ String why="error:"+errDesc(e); try{ SmsDiag.cal(c,"try>fail",why); }catch(Throwable x){} return new String[]{"try>fail",why}; } // Error 도 잡음: 받기 처리가 죽지 않게
   }
 
-  /** 시험용 ‘마지막 문자 다시 읽기’: 받은 문자(SMS·장문) 중 숫자 날짜가 있는 가장 최근 것으로 달력 단계를 다시 돌림. 본문은 어디에도 저장하지 않음 */
+  static String labelOf(String steps,String why){
+    why=why==null?"":why;
+    return CalDecide.stepsLabel(steps,why.contains(":")?why.substring(0,why.indexOf(':')):why)+(why.contains(":")?" · "+why.substring(why.indexOf(':')+1):"");
+  }
+  /** 오류 종류(+원인 종류). 정규식 문법 오류만 설명도 붙임(문자 내용 아님) */
+  static String errDesc(Throwable e){
+    if(e==null) return "";
+    String s=e.getClass().getSimpleName(); Throwable k=e.getCause();
+    if(k!=null){ s+="←"+k.getClass().getSimpleName(); if(k instanceof java.util.regex.PatternSyntaxException){ java.util.regex.PatternSyntaxException pe=(java.util.regex.PatternSyntaxException)k; s+=" "+pe.getDescription()+"@"+pe.getIndex(); } }
+    else if(e instanceof java.util.regex.PatternSyntaxException){ java.util.regex.PatternSyntaxException pe=(java.util.regex.PatternSyntaxException)e; s+=" "+pe.getDescription()+"@"+pe.getIndex(); }
+    return s.length()>120?s.substring(0,120):s;
+  }
+  static String jq(String s){ return s==null?"":s.replace("\\","/").replace("\"","'").replace("\n"," ").replace("\r"," "); }
+
+  /**
+   * 시험용 ‘마지막 문자 다시 읽기’: 받은 문자(SMS·장문) 중 숫자 날짜가 있는 가장 최근 것으로 달력 단계를 다시 돌림.
+   * v7: 어느 문자를 찾았는지(종류·시각·글자 수 — 본문·번호는 아님), 읽기 단계, 달력 넣기 결과를 항상 새 기록으로 남김.
+   * 어떤 오류가 나도 ‘기록 + 라벨’을 돌려줌(조용히 끝나지 않음).
+   */
   static String reread(Context c){
-    java.util.List<Object[]> l=new java.util.ArrayList<>(); // {date, addr, body}
-    android.content.ContentResolver cr=c.getContentResolver();
-    try(android.database.Cursor q=cr.query(android.provider.Telephony.Sms.Inbox.CONTENT_URI,new String[]{"address","body","date"},null,null,"date DESC")){
-      int n=0; while(q!=null&&q.moveToNext()&&n++<30) l.add(new Object[]{q.getLong(2),q.getString(0),q.getString(1)});
-    }catch(Exception e){}
-    try(android.database.Cursor q=cr.query(MmsInbox.MMS_INBOX,new String[]{"_id","date","sub","sub_cs"},null,null,"date DESC")){
-      int n=0; while(q!=null&&q.moveToNext()&&n++<30){ long id=q.getLong(0); String[] tx=MmsInbox.text(cr,id);
-        String sub=MmsLogic.fromIso(q.getString(2),q.isNull(3)?0:q.getInt(3));
-        l.add(new Object[]{MmsLogic.msFromMmsDate(q.getLong(1)),MmsInbox.from(cr,id,1),MmsLogic.feedText(sub,tx[0])}); }
-    }catch(Exception e){}
-    l.sort((x,y)->Long.compare((Long)y[0],(Long)x[0]));
-    Object[] pick=null; for(Object[] m:l) if(ApptParser.hasDate((String)m[2],(Long)m[0])){ pick=m; break; }
-    if(pick==null&&!l.isEmpty()) pick=l.get(0);
-    if(pick==null){ SmsDiag.cal(c,"skip","nodate"); return "{\"ok\":false,\"label\":\"받은 문자가 없어요\"}"; }
-    String[] r=process(c,(String)pick[1],(String)pick[2],(Long)pick[0],true);
-    String why=r[1]==null?"":r[1]; String label=CalDecide.stepsLabel(r[0],why.contains(":")?why.substring(0,why.indexOf(':')):why)+(why.contains(":")?" · "+why.substring(why.indexOf(':')+1):"");
-    return "{\"ok\":true,\"steps\":\""+r[0]+"\",\"label\":\""+label.replace("\"","'")+"\"}";
+    SmsDiag.rrPhase(c,"start");
+    int nSms=0,nMms=0; String qerr=""; String type="", stage="", steps="", reason=""; long msgAt=0; int len=0; String label;
+    try{
+      SmsDiag.rrPhase(c,"init");
+      ApptParser.stage("2026. 1. 1. 오후 1시",0,null,null); // 읽기 도구(정규식)가 이 폰에서 켜지는지 먼저 확인
+      java.util.List<Object[]> l=new java.util.ArrayList<>(); // {date(ms), addr, body, type}
+      android.content.ContentResolver cr=c.getContentResolver();
+      SmsDiag.rrPhase(c,"sms");
+      try(android.database.Cursor q=cr.query(android.provider.Telephony.Sms.Inbox.CONTENT_URI,new String[]{"address","body","date"},null,null,"date DESC")){
+        while(q!=null&&q.moveToNext()&&nSms<30){ nSms++; l.add(new Object[]{q.getLong(2),q.getString(0),q.getString(1),"SMS"}); }
+      }catch(Exception e){ qerr+="sms:"+InboxLogic.errClass(e)+" "; }
+      SmsDiag.rrPhase(c,"mms");
+      try(android.database.Cursor q=cr.query(MmsInbox.MMS_INBOX,new String[]{"_id","date","sub","sub_cs"},null,null,"date DESC")){
+        while(q!=null&&q.moveToNext()&&nMms<30){ nMms++; long id=q.getLong(0); String[] tx=MmsInbox.text(cr,id);
+          String sub=MmsLogic.fromIso(q.getString(2),q.isNull(3)?0:q.getInt(3));
+          l.add(new Object[]{MmsLogic.msFromMmsDate(q.getLong(1)),MmsInbox.from(cr,id,1),MmsLogic.feedText(sub,tx[0]),"MMS"}); }
+      }catch(Exception e){ qerr+="mms:"+InboxLogic.errClass(e)+" "; }
+      SmsDiag.rrPhase(c,"pick");
+      l.sort((x,y)->Long.compare((Long)y[0],(Long)x[0]));
+      Object[] pick=null; for(Object[] m:l) if(ApptParser.hasDate((String)m[2],(Long)m[0])){ pick=m; break; }
+      if(pick==null&&!l.isEmpty()) pick=l.get(0);
+      if(pick==null){
+        steps="skip"; reason="nodate"; stage="none";
+        SmsDiag.cal(c,"skip","nodate");
+        label="받은 문자를 못 찾았어요 (SMS "+nSms+"통 · MMS "+nMms+"통 확인"+(qerr.isEmpty()?"":" · 읽기 오류 "+qerr.trim())+")";
+      } else {
+        type=(String)pick[3]; msgAt=(Long)pick[0]; String body=(String)pick[2]; String addr=(String)pick[1]; len=body==null?0:body.length();
+        SmsDiag.rrPhase(c,"parse");
+        stage=ApptParser.stage(body,msgAt,contactName(c,addr),addr);
+        SmsDiag.rrPhase(c,"decide");
+        String[] r=process(c,addr,body,msgAt,true,true); steps=r[0]; reason=r[1]==null?"":r[1];
+        label=type+" "+len+"자 · "+stage+" · "+labelOf(steps,reason);
+      }
+    }catch(Throwable e){
+      steps="try>fail"; reason="reread:"+errDesc(e); stage=stage.isEmpty()?"error":stage;
+      label="다시 읽다가 오류가 났어요 ("+errDesc(e)+")";
+      try{ SmsDiag.cal(c,steps,reason); }catch(Throwable x){}
+    }
+    SmsDiag.rr(c,type,msgAt,len,nSms,nMms,qerr.trim(),stage,steps,reason);
+    return "{\"ok\":true,\"steps\":\""+jq(steps)+"\",\"stage\":\""+jq(stage)+"\",\"type\":\""+jq(type)+"\",\"len\":"+len+",\"sms\":"+nSms+",\"mms\":"+nMms+",\"label\":\""+jq(label)+"\"}";
   }
   private static String[] insertAuto(Context c,ApptParser.R r,String addr){
     if(!CalStore.hasProvider(c)){ SmsDiag.cal(c,"try>fail","nocalapp"); warnNoCalendar(c,true); return new String[]{"try>fail","nocalapp"}; }

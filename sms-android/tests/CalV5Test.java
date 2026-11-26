@@ -38,7 +38,7 @@ public class CalV5Test{
     t("not an ad / not suspicious (form link w/o urgent)",!SmsSafety.isAd(LMS)&&!SmsSafety.suspicious(LMS));
 
     // 3. 신뢰: 학교 + (주소록 | 일반전화)
-    r=ApptParser.parse(LMS,AT,null,"01012345678"); t("school mobile not in contacts → untrusted",r!=null&&!r.trusted);
+    r=ApptParser.parse(LMS,AT,null,"01012345678"); t("v7: school mobile not in contacts → still asks (never auto)",r!=null&&r.trusted&&r.ask);
     r=ApptParser.parse(LMS,AT,null,"0548401114"); t("school landline 054 → trusted",r!=null&&r.trusted);
     r=ApptParser.parse(LMS,AT,null,"+82548401114"); t("school landline +82 normalized → trusted",r!=null&&r.trusted);
     r=ApptParser.parse(LMS,AT,null,"02-123-4567"); t("school landline 02 → trusted",r!=null&&r.trusted);
@@ -52,7 +52,8 @@ public class CalV5Test{
     t("application → ask",x.act.equals("ask")&&x.r!=null);
     x=CalDecide.decide(false,true,LMS,AT,"내 번호","01012345678"); t("off → skip(off)",x.act.equals("skip")&&x.reason.equals("off"));
     x=CalDecide.decide(true,false,LMS,AT,"내 번호","01012345678"); t("no perm → skip(noperm)",x.act.equals("skip")&&x.reason.equals("noperm"));
-    x=CalDecide.decide(true,true,LMS,AT,null,"01012345678"); t("stranger → skip(untrusted)",x.act.equals("skip")&&x.reason.equals("untrusted"));
+    x=CalDecide.decide(true,true,LMS.replace("[길주중학교]",""),AT,null,"01012345678"); t("stranger without school tag → skip(untrusted)",x.act.equals("skip")&&x.reason.equals("untrusted"));
+    x=CalDecide.decide(true,true,LMS,AT,null,"01012345678"); t("v7: school LMS from unknown mobile → ask",x.act.equals("ask"));
     x=CalDecide.decide(true,true,"안녕 오늘 저녁 뭐 먹어?",AT,"엄마","01011112222"); t("chat no date → skip(nodate)",x.reason.equals("nodate")&&x.r==null);
     x=CalDecide.decide(true,true,"12/3 3시에 보자 ㅎㅎ",AT,"엄마","01011112222"); t("chat with date → skip(noparse:parse:no-datetime-line)",x.reason.equals("noparse:parse:no-datetime-line"));
     x=CalDecide.decide(true,true,"(광고) 12/3 오후 3시 세일 예약 무료수신거부 080-123-4567",AT,"x","010"); t("ad skip",x.reason.equals("ad"));

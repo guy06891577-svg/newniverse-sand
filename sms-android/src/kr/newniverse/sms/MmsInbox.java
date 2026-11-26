@@ -240,10 +240,22 @@ final class MmsInbox {
     StringBuilder sb=new StringBuilder(); String img=""; int imgs=0;
     try(Cursor q=cr.query(Uri.parse("content://mms/part"),new String[]{"_id","ct","text"},"mid=?",new String[]{String.valueOf(id)},"seq ASC")){
       while(q!=null&&q.moveToNext()){ String ct=q.getString(1)==null?"":q.getString(1).toLowerCase();
-        if(ct.equals("text/plain")){ String t=q.getString(2); if(t!=null&&!t.isEmpty()){ if(sb.length()>0) sb.append('\n'); sb.append(t);} }
+        if(ct.equals("text/plain")){ String t=q.getString(2);
+          if(t==null||t.isEmpty()) t=partFile(cr,q.getLong(0)); // v7: 글이 text 칸이 아니라 파일(_data)에 있는 문자(삼성이 저장한 장문 등)
+          if(t!=null&&!t.isEmpty()){ if(sb.length()>0) sb.append('\n'); sb.append(t);} }
         else if(ct.startsWith("image/")){ imgs++; if(img.isEmpty()) img=String.valueOf(q.getLong(0)); } }
     }catch(Exception e){}
     return new String[]{sb.toString(),img,String.valueOf(imgs)};
+  }
+  /** 글 조각이 파일로 저장된 경우: content://mms/part/ID 를 열어 읽음(64KB까지, UTF-8; 깨지면 EUC-KR) */
+  static String partFile(ContentResolver cr,long partId){
+    try(java.io.InputStream in=cr.openInputStream(Uri.parse("content://mms/part/"+partId))){
+      if(in==null) return "";
+      java.io.ByteArrayOutputStream bo=new java.io.ByteArrayOutputStream(); byte[] buf=new byte[4096]; int n; while((n=in.read(buf))>0&&bo.size()<65536) bo.write(buf,0,n);
+      byte[] b=bo.toByteArray(); String u=new String(b,java.nio.charset.StandardCharsets.UTF_8);
+      if(u.indexOf('\uFFFD')>=0){ try{ return new String(b,java.nio.charset.Charset.forName("x-windows-949")); }catch(Exception e){} }
+      return u;
+    }catch(Exception e){ return ""; }
   }
   static String from(ContentResolver cr,long id,int box){
     try(Cursor q=cr.query(Uri.parse("content://mms/"+id+"/addr"),new String[]{"address","type"},null,null,null)){

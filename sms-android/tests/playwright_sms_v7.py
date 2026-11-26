@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""v6 UI: v3 checks + 장문(MMS) 대화 표시, 장문 받기 기록 패널, 다시 받기, v1 문구 없음."""
+"""v7 UI: v3 checks + 장문(MMS) 대화 표시, 장문 받기 기록 패널, 다시 받기, v1 문구 없음."""
 import asyncio, json, subprocess, time, os
 from playwright.async_api import async_playwright
 
@@ -20,7 +20,7 @@ const perms=Object.assign({read:true,send:true,recv:true,contacts:true,notif:tru
 const now=Date.now();
 const threads=cfg.threads||[];
 window.NVSms={
-  status:()=>JSON.stringify({def:!!cfg.def,canRole:true,perms,sdk:36,ver:cfg.ver||'6-test',now}),
+  status:()=>JSON.stringify({def:!!cfg.def,canRole:true,perms,sdk:36,ver:cfg.ver||'7-test',now}),
   calStatus:()=>JSON.stringify({on:false,perm:false,asked:true}),
   diag:()=>JSON.stringify(cfg.diag||{at:0,source:'',insert:'',err:'',inbox:0,def:!!cfg.def,perms,feedAt:0,feedMethod:'',feedOk:false,feedSeen:false,feedRows:0,feedErr:'',ver:'3-test'}),
   requestPerms:()=>__LOG.push('requestPerms'),requestRole:()=>__LOG.push('requestRole'),
@@ -31,7 +31,10 @@ window.NVSms={
     if(!perms.read) return JSON.stringify({ok:true,needPerm:true,list:[]});
     return JSON.stringify({ok:true,err:'',list:threads});
   },
-  getMessages:()=>JSON.stringify(cfg.msgs||[]),mmsRetry:()=>{__LOG.push('mmsRetry');return cfg.retryN||0},calReread:()=>{__LOG.push('calReread');return JSON.stringify({ok:true,steps:'skip',label:cfg.rereadLabel||'건너뜀(일정으로 읽지 못함) · parse:no-datetime-line'})},getPart:()=>'',search:()=>'[]',getContacts:()=>'[]',
+  getMessages:()=>JSON.stringify(cfg.msgs||[]),mmsRetry:()=>{__LOG.push('mmsRetry');return cfg.retryN||0},calRereadStart:()=>{__LOG.push('calRereadStart');const m=cfg.rrMode||'ok';if(m==='throw')throw new Error('boom');
+    if(m==='ok')setTimeout(()=>window.NV_reread&&window.NV_reread(cfg.rrResult||{ok:true,steps:'ask',stage:'parse:ok',type:'MMS',len:412,sms:30,mms:2,label:'MMS 412자 · parse:ok · ‘넣을까요?’ 알림을 띄움'}),cfg.rrDelay||400);
+    if(m==='err')setTimeout(()=>window.NV_reread({ok:false,label:'다시 읽다가 오류가 났어요 (ExceptionInInitializerError←PatternSyntaxException)'}),300);
+    return JSON.stringify({started:true})},getPart:()=>'',search:()=>'[]',getContacts:()=>'[]',
   send:()=>'ok',segments:()=>'1,0,0',markRead:()=>{},viewing:()=>{},takeOpen:()=>'',dial:()=>{},copy:()=>{},vibrate:()=>{},
   calSet:()=>{},calSkip:()=>{},calDelete:()=>{}
 };
@@ -157,12 +160,12 @@ async def main():
             ok('roleWarn says LMS is received', '장문' in sh and '내려받아' in sh)
             await ev("closeSheet();show('set');renderSettings()"); await pg.wait_for_timeout(250)
             st = await ev("document.querySelector('#setList').innerText")
-            ok('settings footer v4, no v1/v3', 'v6 시험판' in st and 'v1' not in st and 'v3' not in st and 'v4' not in st and 'v5' not in st)
+            ok('settings footer v4, no v1/v3', 'v7 시험판' in st and 'v1' not in st and 'v3' not in st and 'v4' not in st and 'v5' not in st and 'v6' not in st)
             ok('settings footer no longer says cannot receive', '새로 받거나 보내지는 못해요' not in st)
             await ctx.close()
 
             # 9. 장문 받기 기록 패널 — 실패 + 다시 받기 (본문·번호 없음)
-            dg={'at':0,'insert':'','inbox':3,'def':True,'perms':{'read':True,'recv':True,'send':True},'feedAt':0,'feedSeen':False,'ver':'6-test',
+            dg={'at':0,'insert':'','inbox':3,'def':True,'perms':{'read':True,'recv':True,'send':True},'feedAt':0,'feedSeen':False,'ver':'7-test',
                 'mmsAt':1764133200000,'mmsUpd':1764133230000,'mmsState':'fail','mmsCode':8,'mmsCodeLabel':'모바일 데이터 연결 없음','mmsHttp':0,'mmsSaved':False,'mmsErr':'','mmsAck':'','mmsPending':1}
             ctx,pg = await page(b, {'def':True,'threads':[],'diag':dg,'retryN':1})
             ev=pg.evaluate
@@ -190,7 +193,7 @@ async def main():
 
             # 11. 달력 등록 기록 — 단계별 문구 (본문·번호 없음)
             for steps,label,reason,want in [('try>ok','시도 → 성공','', '성공'),('skip','건너뜀(자동 넣기가 꺼져 있음)','off','건너뜀'),('try>fail','시도 → 실패(달력 앱이 없음)','nocalapp','실패'),('ask','‘넣을까요?’ 알림을 띄움','','묻는 중')]:
-                d3=dict(dg2); d3.update({'calAt':1764133200000,'calSteps':steps,'calReason':reason,'calLabel':label,'calGood':steps in('try>ok','ask'),'calOn':steps!='skip','calPerm':True})
+                d3=dict(dg2); d3.update({'calAt':1764133200000,'calSteps':steps,'calReason':reason,'calLabel':label,'calGood':steps in('try>ok','ask'),'calOn':steps!='skip','calPerm':True,'calCurrent':True,'calVer':'7-test'})
                 ctx,pg = await page(b, {'def':True,'threads':[],'diag':d3})
                 ev=pg.evaluate
                 await ev("show('set');renderSettings()"); await pg.wait_for_timeout(200)
@@ -198,26 +201,94 @@ async def main():
                 ok('cal diag '+steps, cb and '달력 등록 기록' in cb and label in cb and want in cb and '마지막 일정 후보 문자' in cb)
                 ok('cal diag no body/number '+steps, cb and '010' not in cb and '길주' not in cb and '솜씨' not in cb)
                 await ctx.close()
-            ctx,pg = await page(b, {'def':True,'threads':[],'diag':{'at':0,'perms':{'read':True,'recv':True,'send':True},'ver':'6-test'}})
+            ctx,pg = await page(b, {'def':True,'threads':[],'diag':{'at':0,'perms':{'read':True,'recv':True,'send':True},'ver':'7-test'}})
             ev=pg.evaluate
             await ev("show('set');renderSettings()"); await pg.wait_for_timeout(200)
             cb = await ev("document.querySelector('#calBox').innerText")
-            ok('cal diag empty state', '아직 없음' in cb)
+            ok('cal diag empty state says v7 기록 없음', 'v7 기록 없음' in cb and '다시 읽기 기록 없음' in cb)
             await ctx.close()
 
-            # 12. 마지막 문자 다시 읽기 단추 + 단계 이유 표시
-            d4=dict(dg2); d4.update({'calAt':1764133200000,'calSteps':'skip','calReason':'noparse:parse:no-datetime-line','calLabel':'건너뜀(일정으로 읽지 못함) · parse:no-datetime-line','calGood':False,'calOn':True,'calPerm':True})
+            # 12. 마지막 문자 다시 읽기 (v7: 비동기 + 항상 눈에 보이는 결과)
+            # 12a. 예전(v5) 기록이 남아 있으면 그렇게 말함
+            d4=dict(dg2); d4.update({'calAt':1764133200000,'calSteps':'skip','calReason':'noparse','calLabel':'건너뜀(일정으로 읽지 못함)','calGood':False,'calOn':True,'calPerm':True,'calCurrent':False,'calVer':''})
             ctx,pg = await page(b, {'def':True,'threads':[],'diag':d4})
             ev=pg.evaluate
             await ev("show('set');renderSettings()"); await pg.wait_for_timeout(200)
             cb = await ev("document.querySelector('#calBox').innerText")
-            ok('cal diag shows failing parse stage', 'parse:no-datetime-line' in cb and '일정으로 읽지 못함' in cb)
+            ok('stale v5 record flagged', '예전 버전' in cb and 'v7 기록 없음' in cb and '일정으로 읽지 못함' in cb)
+            ok('no request yet says so', '요청 기록 없음' in cb and '다시 읽기 기록 없음' in cb)
             ok('reread button present', await ev("!!document.querySelector('#calBox [data-b=calreread]')") and '마지막 문자 다시 읽기' in cb)
-            await pg.click('#calBox [data-b=calreread]'); await pg.wait_for_timeout(250)
-            ok('reread button calls native calReread', 'calReread' in await ev("__LOG"))
+            await pg.click('#calBox [data-b=calreread]'); await pg.wait_for_timeout(60)
             tt = await ev("document.querySelector('#toast').innerText")
-            ok('reread shows result toast', 'parse:no-datetime-line' in tt)
-            ok('cal diag has no body/number v6', '010' not in cb and '길주' not in cb and '솜씨' not in cb)
+            ok('immediate 읽는 중 toast', '읽는 중' in tt)
+            ok('button disabled while running', await ev("document.querySelector('#calBox [data-b=calreread]').disabled") and '읽는 중' in await ev("document.querySelector('#calBox [data-b=calreread]').innerText"))
+            await ev("document.querySelector('#calBox [data-b=calreread]')&&document.querySelector('#calBox [data-b=calreread]').click()"); await pg.wait_for_timeout(20)
+            await pg.wait_for_timeout(600)
+            ok('reread calls native calRereadStart once', (await ev("__LOG")).count('calRereadStart')==1)
+            tt = await ev("document.querySelector('#toast').innerText")
+            ok('result toast shows exact outcome', 'MMS 412자' in tt and 'parse:ok' in tt and '넣을까요' in tt)
+            ok('button usable again', not await ev("document.querySelector('#calBox [data-b=calreread]').disabled"))
+            await ctx.close()
+
+            # 12b. 끝난 뒤 패널: 찾은 문자 · 확인한 개수 · 단계 · 결과 (본문·번호 없음)
+            d5=dict(d4); d5.update({'calCurrent':True,'calVer':'7-test','calLabel':'‘넣을까요?’ 알림을 띄움','calSteps':'ask','calGood':True,'calReason':'',
+                'rrStart':1764133260000,'rrAt':1764133261000,'rrPhase':'done','rrType':'MMS','rrMsgAt':1764133200000,'rrLen':412,'rrSms':30,'rrMms':2,'rrQerr':'','rrStage':'parse:ok','rrSteps':'ask','rrReason':'','rrLabel':'‘넣을까요?’ 알림을 띄움','rrGood':True})
+            ctx,pg = await page(b, {'def':True,'threads':[],'diag':d5})
+            ev=pg.evaluate
+            await ev("show('set');renderSettings()"); await pg.wait_for_timeout(200)
+            cb = await ev("document.querySelector('#calBox').innerText")
+            ok('rr rows: found message type/len', 'MMS' in cb and '412자' in cb and '찾은 문자' in cb)
+            ok('rr rows: scanned counts', '30통' in cb and '2통' in cb)
+            ok('rr rows: parse stage shown', '일정 읽기 단계' in cb and 'parse:ok' in cb)
+            ok('rr rows: insert result', '달력 넣기 결과' in cb and '성공' in cb)
+            ok('rr rows: finished', '끝까지 처리됨' in cb and '예전 버전' not in cb)
+            ok('rr no body/number', '010' not in cb and '길주' not in cb and '솜씨' not in cb and '원목' not in cb)
+            await ctx.close()
+
+            # 12c. 실패 단계가 항상 보임 + 시작했지만 끝나지 않은 경우
+            d6=dict(d5); d6.update({'rrStage':'parse:deadline-only','rrSteps':'skip','rrLabel':'건너뜀(일정으로 읽지 못함) · parse:deadline-only','rrGood':False,'calLabel':'건너뜀(일정으로 읽지 못함) · parse:deadline-only','calSteps':'skip','calGood':False,
+                'rrStart':1764133400000,'rrAt':1764133261000,'rrPhase':'parse'})
+            ctx,pg = await page(b, {'def':True,'threads':[],'diag':d6})
+            ev=pg.evaluate
+            await ev("show('set');renderSettings()"); await pg.wait_for_timeout(200)
+            cb = await ev("document.querySelector('#calBox').innerText")
+            ok('failing stage visible in both rows', cb.count('parse:deadline-only')>=2)
+            ok('unfinished request warns with stuck phase', '끝나지 않았어요' in cb and '일정 읽기' in cb)
+            await ctx.close()
+
+            # 12d. 자바에서 오류가 오면 그대로 보여 줌 / 시작 자체가 실패하면 알려 줌
+            ctx,pg = await page(b, {'def':True,'threads':[],'diag':d4,'rrMode':'err'})
+            ev=pg.evaluate
+            await ev("show('set');renderSettings()"); await pg.wait_for_timeout(150)
+            await pg.click('#calBox [data-b=calreread]'); await pg.wait_for_timeout(700)
+            tt = await ev("document.querySelector('#toast').innerText")
+            ok('java error text shown in toast', 'PatternSyntaxException' in tt)
+            await ctx.close()
+            ctx,pg = await page(b, {'def':True,'threads':[],'diag':d4,'rrMode':'throw'})
+            ev=pg.evaluate
+            await ev("show('set');renderSettings()"); await pg.wait_for_timeout(150)
+            await pg.click('#calBox [data-b=calreread]'); await pg.wait_for_timeout(300)
+            tt = await ev("document.querySelector('#toast').innerText")
+            ok('start failure toast', '시작하지 못했어요' in tt)
+            ok('button not stuck after start failure', not await ev("document.querySelector('#calBox [data-b=calreread]').disabled"))
+            await ctx.close()
+
+            # 12e. 10초 안에 응답이 없으면 알려 줌
+            ctx,pg = await page(b, {'def':True,'threads':[],'diag':d4,'rrMode':'never'})
+            ev=pg.evaluate
+            await ev("show('set');renderSettings()"); await pg.wait_for_timeout(150)
+            await pg.click('#calBox [data-b=calreread]'); await pg.wait_for_timeout(10500)
+            tt = await ev("document.querySelector('#toast').innerText")
+            ok('timeout toast after 10s', '응답이 없어요' in tt)
+            await ctx.close()
+
+            # 12f. 예전 앱(다리에 calRereadStart 없음)
+            ctx,pg = await page(b, {'def':True,'threads':[],'diag':d4})
+            ev=pg.evaluate
+            await ev("show('set');renderSettings();delete window.NVSms.calRereadStart"); await pg.wait_for_timeout(150)
+            await pg.click('#calBox [data-b=calreread]'); await pg.wait_for_timeout(200)
+            tt = await ev("document.querySelector('#toast').innerText")
+            ok('old app without bridge method says so', 'v7 필요' in tt)
             await ctx.close()
             await b.close()
     finally:
@@ -229,7 +300,7 @@ async def main():
     else:
         ok('no page errors', True)
     failed=[k for k,v in res.items() if not v]
-    print(f"Playwright v6: {sum(res.values())} passed, {len(failed)} failed")
+    print(f"Playwright v7: {sum(res.values())} passed, {len(failed)} failed")
     if failed:
         print('FAILED', failed)
         raise SystemExit(1)
