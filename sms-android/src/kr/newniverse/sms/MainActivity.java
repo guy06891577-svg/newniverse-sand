@@ -2,8 +2,11 @@ package kr.newniverse.sms;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.database.ContentObserver;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.webkit.WebView;
 
 /** 대화 목록 · 대화 · 새 문자 · 설정 (하이브리드: 화면은 assets/www/index.html) */
@@ -11,6 +14,7 @@ public class MainActivity extends Activity {
   static final int RQ_ROLE=7, RQ_PERM=8, RQ_CAL=9; boolean calOn;
   static volatile MainActivity live; static volatile boolean resumed; static volatile String viewing="";
   WebView w; String pendingAddr, pendingBody;
+  ContentObserver smsObs;
 
   @Override protected void onCreate(Bundle b){
     super.onCreate(b);
@@ -18,6 +22,11 @@ public class MainActivity extends Activity {
     w=new WebView(this); setContentView(w);
     Nv.setupWeb(this,w,new Bridge(this),"file:///android_asset/www/index.html");
     live=this;
+    smsObs=new ContentObserver(new Handler(Looper.getMainLooper())){
+      @Override public void onChange(boolean selfChange){ refresh(); }
+      @Override public void onChange(boolean selfChange,Uri u){ refresh(); }
+    };
+    try{ getContentResolver().registerContentObserver(Uri.parse("content://sms"),true,smsObs); }catch(Exception e){}
   }
   /** smsto:번호, sms_body / 알림에서 열기 */
   private void take(Intent i){
@@ -48,5 +57,5 @@ public class MainActivity extends Activity {
   void js(String s){ if(w!=null) w.post(()->{ if(w!=null) w.evaluateJavascript(s,null); }); }
   /** 새 문자가 오거나 보낸 결과가 나오면 화면을 새로 고침 */
   static void refresh(){ MainActivity m=live; if(m!=null) m.js("window.NV_refresh&&NV_refresh()"); }
-  @Override protected void onDestroy(){ if(live==this) live=null; if(w!=null){ w.destroy(); w=null; } super.onDestroy(); }
+  @Override protected void onDestroy(){ try{ if(smsObs!=null) getContentResolver().unregisterContentObserver(smsObs); }catch(Exception e){} if(live==this) live=null; if(w!=null){ w.destroy(); w=null; } super.onDestroy(); }
 }

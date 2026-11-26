@@ -47,44 +47,52 @@ class Bridge {
       ((MainActivity)a).reqCal(true); }); }
   @JavascriptInterface public void calSkip(){ a.runOnUiThread(()->{ AutoCal.setOn(a,false); ((MainActivity)a).js("window.NV_cal&&NV_cal()"); }); }
   @JavascriptInterface public void calDelete(){ CalStore.deleteAll(a); }
-  @JavascriptInterface public void requestPerms(){ a.runOnUiThread(()->{ String[] m=missing(a); if(m.length>0) a.requestPermissions(m,MainActivity.RQ_PERM); else ((MainActivity)a).js("window.NV_resume&&NV_resume('perm')"); }); }
+  @JavascriptInterface public String diag(){ return SmsDiag.json(a).toString(); }
+
+    @JavascriptInterface public void requestPerms(){ a.runOnUiThread(()->{ String[] m=missing(a); if(m.length>0) a.requestPermissions(m,MainActivity.RQ_PERM); else ((MainActivity)a).js("window.NV_resume&&NV_resume('perm')"); }); }
   @JavascriptInterface public void requestRole(){ a.runOnUiThread(()->{ Intent i=Nv.roleIntent(a); if(i==null){ openDefaultApps(); return; } try{ a.startActivityForResult(i,MainActivity.RQ_ROLE); }catch(Exception e){ openDefaultApps(); } }); }
   @JavascriptInterface public void openDefaultApps(){ a.runOnUiThread(()->{ try{ a.startActivity(new Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS)); }catch(Exception e){ try{ a.startActivity(new Intent(Settings.ACTION_SETTINGS)); }catch(Exception x){} } }); }
   @JavascriptInterface public void openAppSettings(){ a.runOnUiThread(()->{ try{ a.startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+a.getPackageName()))); }catch(Exception e){} }); }
 
-  /** 대화 목록: 대화(thread)마다 가장 최근 문자 한 줄 + 안 읽은 수 */
+  /** 대화 목록. {ok, err, list} — 읽기 실패는 빈 목록이 아니라 err 로 구분 */
   @JavascriptInterface public String getThreads(){
-    JSONArray arr=new JSONArray(); if(!canRead()) return arr.toString();
-    LinkedHashMap<Long,JSONObject> map=new LinkedHashMap<>();
-    ContentResolver cr=a.getContentResolver();
-    try(Cursor q=cr.query(SMS,new String[]{"thread_id","address","body","date","type","read"},"type!=3",null,"date DESC")){
-      int n=0;
-      while(q!=null&&q.moveToNext()&&n++<40000){
-        long t=q.getLong(0); JSONObject j=map.get(t);
-        if(j==null){ j=new JSONObject(); j.put("id",t); j.put("addr",nz(q.getString(1))); j.put("snip",nz(q.getString(2))); j.put("date",q.getLong(3));
-          int ty=q.getInt(4); j.put("out",ty!=1); j.put("fail",ty==5); j.put("unread",0); j.put("n",0); j.put("lastIn",0L); map.put(t,j); }
-        if(q.getInt(4)==1){ if(j.optLong("lastIn")==0) j.put("lastIn",q.getLong(3)); if(q.getInt(5)==0) j.put("unread",j.getInt("unread")+1); }
-        j.put("n",j.getInt("n")+1);
+    JSONObject o=new JSONObject(); JSONArray arr=new JSONArray();
+    try{
+      o.put("ok",true); o.put("err",""); o.put("list",arr);
+      if(!canRead()){ o.put("needPerm",true); return o.toString(); }
+      LinkedHashMap<Long,JSONObject> map=new LinkedHashMap<>();
+      ContentResolver cr=a.getContentResolver();
+      try(Cursor q=cr.query(SMS,new String[]{"thread_id","address","body","date","type","read"},"type!=3",null,"date DESC")){
+        int n=0;
+        while(q!=null&&q.moveToNext()&&n++<40000){
+          long th=q.getLong(0); JSONObject j=map.get(th);
+          if(j==null){ j=new JSONObject(); j.put("id",th); j.put("addr",nz(q.getString(1))); j.put("snip",nz(q.getString(2))); j.put("date",q.getLong(3));
+            int ty=q.getInt(4); j.put("out",ty!=1); j.put("fail",ty==5); j.put("unread",0); j.put("n",0); j.put("lastIn",0L); map.put(th,j); }
+          if(q.getInt(4)==1){ if(j.optLong("lastIn")==0) j.put("lastIn",q.getLong(3)); if(q.getInt(5)==0) j.put("unread",j.getInt("unread")+1); }
+          j.put("n",j.getInt("n")+1);
+        }
       }
-    }catch(Exception e){}
-    // 사진·장문(MMS): 더 최근이면 한 줄을 바꾸고, MMS만 있는 대화도 넣음
-    try(Cursor q=cr.query(MMS,new String[]{"_id","thread_id","date","msg_box","read"},null,null,"date DESC")){
-      int n=0; Set<Long> done=new HashSet<>();
-      while(q!=null&&q.moveToNext()&&n++<5000){
-        long id=q.getLong(0),t=q.getLong(1),d=q.getLong(2)*1000L; int box=q.getInt(3); boolean unread=box==1&&q.getInt(4)==0;
-        JSONObject j=map.get(t);
-        if(j==null){ j=new JSONObject(); j.put("id",t); j.put("addr",mmsAddr(id,box)); j.put("date",0L); j.put("unread",0); j.put("n",0); j.put("lastIn",0L); map.put(t,j); }
-        if(unread) j.put("unread",j.getInt("unread")+1);
-        if(box==1&&d>j.optLong("lastIn")) j.put("lastIn",d);
-        j.put("n",j.getInt("n")+1);
-        if(!done.contains(t)&&d>j.optLong("date")){ String[] tx=mmsText(id); j.put("snip",tx[0].isEmpty()?(tx[1].isEmpty()?"(멀티미디어 문자)":"사진"):tx[0]); j.put("date",d); j.put("out",box!=1); j.put("fail",false); j.put("mms",true); }
-        done.add(t);
+      try(Cursor q=cr.query(MMS,new String[]{"_id","thread_id","date","msg_box","read"},null,null,"date DESC")){
+        int n=0; Set<Long> done=new HashSet<>();
+        while(q!=null&&q.moveToNext()&&n++<5000){
+          long id=q.getLong(0),th=q.getLong(1),d=q.getLong(2)*1000L; int box=q.getInt(3); boolean unread=box==1&&q.getInt(4)==0;
+          JSONObject j=map.get(th);
+          if(j==null){ j=new JSONObject(); j.put("id",th); j.put("addr",mmsAddr(id,box)); j.put("date",0L); j.put("unread",0); j.put("n",0); j.put("lastIn",0L); map.put(th,j); }
+          if(unread) j.put("unread",j.getInt("unread")+1);
+          if(box==1&&d>j.optLong("lastIn")) j.put("lastIn",d);
+          j.put("n",j.getInt("n")+1);
+          if(!done.contains(th)&&d>j.optLong("date")){ String[] tx=mmsText(id); j.put("snip",tx[0].isEmpty()?(tx[1].isEmpty()?"(멀티미디어 문자)":"사진"):tx[0]); j.put("date",d); j.put("out",box!=1); j.put("fail",false); j.put("mms",true); }
+          done.add(th);
+        }
       }
-    }catch(Exception e){}
-    List<JSONObject> l=new ArrayList<>(map.values());
-    l.sort((x,y)->Long.compare(y.optLong("date"),x.optLong("date")));
-    for(JSONObject j:l) arr.put(j);
-    return arr.toString();
+      List<JSONObject> l=new ArrayList<>(map.values());
+      l.sort((x,y)->Long.compare(y.optLong("date"),x.optLong("date")));
+      for(JSONObject j:l) arr.put(j);
+      o.put("list",arr);
+    }catch(Exception e){
+      try{ o.put("ok",false); o.put("err",InboxLogic.errClass(e)); o.put("list",new JSONArray()); }catch(Exception x){}
+    }
+    return o.toString();
   }
   String mmsAddr(long id,int box){
     // 받은 MMS: 보낸 사람(137), 보낸 MMS: 받는 사람(151)

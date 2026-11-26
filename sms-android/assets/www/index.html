@@ -259,7 +259,11 @@ const unreadOf=t=>t.unread>0&&(ST.def||(t.lastIn||t.date)>(SEEN[t.id]||0))?t.unr
 
 /* ---------- 대화 목록 ---------- */
 let THREADS=[],cur='list',CONV=null,MSGS=[],PENDING=[];
-function loadThreads(){THREADS=NV?J(NV.getThreads(),[]):[]}
+let LIST_ERR='';
+function loadThreads(){THREADS=[];LIST_ERR='';if(!NV)return;const r=J(NV.getThreads(),null);
+ if(Array.isArray(r)){THREADS=r;return}
+ if(r&&r.ok===false){LIST_ERR=r.err||'read';THREADS=[];return}
+ THREADS=(r&&Array.isArray(r.list))?r.list:[]}
 const clean=s=>String(s||'').replace(/^\s*\[(Web발신|국제발신|국외발신)\]\s*/,'').replace(/\s*\n+\s*/g,' ');
 function rowHtml(t,q){const nm=nameOf(t.addr),u=unreadOf(t),snip=clean(t.snip);
  const sn=(t.out?(t.fail?'<span class="f">전송 실패</span> · ':'나: '):'')+(q&&snip.toLowerCase().includes(q.toLowerCase())?hl(snip,q):esc(snip));
@@ -274,6 +278,7 @@ function renderList(){const q=$('#lQ').value.trim();lastQ=q;$('#lQx').hidden=!q;
  const L=$('#lList');
  if(NV&&ST.perms&&!ST.perms.read){L.innerHTML=`<div class="empty"><b>문자 권한이 필요해요</b>문자 목록을 보려면 ‘SMS’ 권한을 허용해 주세요<br><button data-b="perm">권한 허용</button><small>허용 창이 안 뜨면 오른쪽 위 ⋮ › 앱 정보 · 제한된 설정</small></div>`;bindB(L);return}
  if(!NV){L.innerHTML=`<div class="empty"><b>폰에서 열어 주세요</b>뉴니버스 문자 앱 안에서만 문자를 읽을 수 있어요</div>`;return}
+ if(LIST_ERR){L.innerHTML=`<div class="empty"><b>문자 목록을 읽지 못했어요</b>받은 문자가 있어도 목록에 안 보일 수 있어요.<br>오른쪽 위 ⋮ › 문자 설정 전체 보기에서 ‘받은 문자 저장 기록’을 확인해 주세요.${LIST_ERR?`<small>${esc(LIST_ERR)}</small>`:''}</div>`;return}
  const list=THREADS.filter(t=>matchThread(t,q));
  let h='';
  if(q&&list.length)h+=`<div class="sec">대화 ${list.length}</div>`;
@@ -406,7 +411,15 @@ function restrictedSheet(kind){const perm=kind==='perm';
   <button class="opt pri" data-b="appset"><span data-i="shield"></span>앱 정보 열기</button>
   <button class="opt" data-b="${perm?'perm':'role'}"><span data-i="retry"></span>다시 시도</button>
   <button class="opt" data-a="close"><span data-i="x"></span>닫기</button>`)}
-function renderSettings(){status();calStatus();const p=ST.perms||{};const yes=b=>b?'<span class="ok">허용됨</span>':'<span class="no2">꺼짐</span>';
+function fmtWhen(ms){ms=+ms||0;if(!ms)return '아직 없음';const d=new Date(ms),n=new Date();const same=d.toDateString()===n.toDateString();return (same?'오늘 ':d.getFullYear()+'. '+(d.getMonth()+1)+'. '+d.getDate()+'. ')+hm(ms)}
+function feedMethodLabel(m){return ({status:'상태 확인',recent:'최근 문자 조회',cal_status:'달력 상태',cal_add:'달력에 추가','' :''})[m]||m||'—'}
+function diagView(){const d=(NV&&NV.diag)?J(NV.diag(),{}):{};const pe=d.perms||{};
+ const ins=d.insert?`<span class="${/fail|parse/.test(d.insert)?'no2':'ok'}">${esc(InboxInsert(d.insert))}</span>`:'<span class="no2">아직 없음</span>';
+ const feed=d.feedSeen||d.feedAt?`<span class="${d.feedOk?'ok':'no2'}">${d.feedOk?'도착':'실패'}</span>`:'<span class="no2">아직 없음</span>';
+ return {d,pe,ins,feed}}
+function InboxInsert(s){return ({ok:'저장됨','retry-ok':'저장됨(다시 시도)',dup:'이미 저장되어 있음',fail:'저장 실패',parse:'문자를 읽지 못함'})[s]||'아직 없음'}
+function sourceLab(s){return s==='deliver'?'SMS_DELIVER':s==='received'?'안전망(SMS_RECEIVED)':'아직 없음'}
+function renderSettings(){status();calStatus();const p=ST.perms||{};const yes=b=>b?'<span class="ok">허용됨</span>':'<span class="no2">꺼짐</span>';const dv=diagView();
  $('#setList').innerHTML=`
  <div class="set glass"><h3>기본 문자 앱</h3>
   <div class="srow2"><div class="grow">뉴니버스 문자를 기본으로<small>${ST.def?'지금 기본 문자 앱이에요. 받은 문자를 이 앱이 저장하고 알려요.':'지금은 원래 문자 앱이 기본이에요. 보기·보내기·새 문자 알림은 되고, 저장은 원래 앱이 해요.'}</small></div>${ST.def?'<span class="ok">사용 중</span>':'<button class="sbtn pri" data-b="rolewarn">설정</button>'}</div>
@@ -426,8 +439,17 @@ function renderSettings(){status();calStatus();const p=ST.perms||{};const yes=b=
   <div class="steps"><ol><li>폰 <b>설정</b> › <b>애플리케이션</b> › <b>기본 앱 선택</b></li><li><b>SMS 앱</b>을 누르고 <b>메시지</b>(삼성 기본 문자)를 고르면 끝</li></ol>뉴니버스 문자를 지워도 원래 문자 앱으로 돌아가요. 문자는 폰 저장소에 그대로 남아요.</div>
   <div class="srow2"><div class="grow">기본 앱 설정 바로 열기</div><button class="sbtn" data-b="defapps">열기</button></div>
  </div>
+ <div class="set glass" id="diagBox"><h3>받은 문자 저장 기록 (시험)</h3>
+  <div class="srow2"><div class="grow">마지막으로 받은 시각<small>이 앱이 새 문자 신호를 처리한 때</small></div><span>${esc(fmtWhen(dv.d.at))}</span></div>
+  <div class="srow2"><div class="grow">저장 결과<small>${dv.d.err?('오류 종류: '+esc(dv.d.err)):esc(sourceLab(dv.d.source))}</small></div>${dv.ins}</div>
+  <div class="srow2"><div class="grow">받은 편지함 개수<small>폰 문자 저장소의 받은 문자 수</small></div><span>${dv.d.inbox>=0?dv.d.inbox:'—'}</span></div>
+  <div class="srow2"><div class="grow">기본 문자 앱</div>${yes(!!dv.d.def)}</div>
+  <div class="srow2"><div class="grow">권한<small>읽기 · 받기 · 보내기</small></div>${(dv.pe.read&&dv.pe.recv&&dv.pe.send)?'<span class="ok">모두 허용</span>':'<span class="no2">'+( [dv.pe.read?'읽기':'읽기 꺼짐',dv.pe.recv?'받기':'받기 꺼짐',dv.pe.send?'보내기':'보내기 꺼짐'].join(' · '))+'</span>'}</div>
+  <div class="srow2"><div class="grow">런처의 마지막 조회<small>${dv.d.feedAt?esc(fmtWhen(dv.d.feedAt)+' · '+(feedMethodLabel(dv.d.feedMethod)||'조회')+(dv.d.feedMethod==='recent'?' · 넘긴 문자 '+(+dv.d.feedRows||0)+'통':''))+(dv.d.feedErr?' · '+dv.d.feedErr:''):'런처가 아직 이 앱에 물어보지 않았어요. 홈을 한 번 열면 기록이 생겨요.'}</small></div>${dv.feed}</div>
+  <div class="steps">문자 본문과 번호는 이 기록에 남기지 않아요. 홈에 카드가 안 보이면 이 ‘런처의 마지막 조회’를 봐 주세요.</div>
+ </div>
  <div class="set glass"><h3>알아 두기</h3>
-  <div class="steps">문자 내용은 폰 밖으로 나가지 않아요 (인터넷 권한 없음).<br>v1은 사진·장문(MMS)을 보기만 하고, 새로 받거나 보내지는 못해요. 긴 글은 여러 개의 문자로 나눠 보내요.<br>뉴니버스 문자 v1 시험판 · ${esc(ST.ver||'')} · 안드로이드 ${ST.sdk||'?'}</div>
+  <div class="steps">문자 내용은 폰 밖으로 나가지 않아요 (인터넷 권한 없음).<br>사진·장문(MMS)은 보기만 하고, 새로 받거나 보내지는 못해요. 긴 글은 여러 개의 문자로 나눠 보내요.<br>뉴니버스 문자 v3 시험판 · ${esc(ST.ver||'')} · 안드로이드 ${ST.sdk||'?'}</div>
  </div>`;bindB($('#setList'))}
 $('#sBack').onclick=()=>{buzz();goList()};
 
