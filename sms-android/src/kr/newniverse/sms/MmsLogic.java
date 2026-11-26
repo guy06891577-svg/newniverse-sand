@@ -114,4 +114,11 @@ final class MmsLogic {
   }
   /** 임시 PDU 파일 이름: 경로 문자 없이 짧게 */
   static boolean safeFileName(String n){ return n!=null&&n.matches("[A-Za-z0-9_\\-]{1,64}\\.pdu"); }
+
+  /** v8 진단: 받은 PDU 의 조각 구성(종류:글자 수 또는 바이트)과 통신사가 알린 크기 대비 받은 크기. 본문 없음 */
+  static String pduSummary(MmsPdu.Pdu d,int downloaded,long announced){
+    StringBuilder sb=new StringBuilder(); int n=0;
+    for(MmsPdu.Part p:d.parts){ if(n++>0) sb.append(", "); if(n>8){ sb.append("…"); break; } sb.append(p.ct).append(':').append(p.isText()?p.text().length()+"자":p.data.length+"B"); }
+    return d.parts.size()+"개 · "+sb+" · 제목 "+d.subjectStr().length()+"자 · 받은 "+downloaded+"B"+(announced>0?" / 알린 크기 "+announced+"B":"");
+  }
 }

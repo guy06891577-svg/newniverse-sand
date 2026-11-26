@@ -17,8 +17,9 @@ public class SmsReceivedReceiver extends BroadcastReceiver {
     if(!Telephony.Sms.Intents.SMS_RECEIVED_ACTION.equals(i.getAction())) return;
     SmsDeliverReceiver.Msg m=SmsDeliverReceiver.parse(i); if(m==null) return;
     if(!Nv.isDefault(c)){
-      if(!c.getSharedPreferences("nv",0).getBoolean("notifyNonDefault",true)){ MainActivity.refresh(); return; }
-      SmsInbox.notify(c,m.addr,m.body,true);
+      // v8: 기본 앱이 아니어도 받은 문자는 달력 처리(알림 설정과 무관)
+      try{ if(!c.getSharedPreferences("nv",0).getBoolean("notifyNonDefault",true)) MainActivity.refresh(); else SmsInbox.notify(c,m.addr,m.body,true); }catch(Throwable e){}
+      try{ if(m.body!=null&&!m.body.isEmpty()) AutoCal.onSms(c,m.addr,m.body,System.currentTimeMillis(),"SMS"); }catch(Throwable e){}
       new Handler(Looper.getMainLooper()).postDelayed(MainActivity::refresh,1500);
       return;
     }

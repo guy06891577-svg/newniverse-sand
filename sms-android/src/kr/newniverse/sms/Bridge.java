@@ -62,6 +62,14 @@ class Bridge {
     },"nv-reread").start();
     return "{\"started\":true}";
   }
+  /** v8: 알림을 못 띄웠을 때 앱 안에서 대신 묻는 카드. [{id,title,when,hasTime,loc}] (본문·번호 없음) */
+  @JavascriptInterface public String calPending(){ try{ return AutoCal.pendJson(a); }catch(Throwable e){ return "[]"; } }
+  /** v8: 카드의 「넣기」 → ok · dup · perm(달력 권한 없음) · fail · none */
+  @JavascriptInterface public String calPendAdd(String id){ try{ return AutoCal.pendAct(a.getApplicationContext(),Long.parseLong(id),true); }catch(Throwable e){ return "fail"; } }
+  /** v8: 카드의 「아니요」 */
+  @JavascriptInterface public String calPendNo(String id){ try{ return AutoCal.pendAct(a.getApplicationContext(),Long.parseLong(id),false); }catch(Throwable e){ return "fail"; } }
+  /** v8: 이 앱의 알림 설정 화면 열기(알림 권한·알림 종류가 꺼져 있을 때) */
+  @JavascriptInterface public void openNotifSettings(){ a.runOnUiThread(()->{ try{ Intent i=new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE,a.getPackageName()); a.startActivity(i); }catch(Exception e){ try{ a.startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+a.getPackageName()))); }catch(Exception x){} } }); }
   /** v4: 못 받은 장문 다시 받기 → 다시 시도한 개수 */
   @JavascriptInterface public int mmsRetry(){ try{ return MmsInbox.retryAll(a.getApplicationContext()); }catch(Exception e){ return 0; } }
 

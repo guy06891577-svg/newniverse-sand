@@ -105,6 +105,7 @@ final class MmsInbox {
     if(d==null||d.type!=MmsPdu.RETRIEVE_CONF){ failed(c,key,101,http,""); return; }
     if(d.retrieveStatus>=0xC0&&d.parts.isEmpty()){ failed(c,key,4,http,"retr:"+Integer.toHexString(d.retrieveStatus)); return; }
     long now=System.currentTimeMillis();
+    try{ SmsDiag.mmsParts(c,MmsLogic.pduSummary(d,data.length,o.optLong("size",0))); }catch(Throwable e){}
     String from=d.fromStr(); if(from.isEmpty()) from=o.optString("from","");
     String[] res={""};
     Uri row=persist(c,d,o.optLong("at",now),o.optLong("sub",-1),o.optString("loc"),from,res);
@@ -112,13 +113,18 @@ final class MmsInbox {
     boolean dup="dup".equals(res[0]);
     pend(c).edit().remove(key).apply();
     SmsDiag.mms(c,0,dup?"dup":"ok",-1,http,true,"",null);
-    cancelFail(c);
-    sendNotifyResp(c,o.optString("tr"),o.optLong("sub",-1));
-    if(dup){ MainActivity.refresh(); return; }
+    SmsDiag.autoPhase(c,"MMS",dup?"mms:dup":"mms:persisted");
     String text=MmsLogic.feedText(d.subjectStr(),d.text());
-    SmsInbox.notify(c,from,MmsLogic.preview(d.subjectStr(),d.text(),d.imageCount()),true);
-    FeedProvider.ping(c);
-    if(!text.isEmpty()) AutoCal.onSms(c,from,text,now);
+    // v8: 아래 단계는 모두 따로 감싸서, 하나가 던져도(또는 dup 이어도) 달력 처리는 반드시 실행됨.
+    // 같은 문자를 두 번 처리해도 CalLogic 이 같은 일정은 한 번만 넣음.
+    try{ cancelFail(c); }catch(Throwable e){}
+    try{ sendNotifyResp(c,o.optString("tr"),o.optLong("sub",-1)); }catch(Throwable e){}
+    if(!dup){
+      try{ SmsInbox.notify(c,from,MmsLogic.preview(d.subjectStr(),d.text(),d.imageCount()),true); }catch(Throwable e){}
+      try{ FeedProvider.ping(c); }catch(Throwable e){}
+    }
+    if(!text.isEmpty()){ try{ AutoCal.onSms(c,from,text,now,"MMS"); }catch(Throwable e){} }
+    else { try{ SmsDiag.auto(c,"MMS",0,"empty","skip","emptytext"); }catch(Throwable e){} }
     MainActivity.refresh();
   }
 
@@ -236,25 +242,47 @@ final class MmsInbox {
   }
 
   // ---------- 읽기 도우미 (목록·대화·런처) ----------
+  /** 글 조각(text/plain)을 seq 순서대로 모두 이어 붙임. text 칸이 비면 파일(_data)에서(글자셋 chset 으로) 읽음. [글, 첫 사진 id, 사진 수] */
   static String[] text(ContentResolver cr,long id){
     StringBuilder sb=new StringBuilder(); String img=""; int imgs=0;
-    try(Cursor q=cr.query(Uri.parse("content://mms/part"),new String[]{"_id","ct","text"},"mid=?",new String[]{String.valueOf(id)},"seq ASC")){
-      while(q!=null&&q.moveToNext()){ String ct=q.getString(1)==null?"":q.getString(1).toLowerCase();
-        if(ct.equals("text/plain")){ String t=q.getString(2);
-          if(t==null||t.isEmpty()) t=partFile(cr,q.getLong(0)); // v7: 글이 text 칸이 아니라 파일(_data)에 있는 문자(삼성이 저장한 장문 등)
-          if(t!=null&&!t.isEmpty()){ if(sb.length()>0) sb.append('\n'); sb.append(t);} }
-        else if(ct.startsWith("image/")){ imgs++; if(img.isEmpty()) img=String.valueOf(q.getLong(0)); } }
-    }catch(Exception e){}
+    for(Part p:parts(cr,id)){
+      if(p.text){ if(!p.body.isEmpty()){ if(sb.length()>0) sb.append('\n'); sb.append(p.body); } }
+      else if(p.ct.startsWith("image/")){ imgs++; if(img.isEmpty()) img=String.valueOf(p.id); }
+    }
     return new String[]{sb.toString(),img,String.valueOf(imgs)};
   }
-  /** 글 조각이 파일로 저장된 경우: content://mms/part/ID 를 열어 읽음(64KB까지, UTF-8; 깨지면 EUC-KR) */
+  /** v8: 한 장문의 모든 조각. 진단에는 종류와 글자 수만 씀 */
+  static final class Part { long id; String ct=""; boolean text; String body=""; boolean fromFile; }
+  static java.util.List<Part> parts(ContentResolver cr,long id){
+    java.util.List<Part> out=new java.util.ArrayList<>();
+    try(Cursor q=cr.query(Uri.parse("content://mms/part"),new String[]{"_id","ct","text"},"mid=?",new String[]{String.valueOf(id)},"seq ASC, _id ASC")){
+      while(q!=null&&q.moveToNext()){
+        Part p=new Part(); p.id=q.getLong(0);
+        String ct=q.getString(1)==null?"":q.getString(1).toLowerCase().trim(); int sc=ct.indexOf(';'); p.ct=sc<0?ct:ct.substring(0,sc).trim();
+        p.text=p.ct.equals("text/plain");
+        if(p.text){ String t=q.getString(2);
+          if(t==null||t.isEmpty()){ t=partFile(cr,p.id); p.fromFile=!t.isEmpty(); }
+          p.body=t==null?"":t; }
+        out.add(p);
+      }
+    }catch(Exception e){}
+    return out;
+  }
+  /** 진단용 요약: 조각 수 · 종류:글자 수 목록 (본문 없음). 예 ‘3개 · application/smil:0, text/plain:344, text/plain:120’ */
+  static String partsSummary(ContentResolver cr,long id){
+    java.util.List<Part> l=parts(cr,id); StringBuilder sb=new StringBuilder(); int n=0;
+    for(Part p:l){ if(n++>0) sb.append(", "); if(n>8){ sb.append("…"); break; } sb.append(p.ct.isEmpty()?"?":p.ct).append(':').append(p.text?p.body.length()+(p.fromFile?"(파일)":""):0); }
+    return l.size()+"개 · "+sb;
+  }
+  static int partCount(ContentResolver cr,long id){ return parts(cr,id).size(); }
+  /** 글 조각이 파일로 저장된 경우: content://mms/part/ID 를 열어 읽음(64KB까지). 글자셋은 chset 칸(있으면), 없으면 UTF-8 → EUC-KR 추측 */
   static String partFile(ContentResolver cr,long partId){
+    int cs=0;
+    try(Cursor q=cr.query(Uri.parse("content://mms/part"),new String[]{"chset"},"_id=?",new String[]{String.valueOf(partId)},null)){ if(q!=null&&q.moveToFirst()&&!q.isNull(0)) cs=q.getInt(0); }catch(Exception e){}
     try(java.io.InputStream in=cr.openInputStream(Uri.parse("content://mms/part/"+partId))){
       if(in==null) return "";
       java.io.ByteArrayOutputStream bo=new java.io.ByteArrayOutputStream(); byte[] buf=new byte[4096]; int n; while((n=in.read(buf))>0&&bo.size()<65536) bo.write(buf,0,n);
-      byte[] b=bo.toByteArray(); String u=new String(b,java.nio.charset.StandardCharsets.UTF_8);
-      if(u.indexOf('\uFFFD')>=0){ try{ return new String(b,java.nio.charset.Charset.forName("x-windows-949")); }catch(Exception e){} }
-      return u;
+      return MmsPdu.decode(bo.toByteArray(),cs);
     }catch(Exception e){ return ""; }
   }
   static String from(ContentResolver cr,long id,int box){

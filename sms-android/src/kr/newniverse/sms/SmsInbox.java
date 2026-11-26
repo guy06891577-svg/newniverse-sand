@@ -76,11 +76,10 @@ final class SmsInbox {
 
   /** 저장 성공/실패에 맞는 알림 + 런처 신호 + 달력 + 화면 새로 고침 */
   static void announce(Context c,String addr,String body,boolean saved){
-    notify(c,addr,body,saved);
-    if(saved){
-      FeedProvider.ping(c);
-      AutoCal.onSms(c,addr,body,System.currentTimeMillis());
-    }
+    // v8: 알림·신호가 던져도 달력 처리는 건너뛰지 않게 각각 따로 감쌈
+    try{ notify(c,addr,body,saved); }catch(Throwable e){}
+    if(saved){ try{ FeedProvider.ping(c); }catch(Throwable e){} }
+    if(body!=null&&!body.isEmpty()){ try{ AutoCal.onSms(c,addr,body,System.currentTimeMillis(),"SMS"); }catch(Throwable e){} } // v8: saved 와 무관(저장이 실패한 문자도 일정은 읽음)
     MainActivity.refresh();
   }
 

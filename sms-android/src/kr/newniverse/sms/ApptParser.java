@@ -13,7 +13,7 @@ final class ApptParser {
   static final class R { int kind; String org="", who="", title="", src="", location=""; long when, oldWhen, endMs; boolean hasTime, oldHasTime, trusted, ask; }
   static final class DT { long ms; boolean hasTime; String line=""; }
 
-  static final String HOSP="병원|의원|치과|한의원|의료원|클리닉|내과|외과|안과|피부과|이비인후과|정형외과|소아과|산부인과|비뇨기과|검진센터";
+  static final String HOSP="병원|의원|치과|한의원|의료원|클리닉|내과|외과|안과|피부과|이비인후과|정형외과|소아과|산부인과|비뇨기과|검진센터|의학과|신경과|신경외과|성형외과|메디컬|요양원";
   static final String AGEN="보건소|주민센터|행정복지센터|시청|구청|군청|도청|건강보험공단|공단|세무서|법원|등기소|면허시험장|교육청|경찰서|출입국[가-힣]*사무소";
   static final Pattern HOSP_W=Pattern.compile("[가-힣A-Za-z0-9]{2,12}(?:"+HOSP+")");
   static final Pattern AGEN_W=Pattern.compile("[가-힣A-Za-z0-9]{2,12}(?:"+AGEN+")");
@@ -204,14 +204,32 @@ final class ApptParser {
   static String stage(String b,long at,String contact,String addr){
     try{ return parse(b,at,contact,addr)!=null?"parse:ok":why(b,at); }catch(RuntimeException e){ return "parse:error"; }
   }
+  /**
+   * 못 읽었을 때 막힌 단계 (진단용, 본문·번호 없음):
+   *  parse:no-date · parse:deadline-only(마감·신청기간 날짜뿐) · parse:past(날짜는 있는데 모두 이미 지남)
+   *  · parse:label-found-no-date(‘일시’ 줄은 있는데 날짜를 못 읽음) · parse:no-datetime-line(‘일시’ 줄도 예약 말도 없음) · parse:other
+   */
   static String why(String b,long at){
     String n=norm(b);
     if(rawDates(n)==0) return "parse:no-date";
-    if(dts(n,at).isEmpty()) return "parse:deadline-only";
+    List<DT> L=dts(n,at);
+    if(L.isEmpty()) return "parse:deadline-only";
+    boolean future=false; for(DT t:L) if(t.ms>=at-3600L*1000) future=true;
+    if(!future&&!CANCEL_RX.matcher(n).find()) return "parse:past";
     List<String> ls=lines(n);
-    if(whenOf(ls,n,at)!=null) return "parse:past";
+    DT w=whenOf(ls,n,at);
+    if(w!=null) return w.ms<at-3600L*1000?"parse:past":"parse:other";
+    if(!labelValue(ls,"(?:행사\\s*)?일\\s*시",false,false,at).isEmpty()) return "parse:label-found-no-date";
     if(!CANCEL_RX.matcher(n).find()&&!CHANGE_RX.matcher(n).find()&&!CONFIRM.matcher(n).find()) return "parse:no-datetime-line";
     return "parse:other";
+  }
+  /** v8: ‘일시’ · ‘장소’ 이름표 줄이 있는지 (진단용 예/아니요) */
+  static String labels(String b,long at){
+    try{ String n=norm(b); List<String> ls=lines(n);
+      boolean il=!labelValue(ls,"(?:행사\\s*)?일\\s*시",false,false,at).isEmpty();
+      boolean jl=!labelValue(ls,"(?:행사\\s*)?(?:장\\s*소|위\\s*치)",true,false,at).isEmpty();
+      return "일시 "+(il?"예":"아니요")+" · 장소 "+(jl?"예":"아니요");
+    }catch(RuntimeException e){ return "?"; }
   }
 
   static long dayOf(long ms){ return Math.floorDiv(ms+9L*3600*1000,24L*3600*1000); }

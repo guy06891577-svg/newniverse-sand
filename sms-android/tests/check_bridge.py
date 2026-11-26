@@ -14,11 +14,16 @@ cb=set(re.findall(r'window\.(NV_\w+)&&',br+open(os.path.join(here,'..','src/kr/n
 defined=set(re.findall(r'window\.(NV_\w+)\s*=',js))
 nodef=sorted(n for n in cb if n not in defined)
 if nodef: print("FAIL Java calls JS callbacks that are not defined:",nodef); fails+=1
-for need in ['calRereadStart','diag']:
+for need in ['calRereadStart','diag','calPending','calPendAdd','calPendNo','openNotifSettings']:
     if need not in exposed: print("FAIL missing",need); fails+=1
 if 'NV_reread' not in defined: print("FAIL NV_reread not defined"); fails+=1
 # 다시 읽기 단추의 data-b 와 act() 가지가 맞는지
 if 'data-b="calreread"' not in js or "k==='calreread'" not in js: print("FAIL calreread button/handler mismatch"); fails+=1
+# v8: 앱 안 카드 단추(data-b)와 act() 가지가 맞는지
+for k in ['pendadd:','pendno:','notifset']:
+    if ('data-b="'+k) not in js and k!='notifset': print("FAIL card button missing",k); fails+=1
+    if ("'"+k+"'") not in js and ("startsWith('"+k+"')") not in js: print("FAIL act() branch missing",k); fails+=1
+if 'data-b="notifset"' not in js: print("FAIL notifset button missing"); fails+=1
 # v6 이름이 남아 있지 않은지(옛 동기 호출)
 if re.search(r'NV\.calReread\b(?!Start)',js): print("FAIL old sync calReread still used"); fails+=1
 print("bridge check: used %d, exposed %d, callbacks %d -> %s"%(len(used),len(exposed),len(cb),"OK" if not fails else "FAILED"))

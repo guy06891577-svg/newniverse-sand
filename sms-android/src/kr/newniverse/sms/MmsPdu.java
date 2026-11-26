@@ -150,16 +150,25 @@ final class MmsPdu {
   }
 
   /** Content-type 값 읽기 → 종류. charset·name·filename 은 into 에 채움 */
+  /** ‘text/plain; charset="utf-8"; name=x’ → ‘text/plain’ (charset·name 은 Part 에) */
+  static String baseCt(String raw,Part into){
+    String t=raw==null?"":raw.trim(); int sc=t.indexOf(';');
+    if(sc<0) return t.toLowerCase();
+    String rest=t.substring(sc+1); t=t.substring(0,sc).trim().toLowerCase();
+    if(into!=null) for(String kv:rest.split(";")){ int eq=kv.indexOf('='); if(eq<0) continue; String k=kv.substring(0,eq).trim().toLowerCase(), v=kv.substring(eq+1).trim().replace("\"","");
+      if(k.equals("charset")) into.charset=mibOf(v); else if(k.equals("name")) into.name=v; else if(k.equals("filename")) into.filename=v; }
+    return t;
+  }
   static String contentType(R r,Part into){
     int c=r.peek();
     if(c>=0x80){ r.u8(); return wk(c&0x7f); }
-    if(c>=32&&c<128){ return r.text().toLowerCase(); }
+    if(c>=32&&c<128){ return baseCt(r.text(),into); } // v8: ‘text/plain; charset=utf-8’ 처럼 매개변수가 글자로 붙어 와도 종류만 뽑음
     int len=r.valueLength(); int stop=Math.min(r.p+len,r.end);
     String type;
     int d=r.peek();
     if(d>=0x80){ r.u8(); type=wk(d&0x7f); }
     else if(d<31){ long v=r.longInt(); type=wk((int)v); }
-    else type=r.text().toLowerCase();
+    else type=baseCt(r.text(),into);
     while(r.p<stop){
       int t=r.peek();
       try{

@@ -43,6 +43,12 @@ final class CalDecide {
       case "nocalapp": return "달력 앱이 없음";
       case "insert": return "달력에 쓰지 못함";
       case "declined": return "‘아니요’를 누름";
+      case "notif-perm": return "알림 권한이 없음";
+      case "notif-off": return "이 앱의 알림이 꺼져 있음";
+      case "notif-channel": return "‘달력에 넣을까요?’ 알림 종류가 꺼져 있음";
+      case "notif-notshown": return "알림을 보냈지만 떠 있지 않음";
+      case "notif-nomanager": return "알림 관리자를 못 찾음";
+      case "notif-error": return "알림 오류";
       default: return r;
     }
   }
@@ -54,7 +60,8 @@ final class CalDecide {
       case "skip": return "건너뜀"+why;
       case "try>ok": return "시도 → 성공";
       case "try>fail": return "시도 → 실패"+why;
-      case "ask": return "‘넣을까요?’ 알림을 띄움"+("forced".equals(reason)?"(시험: 보낸 곳 확인은 건너뜀)":"");
+      case "ask>blocked": return "알림을 띄우지 못함"+why+" → 앱 안 카드로 대신 물어봐요";
+      case "ask": return "‘넣을까요?’ 알림을 띄움(떠 있는 것 확인)"+("forced".equals(reason)?"(시험: 보낸 곳 확인은 건너뜀)":"");
       case "ask>ok": return "‘넣을까요?’ → 넣기 → 성공";
       case "ask>no": return "‘넣을까요?’ → 아니요";
       case "ask>fail": return "‘넣을까요?’ → 넣기 → 실패"+why;

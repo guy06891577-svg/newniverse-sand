@@ -159,6 +159,7 @@ em{font-style:normal;color:var(--a1);font-weight:700}
 <section class="view" id="v-list">
  <div class="head"><h1>문자 <small id="lUn"></small></h1><button class="icb" id="more" aria-label="문자 설정 메뉴" aria-haspopup="true"></button></div>
  <div class="sbox glass"><span data-i="search"></span><input id="lQ" type="search" placeholder="이름 · 초성 · 번호 · 문자 내용" autocomplete="off" enterkeyhint="search"><button class="x" id="lQx" aria-label="지우기" hidden></button></div>
+ <div id="pendBar"></div>
  <div class="scroll" id="lList"></div>
  <button id="fab" aria-label="새 문자 쓰기"></button>
 </section>
@@ -392,18 +393,32 @@ window.addEventListener('error',e=>{try{toast('화면 오류: '+((e&&e.message)|
 let rrBusy=false,rrTimer=0;
 function rereadStart(){
  if(rrBusy){toast('아직 읽는 중이에요…');return}
- if(!NV||!NV.calRereadStart){toast('이 앱에는 다시 읽기가 없어요 (v7 필요)');return}
+ if(!NV||!NV.calRereadStart){toast('이 앱에는 다시 읽기가 없어요 (v8 필요)');return}
  rrBusy=true;toast('마지막 문자를 읽는 중…');const bt=document.querySelector('[data-b="calreread"]');if(bt){bt.disabled=true;bt.textContent='읽는 중…'}
  clearTimeout(rrTimer);rrTimer=setTimeout(()=>{if(rrBusy){rrBusy=false;toast('응답이 없어요 (10초). 잠시 뒤 설정을 다시 열어 보세요');if(cur==='set')renderSettings()}},10000);
  let r;try{r=J(NV.calRereadStart(),{})}catch(e){r=null}
  if(!r||!r.started){rrBusy=false;clearTimeout(rrTimer);toast('다시 읽기를 시작하지 못했어요');if(cur==='set')renderSettings()}
 }
-window.NV_reread=r=>{rrBusy=false;clearTimeout(rrTimer);toast((r&&r.label)||'결과를 받지 못했어요');if(cur==='set')renderSettings()};
+window.NV_reread=r=>{rrBusy=false;clearTimeout(rrTimer);toast((r&&r.label)||'결과를 받지 못했어요');
+ if(r&&r.steps==='ask>blocked'&&/notif-perm/.test(r.reason||'')&&NV&&NV.requestPerms&&!rrPermAsked){rrPermAsked=true;permAsked=Date.now();setTimeout(()=>NV.requestPerms(),600)}
+ pendRender();if(cur==='set')renderSettings()};
+let rrPermAsked=false;
+// v8: 알림을 못 띄운 ‘달력에 넣을까요?’ 를 앱 안 카드로 (넣기/아니요 + 알림 설정 열기). 본문·번호 없이 제목·때·장소만.
+function pendList(){let a=[];try{a=NV&&NV.calPending?(J(NV.calPending(),[])||[]):[]}catch(e){}return Array.isArray(a)?a:[]}
+function pendCard(x,n){return `<div style="margin:8px 12px;padding:10px 12px;border-radius:14px;background:rgba(143,107,255,.18);font-size:13px;line-height:1.5" data-pend="${+x.id}"><b>달력에 넣을까요?</b><br>${esc(x.title||'')} · ${esc(fmtWhen(x.when))}${x.loc?' · '+esc(x.loc):''}<br><small>알림을 띄우지 못해서 여기서 물어봐요</small><div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><button class="sbtn pri" data-b="pendadd:${+x.id}">넣기</button><button class="sbtn" data-b="pendno:${+x.id}">아니요</button>${n?'<button class="sbtn" data-b="notifset">알림 설정 열기</button>':''}</div></div>`}
+function pendHtml(){const L=pendList();if(!L.length)return '';const n=NV&&NV.openNotifSettings;return L.map(x=>pendCard(x,n)).join('')}
+function pendRender(){const b=$('#pendBar');if(!b)return;const h=pendHtml();b.innerHTML=h;if(h)bindB(b)}
+function pendDo(k){const add=k.startsWith('pendadd:');const id=k.slice(add?8:7);let r='fail';try{r=add?NV.calPendAdd(id):NV.calPendNo(id)}catch(e){}
+ if(r==='perm'){toast('달력 권한이 필요해요');NV&&NV.requestPerms&&NV.requestPerms()}
+ else toast(({ok:'달력에 넣었어요',dup:'이미 달력에 있어요',no:'넣지 않을게요',none:'이미 처리된 카드예요',fail:'달력에 넣지 못했어요'})[r]||r);
+ pendRender();if(cur==='set')renderSettings()}
 function act(k){menuClose();
  if(k==='perm'){permAsked=Date.now();NV&&NV.requestPerms()}
  else if(k==='role'){closeSheet();roleAsked=Date.now();NV&&NV.requestRole()}
  else if(k==='rolewarn')roleWarn();
  else if(k==='calreread')rereadStart();
+ else if(k.startsWith('pendadd:')||k.startsWith('pendno:'))pendDo(k);
+ else if(k==='notifset'){NV&&NV.openNotifSettings&&NV.openNotifSettings()}
  else if(k==='mmsretry'){const n=NV&&NV.mmsRetry?NV.mmsRetry():0;toast(n?'장문을 다시 받고 있어요':'다시 받을 장문이 없어요');setTimeout(()=>{if(cur==='set')renderSettings()},1500)}
  else if(k==='appset'){NV&&NV.openAppSettings()}
  else if(k==='defapps'){NV&&NV.openDefaultApps()}
@@ -440,20 +455,33 @@ function diagView(){const d=(NV&&NV.diag)?J(NV.diag(),{}):{};const pe=d.perms||{
 function InboxInsert(s){return ({ok:'저장됨','retry-ok':'저장됨(다시 시도)',dup:'이미 저장되어 있음',fail:'저장 실패',parse:'문자를 읽지 못함'})[s]||'아직 없음'}
 function sourceLab(s){return s==='deliver'?'SMS_DELIVER':s==='received'?'안전망(SMS_RECEIVED)':'아직 없음'}
 function calLabelHtml(d){ // v7: 항상 읽기 단계를 보여 주고, 이 버전 기록이 없으면 그렇게 말함
- if(!d.calSteps)return 'v7 기록 없음 — 아직 일정 후보 문자를 처리한 적이 없어요';
- if(!d.calCurrent)return esc(d.calLabel||'')+'<br>※ 예전 버전'+(d.calVer?'('+esc(d.calVer)+')':'(v5 이하)')+'이 남긴 기록이에요. v7 기록 없음 — ‘다시 읽기’를 눌러 보세요';
+ if(!d.calSteps)return 'v8 기록 없음 — 아직 일정 후보 문자를 처리한 적이 없어요';
+ if(!d.calCurrent)return esc(d.calLabel||'')+'<br>※ 예전 버전'+(d.calVer?'('+esc(d.calVer)+')':'(v5 이하)')+'이 남긴 기록이에요. v8 기록 없음 — ‘다시 읽기’를 눌러 보세요';
  return esc(d.calLabel||'')}
 function phaseLab(p){return ({start:'요청 받음',init:'읽기 도구 켜기',sms:'SMS 읽기',mms:'MMS 읽기',pick:'문자 고르기',parse:'일정 읽기',decide:'달력 넣기',done:'끝'})[p]||p||'—'}
+function rrList(d){
+ const L=d.rrLines||[]; if(!L.length)return '<small>확인한 문자가 없어요</small>';
+ return L.map((x,i)=>`<div style="margin:6px 0;padding:6px 8px;border-radius:10px;background:${x.sel?'rgba(143,107,255,.18)':'rgba(255,255,255,.06)'};font-size:12px;line-height:1.5">${i+1}. ${esc(x.ty)} · ${esc(fmtWhen(x.t))} · ${+x.len}자 · <b>${esc(x.st)}</b>${x.ty==='MMS'?' · 제목 '+(+x.sl)+'자':''}${x.pc?'<br>조각 '+esc(x.pc):''}<br>${esc(x.lb||'')}${x.sel?' <b>← 달력 처리</b>':''}</div>`).join('')}
+function notifLab(d){
+ const ok=d.notifOk===''||d.notifOk==null; const now=ok?'지금 알림을 띄울 수 있어요':({perm:'알림 권한이 없어요 — ‘알림 설정 열기’에서 켜 주세요',off:'이 앱의 알림이 꺼져 있어요 — ‘알림 설정 열기’에서 켜 주세요',channel:'‘달력에 넣을까요?’ 알림 종류가 꺼져 있어요 — ‘알림 설정 열기’에서 켜 주세요'})[d.notifOk]||('확인 필요 '+esc(d.notifOk));
+ return esc(now)+(d.calNotif?'<br>마지막 알림 시도: '+esc(d.calNotifLabel||d.calNotif)+' · '+esc(fmtWhen(d.calNotifAt)):'<br>아직 알림을 띄워 본 적이 없어요')}
+// v8: 받는 순간의 자동 처리 기록(‘다시 읽기’와 따로)
+function ndLab(d){return d.autoNdAt?'<br>날짜 없는 문자는 기록을 덮어쓰지 않아요 (마지막으로 받은 때: '+esc(d.autoNdSrc||'')+' '+esc(fmtWhen(d.autoNdAt))+')':''}
+function autoRows(d){
+ if(!d.autoAt&&!d.autoEnter)return `<div class="srow2"><div class="grow">자동 처리 (받는 순간)<small>아직 자동 처리 기록 없음 — 문자나 장문을 받으면 여기에 남아요 · 기본 문자 앱: ${ST.def?'예':'아니요'}${ndLab(d)}</small></div><span class="no2">아직 없음</span></div>`;
+ const un=d.autoEnter&&d.autoEnter>(d.autoAt||0);
+ return `<div class="srow2" style="display:block"><div class="grow">자동 처리 (받는 순간)<small>${esc(d.autoSrc||'—')} · ${esc(fmtWhen(d.autoAt||d.autoEnter))} · ${+d.autoLen}자 · 읽기 단계 ${esc(d.autoStage||'—')}<br>${un?'⚠ 시작했지만 끝나지 않았어요 · 멈춘 곳: '+esc(d.autoPhase||'—'):esc(d.autoLabel||'')}<br>기본 문자 앱: ${ST.def?'예':'아니요'}${ndLab(d)}</small></div><span class="${d.autoGood?'ok':'no2'}">${d.autoGood?(d.autoSteps==='ask'?'알림 떴어요':'성공'):(d.autoSteps==='ask>blocked'?'알림 막힘':'아니요')}</span></div>`}
 function rrRows(d){
  const un=d.rrStart&&d.rrStart>(d.rrAt||0);
- let h=`<div class="srow2"><div class="grow">다시 읽기 요청<small>${d.rrStart?(un?'⚠ 시작했지만 끝나지 않았어요 · 멈춘 단계: '+esc(phaseLab(d.rrPhase)):'끝까지 처리됨'):'v7 요청 기록 없음 — 단추가 눌린 적이 없어요'}</small></div><span>${esc(fmtWhen(d.rrStart))}</span></div>`;
- if(!d.rrAt)return h+'<div class="srow2"><div class="grow">다시 읽기 결과<small>v7 다시 읽기 기록 없음 — 위 단추를 눌러 보세요</small></div><span class="no2">아직 없음</span></div>';
+ let h=`<div class="srow2"><div class="grow">다시 읽기 요청<small>${d.rrStart?(un?'⚠ 시작했지만 끝나지 않았어요 · 멈춘 단계: '+esc(phaseLab(d.rrPhase)):'끝까지 처리됨'):'v8 요청 기록 없음 — 단추가 눌린 적이 없어요'}</small></div><span>${esc(fmtWhen(d.rrStart))}</span></div>`;
+ if(!d.rrAt)return h+'<div class="srow2"><div class="grow">다시 읽기 결과<small>v8 다시 읽기 기록 없음 — 위 단추를 눌러 보세요</small></div><span class="no2">아직 없음</span></div>';
  const found=d.rrType?esc(d.rrType)+' · '+esc(fmtWhen(d.rrMsgAt))+' · '+(+d.rrLen)+'자':'찾지 못함';
  return h+`<div class="srow2"><div class="grow">다시 읽기 끝난 때</div><span>${esc(fmtWhen(d.rrAt))}</span></div>
   <div class="srow2"><div class="grow">찾은 문자<small>종류 · 받은 때 · 글자 수 (내용·번호는 저장 안 해요)</small></div><span>${found}</span></div>
+  <div class="srow2" style="display:block"><div class="grow">최근 문자 확인 (최대 10통)<small>한 통마다 받은 때 · 종류 · 글자 수 · 읽기 단계 · 장문 조각(종류:글자 수) · ‘일시/장소’ 이름표. 내용·번호는 저장 안 해요</small></div>${rrList(d)}</div>
   <div class="srow2"><div class="grow">확인한 문자함<small>받은 SMS · 받은 MMS${d.rrQerr?' · 읽기 오류 '+esc(d.rrQerr):''}</small></div><span>${+d.rrSms}통 · ${+d.rrMms}통</span></div>
   <div class="srow2"><div class="grow">일정 읽기 단계</div><span class="${d.rrStage==='parse:ok'?'ok':'no2'}">${esc(d.rrStage||'—')}</span></div>
-  <div class="srow2"><div class="grow">달력 넣기 결과<small>${esc(d.rrLabel||'')}</small></div><span class="${d.rrGood?'ok':'no2'}">${d.rrGood?'성공':'아니요'}</span></div>`}
+  <div class="srow2"><div class="grow">달력 넣기 결과<small>${esc(d.rrLabel||'')}</small></div><span class="${d.rrGood?'ok':'no2'}">${d.rrGood?(d.rrSteps==='ask'?'알림 떴어요':'성공'):(d.rrSteps==='ask>blocked'?'알림 막힘':'아니요')}</span></div>`}
 function renderSettings(){status();calStatus();const p=ST.perms||{};const yes=b=>b?'<span class="ok">허용됨</span>':'<span class="no2">꺼짐</span>';const dv=diagView();
  $('#setList').innerHTML=`
  <div class="set glass"><h3>기본 문자 앱</h3>
@@ -488,6 +516,9 @@ function renderSettings(){status();calStatus();const p=ST.perms||{};const yes=b=
   <div class="srow2"><div class="grow">달력 등록<small>${calLabelHtml(dv.d)}</small></div>${dv.cal}</div>
   <div class="srow2"><div class="grow">자동 넣기<small>끄면 ‘달력에 넣을까요?’도 뜨지 않아요</small></div>${yes(!!dv.d.calOn)}</div>
   <div class="srow2"><div class="grow">달력 권한</div>${yes(!!dv.d.calPerm)}</div>
+  ${autoRows(dv.d)}
+  <div class="srow2"><div class="grow">알림 상태<small>${notifLab(dv.d)}</small></div><button class="sbtn" data-b="notifset">알림 설정 열기</button></div>
+  ${pendHtml()}
   <div class="srow2"><div class="grow">마지막 문자 다시 읽기<small>시험용 · 받은 문자함에서 날짜가 있는 가장 최근 문자를 찾아 달력 단계를 다시 돌려 봐요. 다시 보내지 않아도 돼요.</small></div><button class="sbtn pri" data-b="calreread"${rrBusy?' disabled':''}>${rrBusy?'읽는 중…':'다시 읽기'}</button></div>
   ${rrRows(dv.d)}
  </div>
@@ -495,11 +526,12 @@ function renderSettings(){status();calStatus();const p=ST.perms||{};const yes=b=
   <div class="srow2"><div class="grow">마지막 도착 신호<small>통신사가 ‘장문이 있어요’ 신호를 보낸 때</small></div><span>${esc(fmtWhen(dv.d.mmsAt))}</span></div>
   <div class="srow2"><div class="grow">내려받기 결과<small>${dv.d.mmsCode&&dv.d.mmsCode!==-1?('오류 '+(+dv.d.mmsCode)+' · '+esc(dv.d.mmsCodeLabel||'')):'통신사 MMS 서버에서 받기'}${dv.d.mmsHttp?' · HTTP '+(+dv.d.mmsHttp):''}${dv.d.mmsErr?' · '+esc(dv.d.mmsErr):''}</small></div>${dv.mms}</div>
   <div class="srow2"><div class="grow">폰 저장소에 저장</div>${dv.d.mmsAt?(dv.d.mmsSaved?'<span class="ok">저장됨</span>':'<span class="no2">아니요</span>'):'<span class="no2">아직 없음</span>'}</div>
+  <div class="srow2"><div class="grow">마지막으로 받은 장문 구성<small>조각 수 · 종류:글자 수 · 받은 크기 (내용 없음)</small></div><span style="max-width:55%;text-align:right;font-size:12px">${esc(dv.d.mmsParts||'아직 없음')}</span></div>
   <div class="srow2"><div class="grow">통신사에 받았다고 알림<small>M-NotifyResp</small></div><span>${esc(mmsAckLab(dv.d.mmsAck))}</span></div>
   <div class="srow2"><div class="grow">못 받은 장문<small>${(+dv.d.mmsPending||0)>0?'다시 받기를 누르면 통신사에서 다시 내려받아요':'없어요'}</small></div>${(+dv.d.mmsPending||0)>0?'<span class="no2">'+(+dv.d.mmsPending)+'통</span><button class="sbtn pri" data-b="mmsretry">다시 받기</button>':'<span class="ok">0</span>'}</div>
  </div>
  <div class="set glass"><h3>알아 두기</h3>
-  <div class="steps">문자 내용은 폰 밖으로 나가지 않아요 (인터넷 권한 없음).<br>사진·장문(LMS/MMS)은 기본 문자 앱일 때 받아서 저장해요. 사진·장문 보내기는 아직 안 되고, 긴 글은 여러 개의 문자로 나눠 보내요.<br>뉴니버스 문자 v7 시험판 · ${esc(ST.ver||'')} · 안드로이드 ${ST.sdk||'?'}</div>
+  <div class="steps">문자 내용은 폰 밖으로 나가지 않아요 (인터넷 권한 없음).<br>사진·장문(LMS/MMS)은 기본 문자 앱일 때 받아서 저장해요. 사진·장문 보내기는 아직 안 되고, 긴 글은 여러 개의 문자로 나눠 보내요.<br>뉴니버스 문자 v8 시험판 · ${esc(ST.ver||'')} · 안드로이드 ${ST.sdk||'?'}</div>
  </div>`;bindB($('#setList'))}
 $('#sBack').onclick=()=>{buzz();goList()};
 
@@ -512,9 +544,9 @@ $('#bd').onclick=closeSheet;
 let toastT;function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('on'),2200)}
 
 /* ---------- 화면 전환 · 안드로이드 신호 ---------- */
-function show(v){cur=v;menuClose();$('#toast').classList.remove('on');['list','conv','new','set'].forEach(k=>$('#v-'+k).hidden=k!==v);if(v==='set')renderSettings();if(v!=='conv'&&NV)NV.viewing('')}
+function show(v){cur=v;menuClose();$('#toast').classList.remove('on');['list','conv','new','set'].forEach(k=>$('#v-'+k).hidden=k!==v);if(v==='set')renderSettings();if(v==='list')pendRender();if(v!=='conv'&&NV)NV.viewing('')}
 function goList(){CONV=null;show('list');renderList()}
-function refresh(){status();loadThreads();if(cur==='list')renderList();else if(cur==='conv')loadMsgs(false);else if(cur==='new')renderNew()}
+function refresh(){status();pendRender();loadThreads();if(cur==='list')renderList();else if(cur==='conv')loadMsgs(false);else if(cur==='new')renderNew()}
 window.NV_refresh=refresh;
 window.NV_back=()=>{if(closeSheet())return true;if(menuClose())return true;if(cur!=='list'){goList();return true}if($('#lQ').value){$('#lQ').value='';renderList();return true}return false};
 window.NV_resume=(kind,ok)=>{const before=ST.def;status();loadContacts();refresh();

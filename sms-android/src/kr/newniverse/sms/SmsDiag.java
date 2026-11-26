@@ -6,6 +6,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.provider.Telephony;
 import org.json.JSONObject;
+import org.json.JSONArray;
 
 /**
  * v3: 설정 화면에 보여주는 짧은 저장 기록. 문자 본문·번호·비밀은 남기지 않음.
@@ -81,11 +82,21 @@ final class SmsDiag {
     try{ SharedPreferences.Editor e=p(c).edit(); if("start".equals(phase)) e.putLong("rr_start",System.currentTimeMillis()); e.putString("rr_phase",phase==null?"":phase).apply(); }catch(Exception x){}
   }
   /** v7: ‘마지막 문자 다시 읽기’ 기록. 문자 종류·시각·글자 수·확인한 개수·읽기 단계·결과만 (본문·번호 없음) */
-  static void rr(Context c,String type,long msgAt,int len,int nSms,int nMms,String qerr,String stage,String steps,String reason){
+  static void rr(Context c,String type,long msgAt,int len,int nSms,int nMms,String qerr,String stage,String steps,String reason,String lines,int rank){
     try{ p(c).edit().putLong("rr_at",System.currentTimeMillis()).putString("rr_type",type==null?"":type).putLong("rr_msg_at",msgAt).putInt("rr_len",len)
       .putInt("rr_sms",nSms).putInt("rr_mms",nMms).putString("rr_qerr",qerr==null?"":qerr).putString("rr_stage",stage==null?"":stage)
-      .putString("rr_steps",steps==null?"":steps).putString("rr_reason",reason==null?"":reason).putString("rr_ver",Nv.VER).putString("rr_phase","done").apply(); }catch(Exception x){}
+      .putString("rr_steps",steps==null?"":steps).putString("rr_reason",reason==null?"":reason).putString("rr_lines",lines==null?"[]":lines).putInt("rr_rank",rank).putString("rr_ver",Nv.VER).putString("rr_phase","done").apply(); }catch(Exception x){}
   }
+  /** v8: 알림 상태(posted·perm·off·channel·notshown·error:…) — ‘성공’이라고 말하기 전에 알림이 정말 떴는지 */
+  static void calNotif(Context c,String st){ try{ p(c).edit().putString("cal_notif",st==null?"":st).putLong("cal_notif_at",System.currentTimeMillis()).apply(); }catch(Throwable x){} }
+  /** v8: 받는 순간의 자동 처리 기록(‘다시 읽기’ 기록 rr_* 와 따로). 본문·번호 없음 */
+  static void autoPhase(Context c,String src,String phase){ try{ SharedPreferences.Editor e=p(c).edit(); if("enter".equals(phase)){ e.putLong("auto_enter",System.currentTimeMillis()); e.putString("auto_src",src==null?"":src); } e.putString("auto_phase",phase==null?"":phase).apply(); }catch(Throwable x){} }
+  static void autoNoDate(Context c,String src){ try{ p(c).edit().putLong("auto_nd_at",System.currentTimeMillis()).putString("auto_nd_src",src==null?"":src).apply(); }catch(Throwable x){} }
+  static void auto(Context c,String src,int len,String stage,String steps,String reason){
+    try{ p(c).edit().putLong("auto_at",System.currentTimeMillis()).putString("auto_src",src==null?"":src).putInt("auto_len",len).putString("auto_stage",stage==null?"":stage)
+      .putString("auto_steps",steps==null?"":steps).putString("auto_reason",reason==null?"":reason).putString("auto_phase","done").putString("auto_ver",Nv.VER).apply(); }catch(Throwable x){}
+  }
+  static void mmsParts(Context c,String sum){ try{ p(c).edit().putString("mms_parts",sum==null?"":sum).apply(); }catch(Exception x){} }
   static void mmsAck(Context c,String st){ try{ p(c).edit().putString("mms_ack",st==null?"":st).apply(); }catch(Exception x){} }
 
   static JSONObject json(Context c){
@@ -117,8 +128,15 @@ final class SmsDiag {
       String rs=p.getString("rr_steps",""), rr=p.getString("rr_reason","");
       o.put("rrAt",p.getLong("rr_at",0)); o.put("rrType",p.getString("rr_type","")); o.put("rrMsgAt",p.getLong("rr_msg_at",0)); o.put("rrLen",p.getInt("rr_len",0));
       o.put("rrSms",p.getInt("rr_sms",0)); o.put("rrMms",p.getInt("rr_mms",0)); o.put("rrQerr",p.getString("rr_qerr","")); o.put("rrStage",p.getString("rr_stage",""));
+      o.put("rrRank",p.getInt("rr_rank",0)); try{ o.put("rrLines",new JSONArray(p.getString("rr_lines","[]"))); }catch(Exception x){ o.put("rrLines",new JSONArray()); }
       o.put("rrStart",p.getLong("rr_start",0)); o.put("rrPhase",p.getString("rr_phase",""));
       o.put("rrSteps",rs); o.put("rrReason",rr); o.put("rrLabel",rs.isEmpty()?"":AutoCal.labelOf(rs,rr)); o.put("rrGood",CalDecide.isGood(rs));
+      String cn=p.getString("cal_notif",""); o.put("calNotif",cn); o.put("calNotifAt",p.getLong("cal_notif_at",0)); o.put("calNotifLabel",cn.isEmpty()?"":AutoCal.notifLabel(cn));
+      String as=p.getString("auto_steps",""), ar=p.getString("auto_reason","");
+      o.put("autoNdAt",p.getLong("auto_nd_at",0)); o.put("autoNdSrc",p.getString("auto_nd_src",""));
+      o.put("autoAt",p.getLong("auto_at",0)); o.put("autoEnter",p.getLong("auto_enter",0)); o.put("autoSrc",p.getString("auto_src","")); o.put("autoLen",p.getInt("auto_len",0)); o.put("autoStage",p.getString("auto_stage",""));
+      o.put("autoSteps",as); o.put("autoReason",ar); o.put("autoLabel",as.isEmpty()?"":AutoCal.labelOf(as,ar)); o.put("autoGood",CalDecide.isGood(as)); o.put("autoPhase",p.getString("auto_phase",""));
+      o.put("notifOk",AutoCal.notifBlock(c,AutoCal.CH_ASK)); o.put("pendCount",new JSONArray(AutoCal.pendJson(c)).length());
       o.put("calOn",AutoCal.on(c)); o.put("calPerm",AutoCal.perm(c));
       o.put("mmsAt",p.getLong("mms_at",0));
       o.put("mmsUpd",p.getLong("mms_upd",0));
@@ -128,7 +146,7 @@ final class SmsDiag {
       o.put("mmsHttp",p.getInt("mms_http",0));
       o.put("mmsSaved",p.getBoolean("mms_saved",false));
       o.put("mmsErr",p.getString("mms_err",""));
-      o.put("mmsAck",p.getString("mms_ack",""));
+      o.put("mmsAck",p.getString("mms_ack","")); o.put("mmsParts",p.getString("mms_parts",""));
       o.put("mmsPending",MmsInbox.pendingCount(c));
       o.put("ver",Nv.VER);
     }catch(Exception e){}

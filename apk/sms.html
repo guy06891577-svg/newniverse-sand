@@ -1,6 +1,6 @@
 <!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
-<title>뉴니버스 문자 v7 (시험판) 설치</title>
+<title>뉴니버스 문자 v8 (시험판) 설치</title>
 <style>body{font-family:system-ui,"Noto Sans KR",sans-serif;background:#07061a;color:#fff;margin:0;padding:22px;line-height:1.7;font-size:18px}
 h1{font-size:26px;margin:0 0 6px}h2{font-size:20px;margin:28px 0 8px;color:#9fd8ff}.sub{opacity:.72;font-size:15px}
 a.dl{display:block;text-align:center;margin:18px 0;padding:18px;border-radius:22px;background:linear-gradient(135deg,#6fd3ff,#8f6bff);color:#0a0820;font-weight:800;font-size:21px;text-decoration:none}
@@ -9,8 +9,16 @@ a.dl{display:block;text-align:center;margin:18px 0;padding:18px;border-radius:22
 ol,ul{padding-left:22px}li{margin:7px 0}b{color:#c9b8ff}
 img.shot{width:31%;border-radius:14px;margin:1%;vertical-align:top}</style></head><body>
 <img src="sms-icon-512.png" width="88" height="88" alt="" style="border-radius:22px;float:right">
-<h1>뉴니버스 문자 v7 (시험판)</h1><div class="sub">버전 7-test · 뉴니버스 고정 서명(런처·전화와 같은 서명) · 따로 까는 앱 · 인터넷 권한 없음</div>
-<a class="dl" href="newniverse-sms-v7-test.apk" download>내려받기 · 뉴니버스 문자 v7 (약 0.16MB)</a>
+<h1>뉴니버스 문자 v8 (시험판)</h1><div class="sub">버전 8-test · 뉴니버스 고정 서명(런처·전화와 같은 서명) · 따로 까는 앱 · 인터넷 권한 없음</div>
+<a class="dl" href="newniverse-sms-v8-test.apk" download>내려받기 · 뉴니버스 문자 v8 (약 0.17MB)</a>
+
+<h2>v8에서 고친 점 · 받는 순간 자동 처리 · 알림이 안 뜨는데 “성공”이라던 문제</h2><ul>
+<li><b>344자 문자</b>는 잘린 것이 아니라 <b>병원 예약 문자</b>였고, 날짜(2026-10-31)가 이미 지나서 건너뛴 게 맞아요. 다만 이유가 <code>parse:other</code>로 뭉뚱그려 나왔어요. 이제 <code>parse:past</code>(이미 지난 일정) · <code>parse:no-date</code> · <code>parse:deadline-only</code> · <code>parse:label-found-no-date</code>(‘일시’는 있는데 날짜가 없음) · <code>parse:no-datetime-line</code> 으로 나눠 보여 줘요. ‘정신건강의학과’ 같은 병원 이름도 병원으로 알아봐요.</li>
+<li><b>다시 읽기</b>는 이제 <b>최근 문자 10통</b>(SMS+MMS)을 훑어서, 한 통마다 <b>받은 때 · 종류 · 글자 수 · 읽기 단계 · 장문 조각(종류:글자 수) · ‘일시/장소’ 이름표 유무</b>를 한 줄씩 보여 줘요(본문·번호는 저장 안 해요). 그중 <b>가장 최근의 앞으로 올 일정</b>을 달력 처리해요.</li>
+<li><b>장문은 모든 글 조각을 순서대로 이어 붙여요</b>(받을 때도, 다시 읽을 때도). 조각 종류에 <code>; charset=…</code>가 붙은 것, 글이 파일(_data)에 있는 것, 조각 글자셋(EUC-KR 등)도 읽어요. 설정에 <b>마지막으로 받은 장문 구성</b>(조각 수 · 종류:글자 수)이 보여요.</li>
+<li><b>받는 순간 자동 처리</b>: 장문을 받아 저장한 <b>바로 뒤</b>(알림·런처 신호보다 먼저, 이미 저장돼 있던 문자여도) 달력 처리를 돌려요. 설정 › 달력 등록 기록에 <b>자동 처리 (받는 순간)</b> 줄이 새로 생겨요: 어디서(SMS/MMS) · 글자 수 · 읽기 단계 · 결과 · 멈춘 곳. ‘다시 읽기’ 기록과 따로예요.</li>
+<li><b>알림이 정말 떴을 때만 “알림 떴어요”</b>라고 해요. 안 뜨면 이유를 나눠서 보여 줘요: <b>알림 권한 없음</b> · <b>이 앱 알림이 꺼짐</b> · <b>‘달력에 넣을까요?’ 알림 종류가 꺼짐</b> · <b>보냈지만 떠 있지 않음</b>. 알림 종류는 새 채널(중요도 높음)로 바꿨어요.</li>
+<li>알림을 못 띄우면 <b>앱 안 카드</b>(목록 맨 위와 설정)로 대신 물어요: <b>[넣기] [아니요]</b>와 <b>[알림 설정 열기]</b>.</li></ul>
 
 <h2>v7에서 고친 점 · ‘다시 읽기’가 아무 일도 안 하는 것처럼 보이던 문제</h2><ul>
 <li>v6에서 <b>다시 읽기</b>를 눌러도 화면이 그대로였고 <b>예전(v5) 기록</b>이 계속 보였어요. v7은 <b>누르는 순간 “마지막 문자를 읽는 중…”</b>을 보여 주고, 읽기는 화면이 멈추지 않게 <b>따로</b> 돌려요. <b>10초 안에 응답이 없으면</b> 그렇게 알려 줘요.</li>
@@ -65,7 +73,7 @@ img.shot{width:31%;border-radius:14px;margin:1%;vertical-align:top}</style></hea
 
 <h2>1. 설치하기</h2><ol>
 <li><b>Play 프로텍트 검사 잠시 끄기</b>: Play 스토어 → 프로필 사진 → Play 프로텍트 → 톱니바퀴 → ‘Play 프로텍트로 앱 검사’ 끄기.</li>
-<li>이 폰의 크롬에서 위 <b>내려받기</b> → 내 파일 › 다운로드 › <b>newniverse-sms-v7-test.apk</b> → (출처 허용) → <b>설치</b>(이미 v6가 있으면 덮어 깔아요. 문자는 그대로예요).</li>
+<li>이 폰의 크롬에서 위 <b>내려받기</b> → 내 파일 › 다운로드 › <b>newniverse-sms-v8-test.apk</b> → (출처 허용) → <b>설치</b>(이미 v7이 있으면 덮어 깔아요. 문자는 그대로예요).</li>
 <li>설치가 끝나면 <b>Play 프로텍트 검사를 다시 켜기</b>.</li></ol>
 
 <h2>2. 처음 켜기 (권한)</h2><ol>
