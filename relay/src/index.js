@@ -354,7 +354,7 @@ async function wxLoad(env, nx, ny) {
     const s = first('SKY'), p = first('PTY'); sky = s ? +s.fcstValue : null; ptyF = p ? +p.fcstValue : null; }
   const pty = +O.PTY || 0;
   const text = pty ? (WX_PTY[pty] || '강수') : (sky && WX_SKY[sky]) || (ptyF ? WX_PTY[ptyF] : '') || '';
-  return { data: { base: n.base, temp, pty, sky, text, reh: num(String(O.REH ?? '')), rn1: num(String(O.RN1 ?? '')), wsd: num(String(O.WSD ?? '')) } };
+  return { data: { base: n.base, temp, pty, sky, text, reh: num(String(O.REH ?? '')), rn1: num(String(O.RN1 ?? '')), wsd: num(String(O.WSD ?? '')), vec: num(String(O.VEC ?? '')) } };
 }
 async function wxNow(url, env, ctx) {
   const lat = num(url.searchParams.get('lat')), lng = num(url.searchParams.get('lng'));
@@ -367,7 +367,7 @@ async function wxNow(url, env, ctx) {
   }
   const d = c.data, nf = v => (isFinite(v) ? v : null);
   return out({ ok: true, mode: 'weather', source: 'kma', grid: { nx, ny }, base: d.base, temp: d.temp, text: d.text, pty: d.pty, sky: d.sky,
-    reh: nf(d.reh), rn1: nf(d.rn1), wsd: nf(d.wsd), at: new Date(c.at).toISOString(), age: Math.round((Date.now() - c.at) / 1000), cached: c.cached, stale: c.stale,
+    reh: nf(d.reh), rn1: nf(d.rn1), wsd: nf(d.wsd), vec: nf(d.vec), at: new Date(c.at).toISOString(), age: Math.round((Date.now() - c.at) / 1000), cached: c.cached, stale: c.stale,
     note: '기상청 초단기실황·초단기예보' }, 200, 300);
 }
 

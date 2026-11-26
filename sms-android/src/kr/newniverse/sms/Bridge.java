@@ -40,6 +40,13 @@ class Bridge {
     }catch(Exception e){}
     return o.toString();
   }
+  // v2 달력: 문자 속 일정 자동으로 달력에(「뉴니버스」 전용 달력)
+  @JavascriptInterface public String calStatus(){ JSONObject o=new JSONObject(); try{ o.put("on",AutoCal.on(a)); o.put("perm",AutoCal.perm(a)); o.put("asked",AutoCal.asked(a)); }catch(Exception e){} return o.toString(); }
+  @JavascriptInterface public void calSet(boolean on){ a.runOnUiThread(()->{ if(!on){ AutoCal.setOn(a,false); ((MainActivity)a).js("window.NV_cal&&NV_cal()"); return; }
+      if(AutoCal.perm(a)){ AutoCal.setOn(a,true); ((MainActivity)a).js("window.NV_cal&&NV_cal()"); return; }
+      ((MainActivity)a).reqCal(true); }); }
+  @JavascriptInterface public void calSkip(){ a.runOnUiThread(()->{ AutoCal.setOn(a,false); ((MainActivity)a).js("window.NV_cal&&NV_cal()"); }); }
+  @JavascriptInterface public void calDelete(){ CalStore.deleteAll(a); }
   @JavascriptInterface public void requestPerms(){ a.runOnUiThread(()->{ String[] m=missing(a); if(m.length>0) a.requestPermissions(m,MainActivity.RQ_PERM); else ((MainActivity)a).js("window.NV_resume&&NV_resume('perm')"); }); }
   @JavascriptInterface public void requestRole(){ a.runOnUiThread(()->{ Intent i=Nv.roleIntent(a); if(i==null){ openDefaultApps(); return; } try{ a.startActivityForResult(i,MainActivity.RQ_ROLE); }catch(Exception e){ openDefaultApps(); } }); }
   @JavascriptInterface public void openDefaultApps(){ a.runOnUiThread(()->{ try{ a.startActivity(new Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS)); }catch(Exception e){ try{ a.startActivity(new Intent(Settings.ACTION_SETTINGS)); }catch(Exception x){} } }); }

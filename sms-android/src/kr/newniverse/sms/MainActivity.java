@@ -8,7 +8,7 @@ import android.webkit.WebView;
 
 /** 대화 목록 · 대화 · 새 문자 · 설정 (하이브리드: 화면은 assets/www/index.html) */
 public class MainActivity extends Activity {
-  static final int RQ_ROLE=7, RQ_PERM=8;
+  static final int RQ_ROLE=7, RQ_PERM=8, RQ_CAL=9; boolean calOn;
   static volatile MainActivity live; static volatile boolean resumed; static volatile String viewing="";
   WebView w; String pendingAddr, pendingBody;
 
@@ -27,13 +27,19 @@ public class MainActivity extends Activity {
       if(u!=null){ n=u.getSchemeSpecificPart(); if(n==null) n=""; int q=n.indexOf('?'); if(q>=0) n=n.substring(0,q); }
       String body=i.getStringExtra("sms_body"); if(body==null) body=i.getStringExtra(Intent.EXTRA_TEXT);
       pendingAddr=n.isEmpty()?"*":n; pendingBody=body==null?"":body;
+    } else if(i.getBooleanExtra("calperm",false)){ i.removeExtra("calperm"); getWindow().getDecorView().post(()->reqCal(false));
     } else if(Nv.ACTION_OPEN.equals(a)){ pendingAddr=i.getStringExtra("addr"); pendingBody=""; }
   }
   @Override protected void onNewIntent(Intent i){ super.onNewIntent(i); setIntent(i); take(i); js("window.NV_intent&&NV_intent()"); }
   @Override protected void onResume(){ super.onResume(); live=this; resumed=true; js("window.NV_resume&&NV_resume()"); }
   @Override protected void onPause(){ resumed=false; super.onPause(); }
   @Override protected void onActivityResult(int rq,int rs,Intent d){ super.onActivityResult(rq,rs,d); js("window.NV_resume&&NV_resume("+(rq==RQ_ROLE?"'role',"+(rs==RESULT_OK):"''")+")"); }
-  @Override public void onRequestPermissionsResult(int rq,String[] p,int[] g){ js("window.NV_resume&&NV_resume('perm')"); }
+  /** 달력 권한(읽기·쓰기)을 한 번만 묻는다. turnOn 이면 허용되면 자동 넣기를 켬 */
+  void reqCal(boolean turnOn){ calOn=turnOn; if(AutoCal.perm(this)){ if(turnOn) AutoCal.setOn(this,true); js("window.NV_cal&&NV_cal()"); return; }
+    requestPermissions(new String[]{android.Manifest.permission.READ_CALENDAR,android.Manifest.permission.WRITE_CALENDAR},RQ_CAL); }
+  @Override public void onRequestPermissionsResult(int rq,String[] p,int[] g){
+    if(rq==RQ_CAL){ boolean ok=g.length>0; for(int x:g) if(x!=android.content.pm.PackageManager.PERMISSION_GRANTED) ok=false; if(calOn) AutoCal.setOn(this,ok); calOn=false; js("window.NV_cal&&NV_cal()"); return; }
+    js("window.NV_resume&&NV_resume('perm')"); }
   @SuppressWarnings("deprecation")
   @Override public void onBackPressed(){
     if(w==null){ super.onBackPressed(); return; }

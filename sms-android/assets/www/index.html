@@ -187,7 +187,8 @@ em{font-style:normal;color:var(--a1);font-weight:700}
 'use strict';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const NV=window.NVSms||null;
-let ST={perms:{}};
+let ST={perms:{}};let CAL={on:false,perm:false,asked:true};
+function calStatus(){if(NV&&NV.calStatus)CAL=J(NV.calStatus(),CAL)||CAL}
 /* ---------- 선 아이콘 ---------- */
 const P={
  search:'<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
@@ -385,7 +386,16 @@ function act(k){menuClose();
  else if(k==='rolewarn')roleWarn();
  else if(k==='appset'){NV&&NV.openAppSettings()}
  else if(k==='defapps'){NV&&NV.openDefaultApps()}
- else if(k==='settab'){closeSheet();show('set')}}
+ else if(k==='settab'){closeSheet();show('set')}
+ else if(k==='calon'){closeSheet();NV&&NV.calSet(true)}
+ else if(k==='caloff'){closeSheet();NV&&NV.calSet(false)}
+ else if(k==='calno'){closeSheet();NV&&NV.calSkip()}
+ else if(k==='calask')calAsk();
+ else if(k==='caldel')sheet(`<h3>뉴니버스 달력을 지울까요?</h3><div class="steps2">문자에서 자동으로 넣은 일정이 <b>모두</b> 지워져요. 다른 달력과 일정은 그대로예요.</div><button class="opt pri" data-b="caldel2"><span data-i="x"></span>지우기</button><button class="opt" data-a="close"><span data-i="x"></span>그만두기</button>`)
+ else if(k==='caldel2'){closeSheet();NV&&NV.calDelete();toast('뉴니버스 달력을 지웠어요')}}
+/* 달력: 처음 한 번만 묻기 */
+function calAsk(){sheet(`<h3>문자 속 일정을 달력에 넣어 드릴까요?</h3><div class="steps2">병원·공공기관 <b>예약</b>과 <b>택배 도착 예정</b> 문자를 <b>‘뉴니버스’ 전용 달력</b>에 자동으로 넣어요.<ul><li>주소록에 있는 사람, 또는 병원·택배·공공기관 문자만 넣어요</li><li>광고 문자와 수상한 링크 문자는 넣지 않아요</li><li>넣을 때마다 알림이 오고, 알림에서 <b>취소</b>할 수 있어요</li><li>기본 달력은 건드리지 않고, 설정에서 언제든 끌 수 있어요</li></ul>다음 창에서 <b>달력 권한</b>을 한 번 물어봐요.</div><button class="opt pri" data-b="calon"><span data-i="check"></span>달력에 넣기</button><button class="opt" data-b="calno"><span data-i="x"></span>안 할래요</button>`)}
+window.NV_cal=()=>{calStatus();if(cur==='set')renderSettings();if(CAL.on)toast('이제 문자 속 일정을 달력에 넣어요')}
 function roleWarn(){sheet(`<h3>기본 문자 앱으로 바꾸기 전에</h3><div class="steps2">v1 시험판은 <b>사진·장문(MMS) 문자를 아직 받지 못해요</b>. 기본으로 바꾸면 그동안 오는 사진·장문 문자를 놓칠 수 있어요.<br>기본으로 바꾸지 않아도 <b>문자 보기 · 보내기 · 새 문자 알림</b>은 돼요.</div>
  <button class="opt pri" data-b="role"><span data-i="msg"></span>그래도 기본으로 설정</button><button class="opt" data-a="close"><span data-i="x"></span>나중에</button>`)}
 function restrictedSheet(kind){const perm=kind==='perm';
@@ -396,7 +406,7 @@ function restrictedSheet(kind){const perm=kind==='perm';
   <button class="opt pri" data-b="appset"><span data-i="shield"></span>앱 정보 열기</button>
   <button class="opt" data-b="${perm?'perm':'role'}"><span data-i="retry"></span>다시 시도</button>
   <button class="opt" data-a="close"><span data-i="x"></span>닫기</button>`)}
-function renderSettings(){status();const p=ST.perms||{};const yes=b=>b?'<span class="ok">허용됨</span>':'<span class="no2">꺼짐</span>';
+function renderSettings(){status();calStatus();const p=ST.perms||{};const yes=b=>b?'<span class="ok">허용됨</span>':'<span class="no2">꺼짐</span>';
  $('#setList').innerHTML=`
  <div class="set glass"><h3>기본 문자 앱</h3>
   <div class="srow2"><div class="grow">뉴니버스 문자를 기본으로<small>${ST.def?'지금 기본 문자 앱이에요. 받은 문자를 이 앱이 저장하고 알려요.':'지금은 원래 문자 앱이 기본이에요. 보기·보내기·새 문자 알림은 되고, 저장은 원래 앱이 해요.'}</small></div>${ST.def?'<span class="ok">사용 중</span>':'<button class="sbtn pri" data-b="rolewarn">설정</button>'}</div>
@@ -407,6 +417,10 @@ function renderSettings(){status();const p=ST.perms||{};const yes=b=>b?'<span cl
   <div class="srow2"><div class="grow">연락처<small>이름 표시, 받는 사람 찾기</small></div>${yes(p.contacts)}</div>
   <div class="srow2"><div class="grow">알림<small>새 문자 알림</small></div>${yes(p.notif)}</div>
   <div class="srow2"><div class="grow"><small>거절한 권한은 ‘앱 정보 › 권한’에서 다시 켤 수 있어요</small></div><button class="sbtn" data-b="perm">다시 묻기</button><button class="sbtn" data-b="appset">앱 정보</button></div>
+ </div>
+ <div class="set glass"><h3>달력</h3>
+  <div class="srow2"><div class="grow">문자 속 일정을 달력에 넣기<small>병원·공공기관 예약과 택배 도착 예정 문자를 ‘뉴니버스’ 전용 달력에 자동으로 넣어요. 주소록에 있는 사람이나 병원·택배·공공기관만, 광고·수상한 링크는 제외해요. 넣을 때마다 알림에서 취소할 수 있어요.</small></div><button class="sbtn${CAL.on?' pri':''}" data-b="${CAL.on?'caloff':'calon'}" aria-pressed="${CAL.on}">${CAL.on?'켜짐':'꺼짐'}</button></div>
+  <div class="srow2"><div class="grow">뉴니버스 달력 지우기<small>자동으로 넣은 일정을 모두 지워요</small></div><button class="sbtn" data-b="caldel">지우기</button></div>
  </div>
  <div class="set glass"><h3>원래 문자 앱으로 돌아가려면</h3>
   <div class="steps"><ol><li>폰 <b>설정</b> › <b>애플리케이션</b> › <b>기본 앱 선택</b></li><li><b>SMS 앱</b>을 누르고 <b>메시지</b>(삼성 기본 문자)를 고르면 끝</li></ol>뉴니버스 문자를 지워도 원래 문자 앱으로 돌아가요. 문자는 폰 저장소에 그대로 남아요.</div>
@@ -443,6 +457,7 @@ window.NV_intent=()=>{if(!NV)return;const o=J(NV.takeOpen(),null);if(!o||!o.addr
 status();loadContacts();loadThreads();show('list');renderList();
 if(NV&&permMissing().length&&!localStorage.getItem('nvAsked')){localStorage.setItem('nvAsked','1');permAsked=Date.now();NV.requestPerms()}
 NV_intent();
+calStatus();if(NV&&ST.def&&!CAL.asked&&!CAL.on&&NV.calSkip&&!localStorage.getItem('nvCalAsked')){localStorage.setItem('nvCalAsked','1');setTimeout(calAsk,900)}
 </script>
 </body>
 </html>

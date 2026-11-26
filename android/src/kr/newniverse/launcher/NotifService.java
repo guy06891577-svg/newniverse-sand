@@ -6,7 +6,7 @@ import android.service.notification.StatusBarNotification;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-/** v29 알림 배지·미리보기. 알림 내용은 이 폰 안(런처 화면)에서만 보여 주고, 저장하거나 밖으로 보내지 않음. */
+/** v29 알림 배지·미리보기. 알림 내용은 이 폰 안(런처 화면)에서만 보여 주고 밖으로 보내지 않음. */
 public class NotifService extends NotificationListenerService {
   static volatile NotifService inst;
   static volatile Runnable onChange;

@@ -20,6 +20,8 @@ public class SmsDeliverReceiver extends BroadcastReceiver {
       c.getContentResolver().insert(Telephony.Sms.Inbox.CONTENT_URI,v);
     }catch(Exception e){}
     notify(c,m.addr,m.body);
+    FeedProvider.ping(c);
+    AutoCal.onSms(c,m.addr,m.body,System.currentTimeMillis());
     MainActivity.refresh();
   }
   static final class Msg{ String addr="",body=""; long sent; }

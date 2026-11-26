@@ -483,6 +483,14 @@
   #phone.nh #nh{display:block}
   #phone.nh #dots,#phone.nh #hint,#phone.nh #gear,#phone.nh #fixed,#phone.nh #dkp,#phone.nh #edbar{visibility:hidden!important}
   #nh .cos{position:absolute;inset:-3%;background:#05061a url(wallpapers/nh_cosmos.jpg) center/cover no-repeat;will-change:transform;transform:scale(1.04)}
+  /* v43b 살아 있는 우주: 별 몇 개가 천천히 반짝이고 배경이 아주 느리게 흐름 (transform·opacity 만 써서 배터리 가벼움. 화면이 꺼지거나 숨으면·애니메이션 끔이면 멈춤) */
+  #nh .cos .tw{position:absolute;inset:0;pointer-events:none}
+  #nh .cos .tw i{position:absolute;display:block;border-radius:50%;opacity:.5;will-change:opacity,transform}
+  #nh .cos.mo{animation:nhDr 96s ease-in-out infinite alternate}
+  #nh .cos.mo .tw i{animation:nhTw var(--d,5s) ease-in-out infinite;animation-delay:var(--l,0s)}
+  @keyframes nhDr{0%{transform:scale(1.06) translate3d(-1.3%,-.7%,0)}100%{transform:scale(1.06) translate3d(1.3%,.9%,0)}}
+  @keyframes nhTw{0%,100%{opacity:.12;transform:scale(.7)}50%{opacity:.95;transform:scale(1.15)}}
+  @media (prefers-reduced-motion:reduce){#nh .cos.mo,#nh .cos.mo .tw i{animation:none}}
   #nh .vig{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(3,4,16,.35) 0%,rgba(3,4,16,0) 18%,rgba(3,4,16,0) 55%,rgba(3,4,16,.55) 100%)}
   #nhUI{position:absolute;left:16px;right:16px;bottom:88px;display:flex;flex-direction:column;gap:10px}
   #nhBar{display:flex;align-items:center;gap:6px;height:56px;padding:0 6px 0 20px;border-radius:28px;background:rgba(255,255,255,.075);border:1px solid rgba(255,255,255,.18);
@@ -516,6 +524,27 @@
   .nht .ic img{width:44px;height:44px;display:block}
   .nht .ic b{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;font-size:20px}
   .nht .ic.act{background:linear-gradient(135deg,rgba(110,190,255,.28),rgba(160,120,255,.28));border:1px solid rgba(170,190,255,.35);color:#eaf0ff}
+  .smc{display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:4px 12px;padding:14px 14px 12px;border-radius:22px;border:1px solid rgba(255,255,255,.18);background:linear-gradient(160deg,rgba(255,255,255,.13),rgba(255,255,255,.045));-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 10px 28px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.1);color:#fff;transition:opacity .4s,filter .4s}
+  .smc.pre{opacity:0;pointer-events:none}
+  .smc.out{opacity:0;filter:blur(5px)}
+  .smc .ic{grid-row:1/span 2;width:44px;height:44px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(135deg,rgba(110,190,255,.30),rgba(160,120,255,.30));border:1px solid rgba(170,190,255,.38);color:#eaf0ff}
+  .smc .ic .ni{width:24px;height:24px}
+  .smc .tx{min-width:0;display:flex;flex-direction:column;gap:3px}
+  .smc .tx b{font:700 16px/1.25 var(--nv-font,system-ui,sans-serif);letter-spacing:-.2px;color:#fff}
+  .smc .tx small{font:500 12px/1.35 var(--nv-font,system-ui,sans-serif);color:rgba(225,232,255,.7)}
+  .smc .sp{width:40px;height:40px;border-radius:20px;border:1px solid rgba(170,190,255,.4);background:rgba(140,170,255,.14);color:#e6edff;display:grid;place-items:center}
+  .smc .sp .ni{width:20px;height:20px}
+  .smc .sp:active{transform:scale(.96)}
+  .smc.talk .sp{background:linear-gradient(135deg,rgba(110,190,255,.45),rgba(160,120,255,.45))}
+  .smc .meta{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:2px;font:500 11px/1.3 var(--nv-font,system-ui,sans-serif);color:rgba(225,232,255,.52)}
+  .smc .note{display:inline-flex;align-items:center;gap:4px;color:rgba(225,232,255,.62)}
+  .smc .note .ni{width:13px;height:13px}
+  .smc.muted .note{color:rgba(225,232,255,.7)}
+  .smc .ac{display:flex;gap:6px;align-items:center}
+  .smc .bt{padding:8px 12px;border-radius:14px;border:1px solid rgba(170,190,255,.4);background:rgba(140,170,255,.14);color:#e6edff;font:600 12.5px/1 var(--nv-font,system-ui,sans-serif);white-space:nowrap}
+  .smc .bt.pri{background:linear-gradient(135deg,rgba(110,190,255,.5),rgba(160,120,255,.5));border-color:rgba(190,205,255,.55);color:#fff}
+  .smc .bt:disabled{opacity:.75}.smc .bt:active{transform:scale(.96)}
+  #nhSi{display:flex;flex-direction:column;gap:8px;margin-bottom:8px}
   .nht .ic.act .ni{width:24px;height:24px}
   .nht .nm{max-width:100%;font:600 12px/1.2 var(--nv-font,system-ui,sans-serif);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 2px;color:rgba(245,247,255,.95)}
   /* v42b 날씨 카드: 유리·선 아이콘, 하늘→보라 */
@@ -2941,7 +2970,9 @@ function buildMain(){
   const pg=mk('div','pg'),sc=mk('div','scroll');pg.appendChild(sc);sc.appendChild(mk('h1',null,'설정'));
   const prof=mk('div','card prof','<div class="av">장</div><div><b>장지환</b><small>백업으로 데이터 보호</small></div>');prof.style.cursor='pointer';prof.onclick=()=>settingsPush('prof');sc.appendChild(prof);
   if(NATIVE){const c=mk('div','card');const r1=infoRow('휴대전화 설정 열기','와이파이·소리·앱 등 안드로이드 설정',()=>NVNative.openSettings(''));const r2=infoRow('기본 홈 앱','홈 버튼을 누르면 뜰 앱 고르기 (뉴니버스 / 원래 홈)',()=>NVNative.openSettings('home'));c.append(r1,r2);sc.appendChild(c)}
-  sc.appendChild(sCard(swRow('앱 없는 홈 (우주)','잠금을 풀면 우주와 「무엇을 하실 건가요?」만 보여요 · 끄면 예전 아이콘 홈(독·위젯·여러 쪽)',nhOn(),false,on=>nhSet(on))));
+  {const r1=swRow('앱 없는 홈 (우주)','잠금을 풀면 우주와 「무엇을 하실 건가요?」만 보여요 · 끄면 예전 아이콘 홈(독·위젯·여러 쪽)',nhOn(),false,on=>nhSet(on));
+   const r2=swRow('문자 속 할 일 카드','택배·병원 예약·카드 결제·인증번호를 우주에 카드로 · 뉴니버스 문자(기본 문자 앱)가 필요해요 · 폰 안에서만',S.smx===true,false,async on=>{const ok=await smxEnable(on);const b=r2.querySelector('.sw');if(b)b.classList.toggle('on',on?ok:false)});
+   sc.appendChild(sCard(r1,r2))}
   SETG.forEach(g=>{const c=mk('div','card');c.dataset.g=1;g.forEach(i=>{const r=mk('div','it',`<img alt="" src="${setImg(i)}"><div><b>${i.n}</b><small>${i.sub}</small></div>`);r.dataset.k=(i.n+' '+i.sub+' '+i.kw).toLowerCase();r.dataset.id=i.id;r.onclick=()=>settingsPush(i.id);c.appendChild(r)});sc.appendChild(c)});
   {const c=mk('div','card');c.dataset.g=1;const i={n:'내비게이션 바',sub:'디스플레이 › 내비게이션 바',key:'§disp',c1:'#48c774',c2:'#2a9550'};const r=mk('div','it',`<img alt="" src="${setImg(i)}"><div><b>${i.n}</b><small>${i.sub}</small></div>`);r.dataset.k='내비게이션 바 네비게이션 내비 navigation 버튼 제스처 뒤로 홈 최근 스와이프';r.dataset.id='disp';r.dataset.so=1;r.onclick=()=>{settingsPush('disp');setTimeout(()=>settingsPush('navbar'),60)};c.appendChild(r);
    const i2={n:'두 번 눌러 화면 끄기',sub:'유용한 기능 › 두 번 눌러 화면 끄기',key:'§adv',c1:'#ffb340',c2:'#e07b00'};const r2=mk('div','it',`<img alt="" src="${setImg(i2)}"><div><b>${i2.n}</b><small>${i2.sub}</small></div>`);r2.dataset.k='두 번 눌러 화면 끄기 화면 끄기 더블탭 톡톡 두번 잠금';r2.dataset.id='adv';r2.dataset.so=1;r2.onclick=()=>settingsPush('adv');c.appendChild(r2);
@@ -4154,6 +4185,7 @@ function nhMatch(q){const forms=nhForms(q),qn=forms[0];if(!qn)return {hd:'',tile
   NHI.forEach(I=>{const sc=nhScoreIAll(I,forms);if(!sc)return;const t=[];const A=()=>(I.acts||[]).forEach(x=>t.push(Object.assign({k:'act'},x)));if(!I.al)A();(I.apps?I.apps():[]).forEach(a=>t.push({k:'app',a}));if(I.al)A();(I.post?I.post():[]).forEach(a=>t.push({k:'app',a}));
     groups.push({sc,I,tiles:t})});
   try{const wg=nhWxGroup(q);if(wg)groups.push(wg)}catch(_){}
+  try{const mg=nhSmxGroup(q);if(mg)groups.push(mg)}catch(_){}
   try{const cg=nhCtlGroup(q);if(cg)groups.push(cg)}catch(_){}
   try{const sg=nhWebGroup(q);if(sg)groups.push(sg)}catch(_){}
   const ap=[];nhApps().forEach(a=>{const sc=nhScoreApp(a,forms);if(sc)ap.push({sc,a})});
@@ -4187,7 +4219,7 @@ function nhRender(){const r=nhMatch(NH.q);NH.tiles=r.tiles;NH.top=r.top;
   clearTimeout(NH.inT);
   if(fresh.size)NH.inT=setTimeout(()=>{const els=[...NHGRID.querySelectorAll('.nht.pre')];els.forEach(b=>{try{bfxBurst(nhRect(b),true)}catch(_){}});
     NH.inT=setTimeout(()=>els.forEach(b=>b.classList.remove('pre')),380)},0)}
-function nhSetQ(v,fromVoice){NH.q=String(v||'');if(NH.q&&NHCARD)nhCardOff(false);if(NH.q&&NHWX)nhWxOff(false);if(NHQ.value!==NH.q)NHQ.value=NH.q;NH.voice=!!fromVoice;nhRender();try{busTick()}catch(_){}}
+function nhSetQ(v,fromVoice){NH.q=String(v||'');if(NH.q&&NHCARD)nhCardOff(false);if(NH.q&&NHWX)nhWxOff(false);if(NH.q){if(NHSM)nhSmxOff(false);if(SMX.idle)SMX.idle.style.display='none'}else setTimeout(()=>{try{smxIdle(false)}catch(_){}},60);if(NHQ.value!==NH.q)NHQ.value=NH.q;NH.voice=!!fromVoice;nhRender();try{busTick()}catch(_){}}
 function nhRun(x,el){if(!x)return;try{if(navigator.vibrate)navigator.vibrate(6)}catch(_){}
   try{if(el){bfxBurst(nhRect(el),false);el.classList.add('out')}}catch(_){}
   const go=()=>{if(x.k==='act'){x.fn&&x.fn();return}openApp(x.a);setTimeout(()=>nhClear(false),350)};
@@ -4222,7 +4254,7 @@ function nhStarsOpen(){if(!NHST.classList.contains('on'))nhStarsBuild();NH.stars
 function nhStarsClose(){NH.stars=false;NHST.style.transition='opacity .3s';NHST.style.opacity=0;NHUI.style.transition='opacity .3s';NHUI.style.opacity=1;NHUI.style.pointerEvents='';setTimeout(()=>{if(!NH.stars)NHST.classList.remove('on')},320)}
 NHST.querySelector('.all').addEventListener('click',e=>{e.stopPropagation();nhStarsClose();openDR()});
 // ---- 손짓: 위로 = 별, 아래로 = 빠른 설정, 두 번 톡톡 = 말로 찾기, 길게 = 메뉴 ----
-NHEL.addEventListener('pointerdown',e=>{e.stopPropagation();if(e.target.closest('#nhBar,#nhSug,.nht,.sa,.all,#nhCard,#nhWx'))return;if(NHCARD)nhCardOff(true);if(NHWX)nhWxOff(true);
+NHEL.addEventListener('pointerdown',e=>{e.stopPropagation();if(e.target.closest('#nhBar,#nhSug,.nht,.sa,.all,#nhCard,#nhWx,#nhSm,#nhSi'))return;if(NHCARD)nhCardOff(true);if(NHWX)nhWxOff(true);if(NHSM)nhSmxOff(true);
   if(menuOpen()){closeMenu();return}
   const r=phone.getBoundingClientRect();NH.pt={id:e.pointerId,x:e.clientX,y:e.clientY,px:e.clientX-r.left,py:e.clientY-r.top,t:e.timeStamp,m:false,ax:null,vy:0,ly:e.clientY,lt:e.timeStamp,lp:false};
   try{NHEL.setPointerCapture(e.pointerId)}catch(_){}
@@ -4481,7 +4513,7 @@ function nhTts(text,force){if(!text)return 'fail';
   try{if(window.speechSynthesis){window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='ko-KR';u.onend=()=>window.NV_onTts&&NV_onTts('done');window.speechSynthesis.speak(u);return 'ok'}}catch(_){}
   return 'fail'}
 function nhTtsStop(){try{if(NATIVE&&NVNative.ttsStop)NVNative.ttsStop()}catch(_){}try{if(window.speechSynthesis)window.speechSynthesis.cancel()}catch(_){}}
-window.NV_onTts=type=>{const el=document.getElementById('nhWx');if(!el)return;el.classList.toggle('talk',type==='start');const b=el.querySelector('.sp');if(b){b.setAttribute('aria-label',type==='start'?'읽기 멈추기':'다시 읽기');b.innerHTML=ico(type==='start'?'stop':'sound')}};
+window.NV_onTts=type=>{const el=document.getElementById('nhWx')||document.getElementById('nhSm');if(!el)return;el.classList.toggle('talk',type==='start');const b=el.querySelector('.sp');if(b){b.setAttribute('aria-label',type==='start'?'읽기 멈추기':'다시 읽기');b.innerHTML=ico(type==='start'?'stop':'sound')}};
 var NHWX=null,NHWXT=0;
 function nhWxDo(c){nhClear(false);nhWxShow(c||{ask:''})}
 function nhWxShow(c){nhCardOff(false);nhWxOff(false);const el=document.createElement('div');el.id='nhWx';el.className='pre load';
@@ -4545,26 +4577,242 @@ function nhWebSuggest(q,tiles){if(tiles&&tiles.length)return null;const t=String
   const c={engine:'naver',q:t,auto:false,label:'네이버에서 "'+t+'" 검색'};
   return {sc:20,I:{id:'webq',hd:'검색해 볼까요?',auto:false,none:''},tiles:nhWebTiles(c),web:true}}
 
+Object.assign(GLY,{otp:'M8 15a4 4 0 1 0 0-8a4 4 0 0 0 0 8z M11 11h9 M17 11v3 M20 11v2'});
+// ---- v43b 문자 속 할 일 카드: 뉴니버스 문자(기본 문자 앱·같은 서명)가 넘겨 준 택배·예약·카드·인증 문자만 폰 안에서 읽어 카드로 보여 줌 ----
+// 런처는 문자 권한이 없고 인터넷도 쓰지 않음. 문자는 화면 메모리에만 있다가 닫으면 사라지고, 저장하는 건 '닫은 카드' 표시뿐.
+var SMX={items:null,at:0,idle:null,idleT:0,idleEls:{},hid:{},ans:null,ansT:0};
+const SMX_DAY=864e5,SMX_WD=['일','월','화','수','목','금','토'];
+function smxOn(){return S.smx===true}
+function smxSt(){let o={installed:false,def:false,perm:false,ok:false};try{if(NATIVE&&NVNative.smsStatus)o=Object.assign(o,JSON.parse(NVNative.smsStatus()||'{}'))}catch(_){}o.ready=!!(o.installed&&o.def&&o.perm&&o.ok);return o}
+function smxNow(){return window.__nhNow?+window.__nhNow:Date.now()}
+function smxDay(ms){const d=new Date(ms);d.setHours(0,0,0,0);return d.getTime()}
+function smxDLabel(ms,now){const n=smxDay(now==null?smxNow():now),d=smxDay(ms),k=Math.round((d-n)/SMX_DAY);if(k===0)return '오늘';if(k===1)return '내일';if(k===2)return '모레';if(k===-1)return '어제';const t=new Date(ms);return (t.getMonth()+1)+'월 '+t.getDate()+'일('+SMX_WD[t.getDay()]+')'}
+function smxTLabel(ms,spoken){const t=new Date(ms),h=t.getHours(),m=t.getMinutes(),ap=h<12?'오전':'오후',hh=h%12||12;return spoken?ap+' '+hh+'시'+(m?' '+m+'분':''):ap+' '+hh+':'+String(m).padStart(2,'0')}
+function smxWon(n){n=Math.round(n);if(!n)return '0원';const u=[[1e8,'억'],[1e4,'만']];let s='',r=n;u.forEach(([v,l])=>{const q=Math.floor(r/v);if(q){s+=smxSub(q)+l+' ';r-=q*v}});if(r)s+=smxSub(r);return (s.trim()+' 원').replace(/\s+/g,' ')}
+function smxSub(n){let s='';[[1000,'천'],[100,'백'],[10,'십']].forEach(([v,l])=>{const q=Math.floor(n/v);if(q){s+=(q===1?'':q)+l;n-=q*v}});if(n)s+=n;return s}
+function smxCnt(n){return ({1:'한',2:'두',3:'세',4:'네'})[n]||n}
+function smxMoney(n){return Math.round(n).toLocaleString('ko-KR')+'원'}
+// ---- 안전: 광고·수상한 링크는 카드로 만들지 않음 ----
+function smxAd(x){return /[\(\[【]\s*광고\s*[\)\]】]|광고\)|무료\s*수신\s*거부|무료\s*거부|수신\s*거부|080[\s\-]?\d{3,4}[\s\-]?\d{4}/.test(x)}
+function smxSus(x){if(/https?:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|\.apk\b|앱\s*설치|원격\s*제어/i.test(x))return true;const u=x.match(/(?:https?:\/\/|www\.)[^\s)\]】]+/gi);if(!u)return false;if(u.some(h=>/(?:bit\.ly|me2\.do|url\.kr|vo\.la|han\.gl|t\.ly|goo\.gl|tinyurl\.com|is\.gd|buly\.kr|c11\.kr|zrr\.kr|ow\.ly|rb\.gy|cutt\.ly|shorturl\.at)(?:\/|$)/i.test(h)))return true;return /미납|과태료|체납|정지|해외\s*결제|명의\s*도용|검찰|수사|대출|당첨|상품권|긴급|환급|주소\s*불일치|결제\s*실패/.test(x)}
+// ---- 날짜·시간 뽑기 ----
+const SMX_DT=/(?<!\d)(?:(\d{4})[.\-\/]\s?(\d{1,2})[.\-\/]\s?(\d{1,2})|(\d{4})\s?년\s?(\d{1,2})\s?월\s?(\d{1,2})\s?일?|(\d{1,2})\s?[.\/월]\s?(\d{1,2})\s?일?|(오늘|내일|모레|글피)(?:\s*[\(\[]\d{1,2}\s*\/\s*\d{1,2}[\)\]])?)(?!\d)\s*(?:[\(\[][월화수목금토일][\)\]])?(?:[\s,·]*(?:(오전|오후|저녁|낮|아침)\s*)?(\d{1,2})\s*(?::\s*(\d{2})|시\s*(?:(\d{1,2})\s*분|(반))?))?/g;
+function smxDts(x,at){const out=[];SMX_DT.lastIndex=0;let m;const A=new Date(at);
+  while((m=SMX_DT.exec(x))){let y,mo,d,noY=false;
+    if(m[1]){y=+m[1];mo=+m[2];d=+m[3]}else if(m[4]){y=+m[4];mo=+m[5];d=+m[6]}else if(m[7]){y=A.getFullYear();mo=+m[7];d=+m[8];noY=true}
+    else{const c=new Date(at);c.setDate(c.getDate()+({오늘:0,내일:1,모레:2,글피:3})[m[9]]);y=c.getFullYear();mo=c.getMonth()+1;d=c.getDate()}
+    if(mo<1||mo>12||d<1||d>31)continue;
+    let ht=m[11]!=null,h=0,mi=0;
+    if(ht){h=+m[11];mi=m[12]!=null?+m[12]:m[13]!=null?+m[13]:m[14]!=null?30:0;const ap=m[10];
+      if(ap==='오후'||ap==='저녁'){if(h<12)h+=12}else if(ap==='오전'||ap==='아침'){if(h===12)h=0}else if(h>=1&&h<=6)h+=12;
+      if(h>23||mi>59){ht=false;h=0;mi=0}}
+    let t=new Date(y,mo-1,d,h,mi,0,0);if(noY&&t.getTime()<at-45*SMX_DAY)t=new Date(y+1,mo-1,d,h,mi,0,0);
+    out.push({ms:t.getTime(),ht})}
+  return out}
+// ---- 문자 한 통 → 항목 ----
+const SMX_CO=/CJ\s*대한통운|대한통운|롯데택배|롯데글로벌로지스|한진택배|로젠택배|우체국택배|우체국|쿠팡|경동택배|대신택배|GS25\s*택배|CU\s*택배|마켓컬리|컬리/;
+const SMX_HOSP='병원|의원|치과|한의원|의료원|클리닉|내과|외과|안과|피부과|이비인후과|정형외과|소아과|산부인과|비뇨기과|검진센터',SMX_AGEN='보건소|주민센터|행정복지센터|시청|구청|군청|도청|건강보험공단|공단|세무서|법원|등기소|면허시험장|교육청|경찰서';
+const SMX_HW=new RegExp('[가-힣A-Za-z0-9]{2,12}(?:'+SMX_HOSP+')'),SMX_AW=new RegExp('[가-힣A-Za-z0-9]{2,12}(?:'+SMX_AGEN+')');
+function smxOrg(x){const re=/[\[【]([^\]】]{2,20})[\]】]/g;let m;while((m=re.exec(x))){const t=m[1].trim();if(/Web발신|국제발신|발신|광고|MMS|알림톡/.test(t)&&!SMX_HW.test(t))continue;if(SMX_HW.test(t)||SMX_AW.test(t))return t}
+  let h=x.match(SMX_HW);if(h)return h[0];h=x.match(SMX_AW);return h?h[0]:''}
+function smxCard(x,at){if(!/카드|체크|출금|결제/.test(x)||!/승인|결제|출금|취소|사용/.test(x)||/인증\s*번호|인증\s*코드/.test(x))return null;
+  const cut=x.split(/누적|잔액|한도|잔여/)[0],am=cut.match(/(\d{1,3}(?:,\d{3})+|\d{3,9})\s*원/);if(!am)return null;
+  const co=(x.match(/(신한|KB국민|국민|삼성|현대|롯데|하나|우리|NH농협|농협|BC|비씨|카카오뱅크|토스뱅크|케이뱅크|씨티|IBK기업|기업)\s*(?:체크)?카드?/)||[])[1]||'카드';
+  let when=at;const dm=x.match(/(\d{1,2})\/(\d{1,2})\s+(\d{1,2}):(\d{2})/);if(dm){const A=new Date(at);let t=new Date(A.getFullYear(),+dm[1]-1,+dm[2],+dm[3],+dm[4]);if(t.getTime()>at+864e5)t=new Date(A.getFullYear()-1,+dm[1]-1,+dm[2],+dm[3],+dm[4]);when=t.getTime()}
+  let merch='';const mm=x.match(/\d{1,2}:\d{2}\s+([^\s]+(?:\s[^\s\d(][^\s]*)?)/);if(mm)merch=mm[1].replace(/(누적|잔액|한도).*$/,'').trim();
+  const cancel=/취소/.test(x);return {t:'card',co:co==='국민'?'KB국민':co==='농협'?'NH농협':co==='비씨'?'BC':co,amt:+am[1].replace(/,/g,''),merch,at:when,cancel}}
+function smxOtp(x,at){if(!/인증|확인\s*번호|보안\s*코드|OTP|일회용|verification|code|비밀번호/i.test(x)||/승인|택배|배송/.test(x))return null;
+  let m=x.match(/(?:인증\s*번호|인증\s*코드|확인\s*번호|보안\s*코드|OTP|verification\s*code|code)[^0-9가-힣]{0,14}(\d{4,8})/i)||x.match(/[\[\(](\d{4,8})[\]\)]/)||x.match(/\bG-(\d{6})\b/)||x.match(/(?<![\d-])(\d{6})(?![\d-])/);
+  if(!m)return null;const org=((x.match(/[\[【]([^\]】]{2,14})[\]】]/g)||[]).map(s=>s.slice(1,-1)).find(s=>!/Web발신|국제발신|발신/.test(s)))||(x.match(/\[?(Google|Apple|Naver)\]?/i)||[])[1]||'';
+  return {t:'otp',code:m[1],org,at,exp:at+180000}}
+function smxParcel(x,at){const co=x.match(SMX_CO);if(!co||!/택배|배송|배달|도착|운송장|송장/.test(x))return null;
+  const no=(x.match(/(?:운송장|송장|등기|조회)\s*(?:번호)?\s*[:：]?\s*(\d[\d\- ]{8,16}\d)/)||x.match(/(?<!\d)(\d{10,13})(?!\d)/)||[])[1]||'';
+  const done=/배송\s*완료|배달\s*완료|전달\s*완료|수령\s*완료|문\s*앞|현관|경비실|무인택배함|보관/.test(x),ship=/배송\s*출발|배송\s*중|배달\s*출발|집하|간선/.test(x);
+  const L=smxDts(x,at),d0=smxDay(at);let eta=L.length?smxDay(L[0].ms):null,st;
+  if(done)st='done';else if(eta!=null&&eta>d0)st=eta-d0<=SMX_DAY?'tomorrow':'future';else if(eta!=null&&eta===d0)st='today';else if(ship||/오늘.*(도착|배송|배달)/.test(x))st='today';else st='ship';
+  if(st==='today'||st==='ship'||st==='done')eta=eta==null?d0:eta;
+  return {t:'parcel',co:co[0].replace(/\s+/g,''),no:no.replace(/\D/g,''),st,eta,at}}
+function smxAppt(x,at,addr){const L=smxDts(x,at);if(!L.length)return null;const org=smxOrg(x);if(!org)return null;
+  const cancel=/취소\s*(?:되었|됐|완료|처리|되어|접수|됨)|예약[^.\n]{0,25}취소\s*(?:되|됨|완료)/.test(x),change=!cancel&&/(?:변경|조정|연기)\s*(?:되었|됐|완료|안내|처리|되어|됨)|(?:으)?로\s*변경/.test(x),
+    conf=/예약\s*(?:되었|됐|확인|확정|안내|완료|접수|일시|내역|시간|일정|알림)|예약일|예약하신|진료\s*(?:일시|예정|안내|예약)|내원|방문\s*(?:예정|일시|예약)|접종\s*예약|검진\s*(?:예약|일정)|리마인드|진료\s*시간/.test(x);
+  if(!(cancel||change||conf))return null;const who=(x.match(/([가-힣]{2,4})\s*(?:님|환자)/)||[])[1]||'';
+  const o={t:'appt',org,who,addr:addr||'',at,agency:SMX_AW.test(org)&&!SMX_HW.test(org)};
+  if(cancel)return Object.assign(o,{kind:'cancel',when:L[0].ms,ht:L[0].ht});
+  if(change){const n=L[L.length-1];return Object.assign(o,{kind:'change',when:n.ms,ht:n.ht,old:L.length>1?L[0].ms:0})}
+  let p=L.find(t=>t.ht)||L[0];return Object.assign(o,{kind:'new',when:p.ms,ht:p.ht})}
+function smxParse(m){const x=String(m.x||''),at=+m.at||smxNow();if(!x||smxAd(x)||smxSus(x))return null;
+  const r=smxOtp(x,at)||smxCard(x,at)||smxParcel(x,at)||smxAppt(x,at,m.addr);if(!r)return null;r.id=m.id;r.m=m;r.cal=!!m.cal;r.k=r.t+':'+(m.id!=null?m.id:at+':'+x.length);return r}
+const smxDg=s=>String(s||'').replace(/[^0-9+]/g,'');
+function smxBuild(raw){const L=(raw||[]).slice().sort((a,b)=>(+a.at)-(+b.at)),out=[],ap=[];
+  L.forEach(m=>{const r=smxParse(m);if(!r)return;
+    if(r.t!=='appt'){out.push(r);return}
+    const dayOf=ms=>smxDay(ms);
+    const find=(day)=>ap.findIndex(a=>a.org===r.org&&smxDg(a.addr)===smxDg(r.addr)&&dayOf(a.when)===day);
+    if(r.kind==='cancel'){const i=find(dayOf(r.when));if(i>=0)ap.splice(i,1);return}
+    if(r.kind==='change'&&r.old){const i=find(dayOf(r.old));if(i>=0){const a=ap[i];a.when=r.when;a.ht=r.ht;a.m=r.m;a.cal=r.cal;a.at=r.at;return}}
+    if(ap.some(a=>a.org===r.org&&a.when===r.when))return;
+    ap.push(r)});
+  return out.concat(ap)}
+async function smxLoad(force){if(!force&&SMX.items&&Date.now()-SMX.at<15000)return SMX.items;
+  let raw=[];try{if(NATIVE&&NVNative.smsRecent)raw=JSON.parse(NVNative.smsRecent('30')||'[]')}catch(_){}
+  SMX.items=smxBuild(raw);SMX.at=Date.now();return SMX.items}
+// ---- 닫은 카드 기억(3일) ----
+function smxDis(){let o={};try{o=JSON.parse(localStorage.getItem('nv_smxd')||'{}')||{}}catch(_){}const n=Date.now();Object.keys(o).forEach(k=>{if(n-o[k]>3*SMX_DAY)delete o[k]});return o}
+function smxDisSet(k){const o=smxDis();o[k]=Date.now();try{localStorage.setItem('nv_smxd',JSON.stringify(o))}catch(_){}}
+// ---- 항목 → 카드 글 ----
+function smxOtpSp(c){return c.length===6?c.slice(0,3)+' '+c.slice(3):c.length===8?c.slice(0,4)+' '+c.slice(4):c}
+function smxEtaLabel(p,now){if(p.st==='done')return '배송 완료';if(p.st==='ship')return '배송 중';if(p.st==='today')return '오늘 도착 예정';if(p.st==='tomorrow')return '내일 도착 예정';return smxDLabel(p.eta,now)+' 도착 예정'}
+function smxFmtNo(n){return n.length>=10?n.replace(/(\d{4})(?=\d)/g,'$1 '):n}
+function smxAgo(at,now){const m=Math.max(0,Math.round((now-at)/60000));if(m<1)return '방금';if(m<60)return m+'분 전';const h=Math.round(m/60);if(h<24)return h+'시간 전';return Math.round(h/24)+'일 전'}
+function smxInfo(it,now){now=now==null?smxNow():now;
+  if(it.t==='otp'){const left=Math.max(0,Math.ceil((it.exp-now)/60000));return {ic:'otp',b:'인증번호 '+smxOtpSp(it.code),s:(it.org?it.org+' · ':'')+(left>1?left+'분 남았어요':'곧 사라져요'),say:'인증번호는 '+it.code.split('').join(', ')+' 이에요',btn:'복사'}}
+  if(it.t==='parcel'){return {ic:'box',b:it.co+' · '+smxEtaLabel(it,now),s:(it.no?'운송장 '+smxFmtNo(it.no)+' · ':'')+smxAgo(it.at,now)+' 문자',say:it.co+' 택배가 '+smxEtaLabel(it,now).replace('예정','예정이에요').replace('완료','완료됐어요').replace('중','중이에요')}}
+  if(it.t==='appt'){const k=Math.round((smxDay(it.when)-smxDay(now))/SMX_DAY);return {ic:'cross',b:it.org+' · '+smxDLabel(it.when,now)+(it.ht?' '+smxTLabel(it.when):''),s:(it.who?it.who+'님 · ':'')+(k===0?'오늘이에요':k===1?'내일이에요':k>1?k+'일 뒤예요':'지났어요'),say:(it.who?it.who+'님 ':'')+it.org+' 예약은 '+smxDLabel(it.when,now)+(it.ht?' '+smxTLabel(it.when,true):'')+'이에요',cal:true}}
+  if(it.t==='card'){return {ic:'card',b:it.co+' '+(it.cancel?'−':'')+smxMoney(it.amt),s:(it.merch?it.merch+' · ':'')+smxDLabel(it.at,now)+' '+smxTLabel(it.at)+(it.cancel?' · 취소':''),say:''}}
+  return {ic:'info',b:'',s:'',say:''}}
+// ---- 규칙: 말·글로 물어보기 ----
+function nhSmx(raw){const q=String(raw||'').trim();if(!q)return null;const s=q.replace(/\s+/g,'');
+  if(/앱|어플|열어|실행|켜줘|꺼줘|검색|구글|네이버/.test(s)&&!/인증번호/.test(s))return null;
+  const ask=/언제|왔|와\?|와$|오나|올까|어디|몇|며칠|도착|오늘|내일|있어|알려|보여|확인|뭐|얼마|잡혀|썼|쓴|내역|사용|결제|긁|지출|오지|조회/.test(s);
+  if(/인증번호|인증코드|인증문자|otp|일회용비밀번호/i.test(s))return {id:'otp',sc:150,auto:true,label:'인증번호 보기'};
+  if(/식당|호텔|항공|기차|비행|숙소|미용|네일|맛집|카페|영화/.test(s))return null;
+  if(/(카드|결제|지출|긁)/.test(s)&&/(얼마|썼|쓴|내역|사용|결제했|긁|지출)/.test(s)){const day=/어제/.test(s)?'yesterday':/이번달|이달/.test(s)?'month':'today';return {id:'card',day,sc:150,auto:true,label:(day==='yesterday'?'어제':day==='month'?'이번 달':'오늘')+' 카드 쓴 돈'}}
+  if(/택배|배송|소포|운송장/.test(s))return {id:'parcel',sc:ask?150:60,auto:ask,label:'택배 보기'};
+  if(/병원|진료|치과|한의원|내원|검진|의원|예약/.test(s)){if(!/언제|몇시|며칠|몇일|날짜|시간|있어|알려|보여|확인|잡혀|뭐|예약/.test(s)||(/예약/.test(s)&&!/병원|진료|치과|한의원|내원|검진|의원/.test(s)&&!/언제|몇시|며칠|날짜|알려|보여|확인|잡혀|있어/.test(s)))return /병원|진료|치과|한의원|검진/.test(s)?{id:'appt',who:'',sc:60,auto:false,label:'병원 예약 보기'}:null;
+    let who='';const m=q.match(/([가-힣]{2,4})(?:이|가|의|은|는)?\s*(?:병원|진료|치과|예약|한의원|의원)/);if(m){who=m[1];if(who.length>2&&/[이가]$/.test(who))who=who.slice(0,-1);if(/^(다음|이번|오늘|내일|다시|우리|제|내|병원|예약|진료|혹시|그|이|저|나의|제가)$/.test(who))who=''}
+    return {id:'appt',who,sc:150,auto:true,label:'병원 예약 보기'}}
+  return null}
+function nhSmxTiles(c){return [{k:'act',t:c.label,ic:c.id==='otp'?'otp':c.id==='parcel'?'box':c.id==='card'?'card':'cross',smx:c,fn:()=>nhSmxDo(c)}]}
+function nhSmxGroup(q){const c=nhSmx(q);if(!c)return null;return {sc:c.sc,I:{id:'smx',hd:'문자 속 할 일',auto:!!c.auto,none:''},tiles:nhSmxTiles(c),smx:true}}
+// ---- 켜기(처음 한 번 설명) ----
+async function smxEnable(on,fromAsk){if(!on){S.smx=false;saveS();smxIdleOff();return false}
+  if(S.smx===true)return true;
+  if(!NATIVE){toast('폰 앱에서만 쓸 수 있어요');return false}
+  const ok=await ask('문자 속 할 일을 카드로','<b>뉴니버스 문자</b>(기본 문자 앱)가 받은 문자 중 <b>택배 · 병원 예약 · 카드 결제 · 인증번호</b>만 골라 이 폰 안에서 카드로 보여 줘요.<br>· 런처는 문자 권한을 받지 않아요<br>· 인터넷으로 보내지 않고, 문자를 따로 저장하지도 않아요<br>· 설정에서 언제든 끌 수 있어요',{ok:'켜기',no:'나중에'});
+  if(!ok)return false;S.smx=true;saveS();setTimeout(()=>smxIdle(true),300);return true}
+function smxNeed(st){if(!st.installed)return {ic:'msg',b:'뉴니버스 문자가 필요해요',s:'택배·예약·카드·인증 문자를 카드로 보려면 뉴니버스 문자를 설치해 주세요',btn:'받는 곳 열기',act:'get'};
+  if(!st.ok)return {ic:'msg',b:'뉴니버스 문자를 업데이트해 주세요',s:'문자 카드를 쓰려면 새 버전의 뉴니버스 문자가 필요해요',btn:'받는 곳 열기',act:'get'};
+  if(!st.def)return {ic:'msg',b:'뉴니버스 문자를 기본 문자 앱으로',s:'기본 문자 앱으로 지정하면 택배·예약·카드·인증 문자를 카드로 보여 드려요',btn:'문자 열기',act:'open'};
+  return {ic:'msg',b:'문자 권한을 허용해 주세요',s:'뉴니버스 문자에서 문자 권한을 허용하면 카드를 만들 수 있어요',btn:'문자 열기',act:'open'}}
+function smxGo(act){try{if(act==='get'){const u='https://guy06891577-svg.github.io/newniverse-sand/apk/sms.html';if(NATIVE&&NVNative.openUrl)NVNative.openUrl(u)}else if(NATIVE&&NVNative.smsOpenApp)NVNative.smsOpenApp()}catch(_){}}
+// ---- 카드 만들기 ----
+function smxEl(it,o){o=o||{};const f=it.t==='need'?it:smxInfo(it,o.now),el=document.createElement('div');el.className='smc pre';if(it.k)el.dataset.k=it.k;
+  el.innerHTML=`<span class="ic">${ico(f.ic)}</span><div class="tx"><b></b><small></small></div><div class="ac"></div><div class="meta"></div>`;
+  el.querySelector('b').textContent=f.b;const sm=el.querySelector('small');sm.textContent=f.s||'';if(!f.s)sm.style.display='none';
+  const ac=el.querySelector('.ac');
+  if(it.t==='need'){const b=document.createElement('button');b.type='button';b.className='bt pri';b.textContent=f.btn;b.onclick=e=>{e.stopPropagation();smxGo(f.act)};ac.appendChild(b)}
+  if(it.t==='otp'){const b=document.createElement('button');b.type='button';b.className='bt pri';b.textContent='복사';b.onclick=e=>{e.stopPropagation();let r=false;try{r=NATIVE&&NVNative.clipCopy?NVNative.clipCopy(it.code):false}catch(_){}try{if(!r&&navigator.clipboard){navigator.clipboard.writeText(it.code);r=true}}catch(_){}
+      b.textContent=r?'복사했어요':'복사 못 했어요';b.disabled=true;if(r){smxDisSet(it.k);setTimeout(()=>smxDissolve(el,o.onGone),1300)}};ac.appendChild(b)}
+  if(it.t==='appt'&&NATIVE&&NVNative.smsCalAdd){const b=document.createElement('button');b.type='button';b.className='bt';b.dataset.cal=1;
+    if(it.cal){b.textContent='달력에 있어요';b.disabled=true}else{b.textContent='달력에 추가';b.onclick=e=>{e.stopPropagation();smxCalAdd(it,b)}}ac.appendChild(b)}
+  if(o.speak){const sp=document.createElement('button');sp.type='button';sp.className='sp';sp.setAttribute('aria-label','읽어 주기');sp.innerHTML=ico('sound');ac.appendChild(sp)}
+  if(!ac.children.length)ac.remove();
+  return el}
+function smxCalAdd(it,b){let r='none';try{r=JSON.parse(NVNative.smsCalAdd(JSON.stringify({addr:it.m.addr,x:it.m.x,at:it.m.at}))||'{}').r||'none'}catch(_){}
+  if(r==='ok'){it.cal=true;b.textContent='달력에 넣었어요';b.disabled=true;b.classList.add('done')}
+  else if(r==='dup'){it.cal=true;b.textContent='이미 넣었어요';b.disabled=true}
+  else if(r==='perm'){toast('뉴니버스 문자에서 달력 권한을 허용해 주세요');try{NVNative.smsOpenCalPerm()}catch(_){}}
+  else if(r==='unsafe')toast('광고·수상한 링크 문자라 넣지 않았어요');
+  else toast('일정을 찾지 못했어요')}
+function smxDissolve(el,cb){if(!el||!el.isConnected){cb&&cb();return}try{bfxBurst(nhRect(el),false)}catch(_){}el.classList.add('out');setTimeout(()=>{el.remove();cb&&cb()},380)}
+// ---- 우주에 저절로 떠오르는 카드 (최대 2장: 방금 온 인증번호 · 오늘·내일 택배·예약) ----
+function smxPick(items,now){const dis=smxDis(),out=[];
+  items.forEach(it=>{if(dis[it.k]||SMX.hid[it.k])return;
+    if(it.t==='otp'&&now<it.exp&&now>=it.at-60000)out.push({it,p:0});
+    else if(it.t==='appt'){const d=it.when-now;if(d>-2*36e5&&d<36*36e5&&smxDay(it.when)-smxDay(now)<=SMX_DAY)out.push({it,p:1,w:it.when})}
+    else if(it.t==='parcel'){if(it.st==='today'||it.st==='ship'||it.st==='tomorrow'||(it.st==='done'&&now-it.at<6*36e5&&smxDay(it.at)===smxDay(now)))out.push({it,p:2,w:-it.at})}});
+  out.sort((a,b)=>a.p-b.p||(a.w||0)-(b.w||0));
+  const seenP=new Set(),res=[];out.forEach(x=>{if(res.length>=2)return;if(x.it.t==='parcel'){const k=x.it.co+x.it.no;if(seenP.has(k))return;seenP.add(k)}res.push(x.it)});return res}
+function smxIdleOff(){clearTimeout(SMX.idleT);SMX.idleT=0;if(SMX.idle){SMX.idle.remove();SMX.idle=null}SMX.idleEls={}}
+function smxBusy(){return !!(NH.q||NHCARD||NHWX||NHSM||NH.stars||NH.listen||NHQ===document.activeElement)}
+async function smxIdle(force){if(!smxOn()||!nhOn()||!NATIVE){smxIdleOff();return}
+  if(document.hidden||smxBusy()){if(SMX.idle)SMX.idle.style.display='none';return}
+  const st=smxSt();if(!st.ready){smxIdleOff();return}
+  const now=smxNow(),items=await smxLoad(!!force),pick=smxPick(items,now);
+  if(smxBusy())return;
+  if(!pick.length){smxIdleOff();return}
+  if(!SMX.idle){const c=document.createElement('div');c.id='nhSi';NHUI.insertBefore(c,$('nhBar'));SMX.idle=c;SMX.idleEls={}}
+  SMX.idle.style.display='';
+  const keys=new Set(pick.map(x=>x.k));
+  Object.keys(SMX.idleEls).forEach(k=>{if(!keys.has(k)){const e=SMX.idleEls[k];delete SMX.idleEls[k];smxDissolve(e)}});
+  pick.forEach(it=>{if(SMX.idleEls[it.k]){const e=SMX.idleEls[it.k],f=smxInfo(it,now);e.querySelector('small').textContent=f.s;return}
+    const el=smxEl(it,{now,onGone:()=>{}});SMX.idle.appendChild(el);SMX.idleEls[it.k]=el;
+    el.addEventListener('pointerdown',e=>e.stopPropagation());
+    el.addEventListener('click',e=>{if(e.target.closest('button'))return;smxDisSet(it.k);delete SMX.idleEls[it.k];smxDissolve(el)});
+    requestAnimationFrame(()=>{try{bfxBurst(nhRect(el),true)}catch(_){}setTimeout(()=>el.classList.remove('pre'),300)});
+    const life=it.t==='otp'?Math.max(2000,it.exp-now):18000;
+    setTimeout(()=>{if(SMX.idleEls[it.k]===el){delete SMX.idleEls[it.k];if(it.t!=='otp')SMX.hid[it.k]=1;smxDissolve(el)}},life)});
+  clearTimeout(SMX.idleT);SMX.idleT=setTimeout(()=>smxIdle(false),20000)}
+// ---- 물어서 보는 카드 ----
+var NHSM=null,NHSMT=0;
+async function nhSmxDo(c){nhClear(false);nhSmxShow(c)}
+async function nhSmxShow(c){nhCardOff(false);nhWxOff(false);nhSmxOff(false);smxIdleOff();
+  if(!smxOn()){const ok=await smxEnable(true);if(!ok)return}
+  const st=smxSt();let el,rows=[],say='';
+  const mount=e=>{e.id='nhSm';e.className=e.className||'smc pre';NHUI.insertBefore(e,$('nhBar'));NHSM=e;NHSUG.classList.add('hide');e.addEventListener('pointerdown',ev=>ev.stopPropagation());requestAnimationFrame(()=>{try{bfxBurst(nhRect(e),true)}catch(_){}setTimeout(()=>{if(NHSM===e)e.classList.remove('pre')},380)})};
+  if(!st.ready){el=smxEl(Object.assign({t:'need',k:'need'},smxNeed(st)));mount(el);nhSmxTimer(9000);return}
+  const now=smxNow(),items=await smxLoad(true),dis={};
+  let f=null;
+  if(c.id==='otp'){const L=items.filter(i=>i.t==='otp'&&now<i.exp).sort((a,b)=>b.at-a.at);
+    if(L.length){el=smxEl(L[0],{now,speak:true});say=smxInfo(L[0],now).say}else f={ic:'otp',b:'지금 쓸 인증번호가 없어요',s:'받은 지 3분이 안 된 인증번호만 보여 드려요'}}
+  else if(c.id==='parcel'){const L=items.filter(i=>i.t==='parcel'&&now-i.at<7*SMX_DAY).sort((a,b)=>(a.st==='done')-(b.st==='done')||b.at-a.at);
+    const seen=new Set(),U=L.filter(p=>{const k=p.co+(p.no||p.at);if(seen.has(k))return false;seen.add(k);return true});
+    if(U.length){const act=U.filter(p=>p.st!=='done'),first=act[0]||U[0];el=smxEl(first,{now,speak:true});say=smxInfo(first,now).say;const more=U.length-1;
+      if(more>0){el.querySelector('small').textContent+=' · 외 '+more+'건';say+='. 외 '+smxCnt(more)+' 건이 더 있어요'}}
+    else f={ic:'box',b:'택배 문자가 없어요',s:'최근 일주일 안에 받은 택배 문자가 없어요'}}
+  else if(c.id==='appt'){let L=items.filter(i=>i.t==='appt'&&i.when>now-2*36e5).sort((a,b)=>a.when-b.when);const all=L.length;
+    if(c.who)L=L.filter(i=>i.who&&i.who.indexOf(c.who)>=0||c.who.indexOf(i.who||'¿')>=0);
+    if(L.length){const first=L[0];el=smxEl(first,{now,speak:true});say=smxInfo(first,now).say;if(L.length>1){el.querySelector('small').textContent+=' · 외 '+(L.length-1)+'건';say+='. 외 '+smxCnt(L.length-1)+' 건이 더 있어요'}}
+    else f=c.who?{ic:'cross',b:c.who+'님 예약 문자는 없어요',s:all?'다른 예약이 '+all+'건 있어요':'앞으로 잡힌 예약 문자가 없어요'}:{ic:'cross',b:'잡힌 병원 예약이 없어요',s:'앞으로 날짜가 남은 예약 문자가 없어요'}}
+  else if(c.id==='card'){const d0=smxDay(now);let L=items.filter(i=>i.t==='card');
+    L=c.day==='today'?L.filter(i=>smxDay(i.at)===d0):c.day==='yesterday'?L.filter(i=>smxDay(i.at)===d0-SMX_DAY):L.filter(i=>{const a=new Date(i.at),b=new Date(now);return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()});
+    const lab=c.day==='today'?'오늘':c.day==='yesterday'?'어제':'이번 달';
+    if(L.length){const tot=L.reduce((s,i)=>s+(i.cancel?-i.amt:i.amt),0),last=L.slice().sort((a,b)=>b.at-a.at)[0];
+      f={ic:'card',b:lab+' 카드 '+smxMoney(tot),s:L.length+'건 · 마지막 '+(last.merch?last.merch+' ':'')+smxMoney(last.amt)};say=lab+' 카드로 모두 '+smxWon(tot)+' 쓰셨어요. '+L.length+'건이에요'}
+    else f={ic:'card',b:lab+' 카드 결제 문자가 없어요',s:'받은 승인 문자가 없어요'}}
+  if(!el)el=smxEl({t:'info',k:'info'},{});if(f){el.querySelector('.ic').innerHTML=ico(f.ic);el.querySelector('b').textContent=f.b;const s2=el.querySelector('small');s2.textContent=f.s||'';s2.style.display=f.s?'':'none'}
+  el.classList.add('pre');mount(el);
+  el.dataset.line=say;const mu=nhTtsMute(),m=el.querySelector('.meta');
+  m.innerHTML='<span class="src">폰 안에서만 · 뉴니버스 문자</span><span class="note"></span>';
+  const sp=el.querySelector('.sp');
+  if(sp){sp.onclick=e=>{e.stopPropagation();if(el.classList.contains('talk')){nhTtsStop();el.classList.remove('talk');sp.innerHTML=ico('sound');return}if(say){nhTts(say,true);nhSmxTimer(9000)}}}
+  if(!say&&sp)sp.style.display='none';
+  if(say){if(mu){el.classList.add('muted');m.querySelector('.note').innerHTML=ico('mute')+'<span>'+(mu==='dnd'?'방해 금지가 켜져 있어 읽지 않았어요':'무음·진동이라 읽지 않았어요')+'</span>'}
+    else{const r=nhTts(say,false);if(r==='mute'){el.classList.add('muted');m.querySelector('.note').innerHTML=ico('mute')+'<span>무음·진동이라 읽지 않았어요</span>'}}}
+  nhSmxTimer(c.id==='otp'?30000:10000)}
+function nhSmxTimer(ms){clearTimeout(NHSMT);NHSMT=setTimeout(()=>nhSmxOff(true),ms)}
+function nhSmxOff(anim){clearTimeout(NHSMT);const el=NHSM;if(!el)return;nhTtsStop();NHSM=null;const done=()=>{el.remove();if(!NH.q&&!NHCARD&&!NHWX&&!NHSM){NHSUG.classList.remove('hide');smxIdle(false)}};
+  if(anim){try{bfxBurst(nhRect(el),false)}catch(_){}el.classList.add('out');setTimeout(done,380)}else done()}
+
 // ---- 우주: 거의 멈춰 있고 4초에 한 번 아주 조금만 흐름(화면이 꺼지거나 절전이면 멈춤) ----
 function nhStill(){if(S.lite===true||S.nhStill===true)return true;try{if(NATIVE&&NVNative.qsState){const q=JSON.parse(NVNative.qsState());if(q&&q.save)return true}}catch(_){}return false}
-function nhDrift(){clearInterval(NH.dT);NH.dT=0;if(!nhOn()||document.hidden||NH.still)return;
-  NH.dT=setInterval(()=>{if(document.hidden||!nhOn()){clearInterval(NH.dT);NH.dT=0;return}NH.dk=(NH.dk+1)%120;const a=NH.dk/120*Math.PI*2;NHCOS.style.transform=`scale(1.04) translate3d(${(Math.sin(a)*1.1).toFixed(3)}%,${(Math.cos(a*.7)*.7).toFixed(3)}%,0)`},4000)}
-document.addEventListener('visibilitychange',()=>{if(document.hidden){clearInterval(NH.dT);NH.dT=0;nhListenStop()}else if(nhOn()){NH.still=nhStill();nhDrift()}});
+// 별 반짝임 + 느린 흐름: CSS 애니메이션(합성기에서만 돌아 가벼움). 숨김·꺼짐·절전·가벼운 모드·'애니메이션 끔'(animator scale 0)·prefers-reduced-motion 이면 멈춤
+var NHTW=0;
+function nhTwBuild(){if(NHTW)return;NHTW=1;const tw=document.createElement('div');tw.className='tw';const C=['#cfe9ff','#8fd0ff','#7fb6ff','#b9a6ff','#a98cff','#ffffff'];let k=7;const r=()=>{k=(k*16807)%2147483647;return k/2147483647};
+  for(let n=0;n<18;n++){const e=document.createElement('i'),z=1.4+r()*2.2,c=C[Math.floor(r()*C.length)];e.style.cssText=`left:${(r()*96+2).toFixed(1)}%;top:${(r()*78+3).toFixed(1)}%;width:${z.toFixed(1)}px;height:${z.toFixed(1)}px;background:${c};box-shadow:0 0 ${(z*2.6).toFixed(1)}px ${c};--d:${(3.6+r()*5.4).toFixed(1)}s;--l:-${(r()*9).toFixed(1)}s`;tw.appendChild(e)}
+  NHCOS.appendChild(tw)}
+function nhNoMotion(){try{if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)return true}catch(_){}try{if(NATIVE&&NVNative.animScale&&parseFloat(NVNative.animScale())===0)return true}catch(_){}return false}
+function nhDrift(){clearInterval(NH.dT);NH.dT=0;nhTwBuild();const go=nhOn()&&!document.hidden&&!NH.still&&!NH.paused&&!nhNoMotion();NHCOS.classList.toggle('mo',go);if(!go)NHCOS.style.transform=''}
+document.addEventListener('visibilitychange',()=>{if(document.hidden){NHCOS.classList.remove('mo');nhListenStop()}else if(nhOn()){NH.paused=false;NH.still=nhStill();nhDrift()}});
+{const op=window.NV_onPause;window.NV_onPause=()=>{try{op&&op()}catch(_){}NH.paused=true;try{NHCOS.classList.remove('mo')}catch(_){}}}
 // ---- 자리 맞추기·켜고 끄기 ----
 function nhPlace(){if(!nhOn()||!W)return;NHUI.style.bottom=Math.round(H-navY()+12)+'px'}
-function nhApply(){const on=nhOn();phone.classList.toggle('nh',on);if(on){nhPlace();nhSug();NH.still=nhStill();nhDrift();try{closeRecents()}catch(_){}}else{clearInterval(NH.dT);NH.dT=0;nhReset()}
+function nhApply(){const on=nhOn();phone.classList.toggle('nh',on);if(on){nhPlace();nhSug();NH.still=nhStill();nhDrift();try{closeRecents()}catch(_){}}else{NHCOS.classList.remove('mo');nhReset()}
   try{wSync()}catch(_){}try{BUS.plk='';BUS.html='';busPlace();busTick()}catch(_){}}
 function nhSet(on){S.nh=!!on;saveS();nhApply();if(!on){try{spaceKick()}catch(_){}try{relayoutSoon()}catch(_){}toast('예전 아이콘 홈으로 바꿨어요 · 설정에서 다시 켤 수 있어요')}else toast('앱 없는 홈 켜짐 · 무엇을 하실 건가요?')}
-function nhReset(){clearTimeout(NH.aT);nhCardOff(false);nhWxOff(false);nhListenStop();if(NH.stars||NHST.classList.contains('on')){NH.stars=false;NHST.classList.remove('on');NHST.style.opacity=0;NHUI.style.opacity=1;NHUI.style.pointerEvents=''}NHQ.blur();if(NH.q||NHQ.value)nhSetQ('');if(nhOn())nhSug()}
-function nhBack(){if(NHCARD){nhCardOff(true);return true}if(NHWX){nhWxOff(true);return true}if(NH.stars){nhStarsClose();return true}if(NH.listen){nhListenStop();return true}if(NH.q||document.activeElement===NHQ){nhClear(true);return true}return false}
+function nhReset(){clearTimeout(NH.aT);nhCardOff(false);nhWxOff(false);nhSmxOff(false);nhListenStop();if(NH.stars||NHST.classList.contains('on')){NH.stars=false;NHST.classList.remove('on');NHST.style.opacity=0;NHUI.style.opacity=1;NHUI.style.pointerEvents=''}NHQ.blur();if(NH.q||NHQ.value)nhSetQ('');if(nhOn())nhSug()}
+function nhBack(){if(NHCARD){nhCardOff(true);return true}if(NHWX){nhWxOff(true);return true}if(NHSM){nhSmxOff(true);return true}if(NH.stars){nhStarsClose();return true}if(NH.listen){nhListenStop();return true}if(NH.q||document.activeElement===NHQ){nhClear(true);return true}return false}
 window.addEventListener('resize',()=>setTimeout(nhPlace,30));
 {const oi=window.NV_onInsets;window.NV_onInsets=()=>{try{oi&&oi()}catch(_){}nhPlace()}}
-{const orz=window.NV_onResume;window.NV_onResume=()=>{try{orz&&orz()}catch(_){}try{if(NH.pend){const c=NH.pend;NH.pend=null;setTimeout(()=>{try{nhCtlDo(c,true)}catch(_){}},450)}}catch(_){}if(nhOn()){if(NH.hold||NH.speechUi){NH.hold=false}else nhReset();NH.still=nhStill();nhDrift();nhPlace()}}}
+{const orz=window.NV_onResume;window.NV_onResume=()=>{try{orz&&orz()}catch(_){}NH.paused=false;SMX.hid={};SMX.items=null;setTimeout(()=>{try{smxIdle(true)}catch(_){}},500);try{if(NH.pend){const c=NH.pend;NH.pend=null;setTimeout(()=>{try{nhCtlDo(c,true)}catch(_){}},450)}}catch(_){}if(nhOn()){if(NH.hold||NH.speechUi){NH.hold=false}else nhReset();NH.still=nhStill();nhDrift();nhPlace()}}}
 setInterval(()=>{if(nhOn()&&!document.hidden&&!NH.q)nhSug()},60000);
 nhApply();
+setTimeout(()=>{try{smxIdle(true)}catch(_){}},1500);
+window.NV_onSms=()=>{SMX.items=null;try{smxIdle(true)}catch(_){}};
 setTimeout(()=>{nhPlace();nhSug();if(nhOn()&&!S.nhTip){S.nhTip=1;saveS();setTimeout(()=>toast('빈 곳을 두 번 톡톡하면 말로 찾기 · 위로 밀면 최근 앱 · 아래로 빠른 설정'),900)}},300);
 window.__nv.nh={on:nhOn,set:nhSet,q:v=>nhSetQ(v),tiles:()=>NH.tiles.map(x=>x.k==='act'?'act:'+x.t:(x.a.__base||x.a).pkg),hd:()=>NHRES.querySelector('.hd').textContent,sug:()=>[...NHSUG.querySelectorAll('button')].map(b=>b.textContent),
-  stars:()=>NH.stars,starsOpen:nhStarsOpen,recent:()=>nhRecent().map(a=>a.pkg),state:()=>({q:NH.q,listen:NH.listen,stars:NH.stars,still:NH.still,drift:!!NH.dT,busUntil:NH.busUntil,heard:NH.heard||'',ui:!!NH.speechUi,hold:!!NH.hold,cue:!!(document.getElementById('nhCue')&&document.getElementById('nhCue').classList.contains('go')),listening:!!(NH.listen||NH.speechUi||NHEL.classList.contains('listen'))}),back:nhBack,reset:nhReset,place:nhPlace,
+  stars:()=>NH.stars,starsOpen:nhStarsOpen,recent:()=>nhRecent().map(a=>a.pkg),state:()=>({q:NH.q,listen:NH.listen,stars:NH.stars,still:NH.still,drift:NHCOS.classList.contains('mo'),tw:NHCOS.querySelectorAll('.tw i').length,busUntil:NH.busUntil,heard:NH.heard||'',ui:!!NH.speechUi,hold:!!NH.hold,cue:!!(document.getElementById('nhCue')&&document.getElementById('nhCue').classList.contains('go')),listening:!!(NH.listen||NH.speechUi||NHEL.classList.contains('listen'))}),back:nhBack,reset:nhReset,place:nhPlace,
+  smx:{auto:q=>{const r=nhMatch(q);return !!(r.top&&r.top.I&&r.top.I.auto)},q:nhSmx,parse:smxParse,build:smxBuild,info:smxInfo,idle:smxIdle,pick:()=>smxPick(SMX.items||[],smxNow()).map(i=>i.k),won:smxWon,dts:smxDts,ad:smxAd,sus:smxSus,state:()=>({idle:!!SMX.idle&&SMX.idle.style.display!=='none'?[...SMX.idle.querySelectorAll('.smc')].map(e=>e.dataset.k):[],ans:!!NHSM})},
   wx:q=>{const c=nhWx(q);return c?{id:c.id,ask:c.ask||'',auto:!!c.auto,label:c.label}:null},
   web:q=>{const c=nhWeb(q);return c?{engine:c.engine,q:c.q,auto:!!c.auto,label:c.label}:null},
   wxLine:wxLineS,wxDir:wxDir,

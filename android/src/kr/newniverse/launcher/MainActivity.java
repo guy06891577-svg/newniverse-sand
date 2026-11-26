@@ -71,7 +71,15 @@ public class MainActivity extends Activity {
     regLauncherApps();
     regTorch();
     NotifService.onChange=()->{ ui.removeCallbacks(notifPing); ui.postDelayed(notifPing,250); };
+    regSms();
   }
+  static final String SMSPKG="kr.newniverse.sms", SMS_PERM="kr.newniverse.permission.SMS_FEED";
+  boolean openSms(boolean calPerm){ try{ Intent i=getPackageManager().getLaunchIntentForPackage(SMSPKG); if(i==null) return false; if(calPerm) i.putExtra("calperm",true); i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(i); return true; }catch(Exception e){ return false; } }
+  Bundle feedCall(String m,String arg){ try{ return getContentResolver().call(Uri.parse("content://kr.newniverse.sms.feed"),m,arg,null); }catch(Throwable e){ return null; } }
+  final BroadcastReceiver smsRx=new BroadcastReceiver(){ @Override public void onReceive(Context c,Intent i){ js("window.NV_onSms&&NV_onSms()"); } };
+  /** 뉴니버스 문자가 보내는 '새 문자 왔음' 신호(내용 없음). 같은 서명 앱만 보낼 수 있음 */
+  void regSms(){ try{ IntentFilter f=new IntentFilter("kr.newniverse.sms.action.NEW");
+      if(Build.VERSION.SDK_INT>=33) registerReceiver(smsRx,f,SMS_PERM,null,Context.RECEIVER_EXPORTED); else registerReceiver(smsRx,f,SMS_PERM,null); }catch(Exception e){} }
   final Runnable notifPing=()->js("window.NV_onNotif&&NV_onNotif()");
   ValueCallback<Uri[]> fileCb;
   @Override protected void onActivityResult(int req,int res,Intent data){ if(req==REQ_SPEECH){ speechResult(res,data); return; } if(widgetResult(req,res)) return; if(req==REQ_EXP||req==REQ_IMP){ bakResult(req,res,data); return; } if(req==77&&fileCb!=null){ fileCb.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(res,data)); fileCb=null; } else super.onActivityResult(req,res,data); }
@@ -95,7 +103,7 @@ public class MainActivity extends Activity {
       la.registerCallback(laCb,ui);
     }catch(Exception e){ android.util.Log.w("NVWeb","launcherapps",e); }
   }
-  @Override protected void onDestroy(){ try{ if(tts!=null){ tts.stop(); tts.shutdown(); tts=null; } }catch(Exception e){} try{unregisterReceiver(pkgRx);}catch(Exception e){}
+  @Override protected void onDestroy(){ try{ if(tts!=null){ tts.stop(); tts.shutdown(); tts=null; } }catch(Exception e){} try{unregisterReceiver(pkgRx);}catch(Exception e){} try{unregisterReceiver(smsRx);}catch(Exception e){}
     try{ if(laCb!=null) ((android.content.pm.LauncherApps)getSystemService(Context.LAUNCHER_APPS_SERVICE)).unregisterCallback(laCb);}catch(Exception e){} super.onDestroy(); }
 
   // 상태 표시줄(시계·배터리)은 폰 것을 그대로 보이고, 시스템 내비 바는 숨겨 뉴니버스 내비 바와 겹치지 않게 함.
@@ -664,6 +672,29 @@ public class MainActivity extends Activity {
       }catch(Exception e){ try{ o.put("r","fail"); }catch(Exception e2){} }
       return o.toString(); }
     // v42b: 한국어로 읽어 주기(무음·진동·방해 금지면 자동으로 읽지 않음). force=1 이면 카드의 스피커 단추.
+    // v43b 문자 속 할 일 정리: 문자 권한은 런처가 갖지 않음. 기본 문자 앱인 뉴니버스 문자(같은 서명)가 택배·예약·카드·인증 문자만 골라
+    // 서명 수준 권한(kr.newniverse.permission.SMS_FEED)이 걸린 ContentProvider 로 넘겨 주면, 화면(JS)이 폰 안에서만 읽어 카드로 만듦. 인터넷 사용 없음.
+    @JavascriptInterface public String smsStatus(){ JSONObject o=new JSONObject();
+      try{ boolean inst=false; try{ getPackageManager().getPackageInfo(SMSPKG,0); inst=true; }catch(Exception e){}
+        o.put("installed",inst); o.put("def",false); o.put("perm",false); o.put("ok",false);
+        if(inst){ Bundle b=feedCall("status",null);
+          if(b!=null){ o.put("ok",b.getBoolean("ok",false)); o.put("def",b.getBoolean("def",false)); o.put("perm",b.getBoolean("perm",false)); o.put("ver",b.getInt("ver",0)); }
+          else { String d=""; try{ d=Telephony.Sms.getDefaultSmsPackage(MainActivity.this); }catch(Exception e){} o.put("def",SMSPKG.equals(d)); o.put("old",true); } }
+      }catch(Exception e){}
+      return o.toString(); }
+    // v43b: 애니메이션 배율(0이면 '애니메이션 끔') → 우주 반짝임·흐름을 멈춤
+    @JavascriptInterface public String animScale(){ try{ return String.valueOf(Settings.Global.getFloat(getContentResolver(),Settings.Global.ANIMATOR_DURATION_SCALE,1f)); }catch(Exception e){ return "1"; } }
+    // 카드의 「달력에 추가」: 달력 쓰기는 뉴니버스 문자가 함(런처는 달력 권한도 없음) → ok / dup / perm / unsafe / none
+    @JavascriptInterface public String smsCalAdd(String json){ Bundle b=feedCall("cal_add",json); String r=b==null?null:b.getString("r"); return "{\"r\":\""+(r==null?"none":r)+"\"}"; }
+    @JavascriptInterface public boolean smsOpenApp(){ return openSms(false); }
+    @JavascriptInterface public boolean smsOpenCalPerm(){ return openSms(true); }
+    @JavascriptInterface public String smsRecent(String days){ Bundle b=feedCall("recent",days); String j=b==null?null:b.getString("json"); return j==null?"[]":j; }
+    // 인증번호 복사 (미리보기에 안 보이게 민감 표시)
+    @JavascriptInterface public boolean clipCopy(final String text){
+      try{ android.content.ClipboardManager cm=(android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
+        android.content.ClipData d=android.content.ClipData.newPlainText("뉴니버스",text==null?"":text);
+        if(Build.VERSION.SDK_INT>=33){ android.os.PersistableBundle pb=new android.os.PersistableBundle(); pb.putBoolean("android.content.extra.IS_SENSITIVE",true); d.getDescription().setExtras(pb); }
+        cm.setPrimaryClip(d); return true; }catch(Exception e){ return false; } }
     @JavascriptInterface public String ttsSpeak(String text,String force){
       final String t=text==null?"":text.trim(); if(t.isEmpty()) return "fail";
       if(!"1".equals(force)&&ttsMuted()) return "mute";
