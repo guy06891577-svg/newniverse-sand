@@ -11,7 +11,7 @@ final class ApptParser {
   static final int NEW=1, CHANGE=2, CANCEL=3, PARCEL=4;
   static final TimeZone TZ=TimeZone.getTimeZone("Asia/Seoul");
   static final class R { int kind; String org="", who="", title="", src="", location=""; long when, oldWhen, endMs; boolean hasTime, oldHasTime, trusted, ask; }
-  static final class DT { long ms; boolean hasTime; }
+  static final class DT { long ms; boolean hasTime; String line=""; }
 
   static final String HOSP="병원|의원|치과|한의원|의료원|클리닉|내과|외과|안과|피부과|이비인후과|정형외과|소아과|산부인과|비뇨기과|검진센터";
   static final String AGEN="보건소|주민센터|행정복지센터|시청|구청|군청|도청|건강보험공단|공단|세무서|법원|등기소|면허시험장|교육청|경찰서|출입국[가-힣]*사무소";
@@ -92,17 +92,91 @@ final class ApptParser {
     while(m.find()){ String t=m.group(1).trim(); if(t.matches(".*(Web발신|국제발신|발신|광고|MMS|알림톡).*")) continue; return t; }
     return "";
   }
+  // ---------- v6: 실제 폰에서 온 글자 모양 정리 ----------
+  static final String LABELS="(?:행사\\s*)?(?:일\\s*시|장\\s*소|주\\s*제|대\\s*상|신청\\s*기간|신청\\s*방법|문\\s*의|준비물|참가비|제\\s*목)";
+  static final Pattern BULLET_SPLIT=Pattern.compile("[ \\t]*([○●■□▪▫▶▷◆◇☞※•])");
+  static final Pattern LABEL_SPLIT=Pattern.compile("[ \\t]+(?="+LABELS+"\\s*:)");
+  static final Pattern KBUL=Pattern.compile("(?m)(^|[ \\t])ㅇ\\s*(?="+LABELS+")");
+  /**
+   * 줄바꿈(CRLF·CR·U+2028)·모든 유니코드 공백(NBSP 등)·0폭 글자·전각 글자(：～．（）０-９)·물결표(〜～∼)·여러 동그라미(⚬◯◦●◎ㅇ)를 한 모양으로.
+   * 동그라미나 ‘일시:’ ‘장소:’ 앞에서 줄을 나눠, 줄바꿈이 사라진 한 줄짜리 문자도 줄 단위로 읽게 함. 여러 번 해도 같은 결과.
+   */
+  static String norm(String s){
+    if(s==null) return "";
+    String t=s.replace("\r\n","\n").replace('\r','\n').replace('\u2028','\n').replace('\u2029','\n').replace('\u0085','\n').replace('\u000B','\n').replace('\u000C','\n');
+    StringBuilder sb=new StringBuilder(t.length());
+    for(int k=0;k<t.length();k++){
+      char ch=t.charAt(k);
+      if(ch=='\n'){ sb.append(ch); continue; }
+      if((ch>=0x200B&&ch<=0x200F)||ch==0x2060||ch==0xFEFF||ch==0x00AD||(ch>=0x202A&&ch<=0x202E)||ch==0x180E) continue;
+      if(ch=='\t'||Character.getType(ch)==Character.SPACE_SEPARATOR){ sb.append(' '); continue; }
+      if(ch>=0xFF01&&ch<=0xFF5E){ ch=(char)(ch-0xFEE0); }
+      if(ch=='\u301C'||ch=='\u223C'||ch=='\u02DC'||ch=='\u223E') ch='~';
+      else if(ch=='\u2013'||ch=='\u2014'||ch=='\u2012'||ch=='\u2212'||ch=='\u2015') ch='-';
+      else if(ch=='\u25E6'||ch=='\u26AC'||ch=='\u25EF'||ch=='\u2B58'||ch=='\u25CF'||ch=='\u25CE') ch='○';
+      sb.append(ch);
+    }
+    t=sb.toString();
+    t=KBUL.matcher(t).replaceAll("$1○ ");
+    t=BULLET_SPLIT.matcher(t).replaceAll("\n$1");
+    t=LABEL_SPLIT.matcher(t).replaceAll("\n");
+    return t.replaceAll("\n{3,}","\n\n");
+  }
+  static final Pattern SEG_LABEL=Pattern.compile("^[ \\t○●■□▪▫▶▷◆◇☞※•\\-\\*◦ㆍ·▲▼]*");
+  /** 줄 앞의 동그라미·공백을 뗀 줄 */
+  static List<String> lines(String n){
+    List<String> out=new ArrayList<>();
+    for(String ln:n.split("\n")){ String x=SEG_LABEL.matcher(ln).replaceFirst("").trim(); if(!x.isEmpty()) out.add(x); }
+    return out;
+  }
+  /** 이름표로 시작하는 줄의 값. 값에 date 가 있어야 하면 mustDate */
+  static String labelValue(List<String> ls,String labelRx,boolean colonRequired,boolean mustDate,long at){
+    Pattern p=Pattern.compile("^(?:"+labelRx+")\\s*"+(colonRequired?"[:\\-]":"[:\\-]?")+"\\s*(.*)$");
+    for(int k=0;k<ls.size();k++){
+      Matcher m=p.matcher(ls.get(k)); if(!m.find()) continue;
+      String v=m.group(1).trim();
+      if(mustDate){ if(!dts(v,at).isEmpty()) return v; if(v.isEmpty()&&k+1<ls.size()&&!dts(ls.get(k+1),at).isEmpty()) return ls.get(k+1); continue; }
+      if(!v.isEmpty()) return v;
+    }
+    return "";
+  }
+  static final Pattern TIME_ONLY=Pattern.compile("(?:(오전|오후|저녁|낮|아침)\\s*)?(\\d{1,2})\\s*(?::\\s*(\\d{2})|시\\s*(?:(\\d{1,2})\\s*분|(반))?)");
+  /** ‘시간:’ 줄 같은 데서 시각만 뽑기 → 분(0~1439) 또는 -1 */
+  static int timeOf(String v){
+    if(v==null) return -1; Matcher m=TIME_ONLY.matcher(v); if(!m.find()) return -1;
+    int h=i(m.group(2)), mi=m.group(3)!=null?i(m.group(3)):m.group(4)!=null?i(m.group(4)):m.group(5)!=null?30:0; String ap=m.group(1);
+    if("오후".equals(ap)||"저녁".equals(ap)){ if(h<12) h+=12; } else if("오전".equals(ap)||"아침".equals(ap)){ if(h==12) h=0; } else if(h>=1&&h<=6) h+=12;
+    return h>23||mi>59?-1:h*60+mi;
+  }
+  /** 일시 줄 찾기 + 날짜·시각 읽기. 없으면 null. why[0] 에 실패 단계 */
+  static DT whenOf(List<String> ls,String n,long at){
+    String v=labelValue(ls,"(?:행사\\s*)?일\\s*시",false,true,at);
+    if(v.isEmpty()) v=labelValue(ls,"(?:행사\\s*)?(?:일\\s*정|일\\s*자|날\\s*짜|개최\\s*일|진행\\s*일|시\\s*간)",false,true,at);
+    if(v.isEmpty()){ // 줄 맨 앞이 아니어도 ‘일시’ 바로 뒤에 날짜가 있으면
+      Matcher m=Pattern.compile("(?<![가-힣])(?:일\\s*시|일\\s*정)\\s*[:\\-]?\\s*").matcher(n);
+      while(m.find()){ int e=n.indexOf('\n',m.end()); String rest=n.substring(m.end(),e<0?n.length():e); if(!dts(rest,at).isEmpty()){ v=rest; break; } }
+    }
+    if(v.isEmpty()) return null;
+    List<DT> L=dts(v,at); if(L.isEmpty()) return null;
+    DT t=L.get(0); t.line=v;
+    if(!t.hasTime){ // 시각이 다른 줄(시간:)에 있을 수 있음. 없으면 하루 종일
+      int mi=timeOf(labelValue(ls,"(?:행사\\s*)?시\\s*간",false,false,at));
+      if(mi>=0){ Calendar c=cal(t.ms); c.set(Calendar.HOUR_OF_DAY,mi/60); c.set(Calendar.MINUTE,mi%60); t.ms=c.getTimeInMillis(); t.hasTime=true; }
+    }
+    return t;
+  }
+  
   /** 일시: 줄에서 시작(+끝) 시각 */
   static R event(String b,long at,String contact,String addr){
-    String when=first(LBL_WHEN,b); if(when.isEmpty()) return null;
-    List<DT> L=dts(when,at); if(L.isEmpty()) return null;
-    DT t=L.get(0);
+    String n=norm(b); List<String> ls=lines(n);
+    DT t=whenOf(ls,n,at); if(t==null) return null;
+    String when=t.line;
     R r=new R(); r.kind=NEW; r.when=t.ms; r.hasTime=t.hasTime; r.src="event";
-    if(t.hasTime){ Matcher e=Pattern.compile("^\\s*[~～\\-–]\\s*(\\d{1,2})\\s*:\\s*(\\d{2})").matcher(when.substring(Math.min(when.length(),endOfFirst(when)))); // 끝 시각
+    if(t.hasTime){ Matcher e=Pattern.compile("^\\s*[~\\-]\\s*(\\d{1,2})\\s*:\\s*(\\d{2})").matcher(when.substring(Math.min(when.length(),endOfFirst(when)))); // 끝 시각
       if(e.find()){ Calendar c=cal(t.ms); c.set(Calendar.HOUR_OF_DAY,i(e.group(1))); c.set(Calendar.MINUTE,i(e.group(2))); if(c.getTimeInMillis()>t.ms&&c.getTimeInMillis()-t.ms<12L*3600*1000) r.endMs=c.getTimeInMillis(); } }
     if(r.when<at-3600L*1000) return null;
-    r.location=first(LBL_PLACE,b);
-    String tg=tag(b), topic=first(LBL_TOPIC,b);
+    r.location=clean(labelValue(ls,"(?:행사\\s*)?(?:장\\s*소|위\\s*치)",true,false,at));
+    String tg=tag(n), topic=clean(labelValue(ls,"(?:주\\s*제|제\\s*목|행사명|프로그램|행사\\s*내용)",true,false,at));
     if(topic.length()>60) topic=topic.substring(0,60);
     boolean school=!tg.isEmpty()&&SCH_W.matcher(tg).find(), hosp=!tg.isEmpty()&&HOSP_W.matcher(tg).find(), agen=!tg.isEmpty()&&AGEN_W.matcher(tg).find();
     r.org=tg;
@@ -113,12 +187,26 @@ final class ApptParser {
     else r.trusted=false;
     String base=r.org.isEmpty()?"일정":r.org;
     r.title=topic.isEmpty()?(school||!hosp&&!agen?base+" 일정":base+" 예약"):base+" · "+topic;
-    r.ask=APPLY.matcher(b).find()&&!CONFIRM.matcher(b).find();
+    r.ask=APPLY.matcher(n).find()&&!CONFIRM.matcher(n).find();
     return r;
   }
   static int endOfFirst(String when){ Matcher m=DT_RX.matcher(when); return m.find()?m.end():when.length(); }
+  static int rawDates(String b){ Matcher m=DT_RX.matcher(norm(b)); int c=0; while(m.find()) if(m.group(9)==null) c++; return c; }
   /** 숫자로 쓴 날짜가 있는지(오늘·내일 같은 말만 있는 건 제외) — 진단 기록을 일상 문자로 어지럽히지 않으려고 */
-  static boolean hasDate(String b,long at){ if(b==null) return false; Matcher m=DT_RX.matcher(b); while(m.find()) if(m.group(9)==null) return true; return false; }
+  static boolean hasDate(String b,long at){ return rawDates(b)>0; }
+  /**
+   * v6: parse()가 null 을 돌려줬을 때 어느 단계에서 막혔는지 (진단용, 본문·번호 없음)
+   *  parse:no-date · parse:deadline-only(마감·신청기간 날짜뿐) · parse:no-datetime-line(일시 줄도 예약 확정 말도 없음) · parse:past(이미 지난 일정) · parse:other
+   */
+  static String why(String b,long at){
+    String n=norm(b);
+    if(rawDates(n)==0) return "parse:no-date";
+    if(dts(n,at).isEmpty()) return "parse:deadline-only";
+    List<String> ls=lines(n);
+    if(whenOf(ls,n,at)!=null) return "parse:past";
+    if(!CANCEL_RX.matcher(n).find()&&!CHANGE_RX.matcher(n).find()&&!CONFIRM.matcher(n).find()) return "parse:no-datetime-line";
+    return "parse:other";
+  }
 
   static long dayOf(long ms){ return Math.floorDiv(ms+9L*3600*1000,24L*3600*1000); }
 
@@ -126,7 +214,9 @@ final class ApptParser {
   static R parse(String b,long at,String contact){ return parse(b,at,contact,null); }
   /** addr: 보낸 번호(학교가 일반 전화(0xx)로 보낸 건지 확인용) */
   static R parse(String b,long at,String contact,String addr){
-    if(b==null||b.trim().length()<8) return null;
+    if(b==null) return null;
+    b=norm(b);
+    if(b.trim().length()<8) return null;
     boolean cn=CANCEL_RX.matcher(b).find(), ch=!cn&&CHANGE_RX.matcher(b).find();
     if(!cn&&!ch&&!CONFIRM.matcher(b).find()){ R ev=event(b,at,contact,addr); if(ev!=null) return ev; }
     List<DT> L=dts(b,at); if(L.isEmpty()) return null;

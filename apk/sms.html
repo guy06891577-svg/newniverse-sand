@@ -1,6 +1,6 @@
 <!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
-<title>뉴니버스 문자 v5 (시험판) 설치</title>
+<title>뉴니버스 문자 v6 (시험판) 설치</title>
 <style>body{font-family:system-ui,"Noto Sans KR",sans-serif;background:#07061a;color:#fff;margin:0;padding:22px;line-height:1.7;font-size:18px}
 h1{font-size:26px;margin:0 0 6px}h2{font-size:20px;margin:28px 0 8px;color:#9fd8ff}.sub{opacity:.72;font-size:15px}
 a.dl{display:block;text-align:center;margin:18px 0;padding:18px;border-radius:22px;background:linear-gradient(135deg,#6fd3ff,#8f6bff);color:#0a0820;font-weight:800;font-size:21px;text-decoration:none}
@@ -9,8 +9,14 @@ a.dl{display:block;text-align:center;margin:18px 0;padding:18px;border-radius:22
 ol,ul{padding-left:22px}li{margin:7px 0}b{color:#c9b8ff}
 img.shot{width:31%;border-radius:14px;margin:1%;vertical-align:top}</style></head><body>
 <img src="sms-icon-512.png" width="88" height="88" alt="" style="border-radius:22px;float:right">
-<h1>뉴니버스 문자 v5 (시험판)</h1><div class="sub">버전 5-test · 뉴니버스 고정 서명(런처·전화와 같은 서명) · 따로 까는 앱 · 인터넷 권한 없음</div>
-<a class="dl" href="newniverse-sms-v5-test.apk" download>내려받기 · 뉴니버스 문자 v5 (약 0.16MB)</a>
+<h1>뉴니버스 문자 v6 (시험판)</h1><div class="sub">버전 6-test · 뉴니버스 고정 서명(런처·전화와 같은 서명) · 따로 까는 앱 · 인터넷 권한 없음</div>
+<a class="dl" href="newniverse-sms-v6-test.apk" download>내려받기 · 뉴니버스 문자 v6 (약 0.16MB)</a>
+
+<h2>v6에서 고친 점 · 실제 폰에서 온 글자 모양 읽기</h2><ul>
+<li>v5는 실제 폰에서 온 학교 장문을 일정으로 읽지 못했어요. 폰이 보내는 글자는 겉보기와 달리 <b>특수 공백(NBSP 등)</b>, <b>전각 글자(：～０-９)</b>, <b>다른 동그라미(ㅇ ⚬ ◯)</b>, <b>줄바꿈 없는 한 줄</b> 같은 모양이 섞여 있을 수 있는데, 이전 규칙은 보통 공백과 ‘○’만 알아봤어요.</li>
+<li>이제 글을 읽기 전에 <b>줄바꿈·모든 유니코드 공백·0폭 글자·전각 글자·물결표·동그라미</b>를 한 모양으로 맞춰요. ‘일시’ 줄에 날짜가 있으면 되고(<b>2026. 11. 27.</b> / <b>11월 27일</b> / <b>11/27</b>), 시각은 <b>16:00</b> · <b>오후 4시</b> · 따로 적힌 <b>시간:</b> 줄 모두 읽어요. <b>시각이 없으면 하루 종일 일정</b>으로 넣어요.</li>
+<li>설정 › <b>달력 등록 기록</b>에 <b>어느 단계에서 막혔는지</b>가 나와요: <code>parse:no-date</code>(날짜 없음) · <code>parse:deadline-only</code>(마감·신청 기간 날짜뿐) · <code>parse:no-datetime-line</code>(일시 줄이 없음) · <code>parse:past</code>(이미 지난 일정). 본문과 번호는 남기지 않아요.</li>
+<li>시험용 <b>마지막 문자 다시 읽기</b> 단추: 가장 최근에 받은, 날짜가 있는 문자로 달력 단계를 다시 돌려요. 문자를 다시 보내지 않아도 돼요.</li></ul>
 
 <h2>v5에서 고친 점 · 학교·행사 문자가 달력에 안 들어가던 문제</h2><ul>
 <li><b>왜 안 들어갔나</b>: ① 예전 규칙은 “예약 확정” 같은 말이 있는 문자만 일정으로 봤어요. 학교 안내문(“○ 일시: …”)은 일정으로 읽지 못했어요. ② “2026. 11. 27.(금) 16:00”처럼 날짜 끝에 점이 찍힌 모양에서 시각을 못 읽었어요. ③ 학교는 믿을 수 있는 보낸 곳으로 치지 않았어요. ④ 런처 안내로 달력 권한만 허용하고 앱 안에서 ‘켜기’를 누르지 않으면, 권한이 있어도 자동 넣기가 꺼진 채였어요. 이제는 끈 적이 없고 권한이 있으면 켜진 것으로 봐요.</li>
@@ -52,7 +58,7 @@ img.shot{width:31%;border-radius:14px;margin:1%;vertical-align:top}</style></hea
 
 <h2>1. 설치하기</h2><ol>
 <li><b>Play 프로텍트 검사 잠시 끄기</b>: Play 스토어 → 프로필 사진 → Play 프로텍트 → 톱니바퀴 → ‘Play 프로텍트로 앱 검사’ 끄기.</li>
-<li>이 폰의 크롬에서 위 <b>내려받기</b> → 내 파일 › 다운로드 › <b>newniverse-sms-v5-test.apk</b> → (출처 허용) → <b>설치</b>(이미 v4가 있으면 덮어 깔아요. 문자는 그대로예요).</li>
+<li>이 폰의 크롬에서 위 <b>내려받기</b> → 내 파일 › 다운로드 › <b>newniverse-sms-v6-test.apk</b> → (출처 허용) → <b>설치</b>(이미 v5가 있으면 덮어 깔아요. 문자는 그대로예요).</li>
 <li>설치가 끝나면 <b>Play 프로텍트 검사를 다시 켜기</b>.</li></ol>
 
 <h2>2. 처음 켜기 (권한)</h2><ol>

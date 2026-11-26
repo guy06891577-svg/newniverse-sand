@@ -54,7 +54,7 @@ public class CalV5Test{
     x=CalDecide.decide(true,false,LMS,AT,"내 번호","01012345678"); t("no perm → skip(noperm)",x.act.equals("skip")&&x.reason.equals("noperm"));
     x=CalDecide.decide(true,true,LMS,AT,null,"01012345678"); t("stranger → skip(untrusted)",x.act.equals("skip")&&x.reason.equals("untrusted"));
     x=CalDecide.decide(true,true,"안녕 오늘 저녁 뭐 먹어?",AT,"엄마","01011112222"); t("chat no date → skip(nodate)",x.reason.equals("nodate")&&x.r==null);
-    x=CalDecide.decide(true,true,"12/3 3시에 보자 ㅎㅎ",AT,"엄마","01011112222"); t("chat with date → skip(noparse)",x.reason.equals("noparse"));
+    x=CalDecide.decide(true,true,"12/3 3시에 보자 ㅎㅎ",AT,"엄마","01011112222"); t("chat with date → skip(noparse:parse:no-datetime-line)",x.reason.equals("noparse:parse:no-datetime-line"));
     x=CalDecide.decide(true,true,"(광고) 12/3 오후 3시 세일 예약 무료수신거부 080-123-4567",AT,"x","010"); t("ad skip",x.reason.equals("ad"));
     String conf="[안동병원] 장준혁님 2026. 12. 3.(목) 14:00 진료 예약되었습니다.";
     x=CalDecide.decide(true,true,conf,AT,null,"0548401114"); t("confirmed appointment → auto",x.act.equals("auto")&&x.r.when==ms(2026,12,3,14,0)&&!x.r.ask);

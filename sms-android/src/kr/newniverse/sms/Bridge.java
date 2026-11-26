@@ -48,6 +48,8 @@ class Bridge {
   @JavascriptInterface public void calSkip(){ a.runOnUiThread(()->{ AutoCal.setOn(a,false); ((MainActivity)a).js("window.NV_cal&&NV_cal()"); }); }
   @JavascriptInterface public void calDelete(){ CalStore.deleteAll(a); }
   @JavascriptInterface public String diag(){ return SmsDiag.json(a).toString(); }
+  /** v6(시험): 마지막 문자로 달력 단계를 다시 돌려 보기 → {ok, steps, label} */
+  @JavascriptInterface public String calReread(){ try{ return AutoCal.reread(a.getApplicationContext()); }catch(Exception e){ return "{\"ok\":false,\"label\":\"다시 읽지 못했어요 ("+InboxLogic.errClass(e)+")\"}"; } }
   /** v4: 못 받은 장문 다시 받기 → 다시 시도한 개수 */
   @JavascriptInterface public int mmsRetry(){ try{ return MmsInbox.retryAll(a.getApplicationContext()); }catch(Exception e){ return 0; } }
 

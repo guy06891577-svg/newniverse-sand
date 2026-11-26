@@ -391,6 +391,7 @@ function act(k){menuClose();
  if(k==='perm'){permAsked=Date.now();NV&&NV.requestPerms()}
  else if(k==='role'){closeSheet();roleAsked=Date.now();NV&&NV.requestRole()}
  else if(k==='rolewarn')roleWarn();
+ else if(k==='calreread'){const r=NV&&NV.calReread?J(NV.calReread(),{}):{};toast(r.label||'다시 읽지 못했어요');setTimeout(()=>{if(cur==='set')renderSettings()},300)}
  else if(k==='mmsretry'){const n=NV&&NV.mmsRetry?NV.mmsRetry():0;toast(n?'장문을 다시 받고 있어요':'다시 받을 장문이 없어요');setTimeout(()=>{if(cur==='set')renderSettings()},1500)}
  else if(k==='appset'){NV&&NV.openAppSettings()}
  else if(k==='defapps'){NV&&NV.openDefaultApps()}
@@ -460,6 +461,7 @@ function renderSettings(){status();calStatus();const p=ST.perms||{};const yes=b=
   <div class="srow2"><div class="grow">달력 등록<small>${esc(dv.d.calLabel||'아직 없음')}</small></div>${dv.cal}</div>
   <div class="srow2"><div class="grow">자동 넣기<small>끄면 ‘달력에 넣을까요?’도 뜨지 않아요</small></div>${yes(!!dv.d.calOn)}</div>
   <div class="srow2"><div class="grow">달력 권한</div>${yes(!!dv.d.calPerm)}</div>
+  <div class="srow2"><div class="grow">마지막 문자 다시 읽기<small>시험용 · 가장 최근에 받은 날짜가 있는 문자로 달력 단계를 다시 돌려 봐요. 다시 보내지 않아도 돼요.</small></div><button class="sbtn pri" data-b="calreread">다시 읽기</button></div>
  </div>
  <div class="set glass" id="mmsBox"><h3>장문·사진(MMS) 받기 기록 (시험)</h3>
   <div class="srow2"><div class="grow">마지막 도착 신호<small>통신사가 ‘장문이 있어요’ 신호를 보낸 때</small></div><span>${esc(fmtWhen(dv.d.mmsAt))}</span></div>
@@ -469,7 +471,7 @@ function renderSettings(){status();calStatus();const p=ST.perms||{};const yes=b=
   <div class="srow2"><div class="grow">못 받은 장문<small>${(+dv.d.mmsPending||0)>0?'다시 받기를 누르면 통신사에서 다시 내려받아요':'없어요'}</small></div>${(+dv.d.mmsPending||0)>0?'<span class="no2">'+(+dv.d.mmsPending)+'통</span><button class="sbtn pri" data-b="mmsretry">다시 받기</button>':'<span class="ok">0</span>'}</div>
  </div>
  <div class="set glass"><h3>알아 두기</h3>
-  <div class="steps">문자 내용은 폰 밖으로 나가지 않아요 (인터넷 권한 없음).<br>사진·장문(LMS/MMS)은 기본 문자 앱일 때 받아서 저장해요. 사진·장문 보내기는 아직 안 되고, 긴 글은 여러 개의 문자로 나눠 보내요.<br>뉴니버스 문자 v5 시험판 · ${esc(ST.ver||'')} · 안드로이드 ${ST.sdk||'?'}</div>
+  <div class="steps">문자 내용은 폰 밖으로 나가지 않아요 (인터넷 권한 없음).<br>사진·장문(LMS/MMS)은 기본 문자 앱일 때 받아서 저장해요. 사진·장문 보내기는 아직 안 되고, 긴 글은 여러 개의 문자로 나눠 보내요.<br>뉴니버스 문자 v6 시험판 · ${esc(ST.ver||'')} · 안드로이드 ${ST.sdk||'?'}</div>
  </div>`;bindB($('#setList'))}
 $('#sBack').onclick=()=>{buzz();goList()};
 

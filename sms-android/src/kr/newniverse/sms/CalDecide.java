@@ -15,7 +15,7 @@ final class CalDecide {
     if(SmsSafety.isAd(body)){ d.reason="ad"; return d; }
     if(SmsSafety.suspicious(body)){ d.reason="suspicious"; return d; }
     ApptParser.R r=ApptParser.parse(body,at,contact,addr);
-    if(r==null){ d.reason=ApptParser.hasDate(body,at)?"noparse":"nodate"; return d; }
+    if(r==null){ d.reason=ApptParser.hasDate(body,at)?"noparse:"+ApptParser.why(body,at):"nodate"; return d; }
     d.r=r;
     if(!r.trusted){ d.reason="untrusted"; return d; }
     if(!on){ d.reason="off"; return d; }

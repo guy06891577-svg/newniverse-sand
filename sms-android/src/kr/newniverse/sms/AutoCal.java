@@ -25,24 +25,49 @@ final class AutoCal {
   static String contactName(Context c,String addr){ try{ return Nv.lookupName(c,addr); }catch(Exception e){ return null; } }
 
   /** 새 문자·장문을 받을 때(기본 문자 앱). 결과는 설정 › 달력 등록 진단에 남김 */
-  static void onSms(Context c,String addr,String body,long at){
+  static void onSms(Context c,String addr,String body,long at){ process(c,addr,body,at,false); }
+
+  /** 처리하고 {단계, 이유} 를 돌려줌. recordNoDate: 날짜 없는 문자도 기록(‘다시 읽기’ 때) */
+  static String[] process(Context c,String addr,String body,long at,boolean recordNoDate){
     try{
       CalDecide.D d=CalDecide.decide(on(c),perm(c),body,at,contactName(c,addr),addr);
-      if("nodate".equals(d.reason)&&d.r==null) return; // 날짜 없는 일상 문자는 기록하지 않음
-      if("skip".equals(d.act)){ SmsDiag.cal(c,"skip",d.reason); return; }
-      if("ask".equals(d.act)){ SmsDiag.cal(c,"ask",""); notifyAsk(c,d.r,addr,body,at); return; }
-      insertAuto(c,d.r,addr);
-    }catch(Exception e){ try{ SmsDiag.cal(c,"try>fail","insert:"+InboxLogic.errClass(e)); }catch(Exception x){} }
+      if("nodate".equals(d.reason)&&d.r==null){ if(recordNoDate) SmsDiag.cal(c,"skip","nodate"); return new String[]{"skip","nodate"}; }
+      if("skip".equals(d.act)){ SmsDiag.cal(c,"skip",d.reason); return new String[]{"skip",d.reason}; }
+      if("ask".equals(d.act)){ SmsDiag.cal(c,"ask",""); notifyAsk(c,d.r,addr,body,at); return new String[]{"ask",""}; }
+      return insertAuto(c,d.r,addr);
+    }catch(Exception e){ String why="insert:"+InboxLogic.errClass(e); try{ SmsDiag.cal(c,"try>fail",why); }catch(Exception x){} return new String[]{"try>fail",why}; }
   }
-  private static void insertAuto(Context c,ApptParser.R r,String addr){
-    if(!CalStore.hasProvider(c)){ SmsDiag.cal(c,"try>fail","nocalapp"); warnNoCalendar(c,true); return; }
+
+  /** 시험용 ‘마지막 문자 다시 읽기’: 받은 문자(SMS·장문) 중 숫자 날짜가 있는 가장 최근 것으로 달력 단계를 다시 돌림. 본문은 어디에도 저장하지 않음 */
+  static String reread(Context c){
+    java.util.List<Object[]> l=new java.util.ArrayList<>(); // {date, addr, body}
+    android.content.ContentResolver cr=c.getContentResolver();
+    try(android.database.Cursor q=cr.query(android.provider.Telephony.Sms.Inbox.CONTENT_URI,new String[]{"address","body","date"},null,null,"date DESC")){
+      int n=0; while(q!=null&&q.moveToNext()&&n++<30) l.add(new Object[]{q.getLong(2),q.getString(0),q.getString(1)});
+    }catch(Exception e){}
+    try(android.database.Cursor q=cr.query(MmsInbox.MMS_INBOX,new String[]{"_id","date","sub","sub_cs"},null,null,"date DESC")){
+      int n=0; while(q!=null&&q.moveToNext()&&n++<30){ long id=q.getLong(0); String[] tx=MmsInbox.text(cr,id);
+        String sub=MmsLogic.fromIso(q.getString(2),q.isNull(3)?0:q.getInt(3));
+        l.add(new Object[]{MmsLogic.msFromMmsDate(q.getLong(1)),MmsInbox.from(cr,id,1),MmsLogic.feedText(sub,tx[0])}); }
+    }catch(Exception e){}
+    l.sort((x,y)->Long.compare((Long)y[0],(Long)x[0]));
+    Object[] pick=null; for(Object[] m:l) if(ApptParser.hasDate((String)m[2],(Long)m[0])){ pick=m; break; }
+    if(pick==null&&!l.isEmpty()) pick=l.get(0);
+    if(pick==null){ SmsDiag.cal(c,"skip","nodate"); return "{\"ok\":false,\"label\":\"받은 문자가 없어요\"}"; }
+    String[] r=process(c,(String)pick[1],(String)pick[2],(Long)pick[0],true);
+    String why=r[1]==null?"":r[1]; String label=CalDecide.stepsLabel(r[0],why.contains(":")?why.substring(0,why.indexOf(':')):why)+(why.contains(":")?" · "+why.substring(why.indexOf(':')+1):"");
+    return "{\"ok\":true,\"steps\":\""+r[0]+"\",\"label\":\""+label.replace("\"","'")+"\"}";
+  }
+  private static String[] insertAuto(Context c,ApptParser.R r,String addr){
+    if(!CalStore.hasProvider(c)){ SmsDiag.cal(c,"try>fail","nocalapp"); warnNoCalendar(c,true); return new String[]{"try>fail","nocalapp"}; }
     CalStore st=new CalStore(c);
     CalLogic.Out o=CalLogic.apply(st,r,addr,false);
-    if("fail".equals(o.op)){ SmsDiag.cal(c,"try>fail","insert"+(st.err.isEmpty()?"":":"+st.err)); noticeFail(c); return; }
-    if("dup".equals(o.op)){ SmsDiag.cal(c,"skip","dup"); return; }
-    if("none".equals(o.op)){ SmsDiag.cal(c,"skip","noparse"); return; }
+    if("fail".equals(o.op)){ String why="insert"+(st.err.isEmpty()?"":":"+st.err); SmsDiag.cal(c,"try>fail",why); noticeFail(c); return new String[]{"try>fail",why}; }
+    if("dup".equals(o.op)){ SmsDiag.cal(c,"skip","dup"); return new String[]{"skip","dup"}; }
+    if("none".equals(o.op)){ SmsDiag.cal(c,"skip","noparse"); return new String[]{"skip","noparse"}; }
     SmsDiag.cal(c,"try>ok",""); notifyOut(c,o);
     if(!CalStore.hasViewer(c)) warnNoCalendar(c,false);
+    return new String[]{"try>ok",""};
   }
   /** 카드의 「달력에 추가」·‘넣기’ 단추: ok / dup / perm / unsafe / none / fail */
   static String manual(Context c,String addr,String body,long at){
