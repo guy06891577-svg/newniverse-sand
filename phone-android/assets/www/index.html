@@ -269,6 +269,56 @@ h1 small{font-size:13px;font-weight:600;color:var(--sub)}
 .empty .b2{margin-left:8px;background:none;color:var(--fg);border:1px solid var(--line)}
 .empty small{display:block;margin-top:8px;font-size:12.5px;color:var(--sub)}
 
+/* mode (상황 모드) */
+.mdh{display:flex;align-items:center;gap:12px;padding:12px 2px 10px}
+.mdi{flex:none;width:44px;height:44px;border-radius:15px;display:flex;align-items:center;justify-content:center;background:rgba(143,107,255,.14);border:1px solid rgba(143,107,255,.3);color:var(--a1)}
+.mdi svg{width:23px;height:23px}
+.mdh .grow{flex:1;min-width:0}
+.mdn{font-size:18px;font-weight:800;letter-spacing:-.3px}
+.mds{font-size:12.5px;color:var(--sub);margin-top:3px;line-height:1.4}
+.mdbtn{flex:none;min-width:74px;height:42px;padding:0 16px;border-radius:21px;font-size:14.5px;font-weight:800;color:#0a0820;background:var(--acc);box-shadow:0 6px 22px rgba(111,160,255,.3)}
+.mdbtn.off{color:var(--fg);background:rgba(255,255,255,.1);border:1px solid var(--line);box-shadow:none}
+.md.on{border-color:rgba(111,211,255,.5);box-shadow:0 0 0 1px rgba(143,107,255,.25) inset,0 10px 40px rgba(111,160,255,.12)}
+.mdt{display:flex;gap:6px;padding:2px 0 10px;flex-wrap:wrap;align-items:center;font-size:12.5px;color:var(--sub)}
+.mdt button,.mdsg button{padding:7px 12px;border-radius:15px;font-size:13px;font-weight:600;color:var(--sub);border:1px solid var(--line)}
+.mdt button.on,.mdsg button.on{color:#0a0820;background:var(--acc);border-color:transparent}
+.mdsg{display:flex;gap:6px;flex-wrap:wrap;padding:4px 0 8px}
+.mdneed{display:flex;align-items:center;gap:10px;padding:9px 12px;margin:0 0 8px;border-radius:15px;font-size:12.5px;line-height:1.45;color:var(--sub);background:rgba(255,77,109,.07);border:1px solid rgba(255,77,109,.28)}
+.mdneed b{display:block;color:var(--fg);font-size:13px}
+.mdneed .grow{flex:1;min-width:0}
+.mdmore{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;height:40px;font-size:13px;font-weight:600;color:var(--sub);border-top:1px solid rgba(255,255,255,.06)}
+.mdmore svg{width:16px;height:16px;transition:transform .2s}
+.mdmore.open svg{transform:rotate(180deg)}
+.mdset h4{font-size:12.5px;font-weight:700;color:var(--sub);padding:10px 2px 2px}
+.tg{flex:none;width:50px;height:30px;border-radius:15px;background:rgba(255,255,255,.12);border:1px solid var(--line);position:relative;transition:background .15s}
+.tg:after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#e9e6ff;transition:transform .15s}
+.tg[aria-checked=true]{background:var(--acc);border-color:transparent}
+.tg[aria-checked=true]:after{transform:translateX(20px);background:#0a0820}
+.mdtx{width:100%;min-height:78px;resize:none;margin:6px 0 2px;padding:11px 13px;border-radius:15px;font-size:14.5px;line-height:1.5;color:var(--fg);background:rgba(255,255,255,.06);border:1px solid var(--line);outline:none;font-family:inherit}
+.mdtx:focus{border-color:rgba(111,211,255,.6)}
+.mdtxf{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--dim);padding:0 2px 6px}
+.mdtxf button{color:var(--a1);font-weight:600;font-size:12.5px}
+.smh{margin:2px 4px 10px;padding:14px 16px;border-radius:20px;font-size:13px;color:var(--sub);line-height:1.6}
+.smh b{display:block;font-size:19px;color:var(--fg);letter-spacing:-.3px}
+.smrow{display:flex;align-items:center;gap:12px;padding:11px 12px;border-bottom:1px solid rgba(255,255,255,.06)}
+.smrow:last-child{border-bottom:none}
+.smrow .grow{flex:1;min-width:0}
+.smrow .nm{font-size:15.5px;font-weight:700;display:flex;align-items:center;gap:6px}
+.smrow .nm .t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.smrow .meta{font-size:12.5px;color:var(--sub);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.smrow .qb{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);color:var(--a1)}
+.smrow .qb svg{width:19px;height:19px}
+.smrow .qb.pri{background:var(--acc);color:#0a0820;border:none}
+.smrow .meta.x{white-space:normal;color:var(--fg);opacity:.85;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.smnote{font-size:12.5px;color:var(--sub);line-height:1.6;padding:8px 14px 10px}
+.smnote b{color:var(--fg)}
+.smok{margin:6px 4px 0;height:50px;width:calc(100% - 8px);border-radius:25px;font-size:15px;font-weight:800;color:#0a0820;background:var(--acc)}
+.st1{font-size:12px;font-weight:700}.st1.ok{color:var(--a1)}.st1.fail{color:#ff8da0}.st1.wait{color:var(--sub)}
+.mdban{cursor:pointer}
+.mdban .mdi{width:38px;height:38px;border-radius:13px}
+.mdban .mdi svg{width:20px;height:20px}
+.mdban.on{border-color:rgba(111,211,255,.45)}
+
 /* call */
 #ctl{display:flex;flex-wrap:wrap;justify-content:center;gap:16px 14px}
 #ctl .cb{width:30%}
@@ -347,6 +397,16 @@ h1 small{font-size:13px;font-weight:600;color:var(--sub)}
  </div>
  <button class="endc" id="icEnd" aria-label="통화 종료" data-i="phone"></button>
  <div style="font-size:12.5px;color:var(--sub);margin-top:8px">종료</div>
+</section>
+
+<section class="view" id="v-modes" hidden>
+ <h1 class="sub"><button class="icb" id="mdBack" aria-label="뒤로"></button>상황 모드</h1>
+ <div class="scroll" id="mdList"></div>
+</section>
+
+<section class="view" id="v-summary" hidden>
+ <h1 class="sub"><button class="icb" id="smBack" aria-label="뒤로"></button><span id="smTitle">모드 요약</span></h1>
+ <div class="scroll" id="smList"></div>
 </section>
 
 <nav id="tabs" class="glass">
@@ -452,7 +512,7 @@ function load(){
  PEOPLE=new Map();
  CALLS=P0.log?J(()=>NV.getCalls(30),[]):[];
  CALLS.forEach(c=>{c.p=person(c.num,c.name,c.pres);c.t=c.date});
- setToday();
+ setToday();mdLoad();
 }
 const dayOff=t=>{const d=new Date(t);d.setHours(0,0,0,0);return Math.round((today-d.getTime())/DAY)};
 const c15=key=>CALLS.reduce((s,c)=>s+(c.p.key===key&&!pendingDel.has(c.id)&&dayOff(c.t)<15?1:0),0);
@@ -468,7 +528,7 @@ const avHtml=(p,dot)=>`<div class="av${p.unk?' unk':''}">${p.unk?ic('user'):esc(
 /* ---------- toast / sheet ---------- */
 let tT;function toast(msg,btn,fn,ms){const t=$('#toast');t.firstElementChild.textContent=msg;const b=t.lastElementChild;b.textContent=btn||'';b.style.display=btn?'':'none';b.onclick=()=>{t.classList.remove('on');clearTimeout(tT);fn&&fn()};t.classList.add('on');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('on'),ms||3200)}
 function sheet(html){const s=$('#sheet');s.innerHTML=html;s.querySelectorAll('[data-i]').forEach(e=>e.insertAdjacentHTML('afterbegin',ic(e.dataset.i)));s.classList.add('on');$('#bd').classList.add('on')}
-function closeSheet(){$('#sheet').classList.remove('on');$('#bd').classList.remove('on')}
+function closeSheet(){try{mdPend=null}catch(e){}$('#sheet').classList.remove('on');$('#bd').classList.remove('on')}
 $('#bd').onclick=closeSheet;
 function personSheet(p){if(p.hidden){toast('번호가 표시되지 않은 전화예요');return}
  const n=c15(p.key);
@@ -523,10 +583,11 @@ function groups(){const map=new Map();
  return [...days.entries()].sort((a,b)=>a[0]-b[0]).map(([off,gs])=>({off,gs:gs.sort((a,b)=>b.last.t-a.last.t)}))}
 function banners(){const P0=ST.perms||{};let h='';
  if(!NV)return '';
+ h+=mdBanner();
  if(!P0.log||!P0.contacts||!P0.phone)h+=`<div class="banner glass warn"><div class="grow"><b>권한이 필요해요</b>${[!P0.log&&'통화 기록',!P0.contacts&&'연락처',!P0.phone&&'전화'].filter(Boolean).join(' · ')}</div><button data-b="perm">허용</button></div>`;
  return h}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-b]');if(!b||!NV)return;const a=b.dataset.b;menuClose();if(b.closest('#sheet'))closeSheet();
- if(a==='role'){roleAsked=Date.now();NV.requestRole()}else if(a==='settab')show('settings');else if(a==='perm'){permAsked=Date.now();NV.requestPerms()}else if(a==='none'){}else if(a==='perm')NV.requestPerms();else if(a==='defapps')NV.openDefaultApps();else if(a==='appset')NV.openAppSettings();else if(a==='fsi')NV.openFsiSettings()});
+ if(a==='role'){roleAsked=Date.now();NV.requestRole()}else if(a==='settab')show('settings');else if(a==='perm'){permAsked=Date.now();NV.requestPerms()}else if(a==='none'){}else if(a==='perm')NV.requestPerms();else if(a==='defapps')NV.openDefaultApps();else if(a==='appset')NV.openAppSettings();else if(a==='fsi')NV.openFsiSettings();else if(a==='modes')show('modes');else if(a==='mdoff')mdStop();else if(a==='summary'){smData=J(()=>NV.modeSummary(),{});show('summary')}});
 function renderRecent(){
  $('#rBanner').innerHTML=banners();
  const ds=groups();const rows=ds.reduce((s,d)=>s+d.gs.length,0);const live=CALLS.filter(c=>!pendingDel.has(c.id)&&dayOff(c.t)<15).length;
@@ -645,8 +706,9 @@ $('#sList').addEventListener('click',e=>{if(e.target.id==='rsClr'){localStorage.
 /* ---------- 키패드 ⋮ 메뉴 (v2) ---------- */
 let roleAsked=0,permAsked=0;
 function permMissing(){const P0=ST.perms||{};return [!P0.log&&'통화 기록',!P0.contacts&&'연락처',!P0.phone&&'전화'].filter(Boolean)}
-function moreDot(){const b=$('#kpMore');if(!b)return;const need=!!NV&&((!ST.def&&ST.canRole!==false)||permMissing().length>0);let d=b.querySelector('i');if(need&&!d)b.insertAdjacentHTML('beforeend','<i></i>');else if(!need&&d)d.remove()}
+function moreDot(){const b=$('#kpMore');if(!b)return;const need=!!NV&&((!ST.def&&ST.canRole!==false)||permMissing().length>0||!!MS.active||!!MS.pending);let d=b.querySelector('i');if(need&&!d)b.insertAdjacentHTML('beforeend','<i></i>');else if(!need&&d)d.remove()}
 function menuItems(){const miss=permMissing();let h='';
+ {const a=MS.active;h+=`<button class="mi" role="menuitem" data-b="modes"><span data-i="moon"></span><div>${a?esc(mdName(a.id))+' 켜져 있어요':'상황 모드'}<small>${a?'눌러서 끄거나 설정 바꾸기':'운전 중 · 회의 중 · 조용히 하고 문자로 답장'}</small></div></button><hr>`}
  if(ST.def)h+=`<div class="mi st" role="menuitem" aria-disabled="true" data-b="none"><span data-i="check"></span><div><b>기본 전화 앱 사용 중</b><small>걸려오는 전화도 뉴니버스 화면으로 받아요</small></div></div>`;
  else if(ST.canRole===false)h+=`<button class="mi" role="menuitem" data-b="defapps"><span data-i="phone"></span><div>기본 전화 앱으로 설정<small>폰의 기본 앱 설정에서 고를 수 있어요</small></div></button>`;
  else h+=`<button class="mi" role="menuitem" data-b="role"><span data-i="phone"></span><div>기본 전화 앱으로 설정<small>걸려오는 전화도 뉴니버스 화면으로 받아요</small></div></button>`;
@@ -657,7 +719,7 @@ function menuItems(){const miss=permMissing();let h='';
  if(ST.def)h+=`<button class="mi" role="menuitem" data-b="defapps"><span data-i="ret"></span><div>원래 전화 앱으로 돌아가기<small>기본 앱 설정 › 전화 앱 › 전화</small></div></button>`;
  h+=`<button class="mi" role="menuitem" data-b="settab"><span data-i="gear"></span><div>전화 설정 전체 보기</div></button>`;
  return h}
-function menuOpen(){if(NV)try{ST=JSON.parse(NV.status())}catch(e){}const m=$('#kpMenu');m.innerHTML=menuItems();m.querySelectorAll('[data-i]').forEach(e=>e.insertAdjacentHTML('afterbegin',ic(e.dataset.i)));m.hidden=false;$('#mbd').hidden=false;$('#kpMore').classList.add('on');$('#kpMore').setAttribute('aria-expanded','true')}
+function menuOpen(){if(NV)try{ST=JSON.parse(NV.status())}catch(e){}mdLoad();const m=$('#kpMenu');m.innerHTML=menuItems();m.querySelectorAll('[data-i]').forEach(e=>e.insertAdjacentHTML('afterbegin',ic(e.dataset.i)));m.hidden=false;$('#mbd').hidden=false;$('#kpMore').classList.add('on');$('#kpMore').setAttribute('aria-expanded','true')}
 function menuClose(){const m=$('#kpMenu');if(!m||m.hidden)return false;m.hidden=true;$('#mbd').hidden=true;$('#kpMore').classList.remove('on');$('#kpMore').setAttribute('aria-expanded','false');return true}
 $('#kpMore').onclick=e=>{e.stopPropagation();buzz();if(!$('#kpMenu').hidden)menuClose();else menuOpen()};
 $('#mbd').onclick=menuClose;
@@ -677,6 +739,9 @@ function renderSettings(){const P0=ST.perms||{};const yes=b=>b?'<span class="ok"
  <div class="set glass"><h3>기본 전화 앱</h3>
   <div class="srow2"><div class="grow">뉴니버스 전화를 기본으로<small>${ST.def?'지금 기본 전화 앱이에요. 걸려오는 전화도 이 화면으로 받아요.':'지금은 원래 전화 앱이 기본이에요. 걸기·기록 보기는 되지만, 걸려오는 전화는 원래 앱 화면으로 떠요.'}</small></div>${ST.def?'<span class="ok">사용 중</span>':'<button class="sbtn pri" data-b="role">설정</button>'}</div>
  </div>
+ <div class="set glass"><h3>상황 모드</h3>
+  <div class="srow2"><div class="grow">운전 중 · 회의 중<small>${MS.active?esc(mdName(MS.active.id))+' 켜져 있어요':'켜면 전화·알림이 조용해지고, 못 받은 전화에 문자로 답장해요.'}</small></div><button class="sbtn pri" data-b="modes">열기</button></div>
+ </div>
  <div class="set glass"><h3>권한</h3>
   <div class="srow2"><div class="grow">통화 기록<small>최근 통화, 15일 통화 수, 묶음 삭제</small></div>${yes(P0.log&&P0.wlog)}</div>
   <div class="srow2"><div class="grow">연락처<small>이름 표시, 초성 검색</small></div>${yes(P0.contacts)}</div>
@@ -693,26 +758,28 @@ function renderSettings(){const P0=ST.perms||{};const yes=b=>b?'<span class="ok"
   <div class="srow2"><div class="grow">기본 앱 설정 바로 열기</div><button class="sbtn" data-b="defapps">열기</button></div>
  </div>
  <div class="set glass"><h3>알아 두기</h3>
-  <div class="steps">112·119 같은 긴급 전화는 안전을 위해 항상 폰 기본 전화 앱이 연결해요.<br>통화 녹음은 넣지 않았어요 (안드로이드가 일반 앱의 통화 녹음을 막아요).<br>뉴니버스 전화 v4 시험판 · ${esc(ST.ver||'')} · 안드로이드 ${ST.sdk||'?'}</div>
+  <div class="steps">112·119 같은 긴급 전화는 안전을 위해 항상 폰 기본 전화 앱이 연결해요.<br>통화 녹음은 넣지 않았어요 (안드로이드가 일반 앱의 통화 녹음을 막아요).<br>뉴니버스 전화 v5 시험판 · ${esc(ST.ver||'')} · 안드로이드 ${ST.sdk||'?'}</div>
  </div>`}
 
 /* ---------- 화면 전환 ---------- */
 let cur='recent';
-const VIEWS=['keypad','recent','search','settings','incoming','incall'];
+const VIEWS=['keypad','recent','search','settings','modes','summary','incoming','incall'];
 let setFrom='keypad';
-function show(v,keep){if(v==='settings'&&cur!=='settings'&&VIEWS.includes(cur)&&cur!=='incoming'&&cur!=='incall')setFrom=cur;cur=v;VIEWS.forEach(x=>$('#v-'+x).hidden=x!==v);
- const full=v==='incoming'||v==='incall'||v==='settings';$('#tabs').style.display=full?'none':'';if(!keep)closeSheet();menuClose();
+function show(v,keep){if(v==='settings'&&!['settings','modes','summary','incoming','incall'].includes(cur)&&VIEWS.includes(cur))setFrom=cur;if((v==='modes'||v==='summary')&&!['modes','summary','incoming','incall'].includes(cur)&&VIEWS.includes(cur))mdFrom=cur;cur=v;VIEWS.forEach(x=>$('#v-'+x).hidden=x!==v);
+ const full=v==='incoming'||v==='incall'||v==='settings'||v==='modes'||v==='summary';$('#tabs').style.display=full?'none':'';if(!keep)closeSheet();menuClose();
  $$('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
- if(v==='keypad'){KP=kpPeople();renderKp()}if(v==='recent'){renderRecent();NV&&NV.clearMissed&&NV.clearMissed()}if(v==='search')renderSearch();if(v==='settings')renderSettings();
- if(v!=='settings')try{localStorage.setItem('nvp_tab',v)}catch(e){}}
+ if(v==='keypad'){KP=kpPeople();renderKp()}if(v==='recent'){mdLoad();renderRecent();NV&&NV.clearMissed&&NV.clearMissed()}if(v==='search')renderSearch();if(v==='settings')renderSettings();if(v==='modes'){mdLoad();renderModes()}if(v==='summary'){if(!smData)smData=J(()=>NV&&NV.modeSummary(),{});renderSummary()}
+ if(v!=='settings'&&v!=='modes'&&v!=='summary')try{localStorage.setItem('nvp_tab',v)}catch(e){}}
 $('#tabs').onclick=e=>{const b=e.target.closest('button');if(b){buzz();show(b.dataset.v)}};
 function incallBar(){let b=$('#incallBar');if(!b){b=document.createElement('button');b.id='incallBar';b.innerHTML=ic('phone')+'<span>통화 중 · 눌러서 통화 화면으로</span>';b.onclick=()=>NV&&NV.openCall();$('#app').appendChild(b)}b.classList.toggle('on',!!ST.inCall)}
 
-window.NV_resume=(why,ok)=>{if(MODE!=='main')return;const keep=$('#sheet').classList.contains('on');load();incallBar();show(cur,keep);moreDot();
+window.NV_resume=(why,ok)=>{if(MODE!=='main')return;const keep=$('#sheet').classList.contains('on');load();incallBar();if(cur==='summary')smData=J(()=>NV.modeSummary(),smData);show(cur,keep);moreDot();
+ if(why==='perm'&&mdAsked){const quick=Date.now()-mdAsked<1500,w=mdAskW;mdAsked=0;const P1=MS.perms||{};if(quick&&((w==='sms'&&!P1.sms)||(w==='readsms'&&!P1.readSms))){mdRestricted(w);return}}
+ if(mdPend&&$('#sheet').classList.contains('on'))mdSetup(mdPend);
  if(why==='role'){roleAsked=0;if(ST.def)toast('기본 전화 앱으로 설정됐어요');else restrictedSheet('role')}
  else if(why==='perm'&&permAsked){const quick=Date.now()-permAsked<1500;permAsked=0;if(ST.perms&&!ST.perms.log&&quick)restrictedSheet('perm')}};
-window.NV_intent=()=>{if(!NV)return;const v=NV.takeView(),d=NV.takeDial();if(v==='keypad'){num=d?String(d).replace(/[^\d+*#]/g,''):num;show('keypad')}else if(v==='recent')show('recent')};
-window.NV_back=()=>{if(menuClose())return true;if($('#sheet').classList.contains('on')){closeSheet();return true}if(cur==='settings'){show(setFrom||'keypad');return true}if(cur==='keypad'&&num){num='';renderKp();return true}if(cur!=='recent'){show('recent');return true}return false};
+window.NV_intent=()=>{if(!NV)return;const v=NV.takeView(),d=NV.takeDial();if(v==='keypad'){num=d?String(d).replace(/[^\d+*#]/g,''):num;show('keypad')}else if(v==='recent')show('recent');else if(v)mdView(v)};
+window.NV_back=()=>{if(menuClose())return true;if($('#sheet').classList.contains('on')){closeSheet();return true}if(cur==='settings'){show(setFrom||'keypad');return true}if(cur==='modes'||cur==='summary'){show(mdFrom||'recent');return true}if(cur==='keypad'&&num){num='';renderKp();return true}if(cur!=='recent'){show('recent');return true}return false};
 
 /* ======================= 통화 화면 (mode=call) ======================= */
 let CS=null,tmr=null,endT=null,lastLive=null,dtmfStr='';
@@ -765,10 +832,158 @@ $('#dtmfHide').onclick=()=>{$('#dtmf').classList.remove('on');$('#ctl').style.di
 $('#dtmf .kg').addEventListener('click',e=>{const k=e.target.closest('.key');if(!k)return;buzz();dtmfStr+=k.dataset.d;$('#dtmfNum').textContent=dtmfStr.slice(-18);NV&&NV.dtmf(k.dataset.d)});
 $('#icEnd').onclick=()=>{buzz();NV&&NV.hangup()};
 
+/* ---------- 상황 모드 (운전 중 · 회의 중) ---------- */
+Object.assign(P,{
+ car:'<path d="M4.5 16V12l1.7-4.3A2 2 0 0 1 8.1 6.5h7.8a2 2 0 0 1 1.9 1.2L19.5 12v4"/><path d="M3.5 12h17M4.5 16h15v2.2h-2.6V16M7.1 16v2.2H4.5"/><circle cx="8" cy="14" r=".6"/><circle cx="16" cy="14" r=".6"/>',
+ users:'<circle cx="9" cy="8.5" r="3.2"/><path d="M3 19.5a6 6 0 0 1 12 0M16 5.6a3 3 0 0 1 0 5.8M18.2 14.6a5.6 5.6 0 0 1 3 4.9"/>',
+ moon:'<path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/>'
+});
+const MD_IC={drive:'car',meeting:'users'};
+let MS={},mdOpen={},mdFrom='recent',mdPend=null,smData=null,mdAsked=0;
+function mdLoad(){MS=NV?J(()=>NV.modes(),{}):{}}
+const mdDefs=()=>MS.defs||[];
+const mdName=id=>{const d=mdDefs().find(x=>x.id===id);return d?d.name:(id==='meeting'?'회의 중':'운전 중')};
+const mdCfg=id=>(MS.cfg&&MS.cfg[id])||{text:'',allow:'none',repeat:false,reply:true,other:false,contactsOnly:false,texts:true,timer:0};
+function mdDur(ms){const m=Math.max(0,Math.floor(ms/60000));if(m<1)return '방금';if(m<60)return m+'분';const h=Math.floor(m/60),r=m%60;return r?h+'시간 '+r+'분':h+'시간'}
+const mdTm=t=>hm(t);
+function mdMissing(id){const P0=MS.perms||{},cf=mdCfg(id),o=[];
+ if(!P0.dnd)o.push('dnd');
+ if(cf.reply&&(!P0.sms||(!MS.def&&!P0.phone)))o.push('sms');
+ return o}
+let mdAskW='';
+function mdAskOnce(a){mdAsked=Date.now();mdAskW=a;NV&&NV.modeAsk(a)}
+function mdActiveLine(a){const bits=[mdDur(Date.now()-a.start)+'째'];
+ if(a.end>0)bits.push(mdTm(a.end)+'에 자동으로 꺼져요');
+ bits.push('자동 답장 '+(a.sent||0)+'건');
+ bits.push(a.dnd?(a.keep?'방해 금지는 이미 더 강하게 켜져 있어 그대로 둠':'방해 금지 켜짐'):'방해 금지 허용 없음');
+ return bits.join(' · ')}
+function mdBanner(){if(!NV||!MS)return '';let h='';const a=MS.active,p=MS.pending;
+ if(a)h+=`<div class="banner glass mdban on" data-b="modes"><span class="mdi">${ic(MD_IC[a.id]||'moon')}</span><div class="grow"><b>${esc(mdName(a.id))} 켜져 있어요</b>${esc(mdDur(Date.now()-a.start))}째 · 자동 답장 ${a.sent||0}건</div><button data-b="mdoff">끄기</button></div>`;
+ else if(p)h+=`<div class="banner glass mdban" data-b="summary"><span class="mdi">${ic(MD_IC[p.id]||'moon')}</span><div class="grow"><b>${esc(mdName(p.id))}이 끝났어요</b>${esc(mdTm(p.start))} ~ ${esc(mdTm(p.end))} · 놓친 전화 확인</div><button data-b="summary">보기</button></div>`;
+ return h}
+const tg=(k,on,id)=>`<button class="tg" role="switch" aria-checked="${!!on}" data-md="tg" data-k="${k}" data-id="${id}"></button>`;
+function renderModes(){
+ const el=$('#mdList'),sc=el.scrollTop;const P0=MS.perms||{};let h='';
+ h+=`<div class="hint" style="padding:0 18px 10px;text-align:left">켜 두면 전화가 와도 소리 없이 지나가고, 못 받은 전화에는 문자로 답장을 보내요. 끄면 놓친 전화를 한곳에 모아 보여줘요.</div>`;
+ mdDefs().forEach(d=>{const id=d.id,cf=mdCfg(id),a=MS.active&&MS.active.id===id,open=!!mdOpen[id],miss=mdMissing(id);
+  h+=`<div class="set glass md${a?' on':''}" data-id="${id}">
+   <div class="mdh"><span class="mdi">${ic(MD_IC[id]||'moon')}</span><div class="grow"><div class="mdn">${esc(d.name)}</div><div class="mds">${a?esc(mdActiveLine(MS.active)):(id==='meeting'?'회의에 들어가기 전에 켜요':'운전하기 전에 켜요')}</div></div>
+    <button class="mdbtn${a?' off':''}" data-md="toggle" data-id="${id}" aria-label="${esc(d.name)} ${a?'끄기':'켜기'}">${a?'끄기':'켜기'}</button></div>`;
+  if(d.timers&&!a)h+=`<div class="mdt"><span>자동으로 끄기</span>${[[0,'안 함'],[30,'30분'],[60,'1시간'],[120,'2시간']].map(([m,l])=>`<button data-md="timer" data-id="${id}" data-m="${m}" class="${cf.timer===m?'on':''}">${l}</button>`).join('')}</div>`;
+  miss.forEach(m=>{
+   if(m==='dnd')h+=`<div class="mdneed"><div class="grow"><b>방해 금지 접근을 허용해 주세요</b>허용하면 켜는 동안 벨소리와 알림이 조용해져요</div><button class="sbtn pri" data-md="ask" data-w="dnd">허용</button></div>`;
+   else h+=`<div class="mdneed"><div class="grow"><b>문자 보내기를 허용해 주세요</b>자동 답장에 필요해요${MS.def?'':' (기본 전화 앱이 아니라서 ‘전화 상태’도 함께 물어요)'}</div><button class="sbtn pri" data-md="ask" data-w="sms">허용</button></div>`});
+  h+=`<button class="mdmore${open?' open':''}" data-md="open" data-id="${id}">설정 ${open?'접기':'펼치기'}${ic('chev')}</button>`;
+  if(open){
+   h+=`<div class="mdset"><h4>방해 금지 · 이 사람들은 울려요</h4>
+    <div class="mdsg">${[['none','모두 조용히'],['starred','즐겨찾기만'],['contacts','연락처 사람만']].map(([v,l])=>`<button data-md="allow" data-id="${id}" data-v="${v}" class="${cf.allow===v?'on':''}">${l}</button>`).join('')}</div>
+    <div class="srow2"><div class="grow">같은 번호가 15분 안에 또 걸면 울려요<small>급한 전화는 두 번 걸려 오는 경우가 많아요</small></div>${tg('repeat',cf.repeat,id)}</div>
+    <div class="srow2"><div class="grow"><small>즐겨찾기는 연락처에서 별표를 한 사람이에요. 알람은 언제나 울려요.</small></div></div>
+    <h4>못 받은 전화에 문자로 답장</h4>
+    <div class="srow2"><div class="grow">자동 답장 보내기<small>같은 번호에는 한 번만, 모드 한 번에 최대 40건</small></div>${tg('reply',cf.reply,id)}</div>
+    <textarea class="mdtx" data-id="${id}" maxlength="140" aria-label="자동 답장 문구" ${cf.reply?'':'disabled'}>${esc(cf.text)}</textarea>
+    <div class="mdtxf"><span class="cc">${[...(cf.text||'')].length}/140</span><button data-md="deftext" data-id="${id}">기본 문구로</button></div>
+    <div class="srow2"><div class="grow">연락처에 있는 사람에게만<small>모르는 번호에는 보내지 않아요</small></div>${tg('contactsOnly',cf.contactsOnly,id)}</div>
+    <div class="srow2"><div class="grow">일반전화 · 인터넷전화 · 해외 번호에도<small>휴대전화가 아닌 번호예요. 1588 같은 대표번호, 광고·인증 문자 번호, 발신자 표시 제한은 켜도 보내지 않아요.</small></div>${tg('other',cf.other,id)}</div>
+    <h4>끝나면 보여줄 것</h4>
+    <div class="srow2"><div class="grow">받은 문자도 함께 보기<small>${P0.readSms?'모드가 켜져 있던 동안 받은 문자를 요약에 넣어요':'문자 읽기를 허용하면 요약에 넣어요'}</small></div>${P0.readSms||!cf.texts?tg('texts',cf.texts,id):`<button class="sbtn pri" data-md="ask" data-w="readsms">허용</button>`}</div>
+    ${P0.log?'':`<div class="srow2"><div class="grow">놓친 전화 목록<small>통화 기록 허용이 있어야 요약에 놓친 전화가 나와요</small></div><button class="sbtn pri" data-b="perm">허용</button></div>`}
+   </div>`}
+  h+='</div>'});
+ h+=`<div class="set glass"><h3>알아 두기</h3><div class="steps">비행기 모드는 일반 앱이 켤 수 없어서 넣지 않았어요.<br>112·119 같은 긴급 전화는 어떤 모드에서도 항상 울려요.<br>문자 요금은 요금제에 따라 나갈 수 있어요.</div></div>`;
+ el.innerHTML=h;el.scrollTop=sc}
+function mdSave(id,patch){const cf=Object.assign({},mdCfg(id),patch);const r=J(()=>NV.modeSave(id,JSON.stringify(cf)),null);if(r&&r.text!==undefined){MS.cfg=MS.cfg||{};MS.cfg[id]=r}return r}
+function mdStart(id){if(!NV)return;closeSheet();const r=J(()=>NV.modeStart(id,mdCfg(id).timer||0),{});mdLoad();
+ if(!r.ok){toast('켜지 못했어요. 다시 눌러 주세요');renderModes();return}
+ const bits=[mdName(id)+' 켜짐'];
+ if(r.dnd&&r.keep)bits.push('더 강한 방해 금지가 이미 켜져 있어 그대로 뒀어요');else if(r.dnd)bits.push('방해 금지 켜짐');else bits.push('방해 금지 허용이 없어 알림은 그대로예요');
+ if(!r.sms&&mdCfg(id).reply)bits.push('문자 보내기 허용이 없어 자동 답장은 못 해요');
+ toast(bits.join(' · '),null,null,5200);if(cur==='modes')renderModes();else if(cur==='recent')$('#rBanner').innerHTML=banners()}
+function mdStop(){if(!NV)return;const r=J(()=>NV.modeStop(),{});mdLoad();smData=null;show('summary')}
+function mdToggle(id){if(!NV){toast('폰 앱 안에서만 켤 수 있어요');return}
+ if(MS.active&&MS.active.id===id){mdStop();return}
+ const miss=mdMissing(id);
+ if(miss.length&&!localStorage.getItem('nvp_md_asked')){localStorage.setItem('nvp_md_asked','1');mdSetup(id);return}
+ mdStart(id)}
+function mdSetup(id){mdPend=id;const m=mdMissing(id),P0=MS.perms||{};
+ const row=(done,t,s,w)=>`<div class="srow2"><div class="grow">${t}<small>${s}</small></div>${done?'<span class="ok">허용됨</span>':`<button class="sbtn pri" data-md="ask" data-w="${w}">허용</button>`}</div>`;
+ sheet(`<h3>${esc(mdName(id))} · 켜기 전에 한 번만 허용해 주세요</h3>
+  <div class="steps2">허용하지 않아도 켤 수는 있어요. 다만 그 기능만 빠져요.</div>
+  ${row(!!P0.dnd,'방해 금지 접근','벨소리와 알림을 조용하게 해요 (설정 화면이 열려요)','dnd')}
+  ${mdCfg(id).reply?row(!m.includes('sms'),'문자 보내기','못 받은 전화에 자동으로 문자를 보내요','sms'):''}
+  <button class="opt pri" data-md="go" data-id="${id}"><span data-i="check"></span>지금 켜기</button>
+  <button class="opt" data-a="close"><span data-i="x"></span>취소</button>`);
+ $('#sheet').onclick=e=>{if(e.target.closest('[data-a="close"]')){mdPend=null;closeSheet()}}}
+function mdConfirm(id){mdLoad();const n=mdName(id);
+ if(MS.active&&MS.active.id===id){toast(n+'은 이미 켜져 있어요');return}
+ sheet(`<h3>${esc(n)} 켤까요?</h3><div class="steps2">켜면 전화·알림이 조용해지고, 못 받은 전화에는 문자로 답장해요. 언제든 끌 수 있어요.</div>
+  <button class="opt pri" data-md="confirm" data-id="${id}"><span data-i="check"></span>${esc(n)} 켜기</button>
+  <button class="opt" data-a="close"><span data-i="x"></span>취소</button>`);
+ $('#sheet').onclick=e=>{if(e.target.closest('[data-a="close"]'))closeSheet()}}
+function mdRestricted(w){
+ sheet(`<h3>${w==='readsms'?'문자 읽기':'문자 보내기'} 허용을 받지 못했어요</h3>
+  <div class="steps2">허용 창이 뜨지 않았다면 안드로이드가 직접 설치한 앱의 문자 권한을 막은 거예요.
+  <ol><li>아래 <b>앱 정보 열기</b>를 눌러요</li><li>오른쪽 위 <b>⋮</b> › <b>제한된 설정 허용</b> (지문·비밀번호 확인)</li><li>돌아와서 <b>다시 시도</b>를 눌러요</li></ol>
+  <span class="path">설정 › 애플리케이션 › 뉴니버스 전화 › ⋮ › 제한된 설정 허용</span></div>
+  <button class="opt pri" data-b="appset"><span data-i="shield"></span>앱 정보 열기</button>
+  <button class="opt" data-md="ask" data-w="${w||'sms'}"><span data-i="swap"></span>다시 시도</button>
+  <button class="opt" data-a="close"><span data-i="x"></span>닫기</button>`);
+ $('#sheet').onclick=e=>{if(e.target.closest('[data-a="close"]'))closeSheet()}}
+$('#mdList').addEventListener('click',e=>{const b=e.target.closest('[data-md]');if(!b)return;buzz();const k=b.dataset.md,id=b.dataset.id;
+ if(k==='toggle')mdToggle(id);
+ else if(k==='open'){mdOpen[id]=!mdOpen[id];renderModes()}
+ else if(k==='timer'){mdSave(id,{timer:+b.dataset.m});renderModes()}
+ else if(k==='allow'){mdSave(id,{allow:b.dataset.v});renderModes()}
+ else if(k==='tg'){const kk=b.dataset.k,v=b.getAttribute('aria-checked')!=='true';mdSave(id,{[kk]:v});renderModes()}
+ else if(k==='deftext'){const d=mdDefs().find(x=>x.id===id);mdSave(id,{text:d?d.text:''});renderModes()}
+ else if(k==='ask'){mdAskOnce(b.dataset.w)}});
+$('#mdList').addEventListener('input',e=>{const t=e.target.closest('.mdtx');if(!t)return;const id=t.dataset.id;t.parentNode.querySelector('.cc').textContent=[...t.value].length+'/140';clearTimeout(t._s);t._s=setTimeout(()=>mdSave(id,{text:t.value}),500)});
+$('#mdList').addEventListener('focusout',e=>{const t=e.target.closest&&e.target.closest('.mdtx');if(!t)return;clearTimeout(t._s);mdSave(t.dataset.id,{text:t.value})});
+$('#sheet').addEventListener('click',e=>{const b=e.target.closest('[data-md]');if(!b)return;const k=b.dataset.md;
+ if(k==='ask')mdAskOnce(b.dataset.w);else if(k==='go'){mdPend=null;mdStart(b.dataset.id)}else if(k==='confirm'){const id=b.dataset.id;closeSheet();mdToggle(id)}});
+/* 끝난 뒤 요약 */
+const SMW={manual:'직접 껐어요',timer:'정해 둔 시간이 되어 자동으로 꺼졌어요',switch:'다른 모드로 바꿔서 끝났어요'};
+function smRows(a,kind){return a.map(g=>{const nm=g.name||(g.num?fmt(g.num):'발신자 정보 없음');const p=g.num?person(g.num,g.name,''):null;
+ return `<div class="smrow" data-num="${esc(g.num||'')}">${p?avHtml(p,false):`<div class="av unk">${ic('user')}</div>`}<div class="grow"><div class="nm"><span class="t">${esc(nm)}</span>${g.n>1?`<span class="cnt">${g.n}</span>`:''}</div><div class="meta">${esc(hm(g.last))}${g.name&&g.num?' · '+esc(fmt(g.num)):''}</div>${kind==='sms'&&g.x?`<div class="meta x">${esc(g.x)}</div>`:''}</div>
+  ${g.callable?`<button class="qb" data-sm="sms" aria-label="문자 보내기">${ic('msg')}</button><button class="qb pri" data-sm="call" aria-label="전화 걸기">${ic('phone')}</button>`:''}</div>`}).join('')}
+function renderSummary(){
+ const el=$('#smList');const s=smData;
+ if(!s||!s.id){$('#smTitle').textContent='모드 요약';el.innerHTML=`<div class="empty"><b>보여줄 요약이 없어요</b>모드를 켰다 끄면 그동안 놓친 전화가 여기 모여요<br><button data-sm="back">상황 모드로</button></div>`;return}
+ $('#smTitle').textContent=s.name+' 요약';
+ let h=`<div class="smh glass"><b>${esc(s.name)}이 끝났어요</b>${esc(hm(s.start))} ~ ${esc(hm(s.end))} · ${esc(s.durText)}<br>${esc(SMW[s.why]||'')}${s.dnd?(SMW[s.why]?' · ':'')+'방해 금지는 원래대로 돌려놨어요':''}</div>`;
+ const calls=s.calls||[],texts=s.texts||[],log=s.log||[];
+ h+=`<div class="sec"><span>놓친 전화</span><small>${calls.reduce((n,g)=>n+g.n,0)}통 · ${calls.length}명</small></div>`;
+ if(s.needLog)h+=`<div class="mdneed"><div class="grow"><b>통화 기록 허용이 필요해요</b>허용하면 놓친 전화를 여기서 볼 수 있어요</div><button class="sbtn pri" data-b="perm">허용</button></div>`;
+ else if(!calls.length)h+=`<div class="hint">놓친 전화가 없어요</div>`;
+ else h+=`<div class="card glass">${smRows(calls,'call')}</div>`;
+ if(s.textsOn){h+=`<div class="sec"><span>받은 문자</span><small>${texts.reduce((n,g)=>n+g.n,0)}건</small></div>`;
+  if(s.needSms)h+=`<div class="mdneed"><div class="grow"><b>문자 읽기 허용이 필요해요</b>허용하면 그동안 받은 문자를 볼 수 있어요</div><button class="sbtn pri" data-md="ask" data-w="readsms">허용</button></div>`;
+  else if(!texts.length)h+=`<div class="hint">받은 문자가 없어요</div>`;
+  else h+=`<div class="card glass">${smRows(texts,'sms')}</div>`}
+ h+=`<div class="sec"><span>보낸 자동 답장</span><small>${log.length}건</small></div>`;
+ if(!log.length)h+=`<div class="hint">보낸 답장이 없어요</div>`;
+ else h+=`<div class="card glass">${log.slice().reverse().map(e=>`<div class="smrow"><div class="grow"><div class="nm"><span class="t">${esc(e.name||fmt(e.num))}</span></div><div class="meta">${esc(hm(e.at))}${e.name?' · '+esc(fmt(e.num)):''}</div></div><span class="st1 ${e.st==='ok'?'ok':e.st==='fail'?'fail':'wait'}">${e.st==='ok'?'보냈어요':e.st==='fail'?'못 보냈어요':'보내는 중'}</span></div>`).join('')}</div>`;
+ const sk=Object.entries(s.skips||{}).filter(([k,v])=>v>0);
+ if(sk.length)h+=`<div class="smnote">답장을 <b>보내지 않은</b> 번호 · ${sk.map(([k,v])=>esc(k)+' '+v).join(' · ')}</div>`;
+ h+=`<button class="smok" data-sm="done">확인했어요</button>`;
+ el.innerHTML=h}
+$('#smList').addEventListener('click',e=>{const b=e.target.closest('[data-sm]');if(!b)return;buzz();const k=b.dataset.sm;
+ if(k==='done'){NV&&NV.modeDismiss();smData=null;mdLoad();show(mdFrom&&mdFrom!=='summary'&&mdFrom!=='modes'?mdFrom:'recent')}
+ else if(k==='back')show('modes');
+ else{const num=b.closest('[data-num]').dataset.num;if(k==='call')dial(num,person(num,'',''));else if(k==='sms'&&NV)NV.sms(num)}});
+$('#mdBack').innerHTML=ic('larr',2);$('#smBack').innerHTML=ic('larr',2);
+$('#mdBack').onclick=()=>{buzz();show(mdFrom||'recent')};$('#smBack').onclick=()=>{buzz();show(mdFrom||'recent')};
+function mdView(v){ // 앱 밖(알림·런처)에서 온 요청
+ if(v==='summary'){smData=J(()=>NV.modeSummary(),{});show('summary');return true}
+ if(v==='modes'){show('modes');return true}
+ const m=/^modes:(\w+):(\w+)$/.exec(v||'');if(m){show('modes');if(m[1]==='dnd')setTimeout(()=>{mdLoad();mdSetup(m[2])},60);else if(m[1]==='ask')setTimeout(()=>mdConfirm(m[2]),60);return true}
+ return false}
+setInterval(()=>{if(!NV||document.hidden||MODE!=='main')return;if(cur==='modes'){if(document.activeElement&&document.activeElement.classList&&document.activeElement.classList.contains('mdtx'))return;mdLoad();renderModes()}else if(cur==='recent'){const was=!!MS.active;mdLoad();if(was!==!!MS.active||MS.active)$('#rBanner').innerHTML=banners()}},20000);
+
 /* ---------- 시작 ---------- */
 if(MODE==='call'){$('#tabs').style.display='none';VIEWS.forEach(x=>$('#v-'+x).hidden=true);if(NV){const s=J(()=>NV.state(),null);if(s)NV_call(s)}}
-else{load();incallBar();setTimeout(moreDot,0);try{const P0=ST.perms||{};if(NV&&(!P0.log||!P0.contacts||!P0.phone)&&!localStorage.getItem('nvp_asked')){localStorage.setItem('nvp_asked','1');setTimeout(()=>NV.requestPerms(),600)}}catch(e){}let first='recent';if(NV){const v=NV.takeView(),d=NV.takeDial();if(v==='keypad'){first='keypad';num=d?String(d).replace(/[^\d+*#]/g,''):''}else if(v==='recent')first='recent'}show(first)}
-window.__nvp={show,state:()=>({cur,num,calls:CALLS.length,rows:groups().reduce((s,d)=>s+d.gs.length,0)}),norm,fmt,cho,choDigits};
+else{load();incallBar();setTimeout(moreDot,0);try{const P0=ST.perms||{};if(NV&&(!P0.log||!P0.contacts||!P0.phone)&&!localStorage.getItem('nvp_asked')){localStorage.setItem('nvp_asked','1');setTimeout(()=>NV.requestPerms(),600)}}catch(e){}let first='recent',mv='';if(NV){const v=NV.takeView(),d=NV.takeDial();if(v==='keypad'){first='keypad';num=d?String(d).replace(/[^\d+*#]/g,''):''}else if(v==='recent')first='recent';else if(v)mv=v}show(first);if(mv)mdView(mv)}
+window.__nvp={show,mdState:()=>({MS,cur}),state:()=>({cur,num,calls:CALLS.length,rows:groups().reduce((s,d)=>s+d.gs.length,0)}),norm,fmt,cho,choDigits};
 })();
 
 </script>

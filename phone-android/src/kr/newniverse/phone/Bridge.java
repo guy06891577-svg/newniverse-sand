@@ -47,6 +47,32 @@ class Bridge {
   @JavascriptInterface public void openAppSettings(){ a.runOnUiThread(()->{ try{ a.startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+a.getPackageName()))); }catch(Exception e){} }); }
   @JavascriptInterface public void openFsiSettings(){ a.runOnUiThread(()->{ try{ if(Build.VERSION.SDK_INT>=34) a.startActivity(new Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT,Uri.parse("package:"+a.getPackageName()))); else openAppSettings(); }catch(Exception e){ openAppSettings(); } }); }
 
+  // ---------- 상황 모드 (운전 중 · 회의 중) ----------
+  @JavascriptInterface public String modes(){ return ModeManager.state(a).toString(); }
+  /** 켜기. timerMin: 회의 자동 끝내기 분(0 = 직접). 반환 {ok,dnd,keep,sms,def} */
+  @JavascriptInterface public String modeStart(String id,int timerMin){ return ModeManager.start(a,id,timerMin).toString(); }
+  /** 끄기. 반환: 끝난 모드의 요약 머리글({}이면 켜진 모드 없었음) */
+  @JavascriptInterface public String modeStop(){ JSONObject s=ModeManager.stop(a,"manual"); return s==null?"{}":s.toString(); }
+  /** 설정 저장 (자동 답장 문구·울릴 사람·타이머 …). 켜져 있는 동안 바꾸면 바로 반영 */
+  @JavascriptInterface public String modeSave(String id,String json){
+    try{ if(!ModeDefs.valid(id)) return "{}";
+      JSONObject s=ModeStore.saveCfg(a,id,new JSONObject(json==null?"{}":json));
+      JSONObject act=ModeStore.active(a);
+      if(act!=null&&id.equals(act.optString("id"))&&act.optBoolean("dnd")&&!act.optBoolean("keep")) Dnd.reapply(a,s.optString("allow"),s.optBoolean("repeat"));
+      return s.toString();
+    }catch(Exception e){ return "{}"; } }
+  @JavascriptInterface public String modeSummary(){ JSONObject s=ModeManager.summaryFull(a); return s==null?"{}":s.toString(); }
+  @JavascriptInterface public void modeDismiss(){ ModeStore.clearSummary(a); NotificationManager nm=a.getSystemService(NotificationManager.class); if(nm!=null) nm.cancel(ModeManager.N_DONE); }
+  /** 모드에 필요한 허용 열기: dnd = 방해 금지 접근 화면, sms = 문자 보내기(+전화 상태), readsms = 받은 문자 읽기 */
+  @JavascriptInterface public void modeAsk(String what){ a.runOnUiThread(()->{
+    try{
+      if("dnd".equals(what)){ a.startActivity(new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)); return; }
+      List<String> m=new ArrayList<>();
+      if("sms".equals(what)){ if(!Nv.has(a,Manifest.permission.SEND_SMS)) m.add(Manifest.permission.SEND_SMS); if(!Nv.isDefault(a)&&!Nv.has(a,Manifest.permission.READ_PHONE_STATE)) m.add(Manifest.permission.READ_PHONE_STATE); }
+      else if("readsms".equals(what)){ if(!Nv.has(a,Manifest.permission.READ_SMS)) m.add(Manifest.permission.READ_SMS); }
+      if(m.isEmpty()) MainActivity.jsResume(a); else a.requestPermissions(m.toArray(new String[0]),MainActivity.RQ_PERM);
+    }catch(Exception e){ try{ a.startActivity(new Intent(Settings.ACTION_SETTINGS)); }catch(Exception x){} } }); }
+
   /** 최근 통화 (days일, 최대 4000건, 최신 순) */
   @JavascriptInterface public String getCalls(int days){
     JSONArray arr=new JSONArray();

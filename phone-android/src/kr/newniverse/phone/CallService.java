@@ -18,9 +18,11 @@ public class CallService extends InCallService {
   static final Handler H=new Handler(Looper.getMainLooper());
   static final Map<String,String> names=new HashMap<>();
   static final int N_IN=11, N_ON=12;
+  /** v5 상황 모드: 걸려오는 전화마다 「받았는지·문자로 거절했는지·조용히 처리했는지」를 적어 둠 */
+  static final CallTracker tracker=new CallTracker();
 
   private final Call.Callback cb=new Call.Callback(){
-    @Override public void onStateChanged(Call c,int st){ changed(); }
+    @Override public void onStateChanged(Call c,int st){ if(st==Call.STATE_ACTIVE) tracker.active(c); changed(); }
     @Override public void onDetailsChanged(Call c,Call.Details d){ changed(); }
   };
 
@@ -29,12 +31,18 @@ public class CallService extends InCallService {
 
   @Override public void onCallAdded(Call c){
     calls.add(c); c.registerCallback(cb);
+    // 상황 모드가 켜져 있고 이 번호는 울리지 않게 한 사람이면: 전화 화면을 갑자기 띄우지 않고 알림으로만 알려요(받으려면 알림에서)
+    CallTracker.Track t=tracker.added(this,c,num(c),st(c)==Call.STATE_RINGING,st(c)==Call.STATE_ACTIVE);
     refreshNotifs();
     // 수신·발신 모두 통화 화면을 띄움 (InCallService는 백그라운드에서도 화면을 띄울 수 있는 예외 대상)
-    openUi(this);
+    if(!t.quiet) openUi(this);
     tell();
   }
-  @Override public void onCallRemoved(Call c){ c.unregisterCallback(cb); calls.remove(c); refreshNotifs(); tell(); }
+  @Override public void onCallRemoved(Call c){
+    c.unregisterCallback(cb); calls.remove(c);
+    refreshNotifs(); tell();
+    tracker.removed(this,c);   // 받지 않은 전화(부재중·거절)면 상황 모드의 자동 답장 판단으로
+  }
   @Override public void onCallAudioStateChanged(CallAudioState s){ tell(); }
 
   private void changed(){ refreshNotifs(); tell(); }
@@ -96,7 +104,7 @@ public class CallService extends InCallService {
   // ---------- 조작 (메인 스레드에서) ----------
   static void ui(Runnable r){ H.post(()->{ try{ r.run(); }catch(Exception e){} }); }
   static void answer(){ ui(()->{ Call c=ringing(); if(c!=null) c.answer(VideoProfile.STATE_AUDIO_ONLY); }); }
-  static void reject(String msg){ ui(()->{ Call c=ringing(); if(c==null) return; if(msg!=null&&!msg.isEmpty()){ try{ c.reject(true,msg); return; }catch(Exception e){} } c.reject(false,null); }); }
+  static void reject(String msg){ ui(()->{ Call c=ringing(); if(c==null) return; if(msg!=null&&!msg.isEmpty()){ try{ c.reject(true,msg); tracker.rejectedWithMessage(c); return; }catch(Exception e){} } c.reject(false,null); }); }
   static void hangup(){ ui(()->{ Call c=live(); if(c!=null){ c.disconnect(); return; } Call r=ringing(); if(r!=null) r.reject(false,null); }); }
   static void mute(boolean b){ ui(()->{ CallService s=inst; if(s!=null) s.setMuted(b); }); }
   @SuppressWarnings("deprecation")
@@ -121,11 +129,14 @@ public class CallService extends InCallService {
       if(r!=null){
         String nmz=name(this,r),n=Nv.fmt(num(r)); String title=nmz.isEmpty()?(n.isEmpty()?"발신자 정보 없음":n):nmz;
         PendingIntent fs=screen(this,"show",1), ans=screen(this,CallActivity.ACTION_ANSWER,2), dec=act(this,CallActionReceiver.DECLINE,3);
+        CallTracker.Track tr=tracker.get(r); boolean quiet=tr!=null&&tr.quiet;
         Notification.Builder b=new Notification.Builder(this,Nv.CH_IN).setSmallIcon(R.drawable.ic_call).setContentTitle(title)
-          .setContentText("걸려오는 전화"+(nmz.isEmpty()||n.isEmpty()?"":" · "+n)).setCategory(Notification.CATEGORY_CALL).setOngoing(true)
-          .setVisibility(Notification.VISIBILITY_PUBLIC).setContentIntent(fs).setFullScreenIntent(fs,true).setColor(0xFF8F6BFF);
+          .setContentText((quiet?"상황 모드 · 조용히 알려요":"걸려오는 전화")+(nmz.isEmpty()||n.isEmpty()?"":" · "+n)).setCategory(Notification.CATEGORY_CALL).setOngoing(true)
+          .setVisibility(Notification.VISIBILITY_PUBLIC).setContentIntent(fs).setColor(0xFF8F6BFF);
+        if(!quiet) b.setFullScreenIntent(fs,true);
         boolean styled=false;
-        if(Build.VERSION.SDK_INT>=31){ try{ Person p=new Person.Builder().setName(title).setImportant(true).build(); b.setStyle(Notification.CallStyle.forIncomingCall(p,dec,ans)); styled=true; }catch(Exception e){} }
+        // 통화 모양 알림은 전체 화면 알림이 있어야 해서, 조용한 알림은 일반 단추 모양으로
+        if(Build.VERSION.SDK_INT>=31&&!quiet){ try{ Person p=new Person.Builder().setName(title).setImportant(true).build(); b.setStyle(Notification.CallStyle.forIncomingCall(p,dec,ans)); styled=true; }catch(Exception e){} }
         if(!styled){ b.addAction(new Notification.Action.Builder(Icon.createWithResource(this,R.drawable.ic_end),"거절",dec).build());
           b.addAction(new Notification.Action.Builder(Icon.createWithResource(this,R.drawable.ic_call),"받기",ans).build()); }
         nm.notify(N_IN,b.build());

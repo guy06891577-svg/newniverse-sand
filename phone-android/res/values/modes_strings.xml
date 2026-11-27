@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="sc_drive">운전 중</string>
+  <string name="sc_drive_long">운전 중 켜기</string>
+  <string name="sc_meeting">회의 중</string>
+  <string name="sc_meeting_long">회의 중 켜기</string>
+</resources>

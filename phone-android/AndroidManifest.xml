@@ -7,6 +7,13 @@
   <uses-permission android:name="android.permission.WRITE_CALL_LOG"/>
   <uses-permission android:name="android.permission.READ_CONTACTS"/>
   <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+  <!-- v5 상황 모드(운전 중·회의 중): 모드를 처음 켤 때 필요한 것만 묻고, 안 켜면 아무것도 안 해요 -->
+  <uses-permission android:name="android.permission.SEND_SMS"/>        <!-- 안 받은 전화에 자동 답장 문자 -->
+  <uses-permission android:name="android.permission.READ_SMS"/>        <!-- 선택: 끝난 뒤 「모드 동안 받은 문자」 요약. 허용 안 해도 다른 건 다 돼요 -->
+  <uses-permission android:name="android.permission.READ_PHONE_STATE"/> <!-- 기본 전화 앱이 아닐 때만: 안 받은 전화를 알아내려고 -->
+  <!-- 방해 금지 접근은 설정 › 알림 › 방해 금지 접근 에서 사용자가 직접 켜는 특별 허용 (선언만 필요) -->
+  <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY"/>
+  <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/> <!-- 켜 둔 모드의 알람·알림을 폰 재시작 뒤에 다시 걸기 -->
   <!-- 일반 권한 (자동) -->
   <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
   <uses-permission android:name="android.permission.VIBRATE"/>
@@ -24,6 +31,8 @@
         <action android:name="android.intent.action.MAIN"/>
         <category android:name="android.intent.category.LAUNCHER"/>
       </intent-filter>
+      <!-- 앱 아이콘을 길게 누르면 「운전 중」「회의 중」 바로가기 (누르면 켤지 한 번 묻고 켜요) -->
+      <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts"/>
       <!-- 기본 전화 앱 자격: 다이얼 화면 -->
       <intent-filter>
         <action android:name="android.intent.action.DIAL"/>
@@ -52,6 +61,19 @@
       <intent-filter><action android:name="android.telecom.InCallService"/></intent-filter>
     </service>
     <receiver android:name=".CallActionReceiver" android:exported="false"/>
+    <!-- v5 상황 모드: 알림 「끄기」·자동 끝내기 알람·답장 결과 (앱 안에서만 부름) -->
+    <receiver android:name=".ModeActionReceiver" android:exported="false"/>
+    <!-- v5 상황 모드: 시스템 신호(부팅·앱 업데이트·전화 상태) -->
+    <receiver android:name=".ModeSystemReceiver" android:exported="true">
+      <intent-filter>
+        <action android:name="android.intent.action.BOOT_COMPLETED"/>
+        <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+        <action android:name="android.intent.action.PHONE_STATE"/>
+      </intent-filter>
+    </receiver>
+    <!-- v5 상황 모드: 화면 없이 켜고 끄는 문. 같은 뉴니버스 서명 앱(런처)이 부른 것만 따름 -->
+    <activity android:name=".ModeShortcutActivity" android:exported="true" android:theme="@android:style/Theme.Translucent.NoTitleBar"
+        android:excludeFromRecents="true" android:noHistory="true"/>
     <!-- 기본 전화 앱이면 시스템이 부재중 알림을 이 앱에 맡김 -->
     <receiver android:name=".MissedCallReceiver" android:exported="true">
       <intent-filter><action android:name="android.telecom.action.SHOW_MISSED_CALLS_NOTIFICATION"/></intent-filter>

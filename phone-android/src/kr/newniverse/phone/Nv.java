@@ -13,8 +13,8 @@ import android.webkit.*;
 
 /** 공용 도구: 알림 채널, 권한·기본 앱 확인, 연락처 이름 찾기, 번호 모양, WebView 설정 */
 final class Nv {
-  static final String CH_IN="incoming2", CH_ON="ongoing", CH_MISS="missed";
-  static final String VER="4-test";
+  static final String CH_IN="incoming2", CH_ON="ongoing", CH_MISS="missed", CH_MODE="mode", CH_MODE_END="modeend";
+  static final String VER="5-test";
 
   static void channels(Context c){
     NotificationManager nm=c.getSystemService(NotificationManager.class);
@@ -26,6 +26,10 @@ final class Nv {
     NotificationChannel b=new NotificationChannel(CH_ON,"통화 중",NotificationManager.IMPORTANCE_LOW);
     b.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC); nm.createNotificationChannel(b);
     nm.createNotificationChannel(new NotificationChannel(CH_MISS,"부재중 전화",NotificationManager.IMPORTANCE_DEFAULT));
+    // v5 상황 모드: 켜져 있는 동안 조용히 떠 있는 알림 / 끝난 뒤 요약 알림
+    NotificationChannel m=new NotificationChannel(CH_MODE,"상황 모드 켜짐",NotificationManager.IMPORTANCE_LOW);
+    m.setShowBadge(false); nm.createNotificationChannel(m);
+    nm.createNotificationChannel(new NotificationChannel(CH_MODE_END,"상황 모드 끝난 뒤 요약",NotificationManager.IMPORTANCE_DEFAULT));
   }
 
   static boolean has(Context c,String p){ return c.checkSelfPermission(p)==PackageManager.PERMISSION_GRANTED; }
@@ -50,6 +54,16 @@ final class Nv {
       if(q!=null&&q.moveToFirst()) return q.getString(0);
     }catch(Exception e){}
     return null;
+  }
+
+  /** 연락처에 있는 번호인지: 0 = 없음, 1 = 있음, 2 = 즐겨찾기(별표) */
+  static int contactFlags(Context c,String num){
+    if(num==null||num.isEmpty()||!has(c,android.Manifest.permission.READ_CONTACTS)) return 0;
+    Uri u=Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI,Uri.encode(num));
+    try(Cursor q=c.getContentResolver().query(u,new String[]{ContactsContract.PhoneLookup.STARRED},null,null,null)){
+      if(q!=null&&q.moveToFirst()) return q.getInt(0)==1?2:1;
+    }catch(Exception e){}
+    return 0;
   }
 
   /** 한국 번호 모양: 010-1234-5678, 02-123-4567, 1588-0000 */

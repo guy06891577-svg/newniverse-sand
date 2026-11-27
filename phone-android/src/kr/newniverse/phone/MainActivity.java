@@ -9,7 +9,7 @@ import android.webkit.WebView;
 /** 키패드 · 최근 통화 · 검색 · 설정 (하이브리드: 화면은 assets/www/index.html) */
 public class MainActivity extends Activity {
   static final int RQ_ROLE=7, RQ_PERM=8;
-  static final String ACTION_RECENT="kr.newniverse.phone.RECENT", ACTION_ADD="kr.newniverse.phone.ADD";
+  static final String ACTION_RECENT="kr.newniverse.phone.RECENT", ACTION_ADD="kr.newniverse.phone.ADD", ACTION_MODES="kr.newniverse.phone.MODES";
   WebView w; String pendingDial, pendingView; boolean loaded;
 
   @Override protected void onCreate(Bundle b){
@@ -28,9 +28,14 @@ public class MainActivity extends Activity {
       pendingDial=n==null?"":n; pendingView="keypad";
     } else if(ACTION_RECENT.equals(a)) pendingView="recent";
     else if(ACTION_ADD.equals(a)){ pendingView="keypad"; pendingDial=""; }
+    else if(ACTION_MODES.equals(a)){   // 상황 모드 화면 · 끝난 뒤 요약 · (런처 말 명령이 허용이 없어 못 켰을 때) 허용 안내
+      String v=i.getStringExtra("view"); pendingView="summary".equals(v)?"summary":"modes";
+      String need=i.getStringExtra("need"), mode=i.getStringExtra("mode");
+      if(need!=null&&ModeDefs.valid(mode)) pendingView="modes:"+need+":"+mode;
+    }
   }
   @Override protected void onNewIntent(Intent i){ super.onNewIntent(i); setIntent(i); take(i); js("window.NV_intent&&NV_intent()"); }
-  @Override protected void onResume(){ super.onResume(); js("window.NV_resume&&NV_resume()"); }
+  @Override protected void onResume(){ super.onResume(); try{ ModeManager.tick(this); }catch(Exception e){} js("window.NV_resume&&NV_resume()"); }
   @Override protected void onActivityResult(int rq,int rs,Intent d){ super.onActivityResult(rq,rs,d); js("window.NV_resume&&NV_resume("+(rq==RQ_ROLE?"'role',"+(rs==RESULT_OK):"''")+")"); }
   @Override public void onRequestPermissionsResult(int rq,String[] p,int[] g){ js("window.NV_resume&&NV_resume('perm')"); }
   @SuppressWarnings("deprecation")

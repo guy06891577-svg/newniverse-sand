@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>kr.newniverse</groupId><artifactId>phone-robo</artifactId><version>1</version>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.release>17</maven.compiler.release>
+  </properties>
+  <repositories><repository><id>google</id><url>https://maven.google.com</url></repository></repositories>
+  <dependencies>
+    <dependency><groupId>org.robolectric</groupId><artifactId>robolectric</artifactId><version>4.14.1</version><scope>test</scope></dependency>
+    <dependency><groupId>junit</groupId><artifactId>junit</artifactId><version>4.13.2</version><scope>test</scope></dependency>
+    <dependency><groupId>org.robolectric</groupId><artifactId>android-all</artifactId><version>14-robolectric-10818077</version><scope>provided</scope></dependency>
+  </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId><artifactId>build-helper-maven-plugin</artifactId><version>3.6.0</version>
+        <executions><execution><id>add-app</id><phase>generate-sources</phase><goals><goal>add-source</goal></goals>
+          <configuration><sources><source>../../src</source><source>gen</source></sources></configuration></execution></executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId><version>3.2.5</version>
+        <configuration><additionalClasspathElements><additionalClasspathElement>${project.basedir}/lib/monitor-1.7.1.jar</additionalClasspathElement><additionalClasspathElement>${project.basedir}/lib/core-1.6.1.jar</additionalClasspathElement><additionalClasspathElement>${project.basedir}/lib/tracing-1.1.0.jar</additionalClasspathElement><additionalClasspathElement>${project.basedir}/lib/espresso-idling-resource-3.6.1.jar</additionalClasspathElement></additionalClasspathElements><argLine>-Xss4m -Duser.timezone=Asia/Seoul</argLine><includes><include>**/*Test.java</include></includes></configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

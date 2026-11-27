@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+  <shortcut android:shortcutId="mode_drive" android:enabled="true" android:icon="@drawable/ic_mode"
+      android:shortcutShortLabel="@string/sc_drive" android:shortcutLongLabel="@string/sc_drive_long">
+    <intent android:action="kr.newniverse.phone.MODES" android:targetPackage="kr.newniverse.phone" android:targetClass="kr.newniverse.phone.MainActivity">
+      <extra android:name="need" android:value="ask"/>
+      <extra android:name="mode" android:value="drive"/>
+    </intent>
+  </shortcut>
+  <shortcut android:shortcutId="mode_meeting" android:enabled="true" android:icon="@drawable/ic_mode"
+      android:shortcutShortLabel="@string/sc_meeting" android:shortcutLongLabel="@string/sc_meeting_long">
+    <intent android:action="kr.newniverse.phone.MODES" android:targetPackage="kr.newniverse.phone" android:targetClass="kr.newniverse.phone.MainActivity">
+      <extra android:name="need" android:value="ask"/>
+      <extra android:name="mode" android:value="meeting"/>
+    </intent>
+  </shortcut>
+</shortcuts>
