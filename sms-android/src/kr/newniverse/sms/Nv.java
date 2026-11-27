@@ -16,7 +16,7 @@ import java.util.ArrayList;
 
 /** 공용 도구: 알림, 권한·기본 문자 앱 확인, 이름 찾기, 번호 모양, 문자 보내기·저장, WebView 설정 */
 final class Nv {
-  static final String CH_MSG="sms", VER="8-test";
+  static final String CH_MSG="sms", VER="9-test";
   static final String ACTION_OPEN="kr.newniverse.sms.OPEN";
 
   static void channels(Context c){
@@ -69,6 +69,7 @@ final class Nv {
   static String send(Context c,String addr,String text){
     String to=digits(addr); if(to.isEmpty()||text==null||text.trim().isEmpty()) return "empty";
     if(!has(c,Manifest.permission.SEND_SMS)) return "perm";
+    if(MmsLogic.useLms(segments(text))) return MmsOutbox.send(c,to,text); // v9: 한 통을 넘으면 장문(LMS) 한 통으로
     try{
       Uri row=null;
       if(isDefault(c)){
@@ -91,6 +92,11 @@ final class Nv {
     }catch(Exception e){ return "err"; }
   }
 
+  /** 문자 몇 통으로 나뉘는지(폰 계산, 안 되면 직접 계산) */
+  static int segments(String text){
+    try{ int[] r=android.telephony.SmsMessage.calculateLength(text==null?"":text,false); if(r!=null&&r.length>0&&r[0]>0) return r[0]; }catch(Throwable e){}
+    return MmsLogic.smsSegments(text);
+  }
   static void setupWeb(Activity a,WebView w,Object bridge,String url){
     WebSettings s=w.getSettings();
     s.setJavaScriptEnabled(true); s.setDomStorageEnabled(true); s.setTextZoom(100);

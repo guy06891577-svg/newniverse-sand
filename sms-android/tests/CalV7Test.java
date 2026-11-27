@@ -13,7 +13,8 @@ public class CalV7Test{
     t("stage ok",ApptParser.stage(LMS,AT,null,"01012345678").equals("parse:ok"));
     t("stage no-date",ApptParser.stage("안녕 오늘 뭐해?",AT,null,"010").equals("parse:no-date"));
     t("stage deadline-only",ApptParser.stage("[길주중학교]\n학부모님 안녕하세요. 신청 기간: 2026. 11. 20. ~ 11. 25.(수)까지 신청해 주세요.",AT,null,"010").equals("parse:deadline-only"));
-    t("stage no-datetime-line",ApptParser.stage("12/3 3시에 보자 ㅎㅎ",AT,"엄마","01011112222").equals("parse:no-datetime-line"));
+    t("stage no-datetime-line → v9 casual ok",ApptParser.stage("12/3 3시에 보자 ㅎㅎ",AT,"엄마","01011112222").equals("parse:ok"));
+    t("stage no-datetime-line (no cue)",ApptParser.stage("12/3 3시 자료 보냈어요",AT,"엄마","01011112222").equals("parse:no-datetime-line"));
     t("stage null body no throw",ApptParser.stage(null,AT,null,null).startsWith("parse:"));
 
     // 학교 문자는 주소록에 없는 번호여도 ask (자동 X)

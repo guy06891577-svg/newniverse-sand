@@ -55,7 +55,8 @@ public class CalV8Test{
     String noval="[길주중학교]\n학부모 안내문입니다. 2026. 12. 5. 발송\n ○ 일시: 추후 공지\n ○ 장소: 강당\n 참가를 희망하시는 분은 신청해 주세요.";
     t("stage label-found-no-date",ApptParser.stage(noval,AT,null,"010").equals("parse:label-found-no-date"));
     t("stage deadline-only still",ApptParser.stage("[길주중학교]\n신청 기간: 2026. 11. 28. ~ 11. 30.(월)까지 신청해 주세요. 참가 희망자",AT,null,"010").equals("parse:deadline-only"));
-    t("stage no-datetime-line still",ApptParser.stage("12/30 3시에 보자 ㅎㅎ 잘 지내",AT,"엄마","01011112222").equals("parse:no-datetime-line"));
+    t("stage no-datetime-line still",ApptParser.stage("12/30 3시 회의록 잘 받았어",AT,"엄마","01011112222").equals("parse:no-datetime-line"));
+    t("v9: 12/30 3시에 보자 → casual ok",ApptParser.stage("12/30 3시에 보자 ㅎㅎ 잘 지내",AT,"엄마","01011112222").equals("parse:ok"));
     t("stage no body no throw",ApptParser.stage("",AT,null,null).startsWith("parse:"));
 
     // ---- 여러 조각 장문 ----

@@ -121,4 +121,75 @@ final class MmsLogic {
     for(MmsPdu.Part p:d.parts){ if(n++>0) sb.append(", "); if(n>8){ sb.append("…"); break; } sb.append(p.ct).append(':').append(p.isText()?p.text().length()+"자":p.data.length+"B"); }
     return d.parts.size()+"개 · "+sb+" · 제목 "+d.subjectStr().length()+"자 · 받은 "+downloaded+"B"+(announced>0?" / 알린 크기 "+announced+"B":"");
   }
+
+  // ---------------- v9: 장문(LMS) 보내기 ----------------
+  static final int M_TYPE_SEND_REQ=128, MSG_BOX_SENT=2, MSG_BOX_OUTBOX=4, MSG_BOX_FAILED=5;
+  static final String GSM7="@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞ\u001BÆæßÉ !\"#¤%&'()*+,-./0123456789:;<=>?¡ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÑÜ§¿abcdefghijklmnopqrstuvwxyzäöñüà";
+  static final String GSM7EXT="^{}\\[~]|€";
+  /** 문자 한 통에 들어가는지(SmsMessage.calculateLength 를 못 쓸 때): GSM 7비트 160자(확장 글자는 2칸) · 한글 등 UCS-2 70자 */
+  static int smsSegments(String t){
+    if(t==null||t.isEmpty()) return 1;
+    int sept=0; boolean gsm=true;
+    for(int i=0;i<t.length();i++){ char ch=t.charAt(i); if(GSM7.indexOf(ch)>=0) sept++; else if(GSM7EXT.indexOf(ch)>=0) sept+=2; else { gsm=false; break; } }
+    if(gsm) return sept<=160?1:(sept+152)/153;
+    int u=t.length(); return u<=70?1:(u+66)/67;
+  }
+  /** 두 통 이상으로 나뉘면 장문(LMS) 한 통으로 보냄 */
+  static boolean useLms(int segments){ return segments>1; }
+  /** 저장소가 칸을 거절할 때 다시 시도하는 꼭 필요한 칸 */
+  static final java.util.Set<String> OUT_CORE=new java.util.HashSet<>(java.util.Arrays.asList("msg_box","m_type","v","date","read","seen","thread_id","ct_t","tr_id"));
+  /** content://mms/outbox 에 넣을 칸 (date 초 단위). 본문은 part 에 */
+  static Map<String,Object> outValues(String tr,long nowMs,long threadId,long subId,int pduSize){
+    Map<String,Object> v=new LinkedHashMap<>();
+    v.put("msg_box",MSG_BOX_OUTBOX); v.put("m_type",M_TYPE_SEND_REQ); v.put("v",0x12);
+    v.put("date",nowMs/1000L); v.put("read",1); v.put("seen",1);
+    if(threadId>=0) v.put("thread_id",threadId);
+    if(subId>=0) v.put("sub_id",subId);
+    v.put("ct_t","application/vnd.wap.multipart.related"); v.put("tr_id",tr); v.put("m_cls","personal");
+    v.put("exp",MmsPdu.EXPIRY_SEC); v.put("pri",0x81); v.put("rr",0x81); v.put("d_rpt",0x81);
+    v.put("m_size",pduSize); v.put("text_only",1);
+    return v;
+  }
+  /** 통신사 응답(M-Send.conf)의 Response-Status → 쉬운 말 */
+  static String respLabel(int st){ // OMA MMS ENC 1.2 X-Mms-Response-Status
+    switch(st){
+      case 0: return "응답 없음"; case 0x80: return "통신사가 받음";
+      case 0x81: return "통신사 오류"; case 0x82: return "통신사가 서비스 거절"; case 0x83: return "보낸 내용 형식 오류";
+      case 0x84: return "보낸 사람 번호 확인 실패"; case 0x86: return "통신망 문제"; case 0x87: return "통신사가 내용을 받지 않음"; case 0x88: return "지원하지 않는 문자";
+      case 0xC0: return "통신사 일시 오류"; case 0xC1: return "보낸 사람 번호 확인 실패(일시)"; case 0xC3: return "통신망 일시 문제";
+      case 0xE0: return "통신사 거절"; case 0xE1: return "통신사가 서비스 거절"; case 0xE2: return "보낸 내용 형식 오류";
+      case 0xE3: return "보낸 사람 번호 확인 실패"; case 0xE5: return "통신사가 내용을 받지 않음(크기·종류)"; case 0xE7: return "지원하지 않는 문자";
+      default:
+        if(st>=0xC0&&st<0xE0) return "통신사 일시 오류(0x"+Integer.toHexString(st)+")";
+        if(st>=0xE0) return "통신사 거절(0x"+Integer.toHexString(st)+")";
+        return "응답 0x"+Integer.toHexString(st);
+    }
+  }
+  /** 보내기 결과: 시스템 결과가 OK 이고, 통신사 응답이 없거나(일부 폰은 안 줌) ‘받음(0x80)’ 이면 성공 */
+  static boolean sendOk(int resultCode,MmsPdu.Pdu conf){
+    if(resultCode!=-1) return false;
+    if(conf==null) return true;
+    return conf.responseStatus==0||conf.responseStatus==0x80;
+  }
+  /** 보내기 결과 코드 → 쉬운 말 (진단·실패 안내) */
+  static String sendErrLabel(int code){
+    switch(code){
+      case -1: return "보냄";
+      case 3: return "통신사 MMS 서버에 연결 못 함";
+      case 4: return "통신사 서버 응답 오류(HTTP)";
+      case 5: return "보내는 중 끊김(입출력)";
+      case 104: return "보내기를 시작하지 못함";
+      case 105: return "보낼 파일을 만들지 못함";
+      case 106: return "통신사가 거절(응답 확인)";
+      default: return code>=100?"오류 "+code:errLabel(code);
+    }
+  }
+  /** 보내기 단계 이름(진단) */
+  static String outStageLabel(String st){
+    switch(st==null?"":st){
+      case "build": return "보낼 내용 만들기"; case "file": return "파일 쓰기"; case "saved": return "보낸 편지함에 저장";
+      case "handed": return "폰(전화 앱)에 넘김 · 결과 기다리는 중"; case "result": return "결과 받음"; case "error": return "넘기기 전에 오류";
+      default: return st==null||st.isEmpty()?"—":st;
+    }
+  }
 }

@@ -34,6 +34,7 @@ public class RereadRoboTest {
   static final List<Map<String,Object>> PARTS = new ArrayList<>();
   static final List<Map<String,Object>> ADDR = new ArrayList<>();
   static final List<String> QUERIES = new ArrayList<>();
+  static final List<String> SMS_INSERTS = new ArrayList<>();
 
   static MatrixCursor cur(String[] proj, List<Map<String,Object>> rows) {
     if (proj == null) proj = new String[]{"_id"};
@@ -53,7 +54,7 @@ public class RereadRoboTest {
       return cur(p, rows);
     }
     @Override public String getType(Uri u) { return null; }
-    @Override public Uri insert(Uri u, ContentValues v) { return null; }
+    @Override public Uri insert(Uri u, ContentValues v) { SMS_INSERTS.add(u.getPath()); return null; } // v9: 짧은 글은 SMS 보낸 편지함으로 가는지 확인용
     @Override public int delete(Uri u, String s, String[] a) { return 0; }
     @Override public int update(Uri u, ContentValues v, String s, String[] a) { return 0; }
   }
@@ -89,13 +90,22 @@ public class RereadRoboTest {
       if (MMS_FAIL != null) throw MMS_FAIL;
       List<String> seg = u.getPathSegments(); Map<String,Object> m = new LinkedHashMap<>();
       for (String k : v.keySet()) m.put(k, v.get(k));
-      if (seg.size() == 1 && seg.get(0).equals("inbox")) { long id = 100 + MMS.size(); m.put("_id", id); MMS.add(m); return Uri.parse("content://mms/" + id); }
+      if (REJECT_EXTRA && seg.size() == 1 && seg.get(0).equals("outbox") && v.containsKey("text_only")) throw new IllegalArgumentException("Unknown column text_only");
+      if (seg.size() == 1 && (seg.get(0).equals("inbox") || seg.get(0).equals("outbox"))) { long id = 100 + MMS.size(); m.put("_id", id); m.put("_uri", seg.get(0)); MMS.add(m); return Uri.parse("content://mms/" + id); }
       if (seg.size() == 2 && seg.get(1).equals("part")) { m.put("mid", Long.parseLong(seg.get(0))); m.put("_id", 9000L + PARTS.size()); PARTS.add(m); return Uri.parse("content://mms/part/" + m.get("_id")); }
       if (seg.size() == 2 && seg.get(1).equals("addr")) { ADDR.add(m); return Uri.parse("content://mms/" + seg.get(0) + "/addr/1"); }
       return null;
     }
-    @Override public int delete(Uri u, String s, String[] a) { return 0; }
-    @Override public int update(Uri u, ContentValues v, String s, String[] a) { return 0; }
+    @Override public int delete(Uri u, String s, String[] a) {
+      List<String> seg = u.getPathSegments();
+      if (seg.size() == 1) { int n = 0; for (Iterator<Map<String,Object>> it = MMS.iterator(); it.hasNext();) if (String.valueOf(it.next().get("_id")).equals(seg.get(0))) { it.remove(); n++; } return n; }
+      return 0;
+    }
+    @Override public int update(Uri u, ContentValues v, String s, String[] a) { // v9: content://mms/ID ← 보내기 결과(msg_box 2/5, m_id …)
+      List<String> seg = u.getPathSegments(); int n = 0;
+      if (seg.size() == 1) for (Map<String,Object> r : MMS) if (String.valueOf(r.get("_id")).equals(seg.get(0))) { for (String k : v.keySet()) r.put(k, v.get(k)); n++; }
+      UPDATES.add(u + " " + v); return n;
+    }
     @Override public android.os.ParcelFileDescriptor openFile(Uri u, String mode) throws java.io.FileNotFoundException {
       List<String> seg = u.getPathSegments();
       if (seg.size() == 2 && seg.get(0).equals("part")) for (Map<String,Object> r : PARTS) if (String.valueOf(r.get("_id")).equals(seg.get(1)) && r.get("_file") != null)
@@ -104,6 +114,8 @@ public class RereadRoboTest {
     }
   }
   static volatile RuntimeException MMS_FAIL = null;
+  static final List<String> UPDATES = new ArrayList<>();
+  static volatile boolean REJECT_EXTRA = false;
   // ---- 가짜 달력 ----
   static final List<ContentValues> EVENTS = new ArrayList<>();
   static final List<ContentValues> CALS = new ArrayList<>();
@@ -307,7 +319,7 @@ public class RereadRoboTest {
     d = SmsDiag.json(app);
     assertTrue("cal_at 갱신", d.getLong("calAt") >= t0);
     assertTrue(d.getBoolean("calCurrent"));
-    assertEquals("8-test", d.getString("calVer"));
+    assertEquals(Nv.VER, d.getString("calVer")); assertEquals("9-test", Nv.VER);
     assertTrue(d.getLong("rrAt") >= t0);
     assertEquals("MMS", d.getString("rrType"));
     assertEquals(LMS.length(), d.getInt("rrLen"));

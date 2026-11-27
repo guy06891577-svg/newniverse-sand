@@ -222,6 +222,8 @@ final class AutoCal {
   static boolean isShown(NotificationManager nm,int id){
     try{ for(android.service.notification.StatusBarNotification s:nm.getActiveNotifications()) if(s.getId()==id) return true; return false; }catch(Throwable e){ return true; }
   }
+  /** v9: 묻는 알림·카드의 한 줄. 상대 날짜(다음주 목요일 …)도 실제 날짜로 풀어 씀 */
+  static String askLine(ApptParser.R r){ return Casual.askLine(r); }
   static String notifLabel(String st){
     if(st==null||st.isEmpty()||"posted".equals(st)) return "알림을 띄움";
     if(st.startsWith("perm")) return "알림 권한이 없음";
@@ -245,9 +247,9 @@ final class AutoCal {
       Intent add=new Intent(c,CalUndoReceiver.class).setAction(ACT_ASK_ADD).putExtra("addr",addr==null?"":addr).putExtra("body",x).putExtra("at",at).putExtra("nid",id);
       Intent no=new Intent(c,CalUndoReceiver.class).setAction(ACT_ASK_NO).putExtra("nid",id);
       int fl=PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT;
-      String line=r.title+" · "+when(r.when,!r.hasTime)+(r.location.isEmpty()?"":" · "+r.location);
+      String line=askLine(r); // v9: 풀어 쓴 날짜 ‘12월 3일(목) 오후 2시 · 안동대학교 — 달력에 넣을까요?’
       Notification.Builder b=new Notification.Builder(c,CH_ASK).setSmallIcon(R.drawable.ic_msg).setColor(0xFF8F6BFF)
-        .setContentTitle("달력에 넣을까요?").setContentText(line).setStyle(new Notification.BigTextStyle().bigText(line))
+        .setContentTitle("달력에 넣을까요?").setContentText(line).setStyle(new Notification.BigTextStyle().bigText(r.title+"\n"+line))
         .setAutoCancel(true).setCategory(Notification.CATEGORY_EVENT).setVisibility(Notification.VISIBILITY_PRIVATE).setTimeoutAfter(24*3600*1000L)
         .addAction(new Notification.Action.Builder(null,"넣기",PendingIntent.getBroadcast(c,id,add,fl)).build())
         .addAction(new Notification.Action.Builder(null,"아니요",PendingIntent.getBroadcast(c,id+1,no,fl)).build());
@@ -262,7 +264,7 @@ final class AutoCal {
     try{ SharedPreferences p=c.getSharedPreferences(PREF,Context.MODE_PRIVATE);
       org.json.JSONArray a=new org.json.JSONArray(p.getString("pend","[]")); org.json.JSONArray n=new org.json.JSONArray();
       long id=0x500000L|((r.title+r.when).hashCode()&0xfffff);
-      org.json.JSONObject o=new org.json.JSONObject(); o.put("id",id); o.put("title",r.title); o.put("org",r.org); o.put("when",r.when); o.put("end",r.endMs); o.put("hasTime",r.hasTime); o.put("loc",r.location==null?"":r.location); o.put("addr",addr==null?"":addr); o.put("made",System.currentTimeMillis());
+      org.json.JSONObject o=new org.json.JSONObject(); o.put("id",id); o.put("title",r.title); o.put("org",r.org); o.put("when",r.when); o.put("end",r.endMs); o.put("hasTime",r.hasTime); o.put("loc",r.location==null?"":r.location); o.put("label",askLine(r)); o.put("addr",addr==null?"":addr); o.put("made",System.currentTimeMillis());
       n.put(o); for(int i=0;i<a.length()&&n.length()<5;i++){ org.json.JSONObject x=a.getJSONObject(i); if(x.optLong("id")!=id) n.put(x); }
       p.edit().putString("pend",n.toString()).apply();
     }catch(Throwable e){}

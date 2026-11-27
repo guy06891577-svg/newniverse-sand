@@ -211,7 +211,7 @@ final class ApptParser {
    */
   static String why(String b,long at){
     String n=norm(b);
-    if(rawDates(n)==0) return "parse:no-date";
+    if(rawDates(n)==0){ String cw=Casual.whyNot(n,at); return "casual-no-day".equals(cw)?"parse:no-date":"parse:"+cw; }
     List<DT> L=dts(n,at);
     if(L.isEmpty()) return "parse:deadline-only";
     boolean future=false; for(DT t:L) if(t.ms>=at-3600L*1000) future=true;
@@ -238,6 +238,24 @@ final class ApptParser {
   static R parse(String b,long at,String contact){ return parse(b,at,contact,null); }
   /** addr: 보낸 번호(학교가 일반 전화(0xx)로 보낸 건지 확인용) */
   static R parse(String b,long at,String contact,String addr){
+    R r=parse0(b,at,contact,addr); if(r!=null) return r;
+    return casual(b,at,contact,addr);
+  }
+  /**
+   * v9: 사람끼리의 약속 문자(‘다음주 목요일 2시에 안동대학교서 봐’). 병원·학교·기관 문자는 위 규칙 그대로이고, 그 규칙이 못 읽었을 때만.
+   * 언제나 ask(자동으로 넣지 않음). 제목 ‘약속 · 이름(또는 번호 끝 4자리)’.
+   */
+  static R casual(String b,long at,String contact,String addr){
+    if(b==null) return null;
+    String n=norm(b);
+    if(n.trim().length()<4||n.contains("Web발신")||n.contains("광고")||!tag(n).isEmpty()) return null; // [기관] 이름표가 붙은 안내 문자는 사람 문자로 보지 않음
+    Casual.Res c=Casual.find(n,at); if(c==null) return null;
+    R r=new R(); r.kind=NEW; r.when=c.when; r.hasTime=c.hasTime; r.location=c.place; r.src="casual"; r.trusted=true; r.ask=true;
+    String who=contact!=null&&!contact.trim().isEmpty()?contact.trim():Casual.last4(addr);
+    r.org=who.isEmpty()?"약속":who; r.title="약속"+(who.isEmpty()?"":" · "+who);
+    return r;
+  }
+  static R parse0(String b,long at,String contact,String addr){
     if(b==null) return null;
     b=norm(b);
     if(b.trim().length()<8) return null;

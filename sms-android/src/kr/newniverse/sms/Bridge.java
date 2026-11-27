@@ -221,9 +221,12 @@ class Bridge {
   }
 
   @JavascriptInterface public String send(String addr,String text){ String r=Nv.send(a,addr,text); if("perm".equals(r)) requestPerms(); return r; }
-  /** "나눠지는 개수,쓴 글자,남은 글자" */
-  @JavascriptInterface public String segments(String text){
-    try{ int[] r=SmsMessage.calculateLength(text==null?"":text,false); return r[0]+","+r[1]+","+r[2]; }catch(Exception e){ return "1,0,0"; }
+  @JavascriptInterface public String segments(String text){ return segmentsOf(text); }
+  /** "조각 수,쓴 칸,남은 칸,LMS(0/1)" — v9: 4번째 값 = 1 이면 장문(LMS) 한 통으로 보냄 (Nv.send 와 같은 기준) */
+  static String segmentsOf(String text){
+    String t=text==null?"":text;
+    try{ int[] r=SmsMessage.calculateLength(t,false); if(r!=null&&r.length>=3&&r[0]>0) return r[0]+","+r[1]+","+r[2]+","+(MmsLogic.useLms(r[0])?1:0); }catch(Throwable e){}
+    int n=MmsLogic.smsSegments(t); return n+","+t.length()+",0,"+(MmsLogic.useLms(n)?1:0);
   }
   /** 읽음 처리 (폰 저장소에 쓰는 건 기본 문자 앱일 때만 가능) + 그 사람 알림 지우기 */
   @JavascriptInterface public void markRead(long thread,String addr){

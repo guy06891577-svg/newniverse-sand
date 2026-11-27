@@ -18,11 +18,11 @@ import java.util.List;
  */
 final class MmsPdu {
   // X-Mms-Message-Type
-  static final int NOTIFICATION_IND=0x82, NOTIFYRESP_IND=0x83, RETRIEVE_CONF=0x84, ACKNOWLEDGE_IND=0x85, DELIVERY_IND=0x86;
+  static final int SEND_REQ=0x80, SEND_CONF=0x81, NOTIFICATION_IND=0x82, NOTIFYRESP_IND=0x83, RETRIEVE_CONF=0x84, ACKNOWLEDGE_IND=0x85, DELIVERY_IND=0x86;
   // 머리말 번호 (0x80 을 뺀 값)
   static final int H_BCC=0x01,H_CC=0x02,H_CONTENT_LOCATION=0x03,H_CONTENT_TYPE=0x04,H_DATE=0x05,H_DELIVERY_REPORT=0x06,H_EXPIRY=0x08,H_FROM=0x09,
     H_MESSAGE_CLASS=0x0A,H_MESSAGE_ID=0x0B,H_MESSAGE_TYPE=0x0C,H_VERSION=0x0D,H_MESSAGE_SIZE=0x0E,H_PRIORITY=0x0F,H_READ_REPORT=0x10,H_REPORT_ALLOWED=0x11,
-    H_STATUS=0x15,H_SUBJECT=0x16,H_TO=0x17,H_TRANSACTION_ID=0x18,H_RETRIEVE_STATUS=0x19,H_RETRIEVE_TEXT=0x1A;
+    H_RESPONSE_STATUS=0x12,H_RESPONSE_TEXT=0x13,H_STATUS=0x15,H_SUBJECT=0x16,H_TO=0x17,H_TRANSACTION_ID=0x18,H_RETRIEVE_STATUS=0x19,H_RETRIEVE_TEXT=0x1A;
   static final int STATUS_RETRIEVED=0x81, STATUS_DEFERRED=0x83;
   static final int CS_UTF8=106, CS_EUCKR=38, CS_KSC5601=36, CS_ASCII=3, CS_LATIN1=4, CS_UCS2=1000, CS_UTF16=1015;
 
@@ -50,7 +50,8 @@ final class MmsPdu {
   static final class Enc { final int charset; final byte[] raw; Enc(int c,byte[] r){ charset=c; raw=r; } String str(){ return decode(raw,charset); } }
 
   static final class Pdu {
-    int type=-1, version=0, priority=0, retrieveStatus=0, status=0;
+    int type=-1, version=0, priority=0, retrieveStatus=0, status=0, responseStatus=0;
+    boolean fromInsertToken=false;
     String transactionId="", contentLocation="", messageId="", messageClass="", contentType="";
     Enc from=null, subject=null;
     final List<Enc> to=new ArrayList<>(), cc=new ArrayList<>();
@@ -221,12 +222,13 @@ final class MmsPdu {
           case H_PRIORITY: d.priority=r.u8(); break;
           case H_RETRIEVE_STATUS: d.retrieveStatus=r.u8(); break;
           case H_STATUS: d.status=r.u8(); break;
+          case H_RESPONSE_STATUS: d.responseStatus=r.u8(); break;
           case H_SUBJECT: d.subject=r.encString(); break;
           case H_TO: d.to.add(r.encString()); break;
           case H_CC: d.cc.add(r.encString()); break;
           case H_FROM: {
             int len=r.valueLength(); int stop=r.p+len; int tok=r.u8();
-            if(tok==0x80&&r.p<stop) d.from=r.encString();
+            if(tok==0x80&&r.p<stop) d.from=r.encString(); else if(tok==0x81) d.fromInsertToken=true;
             r.p=Math.min(stop,r.end); break; }
           case H_MESSAGE_CLASS: { int c=r.peek(); if(c>=0x80){ r.u8(); d.messageClass=c==0x80?"personal":c==0x81?"advertisement":c==0x82?"informational":"auto"; } else d.messageClass=r.text(); break; }
           case H_EXPIRY: {
@@ -291,4 +293,56 @@ final class MmsPdu {
     if(b.length>0&&(b[0]&0xff)>=0x80) o.write(0x7f);
     o.write(b,0,b.length); o.write(0);
   }
+
+  // ---------------- v9: 보내기(M-Send.req) ----------------
+  static final String SMIL="<smil><head><layout><root-layout/><region id=\"Text\" top=\"0\" left=\"0\" height=\"100%\" width=\"100%\"/></layout></head><body><par dur=\"5000ms\"><text src=\"text_0.txt\" region=\"Text\"/></par></body></smil>";
+  static final long EXPIRY_SEC=7L*24*3600;
+  /**
+   * 장문(LMS) 보내기 PDU. 순서는 OMA-MMS-ENC 1.2 대로 Message-Type → Transaction-ID → MMS-Version 먼저, Content-Type 은 맨 끝.
+   * From = insert-address-token(통신사가 내 번호를 넣음) · To = 받는 번호/TYPE=PLMN · 제목 없음(subject 가 비었으면 머리말을 넣지 않음)
+   * 본문 = multipart/related(start=<smil>, type=application/smil): SMIL 한 조각 + text/plain; charset=utf-8 한 조각.
+   */
+  static byte[] sendReq(String transactionId,List<String> to,String subject,String text,long dateSec,boolean smil){
+    ByteArrayOutputStream o=new ByteArrayOutputStream();
+    o.write(0x80|H_MESSAGE_TYPE); o.write(SEND_REQ);
+    o.write(0x80|H_TRANSACTION_ID); writeText(o,transactionId);
+    o.write(0x80|H_VERSION); o.write(0x92); // 1.2
+    if(dateSec>0){ o.write(0x80|H_DATE); writeLong(o,dateSec); }
+    o.write(0x80|H_FROM); o.write(0x01); o.write(0x81); // insert-address-token
+    for(String a:to){ o.write(0x80|H_TO); writeText(o,toAddr(a)); }
+    if(subject!=null&&!subject.isEmpty()){ o.write(0x80|H_SUBJECT); writeEncUtf8(o,subject); }
+    o.write(0x80|H_MESSAGE_CLASS); o.write(0x80); // personal
+    o.write(0x80|H_EXPIRY); { ByteArrayOutputStream v=new ByteArrayOutputStream(); v.write(0x81); writeLong(v,EXPIRY_SEC); byte[] b=v.toByteArray(); writeVlen(o,b.length); o.write(b,0,b.length); } // 상대 7일
+    o.write(0x80|H_PRIORITY); o.write(0x81); // normal
+    o.write(0x80|H_DELIVERY_REPORT); o.write(0x81); // 받음 보고 없음
+    o.write(0x80|H_READ_REPORT); o.write(0x81);     // 읽음 보고 없음
+    o.write(0x80|H_CONTENT_TYPE);
+    if(smil){ ByteArrayOutputStream v=new ByteArrayOutputStream(); v.write(0x80|0x33); // application/vnd.wap.multipart.related
+      v.write(0x80|0x0A); writeText(v,"<smil>");          // Start
+      v.write(0x80|0x09); writeText(v,"application/smil"); // Type
+      byte[] b=v.toByteArray(); writeVlen(o,b.length); o.write(b,0,b.length); }
+    else o.write(0x80|0x23); // application/vnd.wap.multipart.mixed
+    List<byte[]> parts=new ArrayList<>();
+    if(smil){ ByteArrayOutputStream h=new ByteArrayOutputStream();
+      ByteArrayOutputStream ct=new ByteArrayOutputStream(); writeText(ct,"application/smil"); ct.write(0x81); ct.write(0x80|CS_UTF8); byte[] cb=ct.toByteArray(); writeVlen(h,cb.length); h.write(cb,0,cb.length);
+      h.write(0xC0); h.write(0x22); writeText(h,"<smil>");   // Content-ID (quoted)
+      h.write(0x8E); writeText(h,"smil.xml");                 // Content-Location
+      parts.add(part(h.toByteArray(),SMIL.getBytes(StandardCharsets.UTF_8))); }
+    { ByteArrayOutputStream h=new ByteArrayOutputStream();
+      h.write(0x03); h.write(0x80|0x03); h.write(0x81); h.write(0x80|CS_UTF8); // text/plain; charset=utf-8
+      h.write(0xC0); h.write(0x22); writeText(h,"<text_0>");
+      h.write(0x8E); writeText(h,"text_0.txt");
+      parts.add(part(h.toByteArray(),(text==null?"":text).getBytes(StandardCharsets.UTF_8))); }
+    writeUintvar(o,parts.size());
+    for(byte[] p:parts) o.write(p,0,p.length);
+    return o.toByteArray();
+  }
+  static byte[] part(byte[] headers,byte[] data){ ByteArrayOutputStream o=new ByteArrayOutputStream(); writeUintvar(o,headers.length); writeUintvar(o,data.length); o.write(headers,0,headers.length); o.write(data,0,data.length); return o.toByteArray(); }
+  /** 받는 사람 주소: 숫자(+ 앞의 +)만 남기고 /TYPE=PLMN, 메일 주소는 그대로 */
+  static String toAddr(String a){ String s=a==null?"":a.trim(); if(s.contains("@")) return s; String d=s.replaceAll("[^0-9+]",""); return d+"/TYPE=PLMN"; }
+  static void writeUintvar(ByteArrayOutputStream o,long v){ int n=1; long t=v; while((t>>>=7)!=0) n++; for(int i=n-1;i>=0;i--){ int b=(int)((v>>>(7*i))&0x7f); if(i>0) b|=0x80; o.write(b); } }
+  static void writeVlen(ByteArrayOutputStream o,int len){ if(len<31) o.write(len); else { o.write(31); writeUintvar(o,len); } }
+  static void writeLong(ByteArrayOutputStream o,long v){ int n=0; long t=v; do{ n++; t>>>=8; }while(t!=0); o.write(n); for(int i=n-1;i>=0;i--) o.write((int)((v>>>(8*i))&0xff)); }
+  static void writeEncUtf8(ByteArrayOutputStream o,String s){ byte[] b=s.getBytes(StandardCharsets.UTF_8); int len=1+b.length+1+((b.length>0&&(b[0]&0xff)>=0x80)?1:0);
+    writeVlen(o,len); o.write(0x80|CS_UTF8); if(b.length>0&&(b[0]&0xff)>=0x80) o.write(0x7f); o.write(b,0,b.length); o.write(0); }
 }

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""v8 UI: v3 checks + 장문(MMS) 대화 표시, 장문 받기 기록 패널, 다시 받기, v1 문구 없음."""
+"""v9 UI: v8 checks + 장문(LMS) 보내기 표시(LMS 꼬리표), ‘MMS 보내기 기록’ 패널, 일상 약속 카드(날짜 풀어 쓰기)."""
 import asyncio, json, subprocess, time, os
 from playwright.async_api import async_playwright
 
@@ -7,6 +7,7 @@ PORT = 18466
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'assets'))
 U = f'http://localhost:{PORT}/www/index.html'
 res, errs = {}, []
+SHOTS = os.path.abspath(os.path.join(os.path.dirname(__file__), 'out', 'shots-sms-v9')); os.makedirs(SHOTS, exist_ok=True)
 
 def ok(k, v):
     res[k] = bool(v)
@@ -20,7 +21,7 @@ const perms=Object.assign({read:true,send:true,recv:true,contacts:true,notif:tru
 const now=Date.now();
 const threads=cfg.threads||[];
 window.NVSms={
-  status:()=>JSON.stringify({def:!!cfg.def,canRole:true,perms,sdk:36,ver:cfg.ver||'8-test',now}),
+  status:()=>JSON.stringify({def:!!cfg.def,canRole:true,perms,sdk:36,ver:cfg.ver||'9-test',now}),
   calStatus:()=>JSON.stringify({on:false,perm:false,asked:true}),
   diag:()=>JSON.stringify(cfg.diag||{at:0,source:'',insert:'',err:'',inbox:0,def:!!cfg.def,perms,feedAt:0,feedMethod:'',feedOk:false,feedSeen:false,feedRows:0,feedErr:'',ver:'3-test'}),
   requestPerms:()=>__LOG.push('requestPerms'),requestRole:()=>__LOG.push('requestRole'),
@@ -35,7 +36,7 @@ window.NVSms={
     if(m==='ok')setTimeout(()=>window.NV_reread&&window.NV_reread(cfg.rrResult||{ok:true,steps:'ask',stage:'parse:ok',type:'MMS',len:412,sms:30,mms:2,label:'MMS 412자 · parse:ok · ‘넣을까요?’ 알림을 띄움'}),cfg.rrDelay||400);
     if(m==='err')setTimeout(()=>window.NV_reread({ok:false,label:'다시 읽다가 오류가 났어요 (ExceptionInInitializerError←PatternSyntaxException)'}),300);
     return JSON.stringify({started:true})},getPart:()=>'',search:()=>'[]',getContacts:()=>'[]',
-  send:()=>'ok',segments:()=>'1,0,0',markRead:()=>{},viewing:()=>{},takeOpen:()=>'',dial:()=>{},copy:()=>{},vibrate:()=>{},
+  send:()=>'ok',segments:(v)=>{const n=(v||'').length;return n>70?`${Math.ceil(n/67)},${n},${67-n%67},1`:`1,${n},${70-n},0`},markRead:()=>{},viewing:()=>{},takeOpen:()=>'',dial:()=>{},copy:()=>{},vibrate:()=>{},
   calSet:()=>{},calSkip:()=>{},calDelete:()=>{},
   calPending:()=>JSON.stringify(window.__PEND||cfg.pend||[]),
   calPendAdd:(id)=>{__LOG.push('pendadd:'+id);window.__PEND=(window.__PEND||cfg.pend||[]).filter(x=>String(x.id)!==String(id));return cfg.pendRes||'ok'},
@@ -164,8 +165,9 @@ async def main():
             ok('roleWarn says LMS is received', '장문' in sh and '내려받아' in sh)
             await ev("closeSheet();show('set');renderSettings()"); await pg.wait_for_timeout(250)
             st = await ev("document.querySelector('#setList').innerText")
-            ok('settings footer v4, no v1/v3', 'v8 시험판' in st and 'v1' not in st and 'v3' not in st and 'v4' not in st and 'v5' not in st and 'v6' not in st)
+            ok('settings footer v9, no old versions', 'v9 시험판' in st and 'v8' not in st and 'v1' not in st and 'v3' not in st and 'v4' not in st and 'v5' not in st and 'v6' not in st)
             ok('settings footer no longer says cannot receive', '새로 받거나 보내지는 못해요' not in st)
+            ok('settings says long text goes as one LMS', '장문(LMS) 한 통으로 보내요' in st and '나눠 보내요' not in st)
             await ctx.close()
 
             # 9. 장문 받기 기록 패널 — 실패 + 다시 받기 (본문·번호 없음)
@@ -209,7 +211,7 @@ async def main():
             ev=pg.evaluate
             await ev("show('set');renderSettings()"); await pg.wait_for_timeout(200)
             cb = await ev("document.querySelector('#calBox').innerText")
-            ok('cal diag empty state says v8 기록 없음', 'v8 기록 없음' in cb and '다시 읽기 기록 없음' in cb)
+            ok('cal diag empty state says v9 기록 없음', 'v9 기록 없음' in cb and '다시 읽기 기록 없음' in cb)
             await ctx.close()
 
             # 12. 마지막 문자 다시 읽기 (v7: 비동기 + 항상 눈에 보이는 결과)
@@ -219,7 +221,7 @@ async def main():
             ev=pg.evaluate
             await ev("show('set');renderSettings()"); await pg.wait_for_timeout(200)
             cb = await ev("document.querySelector('#calBox').innerText")
-            ok('stale v5 record flagged', '예전 버전' in cb and 'v8 기록 없음' in cb and '일정으로 읽지 못함' in cb)
+            ok('stale v5 record flagged', '예전 버전' in cb and 'v9 기록 없음' in cb and '일정으로 읽지 못함' in cb)
             ok('no request yet says so', '요청 기록 없음' in cb and '다시 읽기 기록 없음' in cb)
             ok('reread button present', await ev("!!document.querySelector('#calBox [data-b=calreread]')") and '마지막 문자 다시 읽기' in cb)
             await pg.click('#calBox [data-b=calreread]'); await pg.wait_for_timeout(60)
@@ -292,7 +294,7 @@ async def main():
             await ev("show('set');renderSettings();delete window.NVSms.calRereadStart"); await pg.wait_for_timeout(150)
             await pg.click('#calBox [data-b=calreread]'); await pg.wait_for_timeout(200)
             tt = await ev("document.querySelector('#toast').innerText")
-            ok('old app without bridge method says so', 'v8 필요' in tt)
+            ok('old app without bridge method says so', 'v9 필요' in tt)
             await ctx.close()
 
             # 13. v8: 받는 순간 자동 처리 · 알림 상태 · 최근 문자 줄 · 앱 안 카드
@@ -352,6 +354,77 @@ async def main():
             cb = await ev("document.querySelector('#calBox').innerText")
             ok('posted shows 알림 떴어요', '알림 떴어요' in cb and '지금 알림을 띄울 수 있어요' in cb and '알림 막힘' not in cb)
             await ctx.close()
+
+            # 14. v9: 장문(LMS) 꼬리표 — 70자 넘으면 ‘LMS’, 짧으면 글자 수
+            now=Date_now_plus()
+            th=[{'id':7,'addr':'01098765432','snip':'안녕','date':now,'out':False,'fail':False,'unread':0,'n':1,'lastIn':now}]
+            msgs=[{'id':'s1','body':'안녕','date':now-60000,'dir':'in','st':'ok'},
+                  {'id':'m2','body':'가'*320,'date':now-30000,'dir':'out','st':'fail','mms':True,'imgs':[]}]
+            ctx,pg = await page(b, {'def':True,'threads':th,'msgs':msgs})
+            ev=pg.evaluate
+            await pg.click('#lList .trow'); await pg.wait_for_timeout(400)
+            await pg.fill('#cIn','가'*70); await pg.wait_for_timeout(80)
+            c1 = await ev("document.querySelector('#cCnt').innerText")
+            ok('70 Korean chars: plain counter, no LMS tag', c1=='70 / 70자' and not await ev("!!document.querySelector('#cCnt .lms')"))
+            await pg.fill('#cIn','가'*71); await pg.wait_for_timeout(80)
+            c2 = await ev("document.querySelector('#cCnt').innerText")
+            ok('71 Korean chars: LMS tag + one message', await ev("!!document.querySelector('#cCnt .lms')&&document.querySelector('#cCnt .lms').textContent==='LMS'") and '71자' in c2 and '한 통' in c2 and '나눠' not in c2)
+            await pg.fill('#cIn','가'*320); await pg.wait_for_timeout(80)
+            await pg.screenshot(path=os.path.join(SHOTS,'v9-composer-lms.png'))
+            await pg.fill('#cIn',''); await pg.wait_for_timeout(80)
+            ok('empty: counter hidden', await ev("document.querySelector('#cCnt').hidden"))
+            # 실패한 장문 → 다시 보내기
+            await pg.click('#cList .m.fail'); await pg.wait_for_timeout(200)
+            sh = await ev("document.querySelector('#sheet').innerText")
+            ok('failed LMS bubble offers 다시 보내기', '다시 보내기' in sh)
+            await ctx.close()
+
+            # 15. v9: MMS 보내기 기록 패널
+            base={'at':0,'insert':'','inbox':3,'def':True,'perms':{'read':True,'recv':True,'send':True},'feedAt':0,'feedSeen':False,'ver':'9-test'}
+            ctx,pg = await page(b, {'def':True,'threads':[],'diag':dict(base)})
+            ev=pg.evaluate
+            await ev("show('set');renderSettings()"); await pg.wait_for_timeout(200)
+            mb = await ev("document.querySelector('#moBox')&&document.querySelector('#moBox').innerText")
+            ok('moBox exists with title', mb is not None and 'MMS 보내기 기록' in mb)
+            ok('moBox empty state', '아직 장문을 보낸 적이 없어요' in mb and '아직 없음' in mb)
+            await ctx.close()
+            okd=dict(base); okd.update({'moAt':1764223200000,'moN':3,'moStage':'result','moStageLabel':'결과 받음','moStageAt':1764223205000,'moLen':342,'moBytes':1205,
+                'moCode':-1,'moCodeLabel':'보냄','moHttp':200,'moResp':128,'moRespLabel':'통신사가 받음','moErr':'','moSaved':True,'moDoneAt':1764223205000,'moOk':True})
+            ctx,pg = await page(b, {'def':True,'threads':[],'diag':okd})
+            ev=pg.evaluate
+            await ev("show('set');renderSettings()"); await pg.wait_for_timeout(200)
+            mb = await ev("document.querySelector('#moBox').innerText")
+            ok('moBox ok: badge 보냄 + len/bytes/count', '보냄' in mb and '342자' in mb and '1205B' in mb and '3번째' in mb)
+            ok('moBox ok: stage/code/http/carrier', '결과 받음' in mb and '-1 (OK)' in mb and 'HTTP 200' in mb and '통신사가 받음' in mb and '0x80' in mb)
+            ok('moBox ok: saved', '저장됨' in mb)
+            await pg.evaluate("document.querySelector('#moBox').scrollIntoView()"); await pg.wait_for_timeout(100)
+            await pg.screenshot(path=os.path.join(SHOTS,'v9-mobox-ok.png'))
+            await ctx.close()
+            wd=dict(base); wd.update({'moAt':1764223200000,'moN':1,'moStage':'handed','moStageLabel':'전화 앱에 넘김','moStageAt':1764223201000,'moLen':300,'moBytes':1100,'moCode':0,'moSaved':True,'moDoneAt':0,'moOk':False})
+            ctx,pg = await page(b, {'def':True,'threads':[],'diag':wd})
+            ev=pg.evaluate
+            await ev("show('set');renderSettings()"); await pg.wait_for_timeout(200)
+            mb = await ev("document.querySelector('#moBox').innerText")
+            ok('moBox waiting: handed, no result yet', '결과 기다리는 중' in mb and '전화 앱에 넘김' in mb and '아직 없음' in mb)
+            await ctx.close()
+            rj=dict(base); rj.update({'moAt':1764223200000,'moN':2,'moStage':'result','moStageLabel':'결과 받음','moLen':300,'moCode':106,'moCodeLabel':'통신사가 거절함','moHttp':200,'moResp':227,'moRespLabel':'보낸 사람 번호 확인 실패','moSaved':True,'moDoneAt':1764223209000,'moOk':False})
+            ctx,pg = await page(b, {'def':True,'threads':[],'diag':rj})
+            ev=pg.evaluate
+            await ev("show('set');renderSettings()"); await pg.wait_for_timeout(200)
+            mb = await ev("document.querySelector('#moBox').innerText")
+            ok('moBox rejected: 실패 + 106 + carrier code', '실패' in mb and '106' in mb and '거절' in mb and '0xe3' in mb.lower())
+            ok('moBox has no body/number', '010' not in mb)
+            await ctx.close()
+
+            # 16. v9: 일상 약속 카드 — 날짜를 풀어 쓴 줄
+            pend=[{'id':77,'title':'약속 · 5432','when':1764738000000,'hasTime':True,'loc':'안동대학교','label':'12월 3일(목) 오후 2시 · 안동대학교 — 달력에 넣을까요?'}]
+            ctx,pg = await page(b, {'def':True,'threads':[],'pend':pend})
+            ev=pg.evaluate
+            await ev("show('list')"); await pg.wait_for_timeout(250)
+            pb = await ev("document.querySelector('#pendBar').innerText")
+            ok('casual card shows title + resolved date line', '약속 · 5432' in pb and '12월 3일(목) 오후 2시 · 안동대학교 — 달력에 넣을까요?' in pb)
+            await pg.screenshot(path=os.path.join(SHOTS,'v9-casual-card.png'))
+            await ctx.close()
             await b.close()
     finally:
         srv.terminate()
@@ -362,7 +435,7 @@ async def main():
     else:
         ok('no page errors', True)
     failed=[k for k,v in res.items() if not v]
-    print(f"Playwright v8: {sum(res.values())} passed, {len(failed)} failed")
+    print(f"Playwright v9: {sum(res.values())} passed, {len(failed)} failed")
     if failed:
         print('FAILED', failed)
         raise SystemExit(1)

@@ -97,6 +97,18 @@ final class SmsDiag {
       .putString("auto_steps",steps==null?"":steps).putString("auto_reason",reason==null?"":reason).putString("auto_phase","done").putString("auto_ver",Nv.VER).apply(); }catch(Throwable x){}
   }
   static void mmsParts(Context c,String sum){ try{ p(c).edit().putString("mms_parts",sum==null?"":sum).apply(); }catch(Exception x){} }
+  /** v9: 장문(LMS) 보내기 기록. startAt>0 이면 새 보내기 시작(이전 결과 지움). 본문·번호 없음 */
+  static void mmsOut(Context c,String stage,int len,int code,int http,int resp,String err,long startAt,boolean saved){
+    try{ SharedPreferences.Editor e=p(c).edit();
+      if(startAt>0){ e.putLong("mo_at",startAt).putInt("mo_n",p(c).getInt("mo_n",0)+1).remove("mo_done_at").remove("mo_ok").putInt("mo_code",0).putInt("mo_http",0).putInt("mo_resp",0).putString("mo_err","").putInt("mo_bytes",0).putBoolean("mo_saved",false); }
+      e.putString("mo_stage",stage==null?"":stage).putInt("mo_len",len).putLong("mo_stage_at",System.currentTimeMillis());
+      if(code!=0) e.putInt("mo_code",code); if(http!=0) e.putInt("mo_http",http); if(resp!=0) e.putInt("mo_resp",resp);
+      if(err!=null&&!err.isEmpty()) e.putString("mo_err",err);
+      if(!"build".equals(stage)) e.putBoolean("mo_saved",saved);
+      e.apply(); }catch(Throwable x){}
+  }
+  static void mmsOutBytes(Context c,int n){ try{ p(c).edit().putInt("mo_bytes",n).apply(); }catch(Throwable x){} }
+  static void mmsOutDone(Context c,boolean ok){ try{ p(c).edit().putLong("mo_done_at",System.currentTimeMillis()).putBoolean("mo_ok",ok).apply(); }catch(Throwable x){} }
   static void mmsAck(Context c,String st){ try{ p(c).edit().putString("mms_ack",st==null?"":st).apply(); }catch(Exception x){} }
 
   static JSONObject json(Context c){
@@ -146,6 +158,11 @@ final class SmsDiag {
       o.put("mmsHttp",p.getInt("mms_http",0));
       o.put("mmsSaved",p.getBoolean("mms_saved",false));
       o.put("mmsErr",p.getString("mms_err",""));
+      o.put("moAt",p.getLong("mo_at",0)); o.put("moN",p.getInt("mo_n",0)); o.put("moStage",p.getString("mo_stage","")); o.put("moStageLabel",MmsLogic.outStageLabel(p.getString("mo_stage","")));
+      o.put("moStageAt",p.getLong("mo_stage_at",0)); o.put("moLen",p.getInt("mo_len",0)); o.put("moBytes",p.getInt("mo_bytes",0));
+      int mc=p.getInt("mo_code",0), mr=p.getInt("mo_resp",0); o.put("moCode",mc); o.put("moCodeLabel",mc==0?"":MmsLogic.sendErrLabel(mc)); o.put("moHttp",p.getInt("mo_http",0));
+      o.put("moResp",mr); o.put("moRespLabel",mr==0?"":MmsLogic.respLabel(mr)); o.put("moErr",p.getString("mo_err","")); o.put("moSaved",p.getBoolean("mo_saved",false));
+      o.put("moDoneAt",p.getLong("mo_done_at",0)); o.put("moOk",p.getBoolean("mo_ok",false));
       o.put("mmsAck",p.getString("mms_ack","")); o.put("mmsParts",p.getString("mms_parts",""));
       o.put("mmsPending",MmsInbox.pendingCount(c));
       o.put("ver",Nv.VER);

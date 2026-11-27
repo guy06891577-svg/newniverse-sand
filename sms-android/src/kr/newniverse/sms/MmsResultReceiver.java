@@ -12,13 +12,14 @@ public class MmsResultReceiver extends BroadcastReceiver {
     final PendingResult pr=goAsync(); final Context app=c.getApplicationContext();
     new Thread(()->{
       try{
-        if(a.startsWith(MmsInbox.ACT_DL)) MmsInbox.onDownloaded(app,i,code);
+        if(a.startsWith(MmsOutbox.ACT_SENT)) MmsOutbox.onSent(app,i,code); // v9: 장문 보내기 결과
+        else if(a.startsWith(MmsInbox.ACT_DL)) MmsInbox.onDownloaded(app,i,code);
         else if(a.equals(MmsInbox.ACT_RETRY)) MmsInbox.retryAll(app);
         else if(a.startsWith(MmsInbox.ACT_NR)){
           File f=MmsFileProvider.file(app,i.getStringExtra("file")); if(f!=null) f.delete();
           SmsDiag.mmsAck(app,code==Activity.RESULT_OK?"ok":"fail:"+code);
         }
-      }catch(Exception e){ try{ SmsDiag.mms(app,0,"fail",101,0,false,InboxLogic.errClass(e),null); if(a.startsWith(MmsInbox.ACT_DL)) MmsInbox.notifyFail(app,101); }catch(Exception x){} }
+      }catch(Exception e){ if(a.startsWith(MmsOutbox.ACT_SENT)){ try{ SmsDiag.mmsOut(app,"error",0,101,0,0,InboxLogic.errClass(e),0,false); }catch(Exception x){} return; } try{ SmsDiag.mms(app,0,"fail",101,0,false,InboxLogic.errClass(e),null); if(a.startsWith(MmsInbox.ACT_DL)) MmsInbox.notifyFail(app,101); }catch(Exception x){} }
       finally{ try{ pr.finish(); }catch(Exception e){} }
     },"nv-mms-result").start();
   }
