@@ -554,6 +554,12 @@ public class MainActivity extends Activity {
       try{ Object sb=getSystemService("statusbar"); Class.forName("android.app.StatusBarManager").getMethod("expandNotificationsPanel").invoke(sb);}catch(Exception e){} }
     @JavascriptInterface public String info(){ String vn=""; try{ vn=getPackageManager().getPackageInfo(getPackageName(),0).versionName; }catch(Exception e){} if(vn==null) vn=""; vn=vn.replaceAll("[^A-Za-z0-9._\\-]","");
       return "{\"model\":\""+Build.MANUFACTURER+" "+Build.MODEL+"\",\"android\":\""+Build.VERSION.RELEASE+"\",\"sdk\":"+Build.VERSION.SDK_INT+",\"app\":\""+vn+"\"}"; }
+    /** v46: 폰 정보에 보여 줄 설치된 뉴니버스 앱들의 실제 버전 {"pkg":{"vn":"...","vc":N}} — 설치 안 된 앱은 빠짐 (queries 에 적힌 패키지만 볼 수 있음) */
+    @JavascriptInterface public String appVers(){ JSONObject o=new JSONObject();
+      String[] ps={getPackageName(),"kr.newniverse.sms","kr.newniverse.phone","kr.newniverse.settings","kr.newniverse.calc"};
+      for(String p:ps){ try{ android.content.pm.PackageInfo pi=getPackageManager().getPackageInfo(p,0); String vn=pi.versionName==null?"":pi.versionName.replaceAll("[^A-Za-z0-9._\\-]","");
+          long vc=Build.VERSION.SDK_INT>=28?pi.getLongVersionCode():pi.versionCode; JSONObject e=new JSONObject(); e.put("vn",vn); e.put("vc",vc); o.put(p,e); }catch(Exception e){} }
+      return o.toString(); }
     /** 두 번 톡톡 화면 끄기: "ok"=꺼짐, "old"=안드로이드 9 미만, "need"=접근성 권한 필요 */
     @JavascriptInterface public String lockScreen(){
       if(Flavor.BASIC) return "dim";   // 기본판: 접근성 서비스 없음 → 화면을 어둡게만
