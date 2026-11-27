@@ -50,6 +50,27 @@ public class TimePhraseTest {
     h=TimePhrase.find("오늘 오후 2시에 알려줘",NOW);
     assertTrue(h.confirmPast().contains("이미 지난 때"));
   }
+  /** 실제 폰 메모 여섯 문장(있는 그대로). 「광개토대왕」만 알림 없음 */
+  @Test public void v3RealPhoneSentences(){
+    at("내일 아침 9시에 깨워 줘",ms(2026,11,28,9,0));
+    at("내일 아침 10시에 깨워 줘",ms(2026,11,28,10,0));
+    at("내일 10시에 나한테 전화하라고 말해 줘",ms(2026,11,28,10,0)); // 맨 숫자 10시 = 오전
+    none("광개토대왕");
+    TimePhrase.Hit h=TimePhrase.find("10초 후에 알람",NOW);
+    assertNotNull(h); assertEquals(NOW+10000L,h.when); assertTrue(h.relative); assertFalse(h.past);
+    h=TimePhrase.find("10초 뒤에 알람",NOW);
+    assertNotNull(h); assertEquals(NOW+10000L,h.when); assertTrue(h.relative);
+    assertTrue(TimePhrase.confirmWhen(h.when).contains(":10"));
+  }
+  @Test public void v3SecondsAndCues(){
+    TimePhrase.Hit h;
+    h=TimePhrase.find("10초 뒤에 알려줘",NOW); assertNotNull(h); assertEquals(NOW+10000L,h.when);
+    h=TimePhrase.find("십 초 뒤",NOW); assertNotNull(h); assertEquals(NOW+10000L,h.when);
+    h=TimePhrase.find("1분 뒤",NOW); assertNotNull(h); assertEquals(NOW+60000L,h.when);
+    h=TimePhrase.find("10초뒤 알람",NOW); assertNotNull("띄어쓰기 없는 10초뒤",h); assertEquals(NOW+10000L,h.when);
+    at("내일 10시",ms(2026,11,28,10,0)); // 알림 말이 없어도 날짜+시각이면 알림
+    none("오늘 날씨 좋네");
+  }
   // ---- 오늘·내일·모레·글피 ----
   @Test public void relativeDays(){
     at("오늘 저녁 7시에 알려줘",ms(2026,11,27,19,0));
@@ -163,6 +184,7 @@ public class TimePhraseTest {
     assertEquals("12월 3일 (목) 오후 2:00",TimePhrase.confirmWhen(ms(2026,12,3,14,0)));
     assertEquals("12월 3일 (목) 오후 2:30",TimePhrase.confirmWhen(ms(2026,12,3,14,30)));
     assertEquals("11월 28일 (토) 오전 12:00",TimePhrase.confirmWhen(ms(2026,11,28,0,0)));
+    assertTrue(TimePhrase.confirmWhen(NOW+10000L).endsWith("오후 3:00:10"));
   }
   @Test public void minutesParser(){
     assertEquals(30,TimePhrase.minutes("삼십")); assertEquals(15,TimePhrase.minutes("십오")); assertEquals(10,TimePhrase.minutes("십"));

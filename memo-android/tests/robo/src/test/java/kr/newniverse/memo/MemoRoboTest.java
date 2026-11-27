@@ -234,7 +234,11 @@ public class MemoRoboTest {
   @Test public void sixtySecondsSavesAndAutoContinues(){
     launch(); ssr().triggerOnReadyForSpeech(new Bundle());
     say("첫 덩이 이야기"); finalText("첫 덩이 이야기");
-    for(int k=0;k<60;k++){ ssr().triggerOnRmsChanged(8f); idle(1000); if(k%3==0&&sr()!=null&&act.dict.state==Dictation.LISTENING){ say("계속 말해요 "+k); finalText("계속 말해요 "+k); } if(!notes().isEmpty()) break; }
+    for(int k=0;k<60;k++){
+      idle(1000);
+      if(sr()!=null&&act.dict.state==Dictation.LISTENING){ say("계속 말해요 "+k); if(k%3==0) finalText("계속 말해요 "+k); }
+      if(!notes().isEmpty()) break;
+    }
     idle(1700);
     assertTrue("60초에 첫 메모가 저장돼야 해요",notes().size()>=1);
     assertTrue(last("saved").optBoolean("cont")); assertEquals(0,last("saved").optInt("seg"));
@@ -370,17 +374,24 @@ public class MemoRoboTest {
     shadowOf(app).denyPermissions(Manifest.permission.POST_NOTIFICATIONS);
     launch(); String id=saveSpoken("내일 9시에 알려줘");
     JSONObject rem=last("saved").getJSONObject("remind");
-    assertEquals("need-notif",rem.getString("state")); assertEquals(0,sched().size());
+    assertEquals("need-notif",rem.getString("state"));
+    assertEquals(1,sched().size()); // 표시 권한이 없어도 알람은 걸어요
+    assertTrue(notes().get(0).remindAt>0);
+    assertTrue(rem.getString("line").contains("알람은 맞춰 두었어요"));
     assertEquals(Manifest.permission.POST_NOTIFICATIONS,shadowOf(act).getLastRequestedPermission().requestedPermissions[0]);
     shadowOf(app).grantPermissions(Manifest.permission.POST_NOTIFICATIONS);
-    act.onRequestPermissionsResult(MainActivity.REQ_NOTIF,new String[]{Manifest.permission.POST_NOTIFICATIONS},new int[]{0});
-    assertEquals(1,sched().size()); assertTrue(last("remind").getBoolean("ok"));
+    act.pendingRemind=notes().get(0).id;
+    JSONObject after=act.br.remindJson(notes().get(0).id,true,true);
+    assertTrue(after.toString(),after.getBoolean("ok"));
+    assertEquals("exact",after.getString("state"));
+    assertEquals(1,sched().size());
   }
   @Test public void notificationDeniedDoesNotSchedule() throws Exception {
     shadowOf(app).denyPermissions(Manifest.permission.POST_NOTIFICATIONS);
     launch(); saveSpoken("내일 9시에 알려줘");
     act.onRequestPermissionsResult(MainActivity.REQ_NOTIF,new String[]{Manifest.permission.POST_NOTIFICATIONS},new int[]{-1});
-    assertEquals(0,sched().size()); assertEquals("notif-denied",last("remind").getString("state"));
+    assertEquals(1,sched().size()); assertEquals("notif-denied",last("remind").getString("state"));
+    assertTrue(notes().get(0).remindAt>0);
   }
   @Test public void lockedDoesNotRequestNotificationPermission() throws Exception {
     shadowOf(app).denyPermissions(Manifest.permission.POST_NOTIFICATIONS);
@@ -388,7 +399,8 @@ public class MemoRoboTest {
     launch(); saveSpoken("내일 9시에 알려줘");
     JSONObject rem=last("saved").getJSONObject("remind");
     assertEquals("need-notif",rem.getString("state"));
-    assertEquals(0,sched().size());
+    assertEquals(1,sched().size());
+    assertFalse(rem.optBoolean("askSettings"));
     assertNull("잠금 화면에서는 권한 창을 띄우지 않아요",shadowOf(act).getLastRequestedPermission());
     assertEquals(0,unlockAsked);
   }
@@ -405,7 +417,9 @@ public class MemoRoboTest {
   }
   @Test public void noTimePhraseNoReminder() throws Exception {
     launch(); saveSpoken("우유랑 계란 사기");
-    assertFalse(last("saved").has("remind"));
+    JSONObject rem=last("saved").getJSONObject("remind");
+    assertEquals("notime",rem.getString("state"));
+    assertEquals("알림은 맞추지 않았어요",rem.getString("line"));
     assertEquals(0,notes().get(0).remindAt);
     assertEquals(0,sched().size());
     assertEquals("notime",new JSONObject(act.br.remind(String.valueOf(notes().get(0).id),false)).getString("state"));
@@ -415,6 +429,67 @@ public class MemoRoboTest {
     locked=true;
     JSONObject u=new JSONObject(act.br.unremind(id)); assertTrue(u.getBoolean("ok"));
     assertEquals(0,sched().size()); assertEquals(0,notes().get(0).remindAt);
+  }
+  @Test public void usesAlarmClockAndParsesTenSeconds() throws Exception {
+    launch(); saveSpoken("10초 뒤에 알람");
+    assertEquals("setAlarmClock",Reminders.lastMethod);
+    assertEquals(1,sched().size());
+    Note n=notes().get(0);
+    assertEquals(n.createdAt+10000L,n.remindAt);
+    org.json.JSONArray log=AlarmLog.list(app);
+    assertEquals(1,log.length());
+    assertEquals("setAlarmClock",log.getJSONObject(0).optString("method"));
+    assertEquals("10초 뒤에 알람",log.getJSONObject(0).optString("text"));
+  }
+  @Test public void realPhoneSentencesScheduleExceptGwanggaeto() throws Exception {
+    launch();
+    for(String t:new String[]{"내일 아침 9시에 깨워 줘","내일 아침 10시에 깨워 줘","내일 10시에 나한테 전화하라고 말해 줘","10초 후에 알람","10초 뒤에 알람"}){
+      int before=sched().size();
+      if(!act.dict.listening()){ act.startDictation(); idle(80); }
+      ssr().triggerOnReadyForSpeech(new android.os.Bundle()); say(t); finalText(t); idle(100); idle(2700); idle(1700);
+      assertEquals(t,before+1,sched().size());
+    }
+    int n=sched().size();
+    if(!act.dict.listening()){ act.startDictation(); idle(80); }
+    ssr().triggerOnReadyForSpeech(new android.os.Bundle()); say("광개토대왕"); finalText("광개토대왕"); idle(100); idle(2700); idle(1700);
+    assertEquals(n,sched().size());
+    assertEquals("notime",last("saved").getJSONObject("remind").getString("state"));
+  }
+  @Test public void rmsNoiseDoesNotBlockSilenceSave() throws Exception {
+    launch(); ssr().triggerOnReadyForSpeech(new android.os.Bundle());
+    say("10초 뒤에 알람"); finalText("10초 뒤에 알람");
+    for(int k=0;k<15;k++){ ssr().triggerOnRmsChanged(8f); idle(200); }
+    idle(1800);
+    assertFalse(act.dict.busy());
+    assertEquals(1,notes().size());
+    assertEquals("10초 뒤에 알람",notes().get(0).text);
+    assertTrue(notes().get(0).remindAt>0);
+  }
+  @Test public void endOfSpeechSavesAndSchedules() throws Exception {
+    launch(); ssr().triggerOnReadyForSpeech(new android.os.Bundle());
+    say("10초 뒤에 알람");
+    ssr().triggerOnEndOfSpeech();
+    idle(1400); idle(1700);
+    assertFalse(act.dict.busy());
+    assertEquals(1,notes().size());
+    assertEquals("10초 뒤에 알람",notes().get(0).text);
+    assertTrue(notes().get(0).remindAt>0);
+  }
+  @Test public void manualSaveSchedulesAlarm() throws Exception {
+    launch(); ssr().triggerOnReadyForSpeech(new android.os.Bundle()); say("내일 아침 10시에 깨워 줘");
+    act.br.stop(); idle(10);
+    finalText("내일 아침 10시에 깨워 줘");
+    assertFalse(act.dict.busy());
+    assertEquals("내일 아침 10시에 깨워 줘",notes().get(0).text);
+    assertTrue(notes().get(0).remindAt>0);
+    assertEquals("setAlarmClock",Reminders.lastMethod);
+    assertEquals("saved",act.dstate);
+  }
+  @Test public void firstOpenAsksNotificationWhenUnlocked(){
+    shadowOf(app).denyPermissions(Manifest.permission.POST_NOTIFICATIONS);
+    launch();
+    assertEquals(Manifest.permission.POST_NOTIFICATIONS,shadowOf(act).getLastRequestedPermission().requestedPermissions[0]);
+    assertTrue(act.prefs.askedNotif());
   }
 
   // ===================== 비행기 모드·잠금 화면: 클라우드 인식기 금지 =====================

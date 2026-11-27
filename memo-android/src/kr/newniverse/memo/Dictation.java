@@ -19,7 +19,8 @@ import java.util.ArrayList;
 
 /**
  * 듣고 받아 적는 일꾼. 한 번 시작하면 말이 끊겨도(인식기가 알아서 끝내도) 바로 다시 들어서 이어 붙이고,
- * ‘말 끊긴 뒤 silenceMs’ · 누름 · ‘한 덩이 60초(자동 이어 받기, 최대 5덩이)’ 중 먼저 오는 때 저장해요.
+ * 글이 바뀐 뒤 silenceMs, 말 끝 뒤 약 1.2초, 마지막 글 뒤 8초, 누름, 한 덩이 60초(자동 이어 받기, 최대 5덩이) 중 먼저 오는 때 저장해요.
+ * 주변 소음(rms)은 끊김 시계를 되돌리지 않아요.
  * 받아쓰기를 못 쓰면(인식기 없음·인터넷/언어 팩 없음) 소리 파일(m4a)로만 저장해요.
  * 잠금 화면이거나 비행기 모드(네트워크 없음)에서는 클라우드 인식기를 시작하지 않아요.
  * (클라우드 음성 서비스가 잠금 화면용이 아닌 안내 창을 띄워 삼성이 잠금 해제를 물을 수 있기 때문)
@@ -164,23 +165,23 @@ final class Dictation {
       if(state==STARTING) state=LISTENING;
       if(!readyOnce){ readyOnce=true; vibrate(45); ev.onStatus("listening",onDevice?"offline":"online"); }
     }
-    @Override public void onBeginningOfSpeech(){ if(pol!=null&&state!=IDLE) pol.voice(now()); }
+    @Override public void onBeginningOfSpeech(){ if(pol!=null&&state!=IDLE) pol.sound(now()); }
     @Override public void onRmsChanged(float rms){
       if(state==IDLE) return;
-      if(rms>5f&&pol!=null) pol.voice(now());
+      if(rms>5f&&pol!=null) pol.sound(now()); // 주변 소음은 끊김 시계를 되돌리지 않아요
       ev.onLevel(Math.max(0f,Math.min(1f,(rms+2f)/12f)));
     }
     @Override public void onBufferReceived(byte[] b){}
-    @Override public void onEndOfSpeech(){}
+    @Override public void onEndOfSpeech(){ if(pol!=null&&state!=IDLE) pol.endSpeech(now()); }
     @Override public void onPartialResults(Bundle b){
       if(state==IDLE) return;
       String t=first(b); if(t.isEmpty()||t.equals(partial)) return;
-      partial=t; pol.voice(now()); ev.onText(committed.toString(),partial);
+      partial=t; if(pol!=null) pol.text(now()); ev.onText(committed.toString(),partial);
     }
     @Override public void onResults(Bundle b){
       if(state==IDLE) return;
       String t=first(b); if(t.isEmpty()) t=partial;
-      if(!t.isEmpty()){ if(committed.length()>0) committed.append(' '); committed.append(t); pol.voice(now()); }
+      if(!t.isEmpty()){ if(committed.length()>0) committed.append(' '); committed.append(t); if(pol!=null) pol.text(now()); }
       partial=""; ev.onText(committed.toString(),"");
       if(state==STOPPING){ complete(); return; }
       next();

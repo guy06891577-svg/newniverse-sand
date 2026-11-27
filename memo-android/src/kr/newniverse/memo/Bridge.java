@@ -153,23 +153,27 @@ class Bridge {
       TimePhrase.Hit h=TimePhrase.find(n.text,n.createdAt);
       if(h==null){ out.put("ok",false).put("state","notime"); return out; }
       if(h.past){ out.put("ok",false).put("state","past").put("line",h.confirmPast()).put("label",TimePhrase.confirmWhen(h.when)); return out; }
-      if(!Reminders.notifGranted(a)){
-        if(viaPermission){ out.put("ok",false).put("state","notif-denied").put("line",h.confirmSet()); return out; }
-        if(a.locked()){ out.put("ok",false).put("state","need-notif").put("line",h.confirmSet()); return out; }
-        a.pendingRemind=id; out.put("ok",false).put("state","need-notif").put("line",h.confirmSet());
-        try{ a.requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS},MainActivity.REQ_NOTIF); }catch(Throwable e){ out.put("state","notif-denied"); a.pendingRemind=0; }
+      boolean notif=Reminders.notifGranted(a);
+      if(!notif&&!viaPermission&&!a.locked()){
+        a.pendingRemind=id;
+        try{ a.requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS},MainActivity.REQ_NOTIF); }catch(Throwable e){ a.pendingRemind=0; }
+      }
+      int r=Reminders.schedule(a,n,h.when,true); // 알림 표시 권한이 없어도 알람은 걸어요
+      if(r==Reminders.OK_EXACT||r==Reminders.OK_INEXACT) a.store.update(n);
+      AlarmLog.add(a,n,h,r,Reminders.lastMethod,notif,n.remindExact);
+      if(!notif){
+        String st=viaPermission?"notif-denied":"need-notif";
+        String line=h.confirmSet();
+        if(r==Reminders.OK_EXACT||r==Reminders.OK_INEXACT) line+=" · 알람은 맞춰 두었어요. 알림 표시가 꺼져 있으면 소리가 안 날 수 있어요";
+        out.put("ok",false).put("state",st).put("askSettings",!a.locked()).put("line",line).put("when",h.when).put("label",TimePhrase.confirmWhen(h.when)).put("method",Reminders.lastMethod);
         return out;
       }
-      int r=Reminders.schedule(a,n,h.when,true); // 정확한 알람 허용이 없으면 대략적으로
       switch(r){
         case Reminders.OK_EXACT:
-          a.store.update(n);
-          out.put("ok",true).put("state","exact").put("line",h.confirmSet()).put("when",h.when).put("label",TimePhrase.confirmWhen(h.when)); return out;
+          out.put("ok",true).put("state","exact").put("line",h.confirmSet()).put("when",h.when).put("label",TimePhrase.confirmWhen(h.when)).put("method",Reminders.lastMethod); return out;
         case Reminders.OK_INEXACT:
-          a.store.update(n);
-          out.put("ok",true).put("state","inexact").put("line",h.confirmSet()+" · 정확한 알람 허용이 없어 몇 분 어긋날 수 있어요").put("when",h.when).put("label",TimePhrase.confirmWhen(h.when)); return out;
+          out.put("ok",true).put("state","inexact").put("line",h.confirmSet()+" · 정확한 알람 허용이 없어 몇 분 어긋날 수 있어요").put("when",h.when).put("label",TimePhrase.confirmWhen(h.when)).put("method",Reminders.lastMethod); return out;
         case Reminders.NEED_EXACT: out.put("ok",false).put("state","need-exact").put("line",h.confirmSet()); return out;
-        case Reminders.NEED_NOTIF: out.put("ok",false).put("state","notif-denied").put("line",h.confirmSet()); return out;
         case Reminders.PAST: out.put("ok",false).put("state","past").put("line",h.confirmPast()); return out;
         default: out.put("ok",false).put("state","error"); return out;
       }
@@ -206,8 +210,13 @@ class Bridge {
 
   // ---------- 시스템 설정 화면 열기 ----------
   boolean go(Intent i){ try{ i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); a.startActivity(i); return true; }catch(Throwable e){ return false; } }
+  @JavascriptInterface public String alarmLog(){
+    try{ if(!open()) return locked(); return MainActivity.j("ok",true).put("items",AlarmLog.list(a)).toString(); }
+    catch(Throwable e){ return err("log"); }
+  }
   @JavascriptInterface public void openExactSettings(){ a.main.post(()->{ if(!go(Reminders.exactSettings(a))) go(new Intent(Settings.ACTION_SETTINGS)); }); }
   @JavascriptInterface public void openNotifSettings(){ a.main.post(()->{ if(!go(Reminders.notifSettings(a))) go(new Intent(Settings.ACTION_SETTINGS)); }); }
   @JavascriptInterface public void openVoiceSettings(){ a.main.post(()->{ if(!go(new Intent(Settings.ACTION_VOICE_INPUT_SETTINGS))) go(new Intent(Settings.ACTION_SETTINGS)); }); }
   @JavascriptInterface public void openAppSettings(){ a.main.post(()->{ if(!go(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+a.getPackageName())))) go(new Intent(Settings.ACTION_SETTINGS)); }); }
+  @JavascriptInterface public void openBatterySettings(){ a.main.post(()->{ if(!go(Reminders.batterySettings(a))) go(new Intent(Settings.ACTION_SETTINGS)); }); }
 }

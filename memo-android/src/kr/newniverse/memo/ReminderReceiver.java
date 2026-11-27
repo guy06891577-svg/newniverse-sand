@@ -12,7 +12,9 @@ public class ReminderReceiver extends BroadcastReceiver {
       NoteStore s=new NoteStore(c.getFilesDir());
       Note n=s.get(id);
       if(n==null||n.remindAt<=0||n.reminded) return;
-      if(Reminders.post(c,n,false)){ n.reminded=true; s.update(n); }
+      boolean ok=Reminders.post(c,n,false);
+      n.reminded=true; s.update(n);
+      AlarmLog.markFired(c,n.id,ok);
     }catch(Throwable e){}
   }
 }

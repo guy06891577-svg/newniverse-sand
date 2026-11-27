@@ -18,6 +18,8 @@ final class Prefs {
   void setMuted(boolean v){ sp.edit().putBoolean("muted",v).apply(); }
   boolean askedMic(){ return sp.getBoolean("askedMic",false); }
   void setAskedMic(){ sp.edit().putBoolean("askedMic",true).apply(); }
+  boolean askedNotif(){ return sp.getBoolean("askedNotif",false); }
+  void setAskedNotif(){ sp.edit().putBoolean("askedNotif",true).apply(); }
   /** 키: offline keepAudio autoClose vibrate quiet (true/false) · silenceMs (1500/2500/4000). 모르는 키는 false */
   boolean set(String k,String v){
     switch(k){

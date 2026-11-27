@@ -10,7 +10,8 @@ import java.util.regex.*;
  *        이번주 X = 이번 주(월~일)의 X · 다음주/담주/차주 X = 다음 주의 X · 다다음주 X = 그다음 주의 X.
  *        ‘12월 3일’ 같은 숫자 날짜 · ‘3일 뒤’ ‘2주 뒤’ 도 읽음.
  *  시각  N시 · N시 반 · N시 M분 · N:MM · 오전/오후/아침/점심/저녁/밤/새벽/낮. 앞말이 없으면 1~7시=오후, 8~11시=오전, 12시=낮 12시.
- *  뒤    ‘30분 뒤’ ‘한 시간 반 후’ ‘1시간 30분 뒤’ = 지금부터 그만큼 뒤(초 단위까지 그대로).
+ *  뒤    ‘30분 뒤’ ‘한 시간 반 후’ ‘1시간 30분 뒤’ ‘10초 뒤’ ‘십 초 후’ = 지금부터 그만큼 뒤.
+ *  날짜+시각이나 ‘N초/분/시간 뒤’가 있으면 알림 말(알려 줘·알람·깨워 줘·말해 줘)이 없어도 알림으로 쳐요.
  *  날짜만 말하면 오전 9시(defaulted)로 제안하고, 시각만 말했는데 이미 지났으면 내일 그 시각(rolled)으로 제안해요.
  *  지난 일(어제·했어 …)은 때로 치지 않아요. 이미 지난 때는 Hit.past=true 로 돌려 주고, 알림은 맞추지 않아요.
  *  날짜만 말하고 시각이 없으면 오전 9시로 맞춰요. 확인 문구는 confirmSet()/confirmPast() 를 써요.
@@ -30,7 +31,8 @@ final class TimePhrase {
     /** 확인 카드: ‘12월 3일 (목) 오전 9:00 알림 맞춤’ */
     String confirmSet(){
       String s=TimePhrase.confirmWhen(when)+" 알림 맞춤";
-      if(defaulted) s+=" · 시각을 말씀하지 않아 오전 9시로 정했어요";
+      if(relative&&phrase!=null&&!phrase.isEmpty()) s+=" · "+phrase;
+      else if(defaulted) s+=" · 시각을 말씀하지 않아 오전 9시로 정했어요";
       else if(rolled) s+=" · 오늘은 지나서 내일로 정했어요";
       return s;
     }
@@ -49,16 +51,17 @@ final class TimePhrase {
   // ‘뒤’ 말: 앞에 시간·분·일·주 말이 붙어 있어야 함
   static final String K_H="(?:\\d{1,2}|열두|열한|열|아홉|여덟|일곱|여섯|다섯|네|세|두|한)";
   static final String SINO="(?:[이삼사오]?십[일이삼사오육칠팔구]?|[일이삼사오육칠팔구])";
-  static final String AMT="(?:"+K_H+"\\s*시간(?:\\s*반)?|반\\s*시간|(?:\\d{1,3}|"+SINO+")\\s*분|\\d{1,2}\\s*일|하루|이틀|사흘|나흘|\\d\\s*주일?|일주일)";
+  static final String AMT="(?:"+K_H+"\\s*시간(?:\\s*반)?|반\\s*시간|(?:\\d{1,3}|"+SINO+")\\s*분|(?:\\d{1,3}|"+SINO+"|"+K_H+")\\s*초|\\d{1,2}\\s*일|하루|이틀|사흘|나흘|\\d\\s*주일?|일주일)";
   static final Pattern AFTER=Pattern.compile("(?<![가-힣\\d])((?:"+AMT+"\\s*)+)(?:뒤|후|이따가?|있다가|지나서)");
   static final Pattern A_H=Pattern.compile("("+K_H+")\\s*시간(\\s*반)?");
   static final Pattern A_HALFH=Pattern.compile("반\\s*시간");
   static final Pattern A_M=Pattern.compile("(\\d{1,3}|"+SINO+")\\s*분");
   static final Pattern A_D=Pattern.compile("(\\d{1,2})\\s*일|하루|이틀|사흘|나흘");
   static final Pattern A_W=Pattern.compile("(\\d)\\s*주일?|일주일");
+  static final Pattern A_S=Pattern.compile("(\\d{1,3}|"+SINO+"|"+K_H+")\\s*초");
   static final Pattern PAST_WORD=Pattern.compile("어제|그제|그저께|엊그제|지난\\s*(?:주|달|번|해)|작년|며칠\\s*전|(?:\\d|분|시간|일|주)\\s*전(?:에)?");
   static final Pattern PAST_TENSE=Pattern.compile("(?:했|았|었|였|됐|봤|갔|왔|났|끝났|먹었|만났)(?:어|다|지|는데|어요|습니다|음)");
-  static final Pattern REMIND_CUE=Pattern.compile("알려|알림|깨워|리마인드|잊지|까먹지|잊어버리지|상기");
+  static final Pattern REMIND_CUE=Pattern.compile("알려|알림|알람|깨워|말해|리마인드|잊지|까먹지|잊어버리지|상기");
 
   static TimeZone tz(){ return TimeZone.getDefault(); }
   static Calendar cal(long ms){ Calendar c=Calendar.getInstance(tz(),Locale.KOREA); c.setTimeInMillis(ms); return c; }
@@ -74,7 +77,7 @@ final class TimePhrase {
     if(!cue&&PAST_TENSE.matcher(s).find()) return null;
 
     Calendar nowC=cal(now);
-    // 1) 지금부터 ‘N분 뒤’
+    // 1) 지금부터 ‘N초/분/시간 뒤’
     Matcher am=AFTER.matcher(s);
     if(am.find()){
       String chunk=am.group(1);
@@ -82,6 +85,7 @@ final class TimePhrase {
       Matcher m=A_H.matcher(chunk); if(m.find()){ addMs+=hours(m.group(1))*3600000L+(m.group(2)!=null?1800000L:0); }
       else if(A_HALFH.matcher(chunk).find()) addMs+=1800000L;
       m=A_M.matcher(chunk); if(m.find()){ int v=minutes(m.group(1)); if(v<0) return null; addMs+=v*60000L; }
+      m=A_S.matcher(chunk); if(m.find()){ int v=seconds(m.group(1)); if(v<0) return null; addMs+=v*1000L; }
       m=A_D.matcher(chunk);
       if(m.find()){ String g=m.group(0); addDays+=m.group(1)!=null?i(m.group(1)):g.equals("하루")?1:g.equals("이틀")?2:g.equals("사흘")?3:4; }
       m=A_W.matcher(chunk); if(m.find()) addDays+=m.group(1)!=null?7*i(m.group(1)):7;
@@ -160,6 +164,12 @@ final class TimePhrase {
     return c;
   }
   static int hours(String g){ for(int k=0;k<KNUM.length;k++) if(KNUM[k].equals(g)) return KVAL[k]; int v=i(g); return v<0?0:v; }
+  /** 초 단위: 숫자 · 십(sino) · 한/두/열(고유어) */
+  static int seconds(String g){
+    int v=i(g); if(v>=0) return v;
+    v=minutes(g); if(v>=0) return v;
+    return hours(g);
+  }
   static int minutes(String g){
     int v=i(g); if(v>=0) return v;
     String d="일이삼사오육칠팔구"; int ten=g.indexOf('십');
@@ -185,9 +195,10 @@ final class TimePhrase {
   /** 확인·목록용: ‘12월 3일 (목) 오전 9:00’ */
   static String confirmWhen(long ms){
     Calendar c=cal(ms); String[] w={"일","월","화","수","목","금","토"};
-    int h=c.get(Calendar.HOUR_OF_DAY), m=c.get(Calendar.MINUTE);
+    int h=c.get(Calendar.HOUR_OF_DAY), m=c.get(Calendar.MINUTE), sec=c.get(Calendar.SECOND);
     String ap=h<12?"오전":"오후"; int h12=h%12==0?12:h%12;
-    return (c.get(Calendar.MONTH)+1)+"월 "+c.get(Calendar.DATE)+"일 ("+w[c.get(Calendar.DAY_OF_WEEK)-1]+") "+ap+" "+h12+":"+(m<10?"0":"")+m;
+    String clock=ap+" "+h12+":"+(m<10?"0":"")+m+(sec>0?":"+(sec<10?"0":"")+sec:"");
+    return (c.get(Calendar.MONTH)+1)+"월 "+c.get(Calendar.DATE)+"일 ("+w[c.get(Calendar.DAY_OF_WEEK)-1]+") "+clock;
   }
   /** 사람이 읽는 때: ‘12월 3일(목) 오후 2시’ · ‘12월 3일(목) 오후 2시 30분’ */
   static String label(long ms,boolean hasTime){

@@ -107,6 +107,7 @@ public class MainActivity extends Activity implements Dictation.Events {
       autoStart=false; restartOnResume=false;
       if(view.equals("rec")&&!dict.busy()) startDictation();
     }
+    maybeAskNotif();
     if(!gate.unlocked(this)&&!view.equals("rec")) leavePrivate(); // 다시 잠겼는데 지난 메모가 남아 있으면 가림
   }
 
@@ -146,6 +147,14 @@ public class MainActivity extends Activity implements Dictation.Events {
   }
 
   boolean locked(){ return !gate.unlocked(this); }
+
+  /** 처음 잠금을 푼 뒤에 알림 표시 권한을 한 번 물어요(알람은 권한이 없어도 걸어요). */
+  void maybeAskNotif(){
+    if(Build.VERSION.SDK_INT<33) return;
+    if(locked()||Reminders.notifGranted(this)||prefs.askedNotif()) return;
+    prefs.setAskedNotif();
+    try{ requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},REQ_NOTIF); }catch(Throwable e){}
+  }
 
   @Override public void onNeedMic(){
     dstate="needmic"; boolean ask=!prefs.askedMic();
@@ -222,24 +231,28 @@ public class MainActivity extends Activity implements Dictation.Events {
     view="rec"; applyLockFlags(); push(j("t","left"));
   }
 
-  /** 시간 말이 있으면 묻지 않고 알림을 맞추고, 확인 카드에 넣을 결과를 돌려줘요. 잠금 화면에서도 잠금을 풀지 않아요. */
+  /** 시간 말이나 ‘N초/분 뒤’가 있으면 묻지 않고 알림을 맞추고, 확인 카드에 넣을 결과를 돌려줘요. 없으면 「알림은 맞추지 않았어요」. 잠금 화면에서도 잠금을 풀지 않아요. */
   JSONObject autoRemind(Note n){
     TimePhrase.Hit h=TimePhrase.find(n.text,n.createdAt);
-    if(h==null) return null;
+    if(h==null) return j("id",String.valueOf(n.id),"ok",false,"state","notime","line","알림은 맞추지 않았어요","when",0,"label","");
     JSONObject o=j("id",String.valueOf(n.id),"label",TimePhrase.confirmWhen(h.when),"defaulted",h.defaulted,"rolled",h.rolled,"past",h.past,"when",h.when);
     try{
       if(h.past){ o.put("ok",false).put("state","past").put("line",h.confirmPast()); return o; }
-      if(!Reminders.notifGranted(this)){
-        // 잠금 위 권한 창은 잠금 해제를 부를 수 있어, 잠금을 푼 뒤에만 물어요.
-        if(!locked()){ pendingRemind=n.id; try{ requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},REQ_NOTIF); }catch(Throwable e){} }
-        o.put("ok",false).put("state","need-notif").put("line",h.confirmSet()); return o;
+      boolean notif=Reminders.notifGranted(this);
+      if(!notif&&!locked()){ pendingRemind=n.id; try{ requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},REQ_NOTIF); }catch(Throwable e){} }
+      int r=Reminders.schedule(this,n,h.when,true); // 알림 표시 권한이 없어도 알람은 걸어요
+      if(r==Reminders.OK_EXACT||r==Reminders.OK_INEXACT) store.update(n);
+      AlarmLog.add(this,n,h,r,Reminders.lastMethod,notif,n.remindExact);
+      if(!notif){
+        String line=h.confirmSet();
+        if(r==Reminders.OK_EXACT||r==Reminders.OK_INEXACT) line+=" · 알람은 맞춰 두었어요. 알림 표시가 꺼져 있으면 소리가 안 날 수 있어요";
+        o.put("ok",false).put("state","need-notif").put("askSettings",!locked()).put("line",line).put("method",Reminders.lastMethod); return o;
       }
-      int r=Reminders.schedule(this,n,h.when,true); // 정확한 알람 없으면 대략적으로
       switch(r){
         case Reminders.OK_EXACT:
-          store.update(n); o.put("ok",true).put("state","exact").put("line",h.confirmSet()); return o;
+          o.put("ok",true).put("state","exact").put("line",h.confirmSet()).put("method",Reminders.lastMethod); return o;
         case Reminders.OK_INEXACT:
-          store.update(n); o.put("ok",true).put("state","inexact").put("line",h.confirmSet()+" · 정확한 알람 허용이 없어 몇 분 어긋날 수 있어요"); return o;
+          o.put("ok",true).put("state","inexact").put("line",h.confirmSet()+" · 정확한 알람 허용이 없어 몇 분 어긋날 수 있어요").put("method",Reminders.lastMethod); return o;
         case Reminders.PAST:
           o.put("ok",false).put("state","past").put("line",h.confirmPast()); return o;
         default:

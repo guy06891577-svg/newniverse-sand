@@ -5,7 +5,7 @@ import android.webkit.*;
 
 /** 공용 도구: WebView 설정, 상태 표시줄·내비게이션 바 높이 */
 final class Nv {
-  static final String VER="2-test";
+  static final String VER="3-test";
 
   static void setupWeb(Activity a,WebView w,Object bridge,String url){
     WebSettings s=w.getSettings();

@@ -36,7 +36,7 @@ public class ManifestTest {
   }
   @Test public void permissions(){
     Set<String> p=perms();
-    for(String x:new String[]{"RECORD_AUDIO","VIBRATE","POST_NOTIFICATIONS","SCHEDULE_EXACT_ALARM","RECEIVE_BOOT_COMPLETED"}) assertTrue(x,p.contains("android.permission."+x));
+    for(String x:new String[]{"RECORD_AUDIO","VIBRATE","POST_NOTIFICATIONS","SCHEDULE_EXACT_ALARM","RECEIVE_BOOT_COMPLETED","USE_FULL_SCREEN_INTENT"}) assertTrue(x,p.contains("android.permission."+x));
     assertFalse("인터넷 권한이 없어야 해요",p.contains("android.permission.INTERNET"));
     assertFalse(p.contains("android.permission.READ_SMS")); assertFalse(p.contains("android.permission.WRITE_EXTERNAL_STORAGE"));
     assertFalse(p.contains("android.permission.USE_EXACT_ALARM"));

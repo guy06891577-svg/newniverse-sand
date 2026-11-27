@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""빠른 메모 v2 화면 시험: 가짜 NVMemo 다리로 녹음 화면 · 알림 자동 맞춤 확인 카드 · 목록/상세/설정 · 잠금 가림 · 글꼴/이모지/주황 없음."""
+"""빠른 메모 v3 화면 시험: 가짜 NVMemo 다리로 녹음 화면 · 알림 자동 맞춤 확인 카드 · 목록/상세/설정 · 잠금 가림 · 글꼴/이모지/주황 없음."""
 import asyncio, json, subprocess, time, os, re
 from playwright.async_api import async_playwright
 
 PORT = 18477
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'assets'))
 U = f'http://localhost:{PORT}/www/index.html'
-SHOTS = os.path.abspath(os.path.join(os.path.dirname(__file__), 'out', 'shots-memo-v2')); os.makedirs(SHOTS, exist_ok=True)
+SHOTS = os.path.abspath(os.path.join(os.path.dirname(__file__), 'out', 'shots-memo-v3')); os.makedirs(SHOTS, exist_ok=True)
 res = {}
 
 def ok(k, v):
@@ -23,7 +23,7 @@ const notes=cfg.notes||[];
 let locked=!!cfg.locked, settings=Object.assign({offline:true,keepAudio:false,autoClose:true,vibrate:true,quiet:true,silenceMs:2500},cfg.settings||{});
 window.__setLocked=v=>{locked=v};
 window.NVMemo={
-  version:()=>'2-test', ready:()=>L('ready'), snapshot:()=>JSON.stringify(cfg.snap||{state:'idle',autoClose:true}),
+  version:()=>'3-test', ready:()=>L('ready'), snapshot:()=>JSON.stringify(cfg.snap||{state:'idle',autoClose:true}),
   start:()=>L('start'), stop:()=>L('stop'), cancel:()=>L('cancel'), closeApp:()=>L('closeApp'), reqMic:()=>L('reqMic'),
   openView:v=>{L('openView',v)}, leave:()=>L('leave'),
   list:q=>{L('list',q); if(locked) return JSON.stringify({ok:false,locked:true});
@@ -44,7 +44,12 @@ window.NVMemo={
   settings:()=>locked?JSON.stringify({ok:false,locked:true}):JSON.stringify(Object.assign({ok:true},settings)),
   setSetting:(k,v)=>{L('setSetting',k,v); settings[k]=(k==='silenceMs')?+v:(v==='true'); return JSON.stringify({ok:true});},
   status:()=>JSON.stringify({ok:true,mic:true,notif:cfg.notif!==false,exact:cfg.exact!==false,speech:true,onDevice:true,online:cfg.online!==false}),
-  openExactSettings:()=>L('openExactSettings'), openNotifSettings:()=>L('openNotifSettings'), openVoiceSettings:()=>L('openVoiceSettings'), openAppSettings:()=>L('openAppSettings')
+  openExactSettings:()=>L('openExactSettings'), openNotifSettings:()=>L('openNotifSettings'), openVoiceSettings:()=>L('openVoiceSettings'), openAppSettings:()=>L('openAppSettings'),
+  openBatterySettings:()=>L('openBatterySettings'),
+  alarmLog:()=>{L('alarmLog'); return JSON.stringify({ok:true,items:cfg.alarmLog||[
+    {id:1,text:'10초 뒤에 알람',when:Date.now()+10000,method:'setAlarmClock',ok:true,notif:true,exact:true,fired:false},
+    {id:2,text:'내일 아침 9시에 깨워 줘',when:Date.now()-3600000,method:'setAlarmClock',ok:true,notif:true,exact:true,fired:true}
+  ]});}
 };
 })();
 '''
@@ -88,7 +93,7 @@ async def run():
             ok('ready() called on load', any(x[0]=='ready' for x in await log(pg)))
             ok('boot shows preparing', '준비하고 있어요' in await txt(pg,'#st'))
             await ev(pg,{'t':'status','state':'listening','detail':'offline'})
-            ok('listening title', '듣고 있어요' in await txt(pg,'#st'))
+            ok('listening title', '듣는 중' in await txt(pg,'#st'))
             ok('listening chip shows offline', '폰 안에서 인식' in await txt(pg,'#mode'))
             ok('stage has listening class (rings)', 'listening' in (await pg.get_attribute('#stage','class')))
             ok('main button is stop/save', '저장하기' in await txt(pg,'#bMain'))
@@ -104,7 +109,7 @@ async def run():
             # ---------- 2. 저장 + 알림 자동 맞춤 확인 카드 ----------
             rem = {'ok':True,'state':'exact','id':'77','line':'12월 3일 (목) 오후 2:00 알림 맞춤','label':'12월 3일 (목) 오후 2:00','defaulted':False,'rolled':False,'past':False}
             await ev(pg,{'t':'saved','id':'77','text':'목요일 2시에 병원 가기','dur':5400,'kind':'speech','seg':0,'cont':False,'autoClose':True,'remind':rem})
-            ok('saved title', '저장했어요' in await txt(pg,'#st'))
+            ok('saved title', '저장됨' in await txt(pg,'#st'))
             c = await txt(pg,'#cards')
             ok('confirm card shows alarm time and memo', '12월 3일 (목) 오후 2:00 알림 맞춤' in c and '목요일 2시에 병원 가기' in c)
             ok('confirm has cancel and ok', '취소' in c and '확인' in c)
@@ -135,9 +140,16 @@ async def run():
 
             # 알림 허용 거부
             pg = await page()
-            rem_n = {'ok':False,'state':'notif-denied','id':'79','line':'12월 3일 (목) 오후 2:00 알림 맞춤'}
+            rem_n = {'ok':False,'state':'notif-denied','id':'79','line':'12월 3일 (목) 오후 2:00 알림 맞춤 · 알람은 맞춰 두었어요. 알림 표시가 꺼져 있으면 소리가 안 날 수 있어요','askSettings':True}
             await ev(pg,{'t':'saved','id':'79','text':'목요일 2시','dur':3000,'kind':'speech','seg':0,'cont':False,'autoClose':True,'remind':rem_n})
             ok('notif denied shows settings button', '알림 설정 열기' in await txt(pg,'#cards'))
+            rem_nt = {'ok':False,'state':'notime','id':'80b','line':'알림은 맞추지 않았어요'}
+            await ev(pg,{'t':'saved','id':'80b','text':'우유랑 계란 사기','dur':2000,'kind':'speech','seg':0,'cont':False,'autoClose':True,'remind':rem_nt})
+            ok('notime card says no alarm was set', '알림은 맞추지 않았어요' in await txt(pg,'#cards'))
+            ok('notime still auto-closes', await pg.is_visible('#cd'))
+            rem_nl = {'ok':False,'state':'need-notif','id':'80c','line':'알람은 맞춰 두었어요. 알림 표시가 꺼져 있으면 소리가 안 날 수 있어요','askSettings':False}
+            await ev(pg,{'t':'saved','id':'80c','text':'10초 뒤에 알람','dur':2000,'kind':'speech','seg':0,'cont':False,'autoClose':True,'remind':rem_nl})
+            ok('locked need-notif has no settings button', '알림 설정 열기' not in await txt(pg,'#cards') and '알람은 맞춰 두었어요' in await txt(pg,'#cards'))
             await pg.close()
 
             # ---------- 3. 때 말 없음 → 자동 닫기 카운트다운, 터치로 멈춤 ----------
@@ -269,12 +281,29 @@ async def run():
             ok('left event returns to rec and wipes', await pg.is_visible('#rec') and await pg.evaluate("document.getElementById('nl').innerHTML===''&&document.getElementById('q').value===''"))
             await pg.close()
 
+            # ---------- 7b. 지난 알림·완료 칩 ----------
+            now = int(time.time()*1000)
+            chips = [
+                {"id":"10","text":"내일 아침 9시에 깨워 줘","createdAt":now,"durationMs":1000,"kind":"speech","hasAudio":False,"seg":0,"remindAt":now+86400000,"reminded":False,"remindLabel":"11월 28일 (토) 오전 9:00"},
+                {"id":"11","text":"10초 뒤에 알람","createdAt":now-20000,"durationMs":1000,"kind":"speech","hasAudio":False,"seg":0,"remindAt":now-10000,"reminded":True,"remindLabel":"11월 27일 (금) 오후 7:07"},
+                {"id":"12","text":"아침 미팅","createdAt":now-7200000,"durationMs":1000,"kind":"speech","hasAudio":False,"seg":0,"remindAt":now-3600000,"reminded":False,"remindLabel":"11월 27일 (금) 오후 6:00"},
+            ]
+            pg = await page({'notes':chips})
+            await ev(pg,{'t':'unlocked','view':'list'})
+            items = await txt(pg,'#nl')
+            ok('upcoming alarm chip shows time', '11월 28일 (토) 오전 9:00' in items)
+            ok('fired alarm chip shows 알림 완료', '알림 완료' in items and '11월 27일 (금) 오후 7:07' in items)
+            ok('past unfired chip shows 지난 알림', '지난 알림' in items and '11월 27일 (금) 오후 6:00' in items)
+            await pg.screenshot(path=f'{SHOTS}/18_alarm_chips.png')
+            await pg.close()
+
             # ---------- 8. 설정 ----------
             pg = await page({'notes':ns,'exact':False,'notif':False})
             await pg.click('#bSet'); ok('settings asks unlock', ['openView','settings'] in await log(pg))
             await ev(pg,{'t':'unlocked','view':'settings'}); await pg.wait_for_timeout(100)
             s = await txt(pg,'#sBody')
             ok('settings sections', all(x in s for x in ['폰 안에서 먼저 인식','말한 소리도 함께 보관','저장 뒤 자동으로 닫기','정확한 알람','받아쓰기 서비스','측면 버튼으로 열기']))
+            ok('settings has 알림 기록 and battery note', '알림 기록' in s and '잠자는 앱' in s and '10초 뒤에 알람' in s)
             ok('guide mentions menu path', '설정 › 유용한 기능 › 측면 버튼 › 두 번 누르기' in s and '뉴니버스 빠른 메모' in s)
             ok('keepAudio is off by default', await pg.locator('.srow', has_text='말한 소리도 함께 보관').locator('.sw').get_attribute('aria-checked')=='false')
             await pg.screenshot(path=f'{SHOTS}/15_settings.png', full_page=False)
@@ -283,6 +312,8 @@ async def run():
             await pg.click('text=4초'); ok('silence chip', ['setSetting','silenceMs','4000'] in await log(pg))
             await pg.locator('.srow', has_text='정확한 알람').locator('button').click(); ok('exact row opens settings', any(x[0]=='openExactSettings' for x in await log(pg)))
             await pg.locator('.srow:has(b:text-is("알림"))').locator('button').click(); ok('notif row opens settings', any(x[0]=='openNotifSettings' for x in await log(pg)))
+            await pg.locator('.srow', has_text='배터리 · 잠자는 앱').locator('button').click(); ok('battery row opens settings', any(x[0]=='openBatterySettings' for x in await log(pg)))
+            ok('version is 3-test', '3-test' in await txt(pg,'#sBody'))
             await pg.evaluate("document.getElementById('sBody').parentElement.scrollTop=9999"); await pg.wait_for_timeout(80)
             await pg.screenshot(path=f'{SHOTS}/16_settings_bottom.png')
             await pg.close()
