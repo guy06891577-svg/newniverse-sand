@@ -83,6 +83,7 @@ class Bridge {
       Note n=a.store.get(id(id)); if(n==null) return err("nonote");
       if(playing==n.id) stopPlay();
       Reminders.cancel(a,n);
+      if(n.calEventId>0) MemoCal.delete(a,n.calEventId);
       a.store.delete(n.id); a.recent.remove(n.id);
       return MainActivity.j("ok",true).toString();
     }catch(Throwable e){ return err("del"); }
@@ -186,6 +187,47 @@ class Bridge {
       Reminders.cancel(a,n); a.store.update(n); return MainActivity.j("ok",true).toString();
     }catch(Throwable e){ return err("unremind"); }
   }
+  /** 방금 넣은 달력 일정을 빼요. 메모와 알림은 남겨 둬요. 잠금 화면에서도 방금 저장한 메모는 돼요. */
+  @JavascriptInterface public String uncal(String sid){
+    try{
+      long id=id(sid); if(!canTouch(id)) return locked();
+      Note n=a.store.get(id); if(n==null) return err("nonote");
+      if(n.calEventId>0) MemoCal.delete(a,n.calEventId);
+      long when=n.calStart; String title=n.calTitle;
+      n.calEventId=0; n.calNeedPerm=false; n.calTitle=""; n.calLocation=""; n.calStart=0; a.store.update(n);
+      AlarmLog.addCal(a,n,"undo",title,when,true,"");
+      return MainActivity.j("ok",true).toString();
+    }catch(Throwable e){ return err("uncal"); }
+  }
+  @JavascriptInterface public String cal(String sid){
+    try{
+      long id=id(sid); if(!canTouch(id)) return locked();
+      return calJson(id).toString();
+    }catch(Throwable e){ return err("cal"); }
+  }
+  JSONObject calJson(long id){
+    JSONObject out=MainActivity.j("t","cal","id",String.valueOf(id));
+    try{
+      Note n=a.store.get(id); if(n==null){ out.put("ok",false).put("state","nonote"); return out; }
+      ApptPhrase.Hit h=ApptPhrase.find(n.text,n.createdAt);
+      if(h==null){ out.put("ok",false).put("state","noappt"); return out; }
+      out.put("title",h.title).put("location",h.location).put("when",h.when.when).put("allDay",h.allDay).put("line",h.line());
+      if(!MemoCal.granted(a)){
+        n.calNeedPerm=true; n.calTitle=h.title; n.calLocation=h.location; n.calStart=h.when.when; a.store.update(n);
+        out.put("ok",false).put("state","need-perm").put("askSettings",!a.locked()).put("line","달력 권한 필요");
+        return out;
+      }
+      if(n.calEventId>0) MemoCal.delete(a,n.calEventId);
+      long eid=MemoCal.insert(a,h);
+      if(eid>0){
+        n.calEventId=eid; n.calNeedPerm=false; n.calTitle=h.title; n.calLocation=h.location; n.calStart=h.when.when; a.store.update(n);
+        AlarmLog.addCal(a,n,"ok",h.title,h.when.when,true,"");
+        out.put("ok",true).put("state","ok").put("eventId",eid); return out;
+      }
+      AlarmLog.addCal(a,n,"error",h.title,h.when.when,false,MemoCal.err(a));
+      out.put("ok",false).put("state","error"); return out;
+    }catch(Throwable e){ try{ out.put("ok",false).put("state","error"); }catch(Exception x){} return out; }
+  }
 
   // ---------- 설정·상태 ----------
   @JavascriptInterface public String settings(){ try{ if(!open()) return locked(); return a.prefs.json().put("ok",true).toString(); }catch(Throwable e){ return err("settings"); } }
@@ -197,7 +239,7 @@ class Bridge {
       if(!open()) return locked();
       boolean on=false; try{ on=Build.VERSION.SDK_INT>=33&&SpeechRecognizer.isOnDeviceRecognitionAvailable(a); }catch(Throwable e){}
       return MainActivity.j("ok",true,"ver",Nv.VER,"sdk",Build.VERSION.SDK_INT,"mic",a.dict.hasMic(),"notif",Reminders.notifGranted(a),
-        "exact",Reminders.canExact(a),"speech",Dictation.recognizerAvailable(a),"onDevice",on,"online",online()).toString();
+        "exact",Reminders.canExact(a),"cal",MemoCal.granted(a),"speech",Dictation.recognizerAvailable(a),"onDevice",on,"online",online()).toString();
     }catch(Throwable e){ return err("status"); }
   }
   boolean online(){
@@ -218,5 +260,6 @@ class Bridge {
   @JavascriptInterface public void openNotifSettings(){ a.main.post(()->{ if(!go(Reminders.notifSettings(a))) go(new Intent(Settings.ACTION_SETTINGS)); }); }
   @JavascriptInterface public void openVoiceSettings(){ a.main.post(()->{ if(!go(new Intent(Settings.ACTION_VOICE_INPUT_SETTINGS))) go(new Intent(Settings.ACTION_SETTINGS)); }); }
   @JavascriptInterface public void openAppSettings(){ a.main.post(()->{ if(!go(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+a.getPackageName())))) go(new Intent(Settings.ACTION_SETTINGS)); }); }
+  @JavascriptInterface public void openCalSettings(){ openAppSettings(); }
   @JavascriptInterface public void openBatterySettings(){ a.main.post(()->{ if(!go(Reminders.batterySettings(a))) go(new Intent(Settings.ACTION_SETTINGS)); }); }
 }

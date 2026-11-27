@@ -146,6 +146,7 @@ mark{background:rgba(111,211,255,.25);color:#fff;border-radius:4px;padding:0 1px
  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
  <symbol id="i-wave" viewBox="0 0 24 24"><path d="M4 11v2M8 8v8M12 4v16M16 8v8M20 11v2"/></symbol>
  <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></symbol>
+ <symbol id="i-cal" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="14" rx="2"/><path d="M8 4v4M16 4v4M4 11h16"/></symbol>
 </svg>
 <div id="app">
  <div class="bg"></div>
@@ -263,9 +264,12 @@ function viewSaved(e){
     setTop(S.cont?'저장됨 · 이어서 듣는 중':'저장됨',sec+'초 · '+(e.text||'').length+'자'+(e.seg?(' · '+(e.seg+1)+'번째 덩이'):''));
     setText(e.text,'');
   }
-  if(e.remind&&!S.cont) confirmRemind(e);
+  if(!S.cont){
+    if(e.cal&&e.cal.state&&e.cal.state!=='none') confirmCal(e);
+    else if(e.remind) confirmRemind(e);
+  }
   setMain('mic','새 메모',function(){ call('start'); viewStarting(); });
-  if(!S.cont&&!e.remind&&e.autoClose&&e.kind!=='audio') startCd(5);
+  if(!S.cont&&!e.remind&&!(e.cal&&e.cal.state&&e.cal.state!=='none')&&e.autoClose&&e.kind!=='audio') startCd(5);
 }
 function startCd(n){
   var left=n,cd=$('cd'); cd.hidden=false; cd.textContent=left+'초 뒤에 닫혀요 · 화면을 누르면 멈춰요';
@@ -334,6 +338,46 @@ function applyRemind(r,c){
   if(!c) c=$('rc-'+r.id)||null;
   applyConfirm(r,c, (S.last&&S.last.text)||'');
 }
+function confirmCal(e){
+  var r=e.cal||{}, c=el('div','card glass'); c.id='cc-'+e.id;
+  $('cards').appendChild(c);
+  applyCal(r,c,e);
+}
+function applyCal(r,c,e){
+  if(!c) c=$('cc-'+(r.id||''))||null;
+  if(!c){ c=el('div','card glass'); $('cards').appendChild(c); }
+  var st=r.state||(r.ok?'ok':'error'), id=r.id||(e&&e.id);
+  function body(ic, title, sub, btns, bad){
+    c.className='card glass'+(bad?' bad':'');
+    c.innerHTML='<div class="row">'+icon(ic)+'<div class="t"><b></b>'+(sub?'<div class="memo"></div>':'')+'</div></div>'+(btns?'<div class="btns" id="cb"></div>':'');
+    c.querySelector('b').textContent=title;
+    var m=c.querySelector('.memo'); if(m) m.textContent=sub;
+    var rb=c.querySelector('#cb');
+    if(btns) btns.forEach(function(b){ var x=el('button','btn'+(b[2]?' pri':''),b[0]); x.onclick=b[1]; rb.appendChild(x); });
+  }
+  function okBtn(){ return ['확인',function(){ stopCd(); call('closeApp'); },true]; }
+  var memo=(e&&e.text)||(S.last&&S.last.text)||'';
+  if(r.ok||st==='ok'){
+    body('cal', r.line||'달력에 넣음', memo, [
+      ['취소',function(){
+        call('uncal',String(id));
+        body('check','달력에서 빼 두었어요','메모는 그대로 있어요', [okBtn()], false);
+        stopCd(); if(S.last&&S.last.autoClose) startCd(5);
+      }],
+      okBtn()
+    ], false);
+    if(S.last&&S.last.autoClose&&!S.cont) startCd(5);
+    return;
+  }
+  if(st==='need-perm'){
+    var btns=[];
+    if(r.askSettings!==false) btns.push(['앱 설정 열기',function(){ call('openCalSettings'); },true]);
+    btns.push(okBtn());
+    body('cal','달력 권한 필요','일정을 달력에 넣으려면 달력 권한을 허용해 주세요. 메모는 저장해 두었어요.', btns, false);
+    return;
+  }
+  body('alert','달력에 넣지 못했어요', r.line||'잠시 뒤 다시 해 주세요', [okBtn()], true);
+}
 
 function viewNone(){
   stopCd(); lv(0); clearCards(); stage('idle'); $('orbi').innerHTML='<use href="#i-mic"/>';
@@ -389,6 +433,7 @@ window.NV_ev=function(e){
       else noticeCard(e.code,e.msg);
       break;
     case 'remind': applyRemind(e,null); break;
+    case 'cal': applyCal(e,$('cc-'+e.id)||null,S.last||{}); break;
     case 'unlocked':
       if(e.view==='list'){ show('list'); loadList(); }
       else if(e.view==='settings'){ show('set'); loadSettings(); }
@@ -443,6 +488,8 @@ function loadList(){
       else if(n.remindAt<Date.now()) tags+='<span class="tag">'+icon('alert')+lab+' 지난 알림</span>';
       else tags+='<span class="tag">'+icon('clock')+lab+'</span>';
     }
+    if(n.calEventId>0) tags+='<span class="tag">'+icon('cal')+esc(n.calTitle||'달력')+'</span>';
+    else if(n.calNeedPerm) tags+='<span class="tag">'+icon('alert')+'달력 권한 필요</span>';
     if(n.kind==='audio'&&!n.text) tags+='<span class="tag">'+icon('wave')+'소리만</span>';
     else if(n.hasAudio) tags+='<span class="tag">'+icon('wave')+'소리</span>';
     b.innerHTML='<div class="d">'+esc(fmt(n.createdAt))+'<i>'+esc(dur(n.durationMs))+'</i>'+tags+'</div><div class="s'+(n.text?'':' e')+'">'+(n.text?hl(n.text,S.q):'아직 글로 옮기지 않은 소리 메모예요')+'</div>';
@@ -476,6 +523,17 @@ function openNote(id,fromNotif){
   } else if(r.sug){
     var c2=el('div','card glass'); c2.innerHTML='<div class="row">'+icon('clock')+'<div class="t"><b>알림 맞추기</b><br>'+esc(r.sug.line)+'</div></div><div class="btns"><button class="btn pri" id="ry">알림 맞추기</button></div>';
     cards.appendChild(c2); c2.querySelector('#ry').onclick=function(){ var rr=J(call('remind',String(n.id),true)); rr.id=n.id; if(rr.ok){ toast('알림을 맞췄어요'); openNote(n.id,false); } else { applyRemindIn(cards,rr); } };
+  }
+  if(n.calEventId>0){
+    var cc=el('div','card glass');
+    cc.innerHTML='<div class="row">'+icon('cal')+'<div class="t"><b>달력에 넣어 두었어요</b><br>'+esc(n.calLabel||n.calTitle||'')+'</div></div><div class="btns"><button class="btn" id="cu">달력에서 빼기</button></div>';
+    cards.appendChild(cc);
+    cc.querySelector('#cu').onclick=function(){ call('uncal',String(n.id)); toast('달력에서 빼 두었어요'); openNote(n.id,false); };
+  } else if(n.calNeedPerm){
+    var cp=el('div','card glass');
+    cp.innerHTML='<div class="row">'+icon('cal')+'<div class="t"><b>달력 권한 필요</b><br>권한을 허용하면 이 일정을 달력에 넣어요.</div></div><div class="btns"><button class="btn pri" id="cs">앱 설정 열기</button></div>';
+    cards.appendChild(cp);
+    cp.querySelector('#cs').onclick=function(){ call('openCalSettings'); };
   }
 }
 function applyRemindIn(host,rr){ var c=el('div','card glass'); host.appendChild(c); c.id='rc-'+rr.id; applyConfirm(rr,c,''); }
@@ -517,18 +575,19 @@ function loadSettings(){
   b3.appendChild(row('마이크','받아쓰기에 필요해요',st.mic?st_(true,'허용됨'):btn('허용',function(){ call('reqMic'); })));
   b3.appendChild(row('알림','알림 맞추기에 필요해요(안드로이드 13 이상)',st.notif?st_(true,'허용됨'):btn('열기',function(){ call('openNotifSettings'); })));
   b3.appendChild(row('정확한 알람','허용이 없으면 알림이 몇 분 어긋날 수 있어요',st.exact?st_(true,'허용됨'):btn('열기',function(){ call('openExactSettings'); })));
+  b3.appendChild(row('달력','일정 메모를 달력에 넣을 때 필요해요',st.cal?st_(true,'허용됨'):btn('열기',function(){ call('openCalSettings'); })));
   b3.appendChild(row('받아쓰기 서비스',st.speech?(st.onDevice?'폰 안 인식을 쓸 수 있어요':'Google 음성 서비스를 써요'):'이 폰에서 찾지 못했어요',st.speech?st_(true,'있음'):btn('설정',function(){ call('openVoiceSettings'); })));
   b3.appendChild(row('인터넷',st.online?'연결돼 있어요':'없어도 소리로 저장해요',st_(!!st.online,st.online?'연결됨':'없음')));
   b3.appendChild(row('배터리 · 잠자는 앱','삼성 폰은 설정 › 배터리 › 백그라운드 사용 제한(잠자는 앱)에서 이 앱을 빼 두어야 짧은 알림이 제때 울려요',btn('열기',function(){ call('openBatterySettings'); })));
   host.appendChild(b3);
-  host.appendChild(el('div','sec','알림 기록'));
+  host.appendChild(el('div','sec','기록'));
   var lg=J(call('alarmLog')), b4=el('div','set glass');
-  if(!lg||!lg.ok||!lg.items||!lg.items.length){ b4.appendChild(el('div','guide','아직 맞춘 알림이 없어요')); }
+  if(!lg||!lg.ok||!lg.items||!lg.items.length){ b4.appendChild(el('div','guide','아직 기록이 없어요')); }
   else {
     (lg.items||[]).slice(0,10).forEach(function(e){
       var when=e.when?TimeLabel(e.when):'';
-      var stt=e.fired?'울림':(e.ok===false?'실패':'맞춤');
-      var sub=(when?when+' · ':'')+(e.method?e.method+' · ':'')+stt+(e.notif===false?' · 표시 권한 없음':'');
+      var stt=e.kind==='cal'?(e.state==='ok'?'달력에 넣음':e.state==='need-perm'?'달력 권한 필요':e.state==='undo'?'달력에서 뺌':(e.ok===false?'달력 실패':'달력')):(e.fired?'울림':(e.ok===false?'실패':'맞춤'));
+      var sub=(when?when+' · ':'')+(e.title?e.title+' · ':'')+(e.method?e.method+' · ':'')+stt+(e.notif===false?' · 표시 권한 없음':'');
       var r=el('div','srow'); r.innerHTML='<div class="l"><b></b><span></span></div>';
       r.querySelector('b').textContent=e.text||'(글 없음)';
       r.querySelector('span').textContent=sub;

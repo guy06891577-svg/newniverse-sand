@@ -5,7 +5,7 @@ import android.content.SharedPreferences;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-/** 최근에 맞춘 알림 10개(진단용). 설정 화면의 「알림 기록」에서 보여 줘요. */
+/** 최근에 맞춘 알림·달력 결과 10개(진단용). 설정 화면의 「기록」에서 보여 줘요. */
 final class AlarmLog {
   static final int MAX=10;
   static SharedPreferences sp(Context c){ return c.getSharedPreferences("memo",Context.MODE_PRIVATE); }
@@ -22,10 +22,23 @@ final class AlarmLog {
         .put("id",n.id).put("text",text).put("when",when).put("method",method==null?"":method)
         .put("code",code).put("ok",ok).put("notif",notif).put("exact",exact)
         .put("fired",false).put("at",System.currentTimeMillis());
-      JSONArray cur=list(c), next=new JSONArray(); next.put(e);
-      for(int i=0;i<cur.length()&&next.length()<MAX;i++) next.put(cur.get(i));
-      sp(c).edit().putString("alarmLog",next.toString()).apply();
+      prepend(c,e);
     }catch(Exception e){}
+  }
+  static void addCal(Context c,Note n,String state,String title,long when,boolean ok,String err){
+    try{
+      String text=n.text==null?"":n.text; if(text.length()>80) text=text.substring(0,80);
+      JSONObject e=new JSONObject()
+        .put("id",n.id).put("kind","cal").put("text",text).put("when",when)
+        .put("title",title==null?"":title).put("state",state).put("ok",ok)
+        .put("err",err==null?"":err).put("at",System.currentTimeMillis());
+      prepend(c,e);
+    }catch(Exception e){}
+  }
+  static void prepend(Context c,JSONObject e) throws Exception {
+    JSONArray cur=list(c), next=new JSONArray(); next.put(e);
+    for(int i=0;i<cur.length()&&next.length()<MAX;i++) next.put(cur.get(i));
+    sp(c).edit().putString("alarmLog",next.toString()).apply();
   }
   static void markFired(Context c,long id,boolean posted){
     try{

@@ -185,6 +185,11 @@ public class TimePhraseTest {
     assertEquals("12월 3일 (목) 오후 2:30",TimePhrase.confirmWhen(ms(2026,12,3,14,30)));
     assertEquals("11월 28일 (토) 오전 12:00",TimePhrase.confirmWhen(ms(2026,11,28,0,0)));
     assertTrue(TimePhrase.confirmWhen(NOW+10000L).endsWith("오후 3:00:10"));
+    assertEquals("12월 3일 (목)",TimePhrase.confirmDate(ms(2026,12,3,14,0)));
+    assertEquals("안동대학교 미팅",TimePhrase.stripTime("다음주 목요일 2시 안동대학교 미팅"));
+    assertEquals("친구 만나",TimePhrase.stripTime("모레 저녁 7시 친구 만나"));
+    assertEquals("병원 예약",TimePhrase.stripTime("금요일 오전 11시 병원 예약"));
+    assertEquals("알려줘",TimePhrase.stripTime("30분 뒤 알려줘"));
   }
   @Test public void minutesParser(){
     assertEquals(30,TimePhrase.minutes("삼십")); assertEquals(15,TimePhrase.minutes("십오")); assertEquals(10,TimePhrase.minutes("십"));

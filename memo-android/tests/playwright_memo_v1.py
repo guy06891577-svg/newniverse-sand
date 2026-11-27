@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""빠른 메모 v3 화면 시험: 가짜 NVMemo 다리로 녹음 화면 · 알림 자동 맞춤 확인 카드 · 목록/상세/설정 · 잠금 가림 · 글꼴/이모지/주황 없음."""
+"""빠른 메모 v4 화면 시험: 가짜 NVMemo 다리로 녹음 화면 · 알림 자동 맞춤 확인 카드 · 목록/상세/설정 · 잠금 가림 · 글꼴/이모지/주황 없음."""
 import asyncio, json, subprocess, time, os, re
 from playwright.async_api import async_playwright
 
 PORT = 18477
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'assets'))
 U = f'http://localhost:{PORT}/www/index.html'
-SHOTS = os.path.abspath(os.path.join(os.path.dirname(__file__), 'out', 'shots-memo-v3')); os.makedirs(SHOTS, exist_ok=True)
+SHOTS = os.path.abspath(os.path.join(os.path.dirname(__file__), 'out', 'shots-memo-v4')); os.makedirs(SHOTS, exist_ok=True)
 res = {}
 
 def ok(k, v):
@@ -23,7 +23,7 @@ const notes=cfg.notes||[];
 let locked=!!cfg.locked, settings=Object.assign({offline:true,keepAudio:false,autoClose:true,vibrate:true,quiet:true,silenceMs:2500},cfg.settings||{});
 window.__setLocked=v=>{locked=v};
 window.NVMemo={
-  version:()=>'3-test', ready:()=>L('ready'), snapshot:()=>JSON.stringify(cfg.snap||{state:'idle',autoClose:true}),
+  version:()=>'4-test', ready:()=>L('ready'), snapshot:()=>JSON.stringify(cfg.snap||{state:'idle',autoClose:true}),
   start:()=>L('start'), stop:()=>L('stop'), cancel:()=>L('cancel'), closeApp:()=>L('closeApp'), reqMic:()=>L('reqMic'),
   openView:v=>{L('openView',v)}, leave:()=>L('leave'),
   list:q=>{L('list',q); if(locked) return JSON.stringify({ok:false,locked:true});
@@ -45,9 +45,12 @@ window.NVMemo={
   setSetting:(k,v)=>{L('setSetting',k,v); settings[k]=(k==='silenceMs')?+v:(v==='true'); return JSON.stringify({ok:true});},
   status:()=>JSON.stringify({ok:true,mic:true,notif:cfg.notif!==false,exact:cfg.exact!==false,speech:true,onDevice:true,online:cfg.online!==false}),
   openExactSettings:()=>L('openExactSettings'), openNotifSettings:()=>L('openNotifSettings'), openVoiceSettings:()=>L('openVoiceSettings'), openAppSettings:()=>L('openAppSettings'),
-  openBatterySettings:()=>L('openBatterySettings'),
+  openBatterySettings:()=>L('openBatterySettings'), openCalSettings:()=>L('openCalSettings'),
+  uncal:id=>{L('uncal',id); return JSON.stringify({ok:true});},
+  cal:id=>{L('cal',id); return JSON.stringify({ok:true,state:'ok',id,line:'달력에 넣음 · 12월 3일 (목) 오후 2:00 안동대학교 미팅',title:'안동대학교 미팅'});},
   alarmLog:()=>{L('alarmLog'); return JSON.stringify({ok:true,items:cfg.alarmLog||[
     {id:1,text:'10초 뒤에 알람',when:Date.now()+10000,method:'setAlarmClock',ok:true,notif:true,exact:true,fired:false},
+    {id:3,text:'다음주 목요일 2시 안동대학교 미팅',kind:'cal',when:Date.now()+86400000,title:'안동대학교 미팅',state:'ok',ok:true},
     {id:2,text:'내일 아침 9시에 깨워 줘',when:Date.now()-3600000,method:'setAlarmClock',ok:true,notif:true,exact:true,fired:true}
   ]});}
 };
@@ -150,6 +153,20 @@ async def run():
             rem_nl = {'ok':False,'state':'need-notif','id':'80c','line':'알람은 맞춰 두었어요. 알림 표시가 꺼져 있으면 소리가 안 날 수 있어요','askSettings':False}
             await ev(pg,{'t':'saved','id':'80c','text':'10초 뒤에 알람','dur':2000,'kind':'speech','seg':0,'cont':False,'autoClose':True,'remind':rem_nl})
             ok('locked need-notif has no settings button', '알림 설정 열기' not in await txt(pg,'#cards') and '알람은 맞춰 두었어요' in await txt(pg,'#cards'))
+            rem_ok = {'ok':True,'state':'exact','id':'90','line':'12월 3일 (목) 오후 2:00 알림 맞춤'}
+            cal = {'ok':True,'state':'ok','id':'90','line':'달력에 넣음 · 12월 3일 (목) 오후 2:00 안동대학교 미팅','title':'안동대학교 미팅'}
+            await ev(pg,{'t':'saved','id':'90','text':'다음주 목요일 2시 안동대학교 미팅','dur':3000,'kind':'speech','seg':0,'cont':False,'autoClose':True,'remind':rem_ok,'cal':cal})
+            ok('calendar card line', '달력에 넣음 · 12월 3일 (목) 오후 2:00 안동대학교 미팅' in await txt(pg,'#cards'))
+            ok('calendar card has cancel', '취소' in await txt(pg,'#cards'))
+            await pg.screenshot(path=f'{SHOTS}/19_calendar_confirm.png')
+            await pg.click('text=취소')
+            ok('calendar cancel calls uncal and keeps memo', any(x[0]=='uncal' for x in await log(pg)) and '달력에서 빼 두었어요' in await txt(pg,'#cards') and '메모는 그대로 있어요' in await txt(pg,'#cards'))
+            cal_np = {'ok':False,'state':'need-perm','id':'91','line':'달력 권한 필요','askSettings':False}
+            await ev(pg,{'t':'saved','id':'91','text':'모레 저녁 7시 친구 만나','dur':2000,'kind':'speech','seg':0,'cont':False,'autoClose':True,'remind':rem_ok,'cal':cal_np})
+            ok('need calendar perm card', '달력 권한 필요' in await txt(pg,'#cards') and '앱 설정 열기' not in await txt(pg,'#cards'))
+            # 알림만: 달력 카드 없음
+            await ev(pg,{'t':'saved','id':'92','text':'내일 10시에 나한테 전화하라고 말해 줘','dur':2000,'kind':'speech','seg':0,'cont':False,'autoClose':True,'remind':{'ok':True,'state':'exact','id':'92','line':'11월 28일 (토) 오전 10:00 알림 맞춤'}})
+            ok('reminder-only has no calendar card', '달력에 넣음' not in await txt(pg,'#cards') and '알림 맞춤' in await txt(pg,'#cards'))
             await pg.close()
 
             # ---------- 3. 때 말 없음 → 자동 닫기 카운트다운, 터치로 멈춤 ----------
@@ -287,6 +304,7 @@ async def run():
                 {"id":"10","text":"내일 아침 9시에 깨워 줘","createdAt":now,"durationMs":1000,"kind":"speech","hasAudio":False,"seg":0,"remindAt":now+86400000,"reminded":False,"remindLabel":"11월 28일 (토) 오전 9:00"},
                 {"id":"11","text":"10초 뒤에 알람","createdAt":now-20000,"durationMs":1000,"kind":"speech","hasAudio":False,"seg":0,"remindAt":now-10000,"reminded":True,"remindLabel":"11월 27일 (금) 오후 7:07"},
                 {"id":"12","text":"아침 미팅","createdAt":now-7200000,"durationMs":1000,"kind":"speech","hasAudio":False,"seg":0,"remindAt":now-3600000,"reminded":False,"remindLabel":"11월 27일 (금) 오후 6:00"},
+                {"id":"13","text":"다음주 목요일 2시 안동대학교 미팅","createdAt":now,"durationMs":1000,"kind":"speech","hasAudio":False,"seg":0,"remindAt":now+86400000,"reminded":False,"remindLabel":"12월 3일 (목) 오후 2:00","calEventId":77,"calTitle":"안동대학교 미팅"},
             ]
             pg = await page({'notes':chips})
             await ev(pg,{'t':'unlocked','view':'list'})
@@ -294,6 +312,7 @@ async def run():
             ok('upcoming alarm chip shows time', '11월 28일 (토) 오전 9:00' in items)
             ok('fired alarm chip shows 알림 완료', '알림 완료' in items and '11월 27일 (금) 오후 7:07' in items)
             ok('past unfired chip shows 지난 알림', '지난 알림' in items and '11월 27일 (금) 오후 6:00' in items)
+            ok('calendar chip on appointment memo', '안동대학교 미팅' in items and await pg.locator('.item .tag svg use[href="#i-cal"]').count()>=1)
             await pg.screenshot(path=f'{SHOTS}/18_alarm_chips.png')
             await pg.close()
 
@@ -303,7 +322,7 @@ async def run():
             await ev(pg,{'t':'unlocked','view':'settings'}); await pg.wait_for_timeout(100)
             s = await txt(pg,'#sBody')
             ok('settings sections', all(x in s for x in ['폰 안에서 먼저 인식','말한 소리도 함께 보관','저장 뒤 자동으로 닫기','정확한 알람','받아쓰기 서비스','측면 버튼으로 열기']))
-            ok('settings has 알림 기록 and battery note', '알림 기록' in s and '잠자는 앱' in s and '10초 뒤에 알람' in s)
+            ok('settings has 기록 and battery note', '기록' in s and '잠자는 앱' in s and '10초 뒤에 알람' in s and '달력에 넣음' in s)
             ok('guide mentions menu path', '설정 › 유용한 기능 › 측면 버튼 › 두 번 누르기' in s and '뉴니버스 빠른 메모' in s)
             ok('keepAudio is off by default', await pg.locator('.srow', has_text='말한 소리도 함께 보관').locator('.sw').get_attribute('aria-checked')=='false')
             await pg.screenshot(path=f'{SHOTS}/15_settings.png', full_page=False)
@@ -313,7 +332,7 @@ async def run():
             await pg.locator('.srow', has_text='정확한 알람').locator('button').click(); ok('exact row opens settings', any(x[0]=='openExactSettings' for x in await log(pg)))
             await pg.locator('.srow:has(b:text-is("알림"))').locator('button').click(); ok('notif row opens settings', any(x[0]=='openNotifSettings' for x in await log(pg)))
             await pg.locator('.srow', has_text='배터리 · 잠자는 앱').locator('button').click(); ok('battery row opens settings', any(x[0]=='openBatterySettings' for x in await log(pg)))
-            ok('version is 3-test', '3-test' in await txt(pg,'#sBody'))
+            ok('version is 4-test', '4-test' in await txt(pg,'#sBody'))
             await pg.evaluate("document.getElementById('sBody').parentElement.scrollTop=9999"); await pg.wait_for_timeout(80)
             await pg.screenshot(path=f'{SHOTS}/16_settings_bottom.png')
             await pg.close()

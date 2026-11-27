@@ -200,6 +200,24 @@ final class TimePhrase {
     String clock=ap+" "+h12+":"+(m<10?"0":"")+m+(sec>0?":"+(sec<10?"0":"")+sec:"");
     return (c.get(Calendar.MONTH)+1)+"월 "+c.get(Calendar.DATE)+"일 ("+w[c.get(Calendar.DAY_OF_WEEK)-1]+") "+clock;
   }
+  /** 날짜만: ‘12월 3일 (목)’ */
+  static String confirmDate(long ms){
+    Calendar c=cal(ms); String[] w={"일","월","화","수","목","금","토"};
+    return (c.get(Calendar.MONTH)+1)+"월 "+c.get(Calendar.DATE)+"일 ("+w[c.get(Calendar.DAY_OF_WEEK)-1]+")";
+  }
+  /** 메모에서 날짜·시각·‘N분 뒤’ 말을 빼 제목으로 쓸 글만 남겨요 */
+  static String stripTime(String text){
+    if(text==null) return "";
+    String s=text.replace('\n',' ').replace("내일모레","모레");
+    s=AFTER.matcher(s).replaceAll(" ");
+    s=WEEK.matcher(s).replaceAll(" ");
+    s=MD.matcher(s).replaceAll(" ");
+    s=REL.matcher(s).replaceAll(" ");
+    s=BARE.matcher(s).replaceAll(" ");
+    s=TIME.matcher(s).replaceAll(" ");
+    s=s.replaceAll("(?:^|\\s)에(?:\\s|$)", " ").replaceAll("\\s+"," ").trim();
+    return s;
+  }
   /** 사람이 읽는 때: ‘12월 3일(목) 오후 2시’ · ‘12월 3일(목) 오후 2시 30분’ */
   static String label(long ms,boolean hasTime){
     Calendar c=cal(ms); String[] w={"일","월","화","수","목","금","토"};

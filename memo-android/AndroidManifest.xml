@@ -9,6 +9,9 @@
   <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
   <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
   <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
+  <!-- 일정 메모를 달력에 넣기(문자 앱과 같은 뉴니버스 달력) -->
+  <uses-permission android:name="android.permission.READ_CALENDAR"/>
+  <uses-permission android:name="android.permission.WRITE_CALENDAR"/>
   <!-- 인터넷 권한 없음: 메모는 폰 밖으로 나가지 않음 (받아쓰기는 폰의 Google 음성 서비스가 해요) -->
   <queries>
     <intent><action android:name="android.speech.RecognitionService"/></intent>

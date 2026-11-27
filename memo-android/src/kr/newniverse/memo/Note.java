@@ -15,6 +15,11 @@ final class Note {
   long remindAt;      // 0 = 알림 없음
   boolean remindExact;
   boolean reminded;   // 알림이 이미 울렸음
+  long calEventId;    // 0 = 달력에 안 넣음
+  boolean calNeedPerm; // 잠금 화면 등에서 달력 권한이 없어 표시만
+  String calTitle="";
+  String calLocation="";
+  long calStart;
 
   JSONObject toJson(){
     try{
@@ -22,6 +27,7 @@ final class Note {
       o.put("id",id); o.put("text",text); o.put("createdAt",createdAt); o.put("durationMs",durationMs);
       o.put("kind",kind); o.put("audio",audio); o.put("seg",seg);
       o.put("remindAt",remindAt); o.put("remindExact",remindExact); o.put("reminded",reminded);
+      o.put("calEventId",calEventId); o.put("calNeedPerm",calNeedPerm); o.put("calTitle",calTitle==null?"":calTitle); o.put("calLocation",calLocation==null?"":calLocation); o.put("calStart",calStart);
       return o;
     }catch(Exception e){ throw new RuntimeException(e); }
   }
@@ -30,6 +36,7 @@ final class Note {
     n.id=o.optLong("id"); n.text=o.optString("text",""); n.createdAt=o.optLong("createdAt"); n.durationMs=o.optLong("durationMs");
     n.kind=AUDIO.equals(o.optString("kind"))?AUDIO:SPEECH; n.audio=o.optString("audio",""); n.seg=o.optInt("seg");
     n.remindAt=o.optLong("remindAt"); n.remindExact=o.optBoolean("remindExact"); n.reminded=o.optBoolean("reminded");
+    n.calEventId=o.optLong("calEventId"); n.calNeedPerm=o.optBoolean("calNeedPerm"); n.calTitle=o.optString("calTitle",""); n.calLocation=o.optString("calLocation",""); n.calStart=o.optLong("calStart");
     return n;
   }
   /** 목록·화면용 (소리 파일 경로는 숨김) */
@@ -38,6 +45,10 @@ final class Note {
     try{
       o.put("hasAudio",!audio.isEmpty());
       if(remindAt>0) o.put("remindLabel",TimePhrase.confirmWhen(remindAt));
+      if(calEventId>0||calNeedPerm){
+        o.put("calEventId",calEventId); o.put("calNeedPerm",calNeedPerm); o.put("calTitle",calTitle==null?"":calTitle);
+        if(calStart>0) o.put("calLabel",(calTitle!=null&&!calTitle.isEmpty()?TimePhrase.confirmWhen(calStart)+" "+calTitle:TimePhrase.confirmWhen(calStart)));
+      }
     }catch(Exception e){}
     return o;
   }

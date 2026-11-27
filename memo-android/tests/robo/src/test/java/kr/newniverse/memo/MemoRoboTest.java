@@ -44,6 +44,22 @@ import org.robolectric.shadows.ShadowSpeechRecognizer;
 public class MemoRoboTest {
   Application app; ActivityController<MainActivity> ctl; MainActivity act;
   boolean locked=false; int unlockAsked=0; boolean unlockResult=true;
+  FakeCal fakeCal;
+
+  static final class FakeCal implements MemoCal.Backend {
+    long seq=1; String err="";
+    static final class Ev { long id; String title,location; long start,end; boolean allDay; }
+    final java.util.ArrayList<Ev> ev=new java.util.ArrayList<>();
+    @Override public long calId(boolean create){ return 7; }
+    @Override public long insert(String title,String location,long start,long end,boolean allDay){
+      Ev e=new Ev(); e.id=seq++; e.title=title; e.location=location==null?"":location; e.start=start; e.end=end; e.allDay=allDay; ev.add(e); return e.id;
+    }
+    @Override public boolean delete(long eventId){
+      for(int i=0;i<ev.size();i++) if(ev.get(i).id==eventId){ ev.remove(i); return true; } return false;
+    }
+    @Override public String err(){ return err; }
+    Ev last(){ return ev.isEmpty()?null:ev.get(ev.size()-1); }
+  }
 
   @Before public void setUp(){
     TimeZone.setDefault(TimeZone.getTimeZone("Asia/Seoul"));
@@ -52,17 +68,18 @@ public class MemoRoboTest {
     Settings.Global.putInt(app.getContentResolver(),Settings.Global.AIRPLANE_MODE_ON,0);
     shadowOf((KeyguardManager)app.getSystemService(Context.KEYGUARD_SERVICE)).setKeyguardLocked(false);
     AudioCapture.testAmp=-1; AudioCapture.lenient=true;
-    shadowOf(app).grantPermissions(Manifest.permission.RECORD_AUDIO,Manifest.permission.POST_NOTIFICATIONS);
+    shadowOf(app).grantPermissions(Manifest.permission.RECORD_AUDIO,Manifest.permission.POST_NOTIFICATIONS,Manifest.permission.READ_CALENDAR,Manifest.permission.WRITE_CALENDAR);
     ShadowAlarmManager.setCanScheduleExactAlarms(true);
     registerRecognizer(true);
     app.getSharedPreferences("memo",0).edit().clear().commit();
     new NoteStore(app.getFilesDir()).all().forEach(n->new NoteStore(app.getFilesDir()).delete(n.id));
+    fakeCal=new FakeCal(); MemoCal.io=fakeCal;
     MainActivity.gate=new MainActivity.Gate(){
       @Override public boolean unlocked(Activity a){ return !locked; }
       @Override public void requestUnlock(Activity a,Runnable ok,Runnable no){ unlockAsked++; if(unlockResult){ locked=false; ok.run(); } else no.run(); }
     };
   }
-  @After public void tearDown(){ AudioCapture.testAmp=-1; AudioCapture.lenient=false; }
+  @After public void tearDown(){ AudioCapture.testAmp=-1; AudioCapture.lenient=false; MemoCal.io=null; }
 
   void registerRecognizer(boolean on){
     ResolveInfo ri=new ResolveInfo(); ri.serviceInfo=new ServiceInfo(); ri.serviceInfo.packageName="com.google.android.googlequicksearchbox"; ri.serviceInfo.name="svc";
@@ -490,6 +507,83 @@ public class MemoRoboTest {
     launch();
     assertEquals(Manifest.permission.POST_NOTIFICATIONS,shadowOf(act).getLastRequestedPermission().requestedPermissions[0]);
     assertTrue(act.prefs.askedNotif());
+  }
+  @Test public void meetingGoesToCalendarAndKeepsAlarm() throws Exception {
+    launch(); saveSpoken("다음주 목요일 2시 안동대학교 미팅");
+    Note n=notes().get(0);
+    assertEquals(1,fakeCal.ev.size());
+    assertEquals("안동대학교 미팅",fakeCal.last().title);
+    assertTrue(n.createdAt>0);
+    assertEquals(n.calEventId,fakeCal.last().id);
+    assertTrue(n.remindAt>0);
+    assertEquals(fakeCal.last().start+MemoCal.HOUR,fakeCal.last().end);
+    assertFalse(fakeCal.last().allDay);
+    JSONObject cal=last("saved").getJSONObject("cal");
+    assertTrue(cal.toString(),cal.getBoolean("ok"));
+    assertTrue(cal.getString("line").startsWith("달력에 넣음 · "));
+    assertTrue(cal.getString("line").contains("안동대학교 미팅"));
+    assertTrue(last("saved").getJSONObject("remind").optBoolean("ok"));
+    org.json.JSONArray log=AlarmLog.list(app);
+    boolean saw=false; for(int i=0;i<log.length();i++) if("cal".equals(log.getJSONObject(i).optString("kind"))&&log.getJSONObject(i).optBoolean("ok")) saw=true;
+    assertTrue("기록에 달력 결과가 있어야 해요",saw);
+  }
+  @Test public void phoneReminderStaysAlarmOnly() throws Exception {
+    launch(); saveSpoken("내일 10시에 나한테 전화하라고 말해 줘");
+    assertEquals(0,fakeCal.ev.size());
+    assertEquals(0,notes().get(0).calEventId);
+    assertTrue(notes().get(0).remindAt>0);
+    assertFalse(last("saved").has("cal"));
+  }
+  @Test public void meetAndHospitalGoToCalendar() throws Exception {
+    launch(); saveSpoken("모레 저녁 7시 친구 만나");
+    assertEquals(1,fakeCal.ev.size()); assertEquals("친구 만나",fakeCal.last().title);
+    act.dict.cancel(); if(!act.dict.listening()){ act.startDictation(); idle(80); }
+    saveSpoken("금요일 오전 11시 병원 예약");
+    assertEquals(2,fakeCal.ev.size()); assertEquals("병원 예약",fakeCal.last().title);
+  }
+  @Test public void thirtyMinutesNotifyIsAlarmOnly() throws Exception {
+    launch(); saveSpoken("30분 뒤 알려줘");
+    assertEquals(0,fakeCal.ev.size());
+    assertTrue(notes().get(0).remindAt>0);
+    assertFalse(last("saved").has("cal"));
+  }
+  @Test public void lockedWithoutCalendarPermissionMarksNeed() throws Exception {
+    shadowOf(app).denyPermissions(Manifest.permission.READ_CALENDAR,Manifest.permission.WRITE_CALENDAR);
+    locked=true;
+    launch(); saveSpoken("다음주 목요일 2시 안동대학교 미팅");
+    Note n=notes().get(0);
+    assertEquals(0,fakeCal.ev.size());
+    assertTrue(n.calNeedPerm);
+    assertTrue(n.remindAt>0); // 알림은 그대로
+    JSONObject cal=last("saved").getJSONObject("cal");
+    assertEquals("need-perm",cal.getString("state"));
+    assertEquals("달력 권한 필요",cal.getString("line"));
+    assertFalse(cal.optBoolean("askSettings"));
+    assertNull("잠금 화면에서는 달력 권한 창을 띄우지 않아요",shadowOf(act).getLastRequestedPermission());
+  }
+  @Test public void uncalRemovesEventKeepsMemoAndAlarm() throws Exception {
+    launch(); String id=saveSpoken("다음주 목요일 2시 안동대학교 미팅");
+    assertEquals(1,fakeCal.ev.size()); long ev=notes().get(0).calEventId; long rem=notes().get(0).remindAt;
+    JSONObject u=new JSONObject(act.br.uncal(id)); assertTrue(u.toString(),u.getBoolean("ok"));
+    assertEquals(0,fakeCal.ev.size());
+    Note n=notes().get(0);
+    assertEquals(0,n.calEventId);
+    assertEquals(rem,n.remindAt);
+    assertEquals("다음주 목요일 2시 안동대학교 미팅",n.text);
+  }
+  @Test public void firstOpenAsksCalendarWhenUnlocked(){
+    shadowOf(app).denyPermissions(Manifest.permission.READ_CALENDAR,Manifest.permission.WRITE_CALENDAR);
+    // 알림 권한은 이미 있어서 달력만 물어요
+    launch();
+    assertNotNull(shadowOf(act).getLastRequestedPermission());
+    java.util.List<String> p=java.util.Arrays.asList(shadowOf(act).getLastRequestedPermission().requestedPermissions);
+    assertTrue(p.contains(Manifest.permission.READ_CALENDAR));
+    assertTrue(p.contains(Manifest.permission.WRITE_CALENDAR));
+    assertTrue(act.prefs.askedCal());
+  }
+  @Test public void calendarPickerMatchesSmsLocalAccount(){
+    assertEquals("뉴니버스",MemoCal.ACC);
+    assertEquals("LOCAL",MemoCal.ACC_TYPE);
   }
 
   // ===================== 비행기 모드·잠금 화면: 클라우드 인식기 금지 =====================

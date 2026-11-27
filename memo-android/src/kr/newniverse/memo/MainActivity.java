@@ -21,7 +21,7 @@ import org.json.JSONObject;
  */
 public class MainActivity extends Activity implements Dictation.Events {
   static final String EXTRA_NOTE="noteId";
-  static final int REQ_MIC=41, REQ_NOTIF=42;
+  static final int REQ_MIC=41, REQ_NOTIF=42, REQ_CAL=43;
 
   /** 잠금 확인·풀기 (시험에서 바꿔 끼울 수 있게 분리) */
   interface Gate {
@@ -48,7 +48,7 @@ public class MainActivity extends Activity implements Dictation.Events {
   final ArrayList<String> pending=new ArrayList<>();
   final Set<Long> recent=new LinkedHashSet<>(); // 이번에 방금 저장한 메모(잠금 화면에서도 알림 맞추기 가능)
   String view="rec", dstate="idle", committed="", partial="", lastSaved="";
-  long noteToOpen; long createdAt, lastLevelPush; long pendingRemind;
+  long noteToOpen; long createdAt, lastLevelPush; long pendingRemind, pendingCal;
   /** 시험에서 확인하는 값 */
   boolean showWhenLockedSet, turnScreenOnSet; int unlockRequests; String lastNotice="";
   final ArrayList<JSONObject> log=new ArrayList<>(); // 마지막 이벤트들(시험이 확인)
@@ -108,6 +108,8 @@ public class MainActivity extends Activity implements Dictation.Events {
       if(view.equals("rec")&&!dict.busy()) startDictation();
     }
     maybeAskNotif();
+    maybeAskCal();
+    if(!locked()&&MemoCal.granted(this)) retryPendingCal();
     if(!gate.unlocked(this)&&!view.equals("rec")) leavePrivate(); // 다시 잠겼는데 지난 메모가 남아 있으면 가림
   }
 
@@ -155,6 +157,12 @@ public class MainActivity extends Activity implements Dictation.Events {
     prefs.setAskedNotif();
     try{ requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},REQ_NOTIF); }catch(Throwable e){}
   }
+  /** 처음 잠금을 푼 뒤에 달력 권한을 한 번 물어요. */
+  void maybeAskCal(){
+    if(locked()||MemoCal.granted(this)||prefs.askedCal()) return;
+    prefs.setAskedCal();
+    try{ requestPermissions(new String[]{android.Manifest.permission.READ_CALENDAR,android.Manifest.permission.WRITE_CALENDAR},REQ_CAL); }catch(Throwable e){}
+  }
 
   @Override public void onNeedMic(){
     dstate="needmic"; boolean ask=!prefs.askedMic();
@@ -177,6 +185,12 @@ public class MainActivity extends Activity implements Dictation.Events {
       long id=pendingRemind; pendingRemind=0;
       if(id==0) return;
       if(ok) push(br.remindJson(id,true,true)); else push(j("t","remind","ok",false,"state","notif-denied","id",String.valueOf(id)));
+    } else if(code==REQ_CAL){
+      boolean calOk=true;
+      if(res!=null) for(int v:res) if(v!=PackageManager.PERMISSION_GRANTED) calOk=false;
+      long id=pendingCal; pendingCal=0;
+      if(calOk){ retryPendingCal(); if(id>0) push(br.calJson(id)); }
+      else if(id>0) push(j("t","cal","ok",false,"state","need-perm","id",String.valueOf(id),"line","달력 권한 필요"));
     }
   }
 
@@ -201,7 +215,10 @@ public class MainActivity extends Activity implements Dictation.Events {
       Vib.saved(this,prefs);
       JSONObject o=j("t","saved","id",String.valueOf(n.id),"text",n.text,"dur",n.durationMs,"kind",n.kind,"seg",n.seg,"cont",r.cont,"autoClose",prefs.autoClose());
       try{
-        if(n.kind.equals(Note.SPEECH)&&!r.cont){ JSONObject rem=autoRemind(n); if(rem!=null) o.put("remind",rem); }
+        if(n.kind.equals(Note.SPEECH)&&!r.cont){
+          JSONObject rem=autoRemind(n); if(rem!=null) o.put("remind",rem);
+          JSONObject cal=autoCal(n); if(cal!=null) o.put("cal",cal);
+        }
         if(r.reason!=null&&!r.reason.isEmpty()) o.put("reason",r.reason);
       }catch(Exception e){}
       lastSaved=o.toString(); dstate=r.cont?"listening":"saved"; committed=""; partial="";
@@ -259,6 +276,44 @@ public class MainActivity extends Activity implements Dictation.Events {
           o.put("ok",false).put("state","error").put("line",h.confirmSet()); return o;
       }
     }catch(Exception e){ try{ o.put("ok",false).put("state","error"); }catch(Exception x){} return o; }
+  }
+
+  /** 일정 말이 있으면 달력에 넣고, 확인 카드에 넣을 결과를 돌려줘요. 알림은 따로 맞춰 둬요. */
+  JSONObject autoCal(Note n){
+    ApptPhrase.Hit h=ApptPhrase.find(n.text,n.createdAt);
+    if(h==null) return null;
+    JSONObject o=j("id",String.valueOf(n.id),"title",h.title,"location",h.location,"when",h.when.when,"allDay",h.allDay,"line",h.line());
+    try{
+      if(!MemoCal.granted(this)){
+        n.calNeedPerm=true; n.calTitle=h.title; n.calLocation=h.location; n.calStart=h.when.when; store.update(n);
+        AlarmLog.addCal(this,n,"need-perm",h.title,h.when.when,false,"");
+        if(!locked()){ pendingCal=n.id; try{ requestPermissions(new String[]{Manifest.permission.READ_CALENDAR,Manifest.permission.WRITE_CALENDAR},REQ_CAL); }catch(Throwable e){} }
+        o.put("ok",false).put("state","need-perm").put("askSettings",!locked()).put("line","달력 권한 필요");
+        return o;
+      }
+      long eid=MemoCal.insert(this,h);
+      if(eid>0){
+        n.calEventId=eid; n.calNeedPerm=false; n.calTitle=h.title; n.calLocation=h.location; n.calStart=h.when.when; store.update(n);
+        AlarmLog.addCal(this,n,"ok",h.title,h.when.when,true,"");
+        o.put("ok",true).put("state","ok").put("eventId",eid); return o;
+      }
+      AlarmLog.addCal(this,n,"error",h.title,h.when.when,false,MemoCal.err(this));
+      o.put("ok",false).put("state","error").put("line",h.line()); return o;
+    }catch(Exception e){ try{ o.put("ok",false).put("state","error"); }catch(Exception x){} return o; }
+  }
+
+  /** 권한이 생긴 뒤, ‘달력 권한 필요’로 남겨 둔 메모를 달력에 넣어요. */
+  void retryPendingCal(){
+    if(!MemoCal.granted(this)) return;
+    try{
+      for(Note n:store.all()){
+        if(!n.calNeedPerm||n.calEventId>0) continue;
+        ApptPhrase.Hit h=ApptPhrase.find(n.text,n.createdAt);
+        if(h==null){ n.calNeedPerm=false; store.update(n); continue; }
+        long eid=MemoCal.insert(this,h);
+        if(eid>0){ n.calEventId=eid; n.calNeedPerm=false; n.calTitle=h.title; n.calLocation=h.location; n.calStart=h.when.when; store.update(n); AlarmLog.addCal(this,n,"ok",h.title,h.when.when,true,""); }
+      }
+    }catch(Throwable e){}
   }
 
   void close(){ if(dict!=null) dict.stopAndSave(); finishAndRemoveTask(); }
