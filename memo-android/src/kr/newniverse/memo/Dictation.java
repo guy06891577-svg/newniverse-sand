@@ -1,6 +1,7 @@
 package kr.newniverse.memo;
 
 import android.Manifest;
+import android.app.KeyguardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -9,6 +10,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.Settings;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
@@ -19,6 +21,9 @@ import java.util.ArrayList;
  * 듣고 받아 적는 일꾼. 한 번 시작하면 말이 끊겨도(인식기가 알아서 끝내도) 바로 다시 들어서 이어 붙이고,
  * ‘말 끊긴 뒤 silenceMs’ · 누름 · ‘한 덩이 60초(자동 이어 받기, 최대 5덩이)’ 중 먼저 오는 때 저장해요.
  * 받아쓰기를 못 쓰면(인식기 없음·인터넷/언어 팩 없음) 소리 파일(m4a)로만 저장해요.
+ * 잠금 화면이거나 비행기 모드(네트워크 없음)에서는 클라우드 인식기를 시작하지 않아요.
+ * (클라우드 음성 서비스가 잠금 화면용이 아닌 안내 창을 띄워 삼성이 잠금 해제를 물을 수 있기 때문)
+ * 그때는 폰 안 인식기만 쓰고, 없거나 실패하면 잠금을 풀지 않은 채 소리로 저장해요.
  * 모든 호출은 메인 스레드에서.
  */
 final class Dictation {
@@ -75,17 +80,20 @@ final class Dictation {
     state=STARTING; capWanted=false;
     h.removeCallbacks(unmuteR);
     if(p.quiet()) mute();
-    boolean speech=!forceAudio&&recognizerAvailable(ctx);
+    boolean speech=!forceAudio&&willUseSpeech();
     if(speech){
       audioMode=false;
       if(p.keepAudio()) startCapture();
       ev.onStatus("starting","");
       startCycle();
     } else {
-      audioMode=true; if(audioReason.isEmpty()) audioReason="unavailable";
+      audioMode=true;
+      if(audioReason.isEmpty()) audioReason=speechFallbackReason();
       if(!startCapture()){ fail("audio-start"); return; }
       state=LISTENING; vibrate(45);
       ev.onStatus("audio",audioReason);
+      if("no-offline".equals(audioReason)||"lang".equals(audioReason)) ev.onNotice("no-offline",NO_OFFLINE_MSG);
+      else ev.onNotice("fallback-audio",audioReason);
     }
     h.removeCallbacks(tick); h.postDelayed(tick,150);
   }
@@ -97,13 +105,35 @@ final class Dictation {
   }
 
   // ---------- 인식기 ----------
+  static final String NO_OFFLINE_MSG="인터넷 없이 쓰는 한국어 받아쓰기가 없어 소리로 저장했어요. 설정 › 일반 › 언어팩에서 한국어를 받을 수 있어요.";
+
+  /** 잠금 화면이거나 비행기 모드/네트워크 없음이면 클라우드 인식기를 쓰지 않음 */
+  boolean keyguardLocked(){
+    try{ KeyguardManager km=(KeyguardManager)ctx.getSystemService(Context.KEYGUARD_SERVICE); return km!=null&&km.isKeyguardLocked(); }catch(Throwable e){ return false; }
+  }
+  boolean airplaneOn(){
+    try{ return Settings.Global.getInt(ctx.getContentResolver(),Settings.Global.AIRPLANE_MODE_ON,0)!=0; }catch(Throwable e){ return false; }
+  }
+  boolean networkOk(){ return !airplaneOn(); } // 비행기 모드를 네트워크 없음으로 봄(잠금 화면에서는 canUseCloud 가 따로 막아요)
+  boolean canUseCloud(){ return !keyguardLocked()&&networkOk(); }
+  boolean onDevicePossible(){
+    if(Build.VERSION.SDK_INT<33||!p.offline()||onDeviceOff) return false;
+    try{ return SpeechRecognizer.isOnDeviceRecognitionAvailable(ctx); }catch(Throwable e){ return false; }
+  }
+  boolean willUseSpeech(){ return onDevicePossible()||(recognizerAvailable(ctx)&&canUseCloud()); }
+  String speechFallbackReason(){
+    if(!onDevicePossible()&&!canUseCloud()) return "no-offline";
+    if(airplaneOn()||!networkOk()) return "net";
+    return "unavailable";
+  }
+
   SpeechRecognizer make(){
     if(sr!=null) return sr;
     SpeechRecognizer r=null; onDevice=false;
-    if(Build.VERSION.SDK_INT>=33&&p.offline()&&!onDeviceOff){
-      try{ if(SpeechRecognizer.isOnDeviceRecognitionAvailable(ctx)){ r=SpeechRecognizer.createOnDeviceSpeechRecognizer(ctx); onDevice=true; } }catch(Throwable e){ r=null; onDevice=false; }
+    if(onDevicePossible()){
+      try{ r=SpeechRecognizer.createOnDeviceSpeechRecognizer(ctx); onDevice=true; }catch(Throwable e){ r=null; onDevice=false; }
     }
-    if(r==null){ try{ r=SpeechRecognizer.createSpeechRecognizer(ctx); }catch(Throwable e){ r=null; } }
+    if(r==null&&canUseCloud()){ try{ r=SpeechRecognizer.createSpeechRecognizer(ctx); }catch(Throwable e){ r=null; } }
     if(r!=null) r.setRecognitionListener(listener);
     sr=r; return r;
   }
@@ -123,7 +153,7 @@ final class Dictation {
   void startCycle(){
     if(state!=STARTING&&state!=LISTENING) return;
     SpeechRecognizer r=make();
-    if(r==null){ toAudio("unavailable"); return; }
+    if(r==null){ toAudio(speechFallbackReason()); return; }
     recIntent=intent(); cycleStart=now();
     try{ r.startListening(recIntent); }catch(Throwable e){ toAudio("unavailable"); }
   }
@@ -177,7 +207,7 @@ final class Dictation {
             reset(); h.postDelayed(()->startCycle(),250); return; }
           toAudio("audio"); return;
         case 12: case 13: // LANGUAGE_NOT_SUPPORTED · LANGUAGE_UNAVAILABLE
-          if(onDevice){ releaseSr(); onDeviceOff=true; h.postDelayed(()->startCycle(),100); return; }
+          if(onDevice&&canUseCloud()){ releaseSr(); onDeviceOff=true; h.postDelayed(()->startCycle(),100); return; }
           toAudio("lang"); return;
         default: // 네트워크·서버·너무 많은 요청 …
           toAudio("net"); return;
@@ -212,7 +242,8 @@ final class Dictation {
     state=LISTENING; pol.begin(now()); // 소리 모드에서 다시 기다림(처음 7초·끊김 2.5초)
     if(committed.length()>0) pol.voice(now());
     ev.onStatus("audio",why);
-    ev.onNotice("fallback-audio",why);
+    if("no-offline".equals(why)||"lang".equals(why)) ev.onNotice("no-offline",NO_OFFLINE_MSG);
+    else ev.onNotice("fallback-audio",why);
   }
   void consentHint(){ ev.onNotice("consent","Google 음성 안내가 떴다면 ‘동의’를 눌러 주세요. 안 뜨면 설정에서 음성 입력을 확인해 주세요."); }
 

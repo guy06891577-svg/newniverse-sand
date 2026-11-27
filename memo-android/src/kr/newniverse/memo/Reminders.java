@@ -15,9 +15,8 @@ import android.os.Build;
 import android.provider.Settings;
 
 /**
- * 알림 맞추기. 사용자가 ‘알림 맞추기’를 누른 메모에만 걸어요(스스로 걸지 않음).
- * 정확한 알람(SCHEDULE_EXACT_ALARM)은 안드로이드 12부터 사용자가 허용해야 해서, 허용이 없으면 NEED_EXACT 를 돌려주고
- * 허용 화면을 열거나 ‘대략적으로’(몇 분 어긋날 수 있음) 맞추게 해요.
+ * 알림 맞추기. 받아쓴 메모에 때 말이 있으면 저장과 함께 자동으로 걸어요. 확인 카드의 ‘취소’나 목록에서 끌 수 있어요.
+ * 정확한 알람 허용이 없으면 대략적으로(몇 분 어긋날 수 있음) 맞추고, 그 뜻을 확인 카드에 적어요.
  */
 final class Reminders {
   static final String CHANNEL="memo_reminder", ACTION="kr.newniverse.memo.REMIND", EXTRA_ID="noteId";
@@ -71,7 +70,7 @@ final class Reminders {
     if(Build.VERSION.SDK_INT<26) return;
     NotificationManager nm=(NotificationManager)c.getSystemService(Context.NOTIFICATION_SERVICE); if(nm==null) return;
     NotificationChannel ch=new NotificationChannel(CHANNEL,"메모 알림",NotificationManager.IMPORTANCE_HIGH);
-    ch.setDescription("‘알림 맞추기’를 누른 메모를 때에 맞춰 알려 줘요");
+    ch.setDescription("메모에 적힌 때에 맞춰 알려 줘요");
     ch.enableVibration(true); ch.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
     nm.createNotificationChannel(ch);
   }

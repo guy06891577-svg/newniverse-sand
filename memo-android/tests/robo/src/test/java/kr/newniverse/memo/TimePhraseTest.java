@@ -17,10 +17,18 @@ public class TimePhraseTest {
   static void at(String text,long now,long want){
     TimePhrase.Hit h=TimePhrase.find(text,now);
     assertNotNull("‘"+text+"’ 를 읽어야 해요",h);
+    assertFalse("‘"+text+"’ 는 지난 때가 아니어야 해요",h.past);
     assertEquals("‘"+text+"’ → "+TimePhrase.label(want,true)+" 인데 "+TimePhrase.label(h.when,true),want,h.when);
   }
   static void none(String text){ none(text,NOW); }
-  static void none(String text,long now){ TimePhrase.Hit h=TimePhrase.find(text,now); assertNull("‘"+text+"’ 는 제안하면 안 돼요 → "+(h==null?"":TimePhrase.label(h.when,true)),h); }
+  static void none(String text,long now){ TimePhrase.Hit h=TimePhrase.find(text,now); assertTrue("‘"+text+"’ 는 때로 치면 안 돼요 → "+(h==null?"":TimePhrase.label(h.when,true)),h==null); }
+  static void past(String text,long want){ past(text,NOW,want); }
+  static void past(String text,long now,long want){
+    TimePhrase.Hit h=TimePhrase.find(text,now);
+    assertNotNull("‘"+text+"’ 를 읽어야 해요",h);
+    assertTrue("‘"+text+"’ 는 이미 지난 때여야 해요",h.past);
+    assertEquals("‘"+text+"’ → "+TimePhrase.label(want,true)+" 인데 "+TimePhrase.label(h.when,true),want,h.when);
+  }
 
   @Test public void nowIsFriday(){ assertEquals(Calendar.FRIDAY,TimePhrase.cal(NOW).get(Calendar.DAY_OF_WEEK)); }
 
@@ -30,6 +38,17 @@ public class TimePhraseTest {
     at("목요일 2시",ms(2026,12,3,14,0));
     at("다음주 목요일 2시에 안동대학교서 봐",ms(2026,12,3,14,0));
     TimePhrase.Hit h=TimePhrase.find("30분 뒤에 알려줘",NOW); assertNotNull(h); assertEquals(NOW+30*60000L,h.when); assertTrue(h.relative);
+  }
+  @Test public void v2RequiredSentences(){
+    at("내일 아침 9시에 알려줘",ms(2026,11,28,9,0));
+    at("다음주 목요일 2시 안동대학교 미팅",ms(2026,12,3,14,0));
+    TimePhrase.Hit h=TimePhrase.find("모레 약 사기",NOW);
+    assertNotNull(h); assertEquals(ms(2026,11,29,9,0),h.when); assertTrue(h.defaulted); assertFalse(h.past);
+    assertTrue(h.confirmSet().contains("오전 9:00 알림 맞춤"));
+    assertTrue(h.confirmSet().contains("오전 9시로 정했어요"));
+    past("오늘 오후 2시에 알려줘",ms(2026,11,27,14,0));
+    h=TimePhrase.find("오늘 오후 2시에 알려줘",NOW);
+    assertTrue(h.confirmPast().contains("이미 지난 때"));
   }
   // ---- 오늘·내일·모레·글피 ----
   @Test public void relativeDays(){
@@ -50,7 +69,7 @@ public class TimePhraseTest {
     at("다다음주 화요일 저녁 7시",ms(2026,12,8,19,0));
     at("차주 수요일 9시",ms(2026,12,2,9,0));
     at("다음 주 목 오후 3시",ms(2026,12,3,15,0));
-    none("이번주 수요일 2시"); // 이미 지남
+    past("이번주 수요일 2시",ms(2026,11,25,14,0)); // 이미 지남
   }
   // ---- 요일만: 다가오는 그 요일 ----
   @Test public void bareWeekday(){
@@ -91,9 +110,11 @@ public class TimePhraseTest {
     long m=60000L;
     TimePhrase.Hit h;
     h=TimePhrase.find("30분 뒤",NOW); assertEquals(NOW+30*m,h.when);
+    h=TimePhrase.find("삼십 분 뒤",NOW); assertEquals(NOW+30*m,h.when);
     h=TimePhrase.find("10분 후에 알려줘",NOW); assertEquals(NOW+10*m,h.when);
     h=TimePhrase.find("한 시간 뒤에 알려줘",NOW); assertEquals(NOW+60*m,h.when);
     h=TimePhrase.find("두 시간 반 후",NOW); assertEquals(NOW+150*m,h.when);
+    h=TimePhrase.find("1시간 반 뒤",NOW); assertEquals(NOW+90*m,h.when);
     h=TimePhrase.find("1시간 30분 뒤",NOW); assertEquals(NOW+90*m,h.when);
     h=TimePhrase.find("반 시간 뒤에 알려줘",NOW); assertEquals(NOW+30*m,h.when);
     h=TimePhrase.find("삼십분 뒤에 알려줘",NOW); assertEquals(NOW+30*m,h.when);
@@ -109,7 +130,7 @@ public class TimePhraseTest {
   @Test public void numericDate(){
     at("12월 25일 오후 6시에 알려줘",ms(2026,12,25,18,0));
     at("12월 3일에 알려줘",ms(2026,12,3,9,0));
-    none("11월 3일 2시"); // 지난 날짜
+    past("11월 3일 2시",ms(2026,11,3,14,0)); // 지난 날짜
   }
   // ---- 제안하면 안 되는 말 ----
   @Test public void noOffer(){
@@ -127,7 +148,7 @@ public class TimePhraseTest {
     none("지난주 월요일 3시에 갔어");
   }
   @Test public void pastToday(){
-    none("오늘 오후 2시에 알려줘");     // 15:00 기준 이미 지남
+    past("오늘 오후 2시에 알려줘",ms(2026,11,27,14,0)); // 15:00 기준 이미 지남
     at("오늘 오후 4시에 알려줘",ms(2026,11,27,16,0));
   }
   @Test public void tenseWithoutCueIsSkippedButCueWins(){
@@ -138,6 +159,10 @@ public class TimePhraseTest {
     assertEquals("12월 3일(목) 오후 2시",TimePhrase.label(ms(2026,12,3,14,0),true));
     assertEquals("12월 3일(목) 오후 2시 30분",TimePhrase.label(ms(2026,12,3,14,30),true));
     assertEquals("11월 28일(토) 오전 12시",TimePhrase.label(ms(2026,11,28,0,0),true));
+    assertEquals("12월 3일 (목) 오전 9:00",TimePhrase.confirmWhen(ms(2026,12,3,9,0)));
+    assertEquals("12월 3일 (목) 오후 2:00",TimePhrase.confirmWhen(ms(2026,12,3,14,0)));
+    assertEquals("12월 3일 (목) 오후 2:30",TimePhrase.confirmWhen(ms(2026,12,3,14,30)));
+    assertEquals("11월 28일 (토) 오전 12:00",TimePhrase.confirmWhen(ms(2026,11,28,0,0)));
   }
   @Test public void minutesParser(){
     assertEquals(30,TimePhrase.minutes("삼십")); assertEquals(15,TimePhrase.minutes("십오")); assertEquals(10,TimePhrase.minutes("십"));

@@ -94,6 +94,7 @@ p.sb{font-size:14.5px;color:var(--sub);text-align:center;line-height:1.5;max-wid
 .item .s.e{color:var(--sub)}
 .tag{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:10px;border:1px solid rgba(160,190,255,.28);color:var(--sub)}
 .tag .i{width:13px;height:13px}
+.card .memo{margin-top:6px;font-size:14.5px;color:var(--sub);line-height:1.45;word-break:keep-all;overflow-wrap:anywhere}
 .empty{text-align:center;color:var(--sub);padding:60px 30px;line-height:1.7;font-size:15px}
 .empty .i{width:40px;height:40px;margin:0 auto 14px;color:var(--a2);opacity:.8}
 mark{background:rgba(111,211,255,.25);color:#fff;border-radius:4px;padding:0 1px}
@@ -139,6 +140,7 @@ mark{background:rgba(111,211,255,.25);color:#fff;border-radius:4px;padding:0 1px
  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></symbol>
  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></symbol>
  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 17v-6a6 6 0 0 1 12 0v6l1.5 2h-15zM10 21h4"/></symbol>
+ <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3.2 2.2"/></symbol>
  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
  <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6.5" y="6.5" width="11" height="11" rx="2.5"/></symbol>
  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
@@ -261,9 +263,9 @@ function viewSaved(e){
     setTop(S.cont?'저장했어요 · 이어서 듣는 중':'저장했어요',sec+'초 · '+(e.text||'').length+'자'+(e.seg?(' · '+(e.seg+1)+'번째 덩이'):''));
     setText(e.text,'');
   }
-  if(e.sug&&!S.cont) remindCard(e);
+  if(e.remind&&!S.cont) confirmRemind(e);
   setMain('mic','새 메모',function(){ call('start'); viewStarting(); });
-  if(!S.cont&&!e.sug&&e.autoClose&&e.kind!=='audio') startCd(5);
+  if(!S.cont&&!e.remind&&e.autoClose&&e.kind!=='audio') startCd(5);
 }
 function startCd(n){
   var left=n,cd=$('cd'); cd.hidden=false; cd.textContent=left+'초 뒤에 닫혀요 · 화면을 누르면 멈춰요';
@@ -271,15 +273,53 @@ function startCd(n){
 }
 document.addEventListener('pointerdown',function(){ if(S.cdT) stopCd(); },true);
 
-/* 알림 제안: 사용자가 ‘알림 맞추기’를 눌러야만 맞춰져요 */
-function remindCard(e){
-  var host=$('cards'), id=e.id;
-  var c=el('div','card glass'); c.id='rc-'+id;
-  c.innerHTML='<div class="row">'+icon('bell')+'<div class="t"><b>알림 맞출까요?</b><br><span id="rl-'+id+'"></span></div></div><div class="btns"><button class="btn pri" id="ry-'+id+'">'+icon('bell')+'알림 맞추기</button><button class="btn" id="rn-'+id+'">괜찮아요</button></div>';
-  host.appendChild(c);
-  c.querySelector('#rl-'+id).textContent=e.sug.line;
-  c.querySelector('#ry-'+id).onclick=function(){ doRemind(id,false,c); };
-  c.querySelector('#rn-'+id).onclick=function(){ c.remove(); if(!S.cont&&S.last&&S.last.autoClose) startCd(5); };
+/* 알림 확인: 저장할 때 이미 맞춰 두고, 이 카드에서 한 번 보여 줘요 */
+function confirmRemind(e){
+  var r=e.remind||{}, c=el('div','card glass'); c.id='rc-'+e.id;
+  $('cards').appendChild(c);
+  applyConfirm(r,c,e.text||'');
+}
+function applyConfirm(r,c,text){
+  if(!c) c=$('rc-'+(r.id||''))||null;
+  if(!c){ c=el('div','card glass'); $('cards').appendChild(c); }
+  var st=r.state||(r.ok?'exact':'error'), id=r.id;
+  function body(ic, title, sub, btns, bad){
+    c.className='card glass'+(bad?' bad':'');
+    c.innerHTML='<div class="row">'+icon(ic)+'<div class="t"><b></b>'+(sub?'<div class="memo"></div>':'')+'</div></div>'+(btns?'<div class="btns" id="rb"></div>':'');
+    c.querySelector('b').textContent=title;
+    var m=c.querySelector('.memo'); if(m) m.textContent=sub;
+    var rb=c.querySelector('#rb');
+    if(btns) btns.forEach(function(b){ var x=el('button','btn'+(b[2]?' pri':''),b[0]); x.onclick=b[1]; rb.appendChild(x); });
+  }
+  function okBtn(){ return ['확인',function(){ stopCd(); call('closeApp'); },true]; }
+  if(r.ok){
+    body('clock', r.line||'알림 맞춤', text, [
+      ['취소',function(){
+        call('unremind',String(id));
+        body('check','알림을 취소했어요','메모는 그대로 있어요', [okBtn()], false);
+        stopCd(); if(S.last&&S.last.autoClose) startCd(5);
+      }],
+      okBtn()
+    ], false);
+    if(S.last&&S.last.autoClose&&!S.cont) startCd(5);
+    return;
+  }
+  if(st==='past'){
+    body('alert', '이미 지난 때예요', r.line||'알림을 맞추지 않았어요', [okBtn()], true);
+    if(S.last&&S.last.autoClose&&!S.cont) startCd(5);
+    return;
+  }
+  if(st==='need-notif'){
+    body('bell','알림 허용이 필요해요','뜨는 창에서 ‘허용’을 누르면 바로 맞춰요. 창이 안 뜨면 잠금을 푼 뒤 다시 열어 주세요.',
+      [['알림 설정 열기',function(){ call('openNotifSettings'); },true], okBtn()], false);
+    return;
+  }
+  if(st==='notif-denied'){
+    body('alert','알림이 꺼져 있어요','설정에서 알림을 켜면 맞출 수 있어요',
+      [['알림 설정 열기',function(){ call('openNotifSettings'); },true], okBtn()], true);
+    return;
+  }
+  body('alert','알림을 맞추지 못했어요', r.line||'잠시 뒤 다시 해 주세요', [okBtn()], true);
 }
 function doRemind(id,inexact,c){
   var r=J(call('remind',String(id),!!inexact));
@@ -287,22 +327,7 @@ function doRemind(id,inexact,c){
 }
 function applyRemind(r,c){
   if(!c) c=$('rc-'+r.id)||null;
-  if(!c){ c=el('div','card glass'); $('cards').appendChild(c); }
-  var st=r.state||(r.ok?'exact':'error'), id=r.id;
-  function set(html,btns){ c.className='card glass'; c.innerHTML='<div class="row">'+html[0]+'<div class="t">'+html[1]+'</div></div>'+(btns?'<div class="btns" id="rb"></div>':''); var rb=c.querySelector('#rb'); if(btns) btns.forEach(function(b){ var x=el('button','btn'+(b[2]?' pri':''),b[0]); x.onclick=b[1]; rb.appendChild(x); }); }
-  if(r.ok){
-    var t=st==='inexact'?'대략적인 알림을 맞췄어요 (몇 분 어긋날 수 있어요)':'알림을 맞췄어요';
-    set([icon('check'),'<b>'+esc(t)+'</b><br>'+esc(r.line||'')],[['되돌리기',function(){ call('unremind',String(id)); c.remove(); toast('알림을 지웠어요'); }]]);
-    if(S.last&&S.last.autoClose&&!S.cont) startCd(6);
-    return;
-  }
-  if(st==='need-notif'){ set([icon('bell'),'<b>알림 허용이 필요해요</b><br>뜨는 창에서 ‘허용’을 누르면 바로 맞춰요'],null); return; }
-  if(st==='notif-denied'){ set([icon('alert'),'<b>알림이 꺼져 있어요</b><br>설정에서 알림을 켜면 맞출 수 있어요'],[['알림 설정 열기',function(){ call('openNotifSettings'); },true]]); c.classList.add('bad'); return; }
-  if(st==='need-exact'){ set([icon('alert'),'<b>정확한 알람 허용이 필요해요</b><br>허용 화면에서 켜고 돌아와 다시 눌러 주세요. 급하지 않으면 대략적으로 맞출 수도 있어요'],
-      [['허용 화면 열기',function(){ call('openExactSettings'); },true],['대략적으로 맞추기',function(){ doRemind(id,true,c); }],['돌아와서 다시',function(){ doRemind(id,false,c); }]]); return; }
-  if(st==='past'){ set([icon('alert'),'<b>이미 지난 때예요</b><br>알림을 맞추지 않았어요'],null); c.classList.add('bad'); return; }
-  if(st==='notime'||st==='nonote'){ set([icon('alert'),'<b>때를 찾지 못했어요</b>'],null); return; }
-  set([icon('alert'),'<b>알림을 맞추지 못했어요</b><br>잠시 뒤 다시 눌러 주세요'],null); c.classList.add('bad');
+  applyConfirm(r,c, (S.last&&S.last.text)||'');
 }
 
 function viewNone(){
@@ -332,7 +357,8 @@ function noticeCard(code,msg){
   host.appendChild(c);
 }
 var NOTICE_TXT={
-  'fallback-audio':{unavailable:'이 폰에서 받아쓰기를 쓸 수 없어서 소리로 저장해요. 나중에 글로 옮길 수 있어요.',net:'인터넷이 안 돼서 받아쓰기를 못 해요. 소리로 저장해 두고 나중에 글로 옮겨 주세요.',timeout:'받아쓰기가 응답하지 않아서 소리로 저장해요.',lang:'한국어 받아쓰기 준비가 안 돼서 소리로 저장해요.',busy:'받아쓰기가 바빠서 소리로 저장해요.',client:'받아쓰기를 시작하지 못해서 소리로 저장해요.',perm:'받아쓰기 권한이 없어서 소리로 저장해요.',audio:'마이크를 받아쓰기가 쓰지 못해서 소리로 저장해요.'}
+  'no-offline':'인터넷 없이 쓰는 한국어 받아쓰기가 없어 소리로 저장했어요. 설정 › 일반 › 언어팩에서 한국어를 받을 수 있어요.',
+  'fallback-audio':{unavailable:'이 폰에서 받아쓰기를 쓸 수 없어서 소리로 저장해요. 나중에 글로 옮길 수 있어요.',net:'인터넷이 안 돼서 받아쓰기를 못 해요. 소리로 저장해 두고 나중에 글로 옮겨 주세요.',timeout:'받아쓰기가 응답하지 않아서 소리로 저장해요.',lang:'한국어 받아쓰기 준비가 안 돼서 소리로 저장해요.',busy:'받아쓰기가 바빠서 소리로 저장해요.',client:'받아쓰기를 시작하지 못해서 소리로 저장해요.',perm:'받아쓰기 권한이 없어서 소리로 저장해요.',audio:'마이크를 받아쓰기가 쓰지 못해서 소리로 저장해요.','no-offline':'인터넷 없이 쓰는 한국어 받아쓰기가 없어 소리로 저장했어요. 설정 › 일반 › 언어팩에서 한국어를 받을 수 있어요.'}
 };
 
 /* ---------- 이벤트 (자바에서 화면으로) ---------- */
@@ -353,7 +379,8 @@ window.NV_ev=function(e){
     case 'error': viewError(e.reason); break;
     case 'needmic': S.needmic=e; viewNeedMic(e); break;
     case 'notice':
-      if(e.code==='fallback-audio'){ var t=(NOTICE_TXT['fallback-audio'][e.msg])||'받아쓰기를 쓸 수 없어서 소리로 저장해요.'; noticeCard('fallback-audio',t); }
+      if(e.code==='no-offline') noticeCard('no-offline', e.msg||NOTICE_TXT['no-offline']);
+      else if(e.code==='fallback-audio'){ var t=(NOTICE_TXT['fallback-audio'][e.msg])||'받아쓰기를 쓸 수 없어서 소리로 저장해요.'; noticeCard('fallback-audio',t); }
       else noticeCard(e.code,e.msg);
       break;
     case 'remind': applyRemind(e,null); break;
@@ -405,7 +432,7 @@ function loadList(){
   r.notes.forEach(function(n){
     var b=el('button','item glass');
     var tags='';
-    if(n.remindAt>0&&!n.reminded) tags+='<span class="tag">'+icon('bell')+esc(shortAt(n.remindAt))+'</span>';
+    if(n.remindAt>0&&!n.reminded) tags+='<span class="tag">'+icon('clock')+esc(n.remindLabel||shortAt(n.remindAt))+'</span>';
     if(n.reminded) tags+='<span class="tag">'+icon('check')+'알림 완료</span>';
     if(n.kind==='audio'&&!n.text) tags+='<span class="tag">'+icon('wave')+'소리만</span>';
     else if(n.hasAudio) tags+='<span class="tag">'+icon('wave')+'소리</span>';
@@ -432,14 +459,16 @@ function openNote(id,fromNotif){
   $('nAudioT').textContent=n.kind==='audio'&&!n.text?'받아쓰기를 못 해서 소리로 저장했어요. 들으면서 아래에 글로 옮겨 적어 주세요.':'말한 소리도 함께 보관 중이에요.';
   var cards=$('nCards'); cards.innerHTML='';
   if(n.remindAt>0){
-    var c=el('div','card glass'); c.innerHTML='<div class="row">'+icon(n.reminded?'check':'bell')+'<div class="t"><b>'+(n.reminded?'알림이 울렸어요':'알림이 맞춰져 있어요')+'</b><br>'+esc(r.remindLabel||'')+'</div></div>'+(n.reminded?'':'<div class="btns"><button class="btn" id="ru">알림 끄기</button></div>');
-    cards.appendChild(c); var ru=c.querySelector('#ru'); if(ru) ru.onclick=function(){ call('unremind',String(n.id)); toast('알림을 껐어요'); openNote(n.id,false); };
+    var c=el('div','card glass');
+    c.innerHTML='<div class="row">'+icon(n.reminded?'check':'clock')+'<div class="t"><b>'+(n.reminded?'알림이 울렸어요':'알림이 맞춰져 있어요')+'</b><br>'+esc(r.remindLabel||'')+'</div></div><div class="btns">'+(n.reminded?'':'<button class="btn" id="ru">알림 끄기</button>')+(r.sug?'<button class="btn" id="rr">다시 맞추기</button>':'')+'</div>';
+    cards.appendChild(c);
+    var ru=c.querySelector('#ru'); if(ru) ru.onclick=function(){ call('unremind',String(n.id)); toast('알림을 껐어요'); openNote(n.id,false); };
   } else if(r.sug){
-    var c2=el('div','card glass'); c2.innerHTML='<div class="row">'+icon('bell')+'<div class="t"><b>알림 맞출까요?</b><br>'+esc(r.sug.line)+'</div></div><div class="btns"><button class="btn pri" id="ry">알림 맞추기</button></div>';
-    cards.appendChild(c2); c2.querySelector('#ry').onclick=function(){ var rr=J(call('remind',String(n.id),false)); rr.id=n.id; if(rr.ok){ toast('알림을 맞췄어요'); openNote(n.id,false); } else { applyRemindIn(cards,rr); } };
+    var c2=el('div','card glass'); c2.innerHTML='<div class="row">'+icon('clock')+'<div class="t"><b>알림 맞추기</b><br>'+esc(r.sug.line)+'</div></div><div class="btns"><button class="btn pri" id="ry">알림 맞추기</button></div>';
+    cards.appendChild(c2); c2.querySelector('#ry').onclick=function(){ var rr=J(call('remind',String(n.id),true)); rr.id=n.id; if(rr.ok){ toast('알림을 맞췄어요'); openNote(n.id,false); } else { applyRemindIn(cards,rr); } };
   }
 }
-function applyRemindIn(host,rr){ var c=el('div','card glass'); host.appendChild(c); c.id='rc-'+rr.id; applyRemind(rr,c); }
+function applyRemindIn(host,rr){ var c=el('div','card glass'); host.appendChild(c); c.id='rc-'+rr.id; applyConfirm(rr,c,''); }
 $('nBack').onclick=function(){ call('stopPlay'); openList(); };
 $('nCopy').onclick=function(){ var r=J(call('copy',S.noteId)); toast(r.ok?'복사했어요':'복사하지 못했어요'); };
 $('nShare').onclick=function(){ var r=J(call('share',S.noteId)); if(!r.ok) toast('공유하지 못했어요'); };

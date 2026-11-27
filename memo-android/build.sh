@@ -3,7 +3,7 @@
 # 서명: 런처·전화·문자·설정과 같은 고정 릴리스 키 (~/.nv-release/release.jks, 비밀번호는 같은 폴더 storepass 파일). 저장소에 넣지 말 것.
 set -e
 cd "$(dirname "$0")"
-VC=1; VN=1-test
+VC=2; VN=2-test
 export JAVA_HOME=${JAVA_HOME:-$HOME/jdk}; export PATH=$JAVA_HOME/bin:$PATH
 SDK=${ANDROID_HOME:-$HOME/android-sdk}; BT=$SDK/build-tools/34.0.0; JAR=$SDK/platforms/android-34/android.jar
 KEYDIR=${NV_KEYDIR:-$HOME/.nv-release}

@@ -6,6 +6,9 @@ import static org.robolectric.Shadows.shadowOf;
 import android.Manifest;
 import android.app.Activity;
 import android.app.Application;
+import android.provider.Settings;
+import android.app.KeyguardManager;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Looper;
 import android.speech.SpeechRecognizer;
@@ -30,6 +33,8 @@ public class MemoNoRecognizerTest {
     app=RuntimeEnvironment.getApplication();
     shadowOf(app).grantPermissions(Manifest.permission.RECORD_AUDIO,Manifest.permission.POST_NOTIFICATIONS);
     ShadowSpeechRecognizer.reset(); ShadowSpeechRecognizer.setIsOnDeviceRecognitionAvailable(false); AudioCapture.lenient=true; AudioCapture.testAmp=0;
+    Settings.Global.putInt(app.getContentResolver(),Settings.Global.AIRPLANE_MODE_ON,0);
+    shadowOf((KeyguardManager)app.getSystemService(Context.KEYGUARD_SERVICE)).setKeyguardLocked(false);
     app.getSharedPreferences("memo",0).edit().clear().commit();
     MainActivity.gate=new MainActivity.Gate(){ @Override public boolean unlocked(Activity a){ return true; } @Override public void requestUnlock(Activity a,Runnable ok,Runnable no){ ok.run(); } };
   }

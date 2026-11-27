@@ -12,12 +12,13 @@ import java.util.regex.*;
  *  시각  N시 · N시 반 · N시 M분 · N:MM · 오전/오후/아침/점심/저녁/밤/새벽/낮. 앞말이 없으면 1~7시=오후, 8~11시=오전, 12시=낮 12시.
  *  뒤    ‘30분 뒤’ ‘한 시간 반 후’ ‘1시간 30분 뒤’ = 지금부터 그만큼 뒤(초 단위까지 그대로).
  *  날짜만 말하면 오전 9시(defaulted)로 제안하고, 시각만 말했는데 이미 지났으면 내일 그 시각(rolled)으로 제안해요.
- *  지난 일(어제·했어 …)이나 이미 지난 때는 제안하지 않아요. 제안만 하고, 알림은 사용자가 누른 뒤에만 맞춰요.
+ *  지난 일(어제·했어 …)은 때로 치지 않아요. 이미 지난 때는 Hit.past=true 로 돌려 주고, 알림은 맞추지 않아요.
+ *  날짜만 말하고 시각이 없으면 오전 9시로 맞춰요. 확인 문구는 confirmSet()/confirmPast() 를 써요.
  */
 final class TimePhrase {
   static final int DEFAULT_HOUR=9;
   static final class Hit {
-    long when; boolean explicitTime, defaulted, rolled, relative; String phrase="";
+    long when; boolean explicitTime, defaulted, rolled, relative, past; String phrase="";
     String label(){ return TimePhrase.label(when,true); }
     /** 화면에 보일 한 줄: ‘12월 3일(목) 오후 2시’ (+ 설명) */
     String line(){
@@ -26,6 +27,14 @@ final class TimePhrase {
       else if(rolled) s+=" · 오늘은 지나서 내일로";
       return s;
     }
+    /** 확인 카드: ‘12월 3일 (목) 오전 9:00 알림 맞춤’ */
+    String confirmSet(){
+      String s=TimePhrase.confirmWhen(when)+" 알림 맞춤";
+      if(defaulted) s+=" · 시각을 말씀하지 않아 오전 9시로 정했어요";
+      else if(rolled) s+=" · 오늘은 지나서 내일로 정했어요";
+      return s;
+    }
+    String confirmPast(){ return TimePhrase.confirmWhen(when)+"은 이미 지난 때라 알림을 맞추지 않았어요"; }
   }
 
   static final String WD="(월|화|수|목|금|토|일)";
@@ -88,11 +97,11 @@ final class TimePhrase {
       } else {
         h.when=now+addMs+(long)addDays*86400000L; h.explicitTime=true;
       }
-      return h.when>now?h:null;
+      if(h.when<=now) h.past=true; return h;
     }
 
     // 2) 날짜 말
-    Calendar day=null; int dayEnd=-1; boolean bare=false; boolean explicitDay=false;
+    Calendar day=null; int dayEnd=-1; boolean bare=false; boolean explicitDay=false; boolean todayOnly=false;
     Matcher w=WEEK.matcher(s);
     if(w.find()){
       String k=w.group(1).replaceAll("\\s+","");
@@ -103,7 +112,7 @@ final class TimePhrase {
     if(day==null){
       Matcher rel=REL.matcher(s);
       if(rel.find()){ String k=rel.group(1); int add=k.equals("오늘")?0:(k.equals("내일")||k.equals("낼"))?1:k.equals("모레")?2:3;
-        day=(Calendar)nowC.clone(); day.add(Calendar.DATE,add); dayEnd=rel.end(); explicitDay=true; }
+        day=(Calendar)nowC.clone(); day.add(Calendar.DATE,add); dayEnd=rel.end(); explicitDay=true; todayOnly=k.equals("오늘"); }
     }
     if(day==null){
       Matcher b=BARE.matcher(s);
@@ -121,6 +130,7 @@ final class TimePhrase {
     Matcher t=TIME.matcher(s); int mins=-1;
     if(dayEnd>=0&&t.find(dayEnd)) mins=minutes(t); else { t=TIME.matcher(s); if(t.find()) mins=minutes(t); }
     boolean ht=mins>=0;
+    if(todayOnly&&!ht&&!cue) return null; // ‘오늘 날씨 좋네’처럼 오늘만 있고 시각·알림 말도 없으면 알림으로 치지 않음
     if(day==null&&!ht) return null;
 
     Hit h=new Hit(); h.explicitTime=ht;
@@ -137,7 +147,7 @@ final class TimePhrase {
       }
     }
     h.when=c.getTimeInMillis();
-    if(h.when<=now) return null; // 이미 지난 때
+    if(h.when<=now) h.past=true; // 이미 지난 때(알림은 맞추지 않음)
     return h;
   }
 
@@ -171,6 +181,13 @@ final class TimePhrase {
       case "오전": case "아침": case "새벽": if(h==12) h=0; break;
     }
     return h*60+mi;
+  }
+  /** 확인·목록용: ‘12월 3일 (목) 오전 9:00’ */
+  static String confirmWhen(long ms){
+    Calendar c=cal(ms); String[] w={"일","월","화","수","목","금","토"};
+    int h=c.get(Calendar.HOUR_OF_DAY), m=c.get(Calendar.MINUTE);
+    String ap=h<12?"오전":"오후"; int h12=h%12==0?12:h%12;
+    return (c.get(Calendar.MONTH)+1)+"월 "+c.get(Calendar.DATE)+"일 ("+w[c.get(Calendar.DAY_OF_WEEK)-1]+") "+ap+" "+h12+":"+(m<10?"0":"")+m;
   }
   /** 사람이 읽는 때: ‘12월 3일(목) 오후 2시’ · ‘12월 3일(목) 오후 2시 30분’ */
   static String label(long ms,boolean hasTime){

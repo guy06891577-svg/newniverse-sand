@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""빠른 메모 v1 화면 시험: 가짜 NVMemo 다리로 녹음 화면 · 알림 제안(누를 때만) · 목록/상세/설정 · 잠금 가림 · 글꼴/이모지/주황 없음."""
+"""빠른 메모 v2 화면 시험: 가짜 NVMemo 다리로 녹음 화면 · 알림 자동 맞춤 확인 카드 · 목록/상세/설정 · 잠금 가림 · 글꼴/이모지/주황 없음."""
 import asyncio, json, subprocess, time, os, re
 from playwright.async_api import async_playwright
 
 PORT = 18477
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'assets'))
 U = f'http://localhost:{PORT}/www/index.html'
-SHOTS = os.path.abspath(os.path.join(os.path.dirname(__file__), 'out', 'shots-memo-v1')); os.makedirs(SHOTS, exist_ok=True)
+SHOTS = os.path.abspath(os.path.join(os.path.dirname(__file__), 'out', 'shots-memo-v2')); os.makedirs(SHOTS, exist_ok=True)
 res = {}
 
 def ok(k, v):
@@ -23,24 +23,23 @@ const notes=cfg.notes||[];
 let locked=!!cfg.locked, settings=Object.assign({offline:true,keepAudio:false,autoClose:true,vibrate:true,quiet:true,silenceMs:2500},cfg.settings||{});
 window.__setLocked=v=>{locked=v};
 window.NVMemo={
-  version:()=>'1-test', ready:()=>L('ready'), snapshot:()=>JSON.stringify(cfg.snap||{state:'idle',autoClose:true}),
+  version:()=>'2-test', ready:()=>L('ready'), snapshot:()=>JSON.stringify(cfg.snap||{state:'idle',autoClose:true}),
   start:()=>L('start'), stop:()=>L('stop'), cancel:()=>L('cancel'), closeApp:()=>L('closeApp'), reqMic:()=>L('reqMic'),
   openView:v=>{L('openView',v)}, leave:()=>L('leave'),
   list:q=>{L('list',q); if(locked) return JSON.stringify({ok:false,locked:true});
     const f=notes.filter(n=>!q||q.trim().split(/\s+/).every(w=>(n.text||'').toLowerCase().includes(w.toLowerCase())));
     return JSON.stringify({ok:true,notes:f,total:notes.length});},
   get:id=>{L('get',id); if(locked) return JSON.stringify({ok:false,locked:true}); const n=notes.find(x=>x.id==id); if(!n) return JSON.stringify({ok:false});
-    const r={ok:true,note:n}; if(n.sug) r.sug=n.sug; if(n.remindAt>0) r.remindLabel='12월 3일(목) 오후 2시'; return JSON.stringify(r);},
+    const r={ok:true,note:n}; if(n.sug) r.sug=n.sug; if(n.remindAt>0) r.remindLabel=n.remindLabel||'12월 3일 (목) 오후 2:00'; return JSON.stringify(r);},
   edit:(id,t)=>{L('edit',id,t); const n=notes.find(x=>x.id==id); if(n) n.text=t; return JSON.stringify({ok:true});},
   del:id=>{L('del',id); const i=notes.findIndex(x=>x.id==id); if(i>=0) notes.splice(i,1); return JSON.stringify({ok:true});},
   copy:id=>{L('copy',id); return JSON.stringify({ok:true});}, share:id=>{L('share',id); return JSON.stringify({ok:true});},
   play:id=>{L('play',id); return JSON.stringify({ok:true});}, stopPlay:()=>L('stopPlay'),
-  suggest:id=>JSON.stringify({ok:true,line:'12월 3일(목) 오후 2시'}),
+  suggest:id=>JSON.stringify({ok:true,line:'12월 3일 (목) 오후 2:00 알림 맞춤'}),
   remind:(id,inexact)=>{L('remind',id,inexact); const m=cfg.remind||'exact'; 
-    if(m==='exact') return JSON.stringify({ok:true,state:'exact',id,line:'내일 오전 9시'});
-    if(m==='need-exact'&&!inexact) return JSON.stringify({ok:false,state:'need-exact',id,line:'내일 오전 9시'});
-    if(m==='need-exact'&&inexact) return JSON.stringify({ok:true,state:'inexact',id,line:'내일 오전 9시'});
-    return JSON.stringify({ok:false,state:m,id});},
+    if(m==='exact') return JSON.stringify({ok:true,state:'exact',id,line:'12월 3일 (목) 오후 2:00 알림 맞춤'});
+    if(m==='inexact') return JSON.stringify({ok:true,state:'inexact',id,line:'12월 3일 (목) 오후 2:00 알림 맞춤 · 정확한 알람 허용이 없어 몇 분 어긋날 수 있어요'});
+    return JSON.stringify({ok:false,state:m,id,line:'12월 3일 (목) 오후 2:00 알림 맞춤'});},
   unremind:id=>{L('unremind',id); return JSON.stringify({ok:true});},
   settings:()=>locked?JSON.stringify({ok:false,locked:true}):JSON.stringify(Object.assign({ok:true},settings)),
   setSetting:(k,v)=>{L('setSetting',k,v); settings[k]=(k==='silenceMs')?+v:(v==='true'); return JSON.stringify({ok:true});},
@@ -51,10 +50,10 @@ window.NVMemo={
 '''
 
 NOTES = [
-  {"id":"3","text":"내일 오전 9시에 치과 예약 전화하기","createdAt":0,"durationMs":6200,"kind":"speech","hasAudio":False,"seg":0,"remindAt":0,"reminded":False,"sug":{"line":"내일 오전 9시"}},
+  {"id":"3","text":"내일 오전 9시에 치과 예약 전화하기","createdAt":0,"durationMs":6200,"kind":"speech","hasAudio":False,"seg":0,"remindAt":0,"reminded":False,"sug":{"line":"11월 28일 (토) 오전 9:00 알림 맞춤"}},
   {"id":"2","text":"우유랑 계란 사기, 그리고 빨래 널기","createdAt":0,"durationMs":4100,"kind":"speech","hasAudio":True,"seg":0,"remindAt":0,"reminded":False},
   {"id":"1","text":"","createdAt":0,"durationMs":9800,"kind":"audio","hasAudio":True,"seg":0,"remindAt":0,"reminded":False},
-  {"id":"4","text":"목요일 2시에 안동대학교에서 만나기","createdAt":0,"durationMs":5200,"kind":"speech","hasAudio":False,"seg":0,"remindAt":1,"reminded":False},
+  {"id":"4","text":"목요일 2시에 안동대학교에서 만나기","createdAt":0,"durationMs":5200,"kind":"speech","hasAudio":False,"seg":0,"remindAt":1,"reminded":False,"remindLabel":"12월 3일 (목) 오후 2:00"},
 ]
 def notes_with_times():
     now = int(time.time()*1000)
@@ -102,42 +101,46 @@ async def run():
             await pg.click('#bMain'); ok('tap save calls stop', any(x[0]=='stop' for x in await log(pg)))
             await ev(pg,{'t':'status','state':'stopping'}); ok('stopping text', '저장하는 중' in await txt(pg,'#st'))
 
-            # ---------- 2. 저장 + 알림 제안 (누르기 전엔 맞추지 않음) ----------
-            sug = {'line':'12월 3일(목) 오후 2시','label':'12월 3일(목) 오후 2시','defaulted':False,'rolled':False}
-            await ev(pg,{'t':'saved','id':'77','text':'목요일 2시에 병원 가기','dur':5400,'kind':'speech','seg':0,'cont':False,'autoClose':True,'sug':sug})
+            # ---------- 2. 저장 + 알림 자동 맞춤 확인 카드 ----------
+            rem = {'ok':True,'state':'exact','id':'77','line':'12월 3일 (목) 오후 2:00 알림 맞춤','label':'12월 3일 (목) 오후 2:00','defaulted':False,'rolled':False,'past':False}
+            await ev(pg,{'t':'saved','id':'77','text':'목요일 2시에 병원 가기','dur':5400,'kind':'speech','seg':0,'cont':False,'autoClose':True,'remind':rem})
             ok('saved title', '저장했어요' in await txt(pg,'#st'))
-            ok('offer card shows spelled-out time', '알림 맞출까요?' in await txt(pg,'#cards') and '12월 3일(목) 오후 2시' in await txt(pg,'#cards'))
-            ok('never calls remind before tap', not any(x[0]=='remind' for x in await log(pg)))
-            ok('no auto-close countdown while offer is open', await pg.is_hidden('#cd'))
-            await pg.screenshot(path=f'{SHOTS}/02_saved_offer.png')
-            await pg.click('#ry-77'); await pg.wait_for_timeout(100)
-            ok('tap calls remind exactly once', [x for x in await log(pg) if x[0]=='remind']==[['remind','77',False]])
-            ok('success card', '알림을 맞췄어요' in await txt(pg,'#cards') and '되돌리기' in await txt(pg,'#cards'))
-            await pg.screenshot(path=f'{SHOTS}/03_reminder_set.png')
-            await pg.click('text=되돌리기'); ok('undo calls unremind', any(x[0]=='unremind' for x in await log(pg)))
+            c = await txt(pg,'#cards')
+            ok('confirm card shows alarm time and memo', '12월 3일 (목) 오후 2:00 알림 맞춤' in c and '목요일 2시에 병원 가기' in c)
+            ok('confirm has cancel and ok', '취소' in c and '확인' in c)
+            ok('does not ask to set alarm', '알림 맞출까요?' not in c)
+            ok('countdown starts on confirm card', await pg.is_visible('#cd') and '초 뒤에 닫혀요' in await txt(pg,'#cd'))
+            await pg.screenshot(path=f'{SHOTS}/02_saved_confirm.png')
+            await pg.click('text=취소'); await pg.wait_for_timeout(100)
+            ok('cancel calls unremind', any(x[0]=='unremind' for x in await log(pg)))
+            ok('cancel keeps memo, shows cancelled', '알림을 취소했어요' in await txt(pg,'#cards') and '메모는 그대로 있어요' in await txt(pg,'#cards'))
+            await pg.screenshot(path=f'{SHOTS}/03_reminder_cancelled.png')
+            await pg.click('text=확인'); ok('ok calls closeApp', any(x[0]=='closeApp' for x in await log(pg)))
             await pg.close()
 
-            # need-exact → 허용 화면 / 대략적으로
-            pg = await page({'remind':'need-exact'})
-            await ev(pg,{'t':'saved','id':'78','text':'x','dur':3000,'kind':'speech','seg':0,'cont':False,'autoClose':True,'sug':sug})
-            await pg.click('#ry-78'); await pg.wait_for_timeout(100)
-            c = await txt(pg,'#cards')
-            ok('need-exact explains and offers 3 choices', '정확한 알람 허용이 필요해요' in c and '허용 화면 열기' in c and '대략적으로 맞추기' in c and '돌아와서 다시' in c)
-            await pg.screenshot(path=f'{SHOTS}/04_need_exact.png')
-            await pg.click('text=허용 화면 열기'); ok('opens exact alarm settings', any(x[0]=='openExactSettings' for x in await log(pg)))
-            await pg.click('text=대략적으로 맞추기'); await pg.wait_for_timeout(100)
-            ok('approx tap passes inexact=true', ['remind','78',True] in await log(pg))
-            ok('approx result says may be a few minutes off', '몇 분 어긋날 수 있어요' in await txt(pg,'#cards'))
+            # 대략적인 알람
+            pg = await page()
+            rem_i = dict(rem); rem_i.update({'state':'inexact','line':'12월 3일 (목) 오후 2:00 알림 맞춤 · 정확한 알람 허용이 없어 몇 분 어긋날 수 있어요'})
+            await ev(pg,{'t':'saved','id':'78','text':'목요일 2시에 병원 가기','dur':3000,'kind':'speech','seg':0,'cont':False,'autoClose':True,'remind':rem_i})
+            ok('inexact card explains may be a few minutes off', '몇 분 어긋날 수 있어요' in await txt(pg,'#cards') and '알림 맞춤' in await txt(pg,'#cards'))
+            await pg.screenshot(path=f'{SHOTS}/04_inexact.png')
+            await pg.close()
+
+            # 이미 지난 때
+            pg = await page()
+            rem_p = {'ok':False,'state':'past','id':'78b','line':'11월 27일 (금) 오후 2:00은 이미 지난 때라 알림을 맞추지 않았어요','past':True}
+            await ev(pg,{'t':'saved','id':'78b','text':'오늘 오후 2시에 알려줘','dur':2000,'kind':'speech','seg':0,'cont':False,'autoClose':True,'remind':rem_p})
+            ok('past time is not set and is explained', '이미 지난 때' in await txt(pg,'#cards') and '취소' not in await txt(pg,'#cards'))
             await pg.close()
 
             # 알림 허용 거부
-            pg = await page({'remind':'notif-denied'})
-            await ev(pg,{'t':'saved','id':'79','text':'x','dur':3000,'kind':'speech','seg':0,'cont':False,'autoClose':True,'sug':sug})
-            await pg.click('#ry-79'); await pg.wait_for_timeout(100)
+            pg = await page()
+            rem_n = {'ok':False,'state':'notif-denied','id':'79','line':'12월 3일 (목) 오후 2:00 알림 맞춤'}
+            await ev(pg,{'t':'saved','id':'79','text':'목요일 2시','dur':3000,'kind':'speech','seg':0,'cont':False,'autoClose':True,'remind':rem_n})
             ok('notif denied shows settings button', '알림 설정 열기' in await txt(pg,'#cards'))
             await pg.close()
 
-            # ---------- 3. 제안 없음 → 자동 닫기 카운트다운, 터치로 멈춤 ----------
+            # ---------- 3. 때 말 없음 → 자동 닫기 카운트다운, 터치로 멈춤 ----------
             pg = await page()
             await ev(pg,{'t':'saved','id':'80','text':'우유 사기','dur':2000,'kind':'speech','seg':0,'cont':False,'autoClose':True})
             ok('countdown shown', await pg.is_visible('#cd') and '초 뒤에 닫혀요' in await txt(pg,'#cd'))
@@ -158,9 +161,9 @@ async def run():
 
             # ---------- 4. 60초 이어 받기 ----------
             pg = await page()
-            await ev(pg,{'t':'saved','id':'83','text':'긴 이야기 첫 덩이','dur':60000,'kind':'speech','seg':0,'cont':True,'autoClose':True,'sug':sug})
+            await ev(pg,{'t':'saved','id':'83','text':'긴 이야기 첫 덩이','dur':60000,'kind':'speech','seg':0,'cont':True,'autoClose':True,'remind':rem})
             ok('continuing message', '이어서 듣는 중' in await txt(pg,'#st'))
-            ok('no offer card while still listening', await pg.locator('#cards .card').count()==0)
+            ok('no confirm card while still listening', await pg.locator('#cards .card').count()==0)
             await pg.close()
 
             # ---------- 5. 소리로만 저장 / 받아쓰기 불가 ----------
@@ -169,6 +172,8 @@ async def run():
             ok('audio mode title+chip', '소리로 저장하는 중' in await txt(pg,'#st') and '소리로 저장' in await txt(pg,'#mode'))
             await ev(pg,{'t':'notice','code':'fallback-audio','msg':'net'})
             ok('network notice', '인터넷이 안 돼서' in await txt(pg,'#cards'))
+            await ev(pg,{'t':'notice','code':'no-offline','msg':'인터넷 없이 쓰는 한국어 받아쓰기가 없어 소리로 저장했어요. 설정 › 일반 › 언어팩에서 한국어를 받을 수 있어요.'})
+            ok('missing offline pack mentions 언어팩', '언어팩' in await txt(pg,'#cards') and '소리로 저장했어요' in await txt(pg,'#cards'))
             await pg.screenshot(path=f'{SHOTS}/05_audio_fallback.png')
             await ev(pg,{'t':'saved','id':'84','text':'','dur':8000,'kind':'audio','seg':0,'cont':False,'autoClose':True})
             ok('audio saved says transcribe later', '소리로 저장했어요' in await txt(pg,'#st') and '나중에 노트에서 글로 옮겨 주세요' in await txt(pg,'#sb'))
@@ -210,7 +215,7 @@ async def run():
             ok('count shown', '4개' in await txt(pg,'#lCount'))
             items = await pg.inner_text('#nl')
             ok('audio-only note placeholder', '아직 글로 옮기지 않은 소리 메모예요' in items and '소리만' in items)
-            ok('reminder tag on note', await pg.locator('.item .tag', has_text='/').count()>=1)
+            ok('reminder tag on note', await pg.locator('.item .tag', has_text='12월 3일 (목) 오후 2:00').count()>=1 and await pg.locator('.item .tag svg use[href="#i-clock"]').count()>=1)
             ok('date shown as 오늘/오전/오후', re.search(r'(오늘|어제) (오전|오후) \d+:\d\d', items) is not None)
             await pg.screenshot(path=f'{SHOTS}/10_list.png')
             # 검색
@@ -224,7 +229,7 @@ async def run():
             # 상세
             await pg.locator('.item').first.click(); await pg.wait_for_timeout(120)
             ok('detail shows text', await pg.input_value('#nText')=='내일 오전 9시에 치과 예약 전화하기')
-            ok('detail offers reminder (not auto-set)', '알림 맞출까요?' in await txt(pg,'#nCards') and not any(x[0]=='remind' for x in await log(pg)))
+            ok('detail can re-set reminder', '알림 맞추기' in await txt(pg,'#nCards') and not any(x[0]=='remind' for x in await log(pg)))
             await pg.screenshot(path=f'{SHOTS}/12_detail.png')
             await pg.click('#nCopy'); ok('copy', any(x[0]=='copy' for x in await log(pg)))
             await pg.click('#nShare'); ok('share', any(x[0]=='share' for x in await log(pg)))
@@ -251,7 +256,7 @@ async def run():
             ok('NV_back at rec returns false', (await pg.evaluate("NV_back()")) is False)
             await pg.close()
 
-            # 알림 제안: 상세에서 눌러야만
+            # 목록 상세에서 다시 맞추기
             pg = await page({'notes':ns})
             await ev(pg,{'t':'unlocked','view':'list'}); await pg.locator('.item').first.click(); await pg.wait_for_timeout(100)
             await pg.click('#ry'); await pg.wait_for_timeout(150)

@@ -22,7 +22,7 @@ import org.json.JSONObject;
 /**
  * 화면(JS) ↔ 안드로이드 다리. JS에서는 window.NVMemo.이름().
  * 지난 메모를 돌려주는 메서드(list/get/edit/del/copy/share/play, 설정)는 잠금이 풀려 있을 때만 일해요(자바 쪽에서 막음).
- * 잠금 화면에서는 방금 저장한 메모의 알림 맞추기만 돼요. 예외는 밖으로 던지지 않고 {"ok":false,...} 로 돌려줘요.
+ * 잠금 화면에서는 방금 저장한 메모의 알림 확인·취소만 돼요. 예외는 밖으로 던지지 않고 {"ok":false,...} 로 돌려줘요.
  */
 class Bridge {
   final MainActivity a; MediaPlayer mp; long playing;
@@ -64,8 +64,8 @@ class Bridge {
       JSONObject o=n.toView(); o.put("id",String.valueOf(n.id));
       TimePhrase.Hit h=n.text.isEmpty()?null:TimePhrase.find(n.text,n.createdAt);
       JSONObject r=MainActivity.j("ok",true,"note",o);
-      if(h!=null&&n.remindAt==0) r.put("sug",MainActivity.j("line",h.line(),"label",h.label()));
-      if(n.remindAt>0) r.put("remindLabel",TimePhrase.label(n.remindAt,true));
+      if(h!=null&&!h.past&&n.remindAt==0) r.put("sug",MainActivity.j("line",h.confirmSet(),"label",TimePhrase.confirmWhen(h.when),"defaulted",h.defaulted,"rolled",h.rolled));
+      if(n.remindAt>0) r.put("remindLabel",TimePhrase.confirmWhen(n.remindAt));
       return r.toString();
     }catch(Throwable e){ return err("get"); }
   }
@@ -123,7 +123,7 @@ class Bridge {
     try{ if(mp!=null){ try{ mp.stop(); }catch(Throwable e){} mp.release(); } }catch(Throwable e){} mp=null; playing=0;
   }
 
-  // ---------- 알림 맞추기 (사용자가 단추를 눌러야만) ----------
+  // ---------- 알림 맞추기 (받아쓰기 직후는 자동, 목록에서는 끄기/다시 맞추기) ----------
   boolean canTouch(long id){ return open()||a.recent.contains(id); }
 
   @JavascriptInterface public String suggest(String sid){
@@ -132,7 +132,8 @@ class Bridge {
       Note n=a.store.get(id); if(n==null) return err("nonote");
       TimePhrase.Hit h=TimePhrase.find(n.text,n.createdAt);
       if(h==null) return err("notime");
-      return MainActivity.j("ok",true,"line",h.line(),"label",h.label(),"defaulted",h.defaulted,"rolled",h.rolled).toString();
+      if(h.past) return MainActivity.j("ok",false,"state","past","line",h.confirmPast(),"label",TimePhrase.confirmWhen(h.when),"past",true).toString();
+      return MainActivity.j("ok",true,"line",h.confirmSet(),"label",TimePhrase.confirmWhen(h.when),"defaulted",h.defaulted,"rolled",h.rolled).toString();
     }catch(Throwable e){ return err("suggest"); }
   }
   /** 알림 맞추기 단추. inexact=true 면 정확한 알람 허용이 없어도 대략적으로 */
@@ -151,20 +152,25 @@ class Bridge {
       if(n==null){ out.put("ok",false).put("state","nonote"); return out; }
       TimePhrase.Hit h=TimePhrase.find(n.text,n.createdAt);
       if(h==null){ out.put("ok",false).put("state","notime"); return out; }
+      if(h.past){ out.put("ok",false).put("state","past").put("line",h.confirmPast()).put("label",TimePhrase.confirmWhen(h.when)); return out; }
       if(!Reminders.notifGranted(a)){
-        if(viaPermission){ out.put("ok",false).put("state","notif-denied"); return out; }
-        a.pendingRemind=id; out.put("ok",false).put("state","need-notif");
+        if(viaPermission){ out.put("ok",false).put("state","notif-denied").put("line",h.confirmSet()); return out; }
+        if(a.locked()){ out.put("ok",false).put("state","need-notif").put("line",h.confirmSet()); return out; }
+        a.pendingRemind=id; out.put("ok",false).put("state","need-notif").put("line",h.confirmSet());
         try{ a.requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS},MainActivity.REQ_NOTIF); }catch(Throwable e){ out.put("state","notif-denied"); a.pendingRemind=0; }
         return out;
       }
-      int r=Reminders.schedule(a,n,h.when,inexact);
+      int r=Reminders.schedule(a,n,h.when,true); // 정확한 알람 허용이 없으면 대략적으로
       switch(r){
-        case Reminders.OK_EXACT: case Reminders.OK_INEXACT:
+        case Reminders.OK_EXACT:
           a.store.update(n);
-          out.put("ok",true).put("state",r==Reminders.OK_EXACT?"exact":"inexact").put("line",h.line()).put("when",h.when); return out;
-        case Reminders.NEED_EXACT: out.put("ok",false).put("state","need-exact").put("line",h.line()); return out;
-        case Reminders.NEED_NOTIF: out.put("ok",false).put("state","notif-denied"); return out;
-        case Reminders.PAST: out.put("ok",false).put("state","past"); return out;
+          out.put("ok",true).put("state","exact").put("line",h.confirmSet()).put("when",h.when).put("label",TimePhrase.confirmWhen(h.when)); return out;
+        case Reminders.OK_INEXACT:
+          a.store.update(n);
+          out.put("ok",true).put("state","inexact").put("line",h.confirmSet()+" · 정확한 알람 허용이 없어 몇 분 어긋날 수 있어요").put("when",h.when).put("label",TimePhrase.confirmWhen(h.when)); return out;
+        case Reminders.NEED_EXACT: out.put("ok",false).put("state","need-exact").put("line",h.confirmSet()); return out;
+        case Reminders.NEED_NOTIF: out.put("ok",false).put("state","notif-denied").put("line",h.confirmSet()); return out;
+        case Reminders.PAST: out.put("ok",false).put("state","past").put("line",h.confirmPast()); return out;
         default: out.put("ok",false).put("state","error"); return out;
       }
     }catch(Throwable e){ try{ out.put("ok",false).put("state","error"); }catch(Exception x){} return out; }

@@ -35,7 +35,10 @@ final class Note {
   /** 목록·화면용 (소리 파일 경로는 숨김) */
   JSONObject toView(){
     JSONObject o=toJson(); o.remove("audio");
-    try{ o.put("hasAudio",!audio.isEmpty()); }catch(Exception e){}
+    try{
+      o.put("hasAudio",!audio.isEmpty());
+      if(remindAt>0) o.put("remindLabel",TimePhrase.confirmWhen(remindAt));
+    }catch(Exception e){}
     return o;
   }
 }

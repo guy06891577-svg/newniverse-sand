@@ -7,11 +7,13 @@ import android.Manifest;
 import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.Application;
+import android.app.KeyguardManager;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.provider.Settings;
 import android.content.pm.ResolveInfo;
 import android.content.pm.ServiceInfo;
 import android.media.AudioManager;
@@ -32,10 +34,11 @@ import org.robolectric.RuntimeEnvironment;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowAlarmManager;
+import org.robolectric.shadows.ShadowKeyguardManager;
 import org.robolectric.shadows.ShadowNotificationManager;
 import org.robolectric.shadows.ShadowSpeechRecognizer;
 
-/** 잠금 화면 표시 · 열자마자 듣기 · 이어 듣기/끊김/60초 · 받아쓰기 실패 대안 · 잠금 가림 · 알림(누를 때만) */
+/** 잠금 화면 표시 · 열자마자 듣기 · 이어 듣기/끊김/60초 · 받아쓰기 실패 대안 · 잠금 가림 · 알림(저장 때 자동) */
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 34)
 public class MemoRoboTest {
@@ -46,6 +49,8 @@ public class MemoRoboTest {
     TimeZone.setDefault(TimeZone.getTimeZone("Asia/Seoul"));
     app=RuntimeEnvironment.getApplication();
     ShadowSpeechRecognizer.reset(); ShadowSpeechRecognizer.setIsOnDeviceRecognitionAvailable(false); ShadowAlarmManager.reset(); ShadowNotificationManager.reset(); org.robolectric.shadows.ShadowVibrator.reset();
+    Settings.Global.putInt(app.getContentResolver(),Settings.Global.AIRPLANE_MODE_ON,0);
+    shadowOf((KeyguardManager)app.getSystemService(Context.KEYGUARD_SERVICE)).setKeyguardLocked(false);
     AudioCapture.testAmp=-1; AudioCapture.lenient=true;
     shadowOf(app).grantPermissions(Manifest.permission.RECORD_AUDIO,Manifest.permission.POST_NOTIFICATIONS);
     ShadowAlarmManager.setCanScheduleExactAlarms(true);
@@ -176,7 +181,7 @@ public class MemoRoboTest {
   }
 
   // ===================== 받아 적기 =====================
-  @Test public void speechIsSavedAfterSilence(){
+  @Test public void speechIsSavedAfterSilence() throws Exception {
     launch(); ssr().triggerOnReadyForSpeech(new Bundle());
     say("내일"); say("내일 아침 9시에"); finalText("내일 아침 9시에 알려줘");
     assertEquals("한 마디 뒤에도 바로 다시 듣기",true,act.dict.listening());
@@ -186,7 +191,9 @@ public class MemoRoboTest {
     assertFalse(act.dict.busy());
     List<Note> l=notes(); assertEquals(1,l.size()); assertEquals("내일 아침 9시에 알려줘",l.get(0).text); assertEquals(Note.SPEECH,l.get(0).kind);
     JSONObject s=last("saved"); assertNotNull(s); assertEquals("내일 아침 9시에 알려줘",s.optString("text")); assertFalse(s.optBoolean("cont"));
-    assertTrue("때 말이 있으면 제안",s.has("sug")); assertEquals(1,count("saved"));
+    assertTrue("때 말이 있으면 자동으로 알림",s.has("remind")); assertTrue(s.getJSONObject("remind").optBoolean("ok"));
+    assertTrue(s.getJSONObject("remind").optString("line").contains("오전 9:00 알림 맞춤"));
+    assertEquals(1,count("saved")); assertTrue(notes().get(0).remindAt>0);
   }
   @Test public void shortPausesKeepListeningAndTextIsJoined(){
     launch(); ssr().triggerOnReadyForSpeech(new Bundle());
@@ -321,84 +328,141 @@ public class MemoRoboTest {
     assertTrue("원래 음소거였으면 그대로",am.isStreamMute(AudioManager.STREAM_MUSIC));
   }
 
-  // ===================== 알림: 누를 때만 =====================
+  // ===================== 알림: 저장할 때 자동 =====================
   AlarmManager alarms(){ return (AlarmManager)app.getSystemService(Context.ALARM_SERVICE); }
   List<ShadowAlarmManager.ScheduledAlarm> sched(){ return shadowOf(alarms()).getScheduledAlarms(); }
   String saveSpoken(String text){
     ssr().triggerOnReadyForSpeech(new Bundle()); say(text); finalText(text); idle(100); idle(2700); idle(1700);
     return String.valueOf(notes().get(0).id);
   }
-  @Test public void reminderIsOfferedButNeverSetWithoutTap() throws Exception {
-    launch(); String id=saveSpoken("내일 9시에 알려줘");
-    JSONObject s=last("saved"); assertTrue(s.has("sug")); assertTrue(s.getJSONObject("sug").getString("line").contains("오전 9시"));
-    assertEquals("탭 전에는 알람이 없어야 해요",0,sched().size()); assertEquals(0,notes().get(0).remindAt);
-    // 제안만 읽기
-    JSONObject sg=new JSONObject(act.br.suggest(id)); assertTrue(sg.getBoolean("ok"));
-    assertEquals(0,sched().size());
+  @Test public void autoSetsReminderOnSaveAndKeepsMemoOnCancel() throws Exception {
+    launch(); String id=saveSpoken("내일 아침 9시에 알려줘");
+    JSONObject s=last("saved"); assertTrue(s.has("remind"));
+    JSONObject rem=s.getJSONObject("remind"); assertTrue(rem.toString(),rem.getBoolean("ok")); assertEquals("exact",rem.getString("state"));
+    assertTrue(rem.getString("line").contains("오전 9:00 알림 맞춤"));
+    assertEquals(1,sched().size()); assertTrue(notes().get(0).remindAt>0);
+    // 취소하면 알림만 사라지고 메모는 남아요
+    JSONObject u=new JSONObject(act.br.unremind(id)); assertTrue(u.getBoolean("ok"));
+    assertEquals(0,sched().size()); assertEquals(0,notes().get(0).remindAt); assertEquals(1,notes().size());
   }
-  @Test public void tapSchedulesExactAlarmAtTheRightTime() throws Exception {
+  @Test public void autoSchedulesExactAlarmAtTheRightTime() throws Exception {
     launch(); String id=saveSpoken("내일 9시에 알려줘");
-    JSONObject r=new JSONObject(act.br.remind(id,false));
-    assertTrue(r.toString(),r.getBoolean("ok")); assertEquals("exact",r.getString("state"));
     assertEquals(1,sched().size());
     Note n=notes().get(0);
     Calendar c=Calendar.getInstance(); c.setTimeInMillis(n.createdAt); c.add(Calendar.DATE,1); c.set(Calendar.HOUR_OF_DAY,9); c.set(Calendar.MINUTE,0); c.set(Calendar.SECOND,0); c.set(Calendar.MILLISECOND,0);
     assertEquals(c.getTimeInMillis(),sched().get(0).getTriggerAtMs()); assertEquals(c.getTimeInMillis(),n.remindAt); assertTrue(n.remindExact);
   }
-  @Test public void relativeThirtyMinutes() throws Exception {
-    launch(); String id=saveSpoken("30분 뒤에 약 먹기");
+  @Test public void relativeThirtyMinutesAutoSet() throws Exception {
+    launch(); saveSpoken("30분 뒤에 약 먹기");
     Note n0=notes().get(0);
-    JSONObject r=new JSONObject(act.br.remind(id,false)); assertTrue(r.getBoolean("ok"));
-    assertEquals(n0.createdAt+30*60000L,notes().get(0).remindAt); // 말한 시각 기준 30분 뒤
+    assertEquals(n0.createdAt+30*60000L,n0.remindAt);
+    assertTrue(last("saved").getJSONObject("remind").getBoolean("ok"));
   }
-  @Test public void withoutExactPermissionAsksThenAllowsApproximate() throws Exception {
+  @Test public void withoutExactPermissionFallsBackToInexactAutomatically() throws Exception {
     ShadowAlarmManager.setCanScheduleExactAlarms(false);
-    launch(); String id=saveSpoken("목요일 2시에 병원");
-    JSONObject r=new JSONObject(act.br.remind(id,false));
-    assertFalse(r.getBoolean("ok")); assertEquals("need-exact",r.getString("state")); assertEquals(0,sched().size()); assertEquals(0,notes().get(0).remindAt);
-    // ‘대략적으로 맞추기’
-    r=new JSONObject(act.br.remind(id,true)); assertTrue(r.getBoolean("ok")); assertEquals("inexact",r.getString("state")); assertEquals(1,sched().size()); assertFalse(notes().get(0).remindExact);
-    // 허용 화면 열기
-    act.br.openExactSettings(); idle(10);
-    Intent started=shadowOf(app).getNextStartedActivity(); assertNotNull(started);
-    assertEquals(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,started.getAction()); assertEquals("package:"+app.getPackageName(),started.getDataString());
+    launch(); saveSpoken("목요일 2시에 병원");
+    JSONObject rem=last("saved").getJSONObject("remind");
+    assertTrue(rem.toString(),rem.getBoolean("ok")); assertEquals("inexact",rem.getString("state"));
+    assertTrue(rem.getString("line").contains("몇 분 어긋날 수 있어요"));
+    assertEquals(1,sched().size()); assertFalse(notes().get(0).remindExact);
   }
   @Test public void withoutNotificationPermissionAsksFirstThenSchedulesAfterGrant() throws Exception {
-    launch(); String id=saveSpoken("내일 9시에 알려줘");
     shadowOf(app).denyPermissions(Manifest.permission.POST_NOTIFICATIONS);
-    JSONObject r=new JSONObject(act.br.remind(id,false));
-    assertEquals("need-notif",r.getString("state")); assertEquals(0,sched().size());
+    launch(); String id=saveSpoken("내일 9시에 알려줘");
+    JSONObject rem=last("saved").getJSONObject("remind");
+    assertEquals("need-notif",rem.getString("state")); assertEquals(0,sched().size());
     assertEquals(Manifest.permission.POST_NOTIFICATIONS,shadowOf(act).getLastRequestedPermission().requestedPermissions[0]);
     shadowOf(app).grantPermissions(Manifest.permission.POST_NOTIFICATIONS);
     act.onRequestPermissionsResult(MainActivity.REQ_NOTIF,new String[]{Manifest.permission.POST_NOTIFICATIONS},new int[]{0});
     assertEquals(1,sched().size()); assertTrue(last("remind").getBoolean("ok"));
   }
   @Test public void notificationDeniedDoesNotSchedule() throws Exception {
-    launch(); String id=saveSpoken("내일 9시에 알려줘");
     shadowOf(app).denyPermissions(Manifest.permission.POST_NOTIFICATIONS);
-    act.br.remind(id,false);
+    launch(); saveSpoken("내일 9시에 알려줘");
     act.onRequestPermissionsResult(MainActivity.REQ_NOTIF,new String[]{Manifest.permission.POST_NOTIFICATIONS},new int[]{-1});
     assertEquals(0,sched().size()); assertEquals("notif-denied",last("remind").getString("state"));
   }
+  @Test public void lockedDoesNotRequestNotificationPermission() throws Exception {
+    shadowOf(app).denyPermissions(Manifest.permission.POST_NOTIFICATIONS);
+    locked=true;
+    launch(); saveSpoken("내일 9시에 알려줘");
+    JSONObject rem=last("saved").getJSONObject("remind");
+    assertEquals("need-notif",rem.getString("state"));
+    assertEquals(0,sched().size());
+    assertNull("잠금 화면에서는 권한 창을 띄우지 않아요",shadowOf(act).getLastRequestedPermission());
+    assertEquals(0,unlockAsked);
+  }
   @Test public void pastTimeIsNotScheduled() throws Exception {
-    Note n=note("오늘 오후 2시에 알려줘",System.currentTimeMillis()); // 만든 시각 기준으론 미래여도, 지금은…
+    Note n=note("오늘 오후 2시에 알려줘",System.currentTimeMillis());
     Calendar c=Calendar.getInstance(); c.add(Calendar.HOUR_OF_DAY,-5); n.createdAt=c.getTimeInMillis();
     n.text="30분 뒤에 알려줘"; new NoteStore(app.getFilesDir()).add(n);
     launch(); act.recent.add(n.id);
     JSONObject r=new JSONObject(act.br.remind(String.valueOf(n.id),false)); assertEquals("past",r.getString("state")); assertEquals(0,sched().size());
   }
-  @Test public void undoRemovesAlarm() throws Exception {
-    launch(); String id=saveSpoken("내일 9시에 알려줘"); act.br.remind(id,false); assertEquals(1,sched().size());
-    act.br.unremind(id); assertEquals(0,sched().size()); assertEquals(0,notes().get(0).remindAt);
-  }
   @Test public void deletingNoteRemovesItsAlarm() throws Exception {
-    launch(); String id=saveSpoken("내일 9시에 알려줘"); act.br.remind(id,false);
+    launch(); String id=saveSpoken("내일 9시에 알려줘"); assertEquals(1,sched().size());
     new JSONObject(act.br.del(id)); assertEquals(0,sched().size()); assertEquals(0,notes().size());
   }
-  @Test public void noTimePhraseNoOffer() throws Exception {
+  @Test public void noTimePhraseNoReminder() throws Exception {
     launch(); saveSpoken("우유랑 계란 사기");
-    assertFalse(last("saved").has("sug"));
+    assertFalse(last("saved").has("remind"));
+    assertEquals(0,notes().get(0).remindAt);
+    assertEquals(0,sched().size());
     assertEquals("notime",new JSONObject(act.br.remind(String.valueOf(notes().get(0).id),false)).getString("state"));
+  }
+  @Test public void lockScreenCanCancelJustSavedAlarm() throws Exception {
+    launch(); String id=saveSpoken("내일 9시에 알려줘"); assertEquals(1,sched().size());
+    locked=true;
+    JSONObject u=new JSONObject(act.br.unremind(id)); assertTrue(u.getBoolean("ok"));
+    assertEquals(0,sched().size()); assertEquals(0,notes().get(0).remindAt);
+  }
+
+  // ===================== 비행기 모드·잠금 화면: 클라우드 인식기 금지 =====================
+  void setAirplane(boolean on){
+    Settings.Global.putInt(app.getContentResolver(),Settings.Global.AIRPLANE_MODE_ON,on?1:0);
+  }
+  void setKeyguard(boolean on){
+    KeyguardManager km=(KeyguardManager)app.getSystemService(Context.KEYGUARD_SERVICE);
+    shadowOf(km).setKeyguardLocked(on);
+  }
+  @Test public void airplaneWithoutOnDeviceSavesAudioAndDoesNotAskUnlock(){
+    setAirplane(true);
+    ShadowSpeechRecognizer.setIsOnDeviceRecognitionAvailable(false);
+    launch();
+    assertTrue(act.dict.audioMode);
+    assertEquals("audio",last("status").optString("state"));
+    assertEquals("no-offline",last("notice").optString("code"));
+    assertTrue(last("notice").optString("msg").contains("언어팩"));
+    assertEquals(0,unlockAsked);
+    assertNull("클라우드 인식기를 시작하면 안 돼요",sr());
+  }
+  @Test public void lockedWithoutOnDeviceSavesAudioAndDoesNotAskUnlock(){
+    setKeyguard(true); locked=true;
+    ShadowSpeechRecognizer.setIsOnDeviceRecognitionAvailable(false);
+    launch();
+    assertTrue(act.dict.audioMode);
+    assertEquals("no-offline",last("notice").optString("code"));
+    assertEquals(0,unlockAsked);
+    assertNull(sr());
+  }
+  @Test public void onDeviceMissingLanguagePackOnLockGoesToAudioNotCloud(){
+    setKeyguard(true); locked=true;
+    ShadowSpeechRecognizer.setIsOnDeviceRecognitionAvailable(true);
+    launch();
+    assertTrue(act.dict.onDevice); assertFalse(act.dict.audioMode);
+    ssr().triggerOnError(12); idle(200);
+    assertTrue(act.dict.audioMode);
+    assertEquals("no-offline",last("notice").optString("code"));
+    assertFalse("클라우드로 바꾸면 안 돼요",act.dict.onDevice&&!act.dict.audioMode);
+    assertEquals(0,unlockAsked);
+  }
+  @Test public void networkErrorOnLockDoesNotAskUnlock(){
+    setKeyguard(true); locked=true;
+    ShadowSpeechRecognizer.setIsOnDeviceRecognitionAvailable(true);
+    launch(); ssr().triggerOnReadyForSpeech(new Bundle());
+    ssr().triggerOnError(SpeechRecognizer.ERROR_NETWORK);
+    assertTrue(act.dict.audioMode);
+    assertEquals(0,unlockAsked);
   }
 
   @Test public void receiverPostsPrivateNotificationOnce() throws Exception {

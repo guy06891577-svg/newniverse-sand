@@ -145,11 +145,14 @@ public class MainActivity extends Activity implements Dictation.Events {
     committed=""; partial=""; dict.start();
   }
 
+  boolean locked(){ return !gate.unlocked(this); }
+
   @Override public void onNeedMic(){
     dstate="needmic"; boolean ask=!prefs.askedMic();
     boolean blocked=!ask&&Build.VERSION.SDK_INT>=23&&!shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO);
     push(j("t","needmic","canAsk",ask,"blocked",blocked));
-    if(ask&&Build.VERSION.SDK_INT>=23){ prefs.setAskedMic(); try{ requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO},REQ_MIC); }catch(Throwable e){} }
+    // 잠금 화면 위에서 권한 창을 띄우면 삼성이 잠금 해제를 물을 수 있어요. 잠금을 푼 뒤에만 물어요.
+    if(ask&&!locked()&&Build.VERSION.SDK_INT>=23){ prefs.setAskedMic(); try{ requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO},REQ_MIC); }catch(Throwable e){} }
   }
   /** 마이크 허용 창을 다시 띄움(‘허용하기’ 단추) */
   void askMic(){
@@ -164,7 +167,7 @@ public class MainActivity extends Activity implements Dictation.Events {
     } else if(code==REQ_NOTIF){
       long id=pendingRemind; pendingRemind=0;
       if(id==0) return;
-      if(ok) push(br.remindJson(id,false,true)); else push(j("t","remind","ok",false,"state","notif-denied","id",String.valueOf(id)));
+      if(ok) push(br.remindJson(id,true,true)); else push(j("t","remind","ok",false,"state","notif-denied","id",String.valueOf(id)));
     }
   }
 
@@ -187,10 +190,9 @@ public class MainActivity extends Activity implements Dictation.Events {
       try{ store.add(n); }catch(Throwable e){ push(j("t","error","reason","save")); dstate="idle"; return; }
       recent.add(n.id);
       Vib.saved(this,prefs);
-      TimePhrase.Hit hit=n.kind.equals(Note.SPEECH)?TimePhrase.find(n.text,n.createdAt):null;
       JSONObject o=j("t","saved","id",String.valueOf(n.id),"text",n.text,"dur",n.durationMs,"kind",n.kind,"seg",n.seg,"cont",r.cont,"autoClose",prefs.autoClose());
       try{
-        if(hit!=null) o.put("sug",new JSONObject().put("line",hit.line()).put("label",hit.label()).put("defaulted",hit.defaulted).put("rolled",hit.rolled));
+        if(n.kind.equals(Note.SPEECH)&&!r.cont){ JSONObject rem=autoRemind(n); if(rem!=null) o.put("remind",rem); }
         if(r.reason!=null&&!r.reason.isEmpty()) o.put("reason",r.reason);
       }catch(Exception e){}
       lastSaved=o.toString(); dstate=r.cont?"listening":"saved"; committed=""; partial="";
@@ -218,6 +220,32 @@ public class MainActivity extends Activity implements Dictation.Events {
   }
   void leavePrivate(){
     view="rec"; applyLockFlags(); push(j("t","left"));
+  }
+
+  /** 시간 말이 있으면 묻지 않고 알림을 맞추고, 확인 카드에 넣을 결과를 돌려줘요. 잠금 화면에서도 잠금을 풀지 않아요. */
+  JSONObject autoRemind(Note n){
+    TimePhrase.Hit h=TimePhrase.find(n.text,n.createdAt);
+    if(h==null) return null;
+    JSONObject o=j("id",String.valueOf(n.id),"label",TimePhrase.confirmWhen(h.when),"defaulted",h.defaulted,"rolled",h.rolled,"past",h.past,"when",h.when);
+    try{
+      if(h.past){ o.put("ok",false).put("state","past").put("line",h.confirmPast()); return o; }
+      if(!Reminders.notifGranted(this)){
+        // 잠금 위 권한 창은 잠금 해제를 부를 수 있어, 잠금을 푼 뒤에만 물어요.
+        if(!locked()){ pendingRemind=n.id; try{ requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},REQ_NOTIF); }catch(Throwable e){} }
+        o.put("ok",false).put("state","need-notif").put("line",h.confirmSet()); return o;
+      }
+      int r=Reminders.schedule(this,n,h.when,true); // 정확한 알람 없으면 대략적으로
+      switch(r){
+        case Reminders.OK_EXACT:
+          store.update(n); o.put("ok",true).put("state","exact").put("line",h.confirmSet()); return o;
+        case Reminders.OK_INEXACT:
+          store.update(n); o.put("ok",true).put("state","inexact").put("line",h.confirmSet()+" · 정확한 알람 허용이 없어 몇 분 어긋날 수 있어요"); return o;
+        case Reminders.PAST:
+          o.put("ok",false).put("state","past").put("line",h.confirmPast()); return o;
+        default:
+          o.put("ok",false).put("state","error").put("line",h.confirmSet()); return o;
+      }
+    }catch(Exception e){ try{ o.put("ok",false).put("state","error"); }catch(Exception x){} return o; }
   }
 
   void close(){ if(dict!=null) dict.stopAndSave(); finishAndRemoveTask(); }
