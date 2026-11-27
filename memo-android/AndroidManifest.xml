@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="kr.newniverse.memo">
+  <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="34"/>
+  <!-- 마이크: 처음 한 번 ‘허용’ (말을 받아 적기 위해) -->
+  <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+  <uses-permission android:name="android.permission.VIBRATE"/>
+  <!-- 알림 맞추기: 알림 표시(안드로이드 13+) · 정확한 알람(안드로이드 12+, 사용자가 설정에서 허용) · 껐다 켜도 알림 유지 -->
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+  <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
+  <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+  <!-- 인터넷 권한 없음: 메모는 폰 밖으로 나가지 않음 (받아쓰기는 폰의 Google 음성 서비스가 해요) -->
+  <queries>
+    <intent><action android:name="android.speech.RecognitionService"/></intent>
+    <package android:name="com.google.android.googlequicksearchbox"/>
+  </queries>
+  <application android:label="뉴니버스 빠른 메모" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher"
+      android:supportsRtl="true" android:usesCleartextTraffic="false" android:allowBackup="false" android:theme="@style/NV">
+    <!-- 잠금 화면 위에서 열리고 화면을 켬. 지난 메모는 잠금을 풀어야 열림(앱 안에서 requestDismissKeyguard) -->
+    <activity android:name=".MainActivity" android:exported="true" android:launchMode="singleTask"
+        android:showWhenLocked="true" android:turnScreenOn="true"
+        android:screenOrientation="portrait" android:windowSoftInputMode="adjustResize"
+        android:configChanges="orientation|screenSize|keyboardHidden|keyboard|navigation|uiMode|density|screenLayout|smallestScreenSize">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN"/>
+        <category android:name="android.intent.category.LAUNCHER"/>
+      </intent-filter>
+    </activity>
+    <receiver android:name=".ReminderReceiver" android:exported="false"/>
+    <receiver android:name=".BootReceiver" android:exported="true">
+      <intent-filter>
+        <action android:name="android.intent.action.BOOT_COMPLETED"/>
+        <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+      </intent-filter>
+    </receiver>
+  </application>
+</manifest>
