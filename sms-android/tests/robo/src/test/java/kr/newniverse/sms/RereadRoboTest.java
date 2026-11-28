@@ -145,8 +145,13 @@ public class RereadRoboTest {
     java.util.Calendar c = java.util.Calendar.getInstance(ApptParser.TZ); c.add(java.util.Calendar.DATE, 5);
     String[] w = {"일", "월", "화", "수", "목", "금", "토"};
     String d = c.get(java.util.Calendar.YEAR) + ". " + (c.get(java.util.Calendar.MONTH) + 1) + ". " + c.get(java.util.Calendar.DATE) + ".(" + w[c.get(java.util.Calendar.DAY_OF_WEEK) - 1] + ") 16:00";
-    return LMS.replace("2026. 11. 27.(금) 16:00", d);
+    java.util.Calendar dl = java.util.Calendar.getInstance(ApptParser.TZ); dl.add(java.util.Calendar.DATE, 3); // 신청 마감일도 ‘오늘+3일’ 로 (시계가 지나도 시험이 깨지지 않게)
+    String dd = (dl.get(java.util.Calendar.MONTH) + 1) + "월 " + dl.get(java.util.Calendar.DATE) + "일(" + w[dl.get(java.util.Calendar.DAY_OF_WEEK) - 1] + ")";
+    return LMS.replace("2026. 11. 27.(금) 16:00", d).replace("11월 26일(목)", dd);
   }
+
+  /** dynSchool() 의 일시(오늘+5일 16:00) 를 ms 로 */
+  static long dynWhen() { java.util.Calendar c = java.util.Calendar.getInstance(ApptParser.TZ); c.add(java.util.Calendar.DATE, 5); return kst(c.get(java.util.Calendar.YEAR), c.get(java.util.Calendar.MONTH) + 1, c.get(java.util.Calendar.DATE), 16, 0); }
 
   Application app;
 
@@ -319,7 +324,7 @@ public class RereadRoboTest {
     d = SmsDiag.json(app);
     assertTrue("cal_at 갱신", d.getLong("calAt") >= t0);
     assertTrue(d.getBoolean("calCurrent"));
-    assertEquals(Nv.VER, d.getString("calVer")); assertEquals("9-test", Nv.VER);
+    assertEquals(Nv.VER, d.getString("calVer")); assertEquals("10-test", Nv.VER);
     assertTrue(d.getLong("rrAt") >= t0);
     assertEquals("MMS", d.getString("rrType"));
     assertEquals(LMS.length(), d.getInt("rrLen"));
@@ -375,7 +380,7 @@ public class RereadRoboTest {
   }
 
   @Test public void bridgeStart_runsOnBackgroundThread_andWritesRecord() throws Exception {
-    addMms(7, NOW, "", "01055556666", LMS);
+    addMms(7, NOW, "", "01055556666", dynSchool());
     android.app.Activity act = Robolectric.buildActivity(android.app.Activity.class).create().get();
     long t0 = System.currentTimeMillis();
     String ret = new Bridge(act).calRereadStart();
@@ -603,7 +608,7 @@ public class RereadRoboTest {
 
   @Test public void notification_permissionMissing_isNotSuccess_andCardIsKept_andCardAddsEvent() throws Exception {
     shadowOf(app).denyPermissions(android.Manifest.permission.POST_NOTIFICATIONS);
-    addMms(7, NOW, "", "01055556666", LMS);
+    addMms(7, NOW, "", "01055556666", dynSchool());
     JSONObject r = reread();
     assertEquals(r.toString(), "ask>blocked", r.getString("steps"));
     assertFalse("성공이라고 말하면 안 됨", r.getString("label").contains("성공"));
@@ -617,17 +622,17 @@ public class RereadRoboTest {
     org.json.JSONArray cards = new org.json.JSONArray(br.calPending());
     assertEquals(1, cards.length());
     JSONObject c = cards.getJSONObject(0);
-    assertEquals("길주중학교 · 원목 트레이, 원목 수납장 만들기", c.getString("title")); assertEquals(kst(2026, 11, 27, 16, 0), c.getLong("when"));
+    assertEquals("길주중학교 · 원목 트레이, 원목 수납장 만들기", c.getString("title")); assertEquals(dynWhen(), c.getLong("when"));
     assertEquals("ok", br.calPendAdd(String.valueOf(c.getLong("id"))));
     assertEquals(1, EVENTS.size());
-    assertEquals(kst(2026, 11, 27, 16, 0), (long) EVENTS.get(0).getAsLong("dtstart"));
+    assertEquals(dynWhen(), (long) EVENTS.get(0).getAsLong("dtstart"));
     assertEquals("[]", br.calPending());
     assertEquals("ask>ok", diag().get("cal_steps"));
   }
 
   @Test public void notification_cardNo_addsNothing() throws Exception {
     shadowOf(app).denyPermissions(android.Manifest.permission.POST_NOTIFICATIONS);
-    addMms(7, NOW, "", "01055556666", LMS);
+    addMms(7, NOW, "", "01055556666", dynSchool());
     reread();
     Bridge br = bridge();
     long id = new org.json.JSONArray(br.calPending()).getJSONObject(0).getLong("id");
@@ -638,7 +643,7 @@ public class RereadRoboTest {
 
   @Test public void notification_appDisabled_isReported() throws Exception {
     shadowOf(nm()).setNotificationsEnabled(false);
-    addMms(7, NOW, "", "01055556666", LMS);
+    addMms(7, NOW, "", "01055556666", dynSchool());
     JSONObject r = reread();
     assertEquals("ask>blocked", r.getString("steps"));
     assertTrue(r.getString("label"), r.getString("label").contains("알림이 꺼져"));

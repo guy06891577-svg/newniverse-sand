@@ -47,6 +47,9 @@ class Bridge {
       ((MainActivity)a).reqCal(true); }); }
   @JavascriptInterface public void calSkip(){ a.runOnUiThread(()->{ AutoCal.setOn(a,false); ((MainActivity)a).js("window.NV_cal&&NV_cal()"); }); }
   @JavascriptInterface public void calDelete(){ CalStore.deleteAll(a); }
+  // v10: 입금 요약 · 나갈 돈(출금 예정). 은행·보낸 사람·금액·시각만 화면으로(문자 본문·계좌번호 없음)
+  @JavascriptInterface public String moneySummary(){ try{ return MoneyFeed.json(a.getApplicationContext(),System.currentTimeMillis()).toString(); }catch(Throwable e){ return "{\"ok\":false}"; } }
+  @JavascriptInterface public void moneySet(boolean on){ MoneyFeed.setOn(a.getApplicationContext(),on); if(on) new Thread(()->BillScheduler.refresh(a.getApplicationContext()),"nv-bills").start(); else BillScheduler.cancelAll(a.getApplicationContext()); }
   @JavascriptInterface public String diag(){ return SmsDiag.json(a).toString(); }
   /**
    * v7(시험): 마지막 문자로 달력 단계를 다시 돌려 보기. 화면이 멈추지 않게 다른 스레드에서 돌리고 바로 {"started":true} 를 돌려줌.

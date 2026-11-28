@@ -126,6 +126,33 @@ em{font-style:normal;color:var(--a1);font-weight:700}
 .steps{font-size:13px;color:var(--sub);line-height:1.7;padding:4px 2px 10px}
 .steps b{color:var(--fg)}
 .steps ol{padding-left:18px}
+/* v10: 입금 · 나갈 돈 */
+#moneyBar{padding:0 14px}
+.mcard{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 14px;border-radius:20px;margin:0 0 8px;cursor:pointer}
+.mcard:active{background:rgba(143,107,255,.14)}
+.mcard .mi2{flex:none;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(143,107,255,.16);border:1px solid rgba(160,190,255,.22);color:var(--a1)}
+.mcard .mi2 svg{width:20px;height:20px}
+.mcard b{display:block;font-size:15.5px;font-weight:800;letter-spacing:-.2px}
+.mcard small{display:block;font-size:12px;color:var(--sub);margin-top:2px}
+.mcard .go{margin-left:auto;color:var(--dim);flex:none}.mcard .go svg{width:18px;height:18px;transform:rotate(180deg)}
+.seg{display:flex;gap:6px;padding:4px 14px 10px;overflow-x:auto;scrollbar-width:none}
+.seg::-webkit-scrollbar{display:none}
+.seg button{flex:none;padding:9px 15px;border-radius:16px;font-size:14px;font-weight:700;color:var(--sub);border:1px solid var(--line);background:var(--glass)}
+.seg button.on{background:var(--acc);color:#0a0820;border-color:transparent}
+#moneyList{padding:0 14px calc(var(--sab) + 30px)}
+.msum{border-radius:var(--r);padding:18px 18px 16px;margin-bottom:12px}
+.msum .lb{font-size:13px;font-weight:700;color:var(--sub)}
+.msum .big{font-size:34px;font-weight:800;letter-spacing:-1px;margin-top:4px;background:var(--acc);-webkit-background-clip:text;background-clip:text;color:transparent}
+.msum .sub{font-size:13.5px;color:var(--sub);margin-top:2px}
+.mrow{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:18px;margin-bottom:6px}
+.mrow .tm2{flex:none;width:62px;font-size:12px;color:var(--sub);line-height:1.35}
+.mrow .mid{flex:1;min-width:0}
+.mrow .nm2{font-size:15.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mrow .pill{display:inline-block;margin-top:3px;padding:1px 8px;border-radius:9px;font-size:11px;font-weight:700;color:var(--a1);border:1px solid rgba(111,211,255,.35)}
+.mrow .am{flex:none;font-size:15.5px;font-weight:800;text-align:right}
+.mrow .am small{display:block;font-size:11px;font-weight:600;color:var(--sub);margin-top:2px}
+.mnote{font-size:12.5px;color:var(--sub);line-height:1.6;padding:8px 4px 4px}
+.mnote b{color:var(--fg)}
 /* ⋮ 메뉴 */
 #mbd{position:absolute;inset:0;z-index:34}
 #menu{position:absolute;top:calc(var(--sat) + 70px);right:12px;width:min(300px,calc(100% - 24px));z-index:35;border-radius:22px;padding:6px;background:#15122c;border:1px solid rgba(160,190,255,.22);box-shadow:0 18px 50px rgba(0,0,0,.5);transform-origin:top right;animation:mIn .16s ease-out}
@@ -161,6 +188,7 @@ em{font-style:normal;color:var(--a1);font-weight:700}
  <div class="head"><h1>문자 <small id="lUn"></small></h1><button class="icb" id="more" aria-label="문자 설정 메뉴" aria-haspopup="true"></button></div>
  <div class="sbox glass"><span data-i="search"></span><input id="lQ" type="search" placeholder="이름 · 초성 · 번호 · 문자 내용" autocomplete="off" enterkeyhint="search"><button class="x" id="lQx" aria-label="지우기" hidden></button></div>
  <div id="pendBar"></div>
+ <div id="moneyBar"></div>
  <div class="scroll" id="lList"></div>
  <button id="fab" aria-label="새 문자 쓰기"></button>
 </section>
@@ -175,6 +203,12 @@ em{font-style:normal;color:var(--a1);font-weight:700}
  <div class="bar"><button class="icb" id="nBack" aria-label="뒤로"></button><h2>새 문자</h2></div>
  <div class="tofield glass"><label for="nTo">받는 사람</label><input id="nTo" placeholder="이름 · 초성 · 번호" autocomplete="off" inputmode="text"></div>
  <div class="scroll" id="nList"></div>
+</section>
+
+<section class="view" id="v-money" hidden>
+ <div class="bar"><button class="icb" id="mBack" aria-label="뒤로"></button><h2>입금 · 나갈 돈</h2></div>
+ <div class="seg" id="mSeg"></div>
+ <div class="scroll" id="moneyList"></div>
 </section>
 
 <section class="view" id="v-set" hidden>
@@ -210,13 +244,15 @@ const P={
  gear:'<circle cx="12" cy="12" r="3"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8"/>',
  copy:'<rect x="8" y="8" width="11" height="11" rx="2"/><path d="M5 15V6a1 1 0 0 1 1-1h9"/>',
  retry:'<path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5"/><path d="M20 12a8 8 0 0 1-14 5.3L4 15M4 20v-5h5"/>',
+ coin:'<circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.6c.5-.9 1.4-1.4 2.4-1.4 1.4 0 2.4.8 2.4 1.9s-1 1.6-2.4 1.9-2.4.8-2.4 1.9 1 1.9 2.4 1.9c1 0 1.9-.5 2.4-1.4M12 6.4v1.8M12 15.8v1.8"/>',
+ out:'<path d="M7 17L17 7M9 7h8v8"/>',
  hash:'<path d="M5 9h14M5 15h14M10 4l-2 16M16 4l-2 16"/>'
 };
 const ic=(n,sw=1.7)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${P[n]||P.msg}</svg>`;
 function icons(root){(root||document).querySelectorAll('[data-i]').forEach(e=>{if(!e.querySelector('svg'))e.insertAdjacentHTML('afterbegin',ic(e.dataset.i))})}
 icons();
 $('#more').innerHTML=ic('more',2.6);$('#lQx').innerHTML=ic('x',2);$('#fab').innerHTML=ic('pen',2);
-$('#cBack').innerHTML=ic('larr',2);$('#nBack').innerHTML=ic('larr',2);$('#sBack').innerHTML=ic('larr',2);$('#cCall').innerHTML=ic('phone',1.8);$('#cSend').innerHTML=ic('send',2.2);
+$('#cBack').innerHTML=ic('larr',2);$('#nBack').innerHTML=ic('larr',2);$('#sBack').innerHTML=ic('larr',2);$('#mBack').innerHTML=ic('larr',2);$('#mBack').onclick=()=>goList();$('#cCall').innerHTML=ic('phone',1.8);$('#cSend').innerHTML=ic('send',2.2);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const buzz=()=>{try{NV&&NV.vibrate(12)}catch(e){}};
 const J=(s,d)=>{try{return JSON.parse(s)}catch(e){return d}};
@@ -382,6 +418,7 @@ function menuItems(){const miss=permMissing();let h='';
  h+='<hr>';
  h+=`<button class="mi" role="menuitem" data-b="appset"><span data-i="shield"></span><div>앱 정보 · 제한된 설정<small>‘액세스가 거부됨’이 뜰 때 여기서 허용해요</small></div></button>`;
  if(ST.def)h+=`<button class="mi" role="menuitem" data-b="defapps"><span data-i="ret"></span><div>원래 문자 앱으로 돌아가기<small>기본 앱 설정 › SMS 앱 › 메시지</small></div></button>`;
+ h+=`<button class="mi" role="menuitem" data-b="money"><span data-i="coin"></span><div>입금 · 나갈 돈<small>${esc(moneyMenuSub())}</small></div></button>`;
  h+=`<button class="mi" role="menuitem" data-b="settab"><span data-i="gear"></span><div>문자 설정 전체 보기</div></button>`;
  return h}
 function status(){if(NV)ST=J(NV.status(),ST)||ST;moreDot()}
@@ -415,6 +452,11 @@ function pendDo(k){const add=k.startsWith('pendadd:');const id=k.slice(add?8:7);
  else toast(({ok:'달력에 넣었어요',dup:'이미 달력에 있어요',no:'넣지 않을게요',none:'이미 처리된 카드예요',fail:'달력에 넣지 못했어요'})[r]||r);
  pendRender();if(cur==='set')renderSettings()}
 function act(k){menuClose();
+ if(k.startsWith('mtab:')){mTab=k.slice(5);if(cur!=='money'){openMoney(mTab)}else moneyView();return}
+ if(k==='money'){openMoney('today');return}
+ if(k==='moneyon'){NV&&NV.moneySet&&NV.moneySet(true);setTimeout(()=>{loadMoney();moneyView();moneyBar()},350);toast('입금·출금 예정 읽기를 켰어요');return}
+ if(k==='moneyoff'){NV&&NV.moneySet&&NV.moneySet(false);setTimeout(()=>{loadMoney();moneyView();moneyBar()},150);toast('입금·출금 예정 읽기를 껐어요');return}
+ if(k==='permmoney'){permAsked=Date.now();NV&&NV.requestPerms();return}
  if(k==='perm'){permAsked=Date.now();NV&&NV.requestPerms()}
  else if(k==='role'){closeSheet();roleAsked=Date.now();NV&&NV.requestRole()}
  else if(k==='rolewarn')roleWarn();
@@ -472,7 +514,7 @@ function ndLab(d){return d.autoNdAt?'<br>날짜 없는 문자는 기록을 덮�
 function autoRows(d){
  if(!d.autoAt&&!d.autoEnter)return `<div class="srow2"><div class="grow">자동 처리 (받는 순간)<small>아직 자동 처리 기록 없음 — 문자나 장문을 받으면 여기에 남아요 · 기본 문자 앱: ${ST.def?'예':'아니요'}${ndLab(d)}</small></div><span class="no2">아직 없음</span></div>`;
  const un=d.autoEnter&&d.autoEnter>(d.autoAt||0);
- return `<div class="srow2" style="display:block"><div class="grow">자동 처리 (받는 순간)<small>${esc(d.autoSrc||'—')} · ${esc(fmtWhen(d.autoAt||d.autoEnter))} · ${+d.autoLen}자 · 읽기 단계 ${esc(d.autoStage||'—')}<br>${un?'⚠ 시작했지만 끝나지 않았어요 · 멈춘 곳: '+esc(d.autoPhase||'—'):esc(d.autoLabel||'')}<br>기본 문자 앱: ${ST.def?'예':'아니요'}${ndLab(d)}</small></div><span class="${d.autoGood?'ok':'no2'}">${d.autoGood?(d.autoSteps==='ask'?'알림 떴어요':'성공'):(d.autoSteps==='ask>blocked'?'알림 막힘':'아니요')}</span></div>`}
+ return `<div class="srow2" style="display:block"><div class="grow">자동 처리 (받는 순간)<small>${esc(d.autoSrc||'—')} · ${esc(fmtWhen(d.autoAt||d.autoEnter))} · ${+d.autoLen}자 · 읽기 단계 ${esc(d.autoStage||'—')}<br>${un?'주의: 시작했지만 끝나지 않았어요 · 멈춘 곳: '+esc(d.autoPhase||'—'):esc(d.autoLabel||'')}<br>기본 문자 앱: ${ST.def?'예':'아니요'}${ndLab(d)}</small></div><span class="${d.autoGood?'ok':'no2'}">${d.autoGood?(d.autoSteps==='ask'?'알림 떴어요':'성공'):(d.autoSteps==='ask>blocked'?'알림 막힘':'아니요')}</span></div>`}
 // v9: 장문(LMS) 보내기 기록 — 시각 · 글자 수 · 단계 · 결과 코드 · HTTP · 통신사 응답 (본문·번호 없음)
 function moRows(d){
  if(!d.moAt)return '<div class="srow2"><div class="grow">마지막 장문 보내기<small>아직 장문을 보낸 적이 없어요 — 70자가 넘는 글을 보내면 여기에 남아요</small></div><span class="no2">아직 없음</span></div>';
@@ -484,7 +526,7 @@ function moRows(d){
   <div class="srow2"><div class="grow">대화에 저장<small>기본 문자 앱일 때 ‘보내는 중’으로 저장했다가 결과에 따라 ‘보냄/실패’로 바꿔요</small></div>${d.moSaved?'<span class="ok">저장됨</span>':'<span class="no2">아니요</span>'}</div>`}
 function rrRows(d){
  const un=d.rrStart&&d.rrStart>(d.rrAt||0);
- let h=`<div class="srow2"><div class="grow">다시 읽기 요청<small>${d.rrStart?(un?'⚠ 시작했지만 끝나지 않았어요 · 멈춘 단계: '+esc(phaseLab(d.rrPhase)):'끝까지 처리됨'):'v9 요청 기록 없음 — 단추가 눌린 적이 없어요'}</small></div><span>${esc(fmtWhen(d.rrStart))}</span></div>`;
+ let h=`<div class="srow2"><div class="grow">다시 읽기 요청<small>${d.rrStart?(un?'주의: 시작했지만 끝나지 않았어요 · 멈춘 단계: '+esc(phaseLab(d.rrPhase)):'끝까지 처리됨'):'v9 요청 기록 없음 — 단추가 눌린 적이 없어요'}</small></div><span>${esc(fmtWhen(d.rrStart))}</span></div>`;
  if(!d.rrAt)return h+'<div class="srow2"><div class="grow">다시 읽기 결과<small>v9 다시 읽기 기록 없음 — 위 단추를 눌러 보세요</small></div><span class="no2">아직 없음</span></div>';
  const found=d.rrType?esc(d.rrType)+' · '+esc(fmtWhen(d.rrMsgAt))+' · '+(+d.rrLen)+'자':'찾지 못함';
  return h+`<div class="srow2"><div class="grow">다시 읽기 끝난 때</div><span>${esc(fmtWhen(d.rrAt))}</span></div>
@@ -504,6 +546,9 @@ function renderSettings(){status();calStatus();const p=ST.perms||{};const yes=b=
   <div class="srow2"><div class="grow">연락처<small>이름 표시, 받는 사람 찾기</small></div>${yes(p.contacts)}</div>
   <div class="srow2"><div class="grow">알림<small>새 문자 알림</small></div>${yes(p.notif)}</div>
   <div class="srow2"><div class="grow"><small>거절한 권한은 ‘앱 정보 › 권한’에서 다시 켤 수 있어요</small></div><button class="sbtn" data-b="perm">다시 묻기</button><button class="sbtn" data-b="appset">앱 정보</button></div>
+ </div>
+ <div class="set glass"><h3>입금 · 나갈 돈</h3>
+  <div class="srow2"><div class="grow">입금 요약과 출금 예정 알림<small>은행 입금 문자와 공과금·카드 대금 출금 예정 문자를 이 폰 안에서만 읽어 모아 보여 줘요. 빠른 확인용이에요.</small></div>${MONEY&&MONEY.on===false?'<button class="sbtn pri" data-b="moneyon">켜기</button>':'<button class="sbtn" data-b="moneyoff">끄기</button>'}</div>
  </div>
  <div class="set glass"><h3>달력</h3>
   <div class="srow2"><div class="grow">문자 속 일정을 달력에 넣기<small>병원·학교·공공기관의 예약·행사 일정과 택배 도착 예정 문자를 ‘뉴니버스’ 전용 달력에 넣어요. 확정된 예약은 자동으로, 신청·모집 안내는 “달력에 넣을까요?” 하고 물어요. 주소록에 있는 사람이나 병원·학교·택배·공공기관만, 광고·수상한 링크는 제외해요. 넣을 때마다 알림에서 취소할 수 있어요.</small></div><button class="sbtn${CAL.on?' pri':''}" data-b="${CAL.on?'caloff':'calon'}" aria-pressed="${CAL.on}">${CAL.on?'켜짐':'꺼짐'}</button></div>
@@ -543,7 +588,7 @@ function renderSettings(){status();calStatus();const p=ST.perms||{};const yes=b=
  </div>
  <div class="set glass" id="moBox"><h3>MMS 보내기 기록 (시험)</h3>${moRows(dv.d)}</div>
  <div class="set glass"><h3>알아 두기</h3>
-  <div class="steps">문자 내용은 폰 밖으로 나가지 않아요 (인터넷 권한 없음).<br>사진·장문(LMS/MMS)은 기본 문자 앱일 때 받아서 저장해요. 긴 글(한 통 70자를 넘는 한글 등)은 장문(LMS) 한 통으로 보내요. 사진 보내기는 아직 안 돼요.<br>뉴니버스 문자 v9 시험판 · ${esc(ST.ver||'')} · 안드로이드 ${ST.sdk||'?'}</div>
+  <div class="steps">문자 내용은 폰 밖으로 나가지 않아요 (인터넷 권한 없음).<br>사진·장문(LMS/MMS)은 기본 문자 앱일 때 받아서 저장해요. 긴 글(한 통 70자를 넘는 한글 등)은 장문(LMS) 한 통으로 보내요. 사진 보내기는 아직 안 돼요.<br>입금 요약·출금 예정은 이 폰 안의 문자만 읽어요(빠른 확인용).<br>뉴니버스 문자 v10 시험판 · ${esc(ST.ver||'')} · 안드로이드 ${ST.sdk||'?'}</div>
  </div>`;bindB($('#setList'))}
 $('#sBack').onclick=()=>{buzz();goList()};
 
@@ -555,10 +600,47 @@ function closeSheet(){const s=$('#sheet');if(s.hidden)return false;s.hidden=true
 $('#bd').onclick=closeSheet;
 let toastT;function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('on'),2200)}
 
+
+/* ---------- v10: 입금 요약 · 나갈 돈(출금 예정) — 문자 본문·계좌번호 없이 은행·보낸 사람·금액·시각만 ---------- */
+let MONEY=null,mTab='today';
+function loadMoney(){MONEY=null;if(!NV||!NV.moneySummary)return;MONEY=J(NV.moneySummary(),null)}
+const MTABS=[['today','오늘'],['yesterday','어제'],['week','이번 주'],['bills','나갈 돈']];
+function moneyMenuSub(){if(!MONEY||!MONEY.ok)return '은행 입금 문자 모아 보기';if(MONEY.on===false)return '꺼져 있어요';return MONEY.today&&MONEY.today.n?MONEY.today.line:(MONEY.billLine||'오늘 들어온 입금 문자는 아직 없어요')}
+function moneyBar(){const b=$('#moneyBar');if(!b)return;let h='';
+ if(MONEY&&MONEY.ok&&MONEY.perm&&MONEY.on!==false){
+  if(MONEY.today&&MONEY.today.n)h+=`<button class="mcard glass" data-b="mtab:today"><span class="mi2">${ic('coin')}</span><span><b>${esc(MONEY.today.line)}</b><small>빠른 확인용 · 눌러서 건별로 보기</small></span><span class="go">${ic('larr',2)}</span></button>`;
+  if(MONEY.tomorrow&&MONEY.tomorrow.length)h+=`<button class="mcard glass" data-b="mtab:bills"><span class="mi2">${ic('out')}</span><span><b>${esc(MONEY.billLine)}</b><small>빠른 확인용 · 나갈 돈 보기</small></span><span class="go">${ic('larr',2)}</span></button>`;
+ }
+ b.innerHTML=h;if(h)bindB(b)}
+function openMoney(tab){mTab=tab||'today';loadMoney();show('money')}
+function mDate(t){const d=new Date(t);return (d.getMonth()+1)+'/'+d.getDate()+' '+hm(t)}
+function moneyView(){const seg=$('#mSeg'),L=$('#moneyList');if(!seg||!L||cur!=='money')return;
+ seg.innerHTML=MTABS.map(([k,n])=>`<button class="${k===mTab?'on':''}" data-b="mtab:${k}">${n}</button>`).join('');bindB(seg);
+ const M=MONEY;let h='';
+ if(!NV){L.innerHTML='<div class="empty"><b>폰에서 열어 주세요</b>뉴니버스 문자 앱 안에서만 볼 수 있어요</div>';return}
+ if(!M||!M.ok){L.innerHTML='<div class="empty"><b>불러오지 못했어요</b>잠시 뒤 다시 열어 보세요</div>';return}
+ if(!M.perm){L.innerHTML='<div class="empty"><b>문자 권한이 필요해요</b>입금 문자를 모으려면 ‘SMS’ 권한을 허용해 주세요<br><button data-b="permmoney">권한 허용</button></div>';bindB(L);return}
+ if(M.on===false){L.innerHTML='<div class="empty"><b>꺼져 있어요</b>켜면 이 폰 안의 문자에서 입금과 출금 예정을 읽어요. 밖으로 나가지 않아요.<br><button data-b="moneyon">켜기</button></div>';bindB(L);return}
+ if(mTab==='bills'){
+  const bl=M.bills||[];
+  h+=`<div class="msum glass"><div class="lb">앞으로 나갈 돈 · 확실한 문자만</div><div class="big">${bl.length?esc(wonShort(M.billSum)):'없음'}</div><div class="sub">${bl.length?bl.length+'건 · 45일 안':'출금 예정 문자가 아직 없어요'}</div></div>`;
+  h+=bl.map(x=>`<div class="mrow glass"><div class="tm2">${esc(x.when)}</div><div class="mid"><div class="nm2">${esc(x.org)}</div><span class="pill">${esc(x.cat)} · ${esc(x.kindLabel)}</span></div><div class="am">${esc(x.t)}</div></div>`).join('');
+  h+=`<div class="mnote"><b>공과금·자동이체·카드 대금</b> 출금 예정 문자 중 기관·금액·날짜가 모두 분명한 것만 보여요. 이미 결제된 카드 사용 문자, 광고, 링크가 든 문자는 빼요. 출금 하루 전 오전 9시쯤 「내일 출금 예상」 알림이 와요. ${esc(M.note)}</div>`;
+ } else {
+  const B=M[mTab]||{n:0,items:[]},nm={today:'오늘',yesterday:'어제',week:'이번 주'}[mTab];
+  h+=`<div class="msum glass"><div class="lb">${nm} 입금</div><div class="big">${B.n?esc(B.text):'없음'}</div><div class="sub">${B.n?B.n+'건':'이 기간에 들어온 입금 문자가 없어요'}</div></div>`;
+  h+=B.items.map(x=>`<div class="mrow glass"><div class="tm2">${mTab==='today'?hm(x.at):esc(mDate(x.at)).replace(' ','<br>')}</div><div class="mid"><div class="nm2">${esc(x.who||'보낸 사람 표시 없음')}</div><span class="pill">${esc(x.bank)}</span></div><div class="am">${esc(x.t)}</div></div>`).join('');
+  if(!B.n)h+=`<div class="mnote">은행에서 입금을 <b>문자</b>로 알려 주는 계좌만 보여요. 앱 알림(푸시)으로만 받는 계좌는 문자함에 없어서 안 보여요.</div>`;
+  if(M.suspect)h+=`<div class="mnote">입금이라고 적혀 있지만 링크·광고·개인 번호에서 와서 <b>세지 않은 문자 ${M.suspect}통</b>이 있어요. 가짜 입금 문자일 수 있으니 은행 앱에서 꼭 확인하세요.</div>`;
+  h+=`<div class="mnote">계좌번호는 화면에 보여 주지 않아요. ${esc(M.note)} 은행이 문자 형식을 바꾸면 틀릴 수 있어요.</div>`;
+ }
+ L.innerHTML=h}
+function wonShort(v){v=+v||0;if(v<10000)return v.toLocaleString('ko-KR')+'원';const e=Math.floor(v/1e8),m=Math.floor(v%1e8/1e4),r=v%1e4;let s='';if(e)s+=e.toLocaleString('ko-KR')+'억';if(m)s+=(s?' ':'')+m.toLocaleString('ko-KR')+'만';return r?s+' '+r.toLocaleString('ko-KR')+'원':s+' 원'}
+
 /* ---------- 화면 전환 · 안드로이드 신호 ---------- */
-function show(v){cur=v;menuClose();$('#toast').classList.remove('on');['list','conv','new','set'].forEach(k=>$('#v-'+k).hidden=k!==v);if(v==='set')renderSettings();if(v==='list')pendRender();if(v!=='conv'&&NV)NV.viewing('')}
+function show(v){cur=v;menuClose();$('#toast').classList.remove('on');['list','conv','new','set','money'].forEach(k=>$('#v-'+k).hidden=k!==v);if(v==='set')renderSettings();if(v==='list'){pendRender();moneyBar()}if(v==='money')moneyView();if(v!=='conv'&&NV)NV.viewing('')}
 function goList(){CONV=null;show('list');renderList()}
-function refresh(){status();pendRender();loadThreads();if(cur==='list')renderList();else if(cur==='conv')loadMsgs(false);else if(cur==='new')renderNew()}
+function refresh(){status();pendRender();loadMoney();if(cur==='list')moneyBar();if(cur==='money')moneyView();loadThreads();if(cur==='list')renderList();else if(cur==='conv')loadMsgs(false);else if(cur==='new')renderNew()}
 window.NV_refresh=refresh;
 window.NV_back=()=>{if(closeSheet())return true;if(menuClose())return true;if(cur!=='list'){goList();return true}if($('#lQ').value){$('#lQ').value='';renderList();return true}return false};
 window.NV_resume=(kind,ok)=>{const before=ST.def;status();loadContacts();refresh();
@@ -568,9 +650,10 @@ window.NV_resume=(kind,ok)=>{const before=ST.def;status();loadContacts();refresh
  if(kind==='perm'&&permAsked&&ST.perms&&!ST.perms.read){permAsked=0;restrictedSheet('perm')}
  else if(kind==='perm')permAsked=0};
 window.NV_intent=()=>{if(!NV)return;const o=J(NV.takeOpen(),null);if(!o||!o.addr)return;closeSheet();menuClose();
+ if(o.addr==='#money'){openMoney('bills');return}
  if(o.addr==='*')openNew(o.body);else openAddr(o.addr.split(/[;,]/)[0],o.body)};
 /* 시작 */
-status();loadContacts();loadThreads();show('list');renderList();
+status();loadContacts();loadThreads();loadMoney();show('list');renderList();
 if(NV&&permMissing().length&&!localStorage.getItem('nvAsked')){localStorage.setItem('nvAsked','1');permAsked=Date.now();NV.requestPerms()}
 NV_intent();
 calStatus();if(NV&&ST.def&&!CAL.asked&&!CAL.on&&NV.calSkip&&!localStorage.getItem('nvCalAsked')){localStorage.setItem('nvCalAsked','1');setTimeout(calAsk,900)}

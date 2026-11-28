@@ -80,6 +80,7 @@ final class SmsInbox {
     try{ notify(c,addr,body,saved); }catch(Throwable e){}
     if(saved){ try{ FeedProvider.ping(c); }catch(Throwable e){} }
     if(body!=null&&!body.isEmpty()){ try{ AutoCal.onSms(c,addr,body,System.currentTimeMillis(),"SMS"); }catch(Throwable e){} } // v8: saved 와 무관(저장이 실패한 문자도 일정은 읽음)
+    try{ BillScheduler.refresh(c); }catch(Throwable e){} // v10: 출금 예정 문자가 왔으면 하루 전 알림 맞춤
     MainActivity.refresh();
   }
 

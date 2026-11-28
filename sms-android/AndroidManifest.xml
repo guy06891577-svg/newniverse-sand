@@ -10,6 +10,7 @@
   <uses-permission android:name="android.permission.READ_CONTACTS"/>
   <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
   <uses-permission android:name="android.permission.VIBRATE"/>
+  <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
   <!-- v2: 문자 속 일정을 「뉴니버스」 전용 달력에 넣기 (처음에 한 번만 묻고, 설정에서 끌 수 있음) -->
   <uses-permission android:name="android.permission.READ_CALENDAR"/>
   <uses-permission android:name="android.permission.WRITE_CALENDAR"/>
@@ -58,6 +59,11 @@
       <intent-filter><action android:name="android.provider.Telephony.SMS_DELIVER"/></intent-filter>
     </receiver>
     <!-- 기본 앱이 아닐 때: 알림만 (저장은 원래 문자 앱이 함) -->
+    <!-- v10: 출금 예정 하루 전 알림(알람) · 폰이 켜지면 알람 다시 맞춤 -->
+    <receiver android:name=".BillReceiver" android:exported="false"/>
+    <receiver android:name=".BootReceiver" android:exported="true">
+      <intent-filter><action android:name="android.intent.action.BOOT_COMPLETED"/><action android:name="android.intent.action.MY_PACKAGE_REPLACED"/></intent-filter>
+    </receiver>
     <receiver android:name=".SmsReceivedReceiver" android:exported="true" android:permission="android.permission.BROADCAST_SMS">
       <intent-filter android:priority="0"><action android:name="android.provider.Telephony.SMS_RECEIVED"/></intent-filter>
     </receiver>

@@ -30,11 +30,15 @@ public class FeedProvider extends ContentProvider {
     Context c=getContext(); Bundle b=new Bundle();
     if(c==null||!callerOk(c)){ b.putBoolean("ok",false); b.putString("json","[]"); try{ if(c!=null) SmsDiag.feed(c,method==null?"":method,false,0,"caller"); }catch(Exception e){} return b; }
     boolean def=Nv.isDefault(c), perm=c.checkSelfPermission(android.Manifest.permission.READ_SMS)==PackageManager.PERMISSION_GRANTED;
-    b.putBoolean("ok",true); b.putBoolean("def",def); b.putBoolean("perm",perm); b.putInt("ver",5);
+    b.putBoolean("ok",true); b.putBoolean("def",def); b.putBoolean("perm",perm); b.putInt("ver",6);
     if("cal_status".equals(method)){ b.putBoolean("calOn",AutoCal.on(c)); b.putBoolean("calPerm",AutoCal.perm(c)); try{ SmsDiag.feed(c,"cal_status",true,0,""); }catch(Exception e){} return b; }
     if("cal_add".equals(method)){ String r="none";
       try{ JSONObject o=new JSONObject(arg==null?"{}":arg); r=AutoCal.manual(c,o.optString("addr"),o.optString("x"),o.optLong("at",System.currentTimeMillis())); }catch(Exception e){}
       b.putString("r",r); try{ SmsDiag.feed(c,"cal_add",true,0,""); }catch(Exception e){} return b; }
+    // v10: 입금 요약·나갈 돈(출금 예정). 문자 본문·계좌번호는 없고 은행·보낸 사람·금액·시각·기관·날짜만. 기본 문자 앱+문자 읽기 권한일 때만.
+    if("money".equals(method)){
+      String j="{\"ok\":false}"; try{ if(def&&perm) j=MoneyFeed.json(c,System.currentTimeMillis()).toString(); }catch(Exception e){}
+      b.putString("json",j); try{ SmsDiag.feed(c,"money",def&&perm,0,""); }catch(Exception e){} return b; }
     if("recent".equals(method)){
       JSONArray a=new JSONArray(); String err=""; int mmsN=0;
       if(def&&perm){

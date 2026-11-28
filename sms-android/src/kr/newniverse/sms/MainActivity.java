@@ -38,10 +38,11 @@ public class MainActivity extends Activity {
       String body=i.getStringExtra("sms_body"); if(body==null) body=i.getStringExtra(Intent.EXTRA_TEXT);
       pendingAddr=n.isEmpty()?"*":n; pendingBody=body==null?"":body;
     } else if(i.getBooleanExtra("calperm",false)){ i.removeExtra("calperm"); getWindow().getDecorView().post(()->reqCal(false));
+    } else if(Nv.ACTION_MONEY.equals(a)){ pendingAddr="#money"; pendingBody="";
     } else if(Nv.ACTION_OPEN.equals(a)){ pendingAddr=i.getStringExtra("addr"); pendingBody=""; }
   }
   @Override protected void onNewIntent(Intent i){ super.onNewIntent(i); setIntent(i); take(i); js("window.NV_intent&&NV_intent()"); }
-  @Override protected void onResume(){ super.onResume(); live=this; resumed=true; js("window.NV_resume&&NV_resume()"); }
+  @Override protected void onResume(){ super.onResume(); live=this; resumed=true; final android.content.Context app=getApplicationContext(); new Thread(()->BillScheduler.refresh(app),"nv-bills").start(); js("window.NV_resume&&NV_resume()"); }
   @Override protected void onPause(){ resumed=false; super.onPause(); }
   @Override protected void onActivityResult(int rq,int rs,Intent d){ super.onActivityResult(rq,rs,d); js("window.NV_resume&&NV_resume("+(rq==RQ_ROLE?"'role',"+(rs==RESULT_OK):"''")+")"); }
   /** 달력 권한(읽기·쓰기)을 한 번만 묻는다. turnOn 이면 허용되면 자동 넣기를 켬 */
