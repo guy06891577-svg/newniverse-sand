@@ -4659,7 +4659,16 @@ function nhTts(text,force){if(!text)return 'fail';
   try{if(window.speechSynthesis){window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='ko-KR';u.onend=()=>window.NV_onTts&&NV_onTts('done');window.speechSynthesis.speak(u);return 'ok'}}catch(_){}
   return 'fail'}
 function nhTtsStop(){try{if(NATIVE&&NVNative.ttsStop)NVNative.ttsStop()}catch(_){}try{if(window.speechSynthesis)window.speechSynthesis.cancel()}catch(_){}}
-window.NV_onTts=type=>{const el=document.getElementById('nhWx')||document.getElementById('nhSm');if(!el)return;el.classList.toggle('talk',type==='start');const b=el.querySelector('.sp');if(b){b.setAttribute('aria-label',type==='start'?'읽기 멈추기':'다시 읽기');b.innerHTML=ico(type==='start'?'stop':'sound')}};
+function nhTtsClear(el){if(el&&el._ttsW){clearTimeout(el._ttsW);el._ttsW=0}}
+function nhTtsFailNote(el){if(!el||el.classList.contains('muted'))return;const n=el.querySelector('.note');if(n)n.innerHTML=ico('mute')+'<span>읽지 못했어요</span>'}
+function nhTtsHint(el,r){nhTtsClear(el);if(!el)return r;
+  if(r==='mute'){el.classList.add('muted');const n=el.querySelector('.note');if(n)n.innerHTML=ico('mute')+'<span>무음·진동이라 읽지 않았어요</span>';return r}
+  if(r==='fail'){nhTtsFailNote(el);return r}
+  if(r==='wait'){el._ttsW=setTimeout(()=>{el._ttsW=0;if(!el.isConnected||el.classList.contains('talk'))return;let s='';try{s=NATIVE&&NVNative.ttsState?NVNative.ttsState():''}catch(_){}
+    if(s==='talk'||s==='ready')return;nhTtsFailNote(el)},4000)}
+  return r}
+window.NV_onTts=type=>{const el=document.getElementById('nhWx')||document.getElementById('nhSm');if(!el)return;if(type==='start')nhTtsClear(el);el.classList.toggle('talk',type==='start');const b=el.querySelector('.sp');if(b){b.setAttribute('aria-label',type==='start'?'읽기 멈추기':'다시 읽기');b.innerHTML=ico(type==='start'?'stop':'sound')}
+  if(type==='error'||type==='fail')nhTtsFailNote(el)};
 var NHWX=null,NHWXT=0;
 function nhWxDo(c){nhClear(false);nhWxShow(c||{ask:''})}
 function nhWxShow(c){nhCardOff(false);nhWxOff(false);const el=document.createElement('div');el.id='nhWx';el.className='pre load';
@@ -4670,7 +4679,7 @@ function nhWxShow(c){nhCardOff(false);nhWxOff(false);const el=document.createEle
   wxGet(false).then(w=>{if(NHWX!==el)return;if(!w){el.classList.remove('load');el.querySelector('b').textContent='날씨를 받지 못했어요';el.querySelector('small').textContent='잠시 후 다시 말해 주세요';el.querySelector('.sp').style.display='none';nhWxTimer(3600);return}
     nhWxFill(el,w,c);const line=wxLineS(w,c&&c.ask),mu=nhTtsMute();el.dataset.line=line;
     if(mu){el.classList.add('muted');const n=el.querySelector('.note');if(n)n.innerHTML=ico('mute')+'<span>'+(mu==='dnd'?'방해 금지가 켜져 있어 읽지 않았어요':'무음·진동이라 읽지 않았어요')+'</span>'}
-    else{const r=nhTts(line,false);if(r==='mute'){el.classList.add('muted');const n=el.querySelector('.note');if(n)n.innerHTML=ico('mute')+'<span>무음·진동이라 읽지 않았어요</span>'}}
+    else nhTtsHint(el,nhTts(line,false));
     nhWxTimer(8000)}).catch(()=>{if(NHWX===el){el.querySelector('b').textContent='날씨를 받지 못했어요';nhWxTimer(3600)}})}
 function nhWxFill(el,w,c){el.classList.remove('load');const ic=wxIcon(w.text,w.pty);
   el.querySelector('.ic').innerHTML=ico(ic);
@@ -4689,7 +4698,7 @@ function nhWxFill(el,w,c){el.classList.remove('load');const ic=wxIcon(w.text,w.p
   el.querySelector('.meta').innerHTML=`<span class="src">${esc(src)}${age?' · '+age:''}${late?' · 예전 값일 수 있어요':''}</span><span class="note"></span>`;
   const spb=el.querySelector('.sp');
   spb.onclick=e=>{e.stopPropagation();if(el.classList.contains('talk')){nhTtsStop();el.classList.remove('talk');spb.innerHTML=ico('sound');spb.setAttribute('aria-label','다시 읽기');return}
-    const line=el.dataset.line||wxLineS(w,c&&c.ask);nhTts(line,true);nhWxTimer(9000)}}
+    const line=el.dataset.line||wxLineS(w,c&&c.ask);nhTtsHint(el,nhTts(line,true));nhWxTimer(9000)}}
 function nhWxTimer(ms){clearTimeout(NHWXT);NHWXT=setTimeout(()=>nhWxOff(true),ms)}
 function nhWxOff(anim){clearTimeout(NHWXT);nhTtsStop();const el=NHWX;if(!el)return;NHWX=null;
   const done=()=>{el.remove();if(!NH.q&&!NHCARD&&!NHWX)NHSUG.classList.remove('hide')};
@@ -4944,10 +4953,10 @@ async function nhSmxShow(c){nhCardOff(false);nhWxOff(false);nhSmxOff(false);smxI
   el.dataset.line=say;const mu=nhTtsMute(),m=el.querySelector('.meta');
   m.innerHTML='<span class="src">폰 안에서만 · 뉴니버스 문자</span><span class="note"></span>';
   const sp=el.querySelector('.sp');
-  if(sp){sp.onclick=e=>{e.stopPropagation();if(el.classList.contains('talk')){nhTtsStop();el.classList.remove('talk');sp.innerHTML=ico('sound');return}if(say){nhTts(say,true);nhSmxTimer(9000)}}}
+  if(sp){sp.onclick=e=>{e.stopPropagation();if(el.classList.contains('talk')){nhTtsStop();el.classList.remove('talk');sp.innerHTML=ico('sound');return}if(say){nhTtsHint(el,nhTts(say,true));nhSmxTimer(9000)}}}
   if(!say&&sp)sp.style.display='none';
   if(say){if(mu){el.classList.add('muted');m.querySelector('.note').innerHTML=ico('mute')+'<span>'+(mu==='dnd'?'방해 금지가 켜져 있어 읽지 않았어요':'무음·진동이라 읽지 않았어요')+'</span>'}
-    else{const r=nhTts(say,false);if(r==='mute'){el.classList.add('muted');m.querySelector('.note').innerHTML=ico('mute')+'<span>무음·진동이라 읽지 않았어요</span>'}}}
+    else nhTtsHint(el,nhTts(say,false))}
   nhSmxTimer(c.id==='otp'?30000:10000)}
 function nhSmxTimer(ms){clearTimeout(NHSMT);NHSMT=setTimeout(()=>nhSmxOff(true),ms)}
 function nhSmxOff(anim){clearTimeout(NHSMT);const el=NHSM;if(!el)return;nhTtsStop();NHSM=null;const done=()=>{el.remove();if(!NH.q&&!NHCARD&&!NHWX&&!NHSM){NHSUG.classList.remove('hide');smxIdle(false)}};
@@ -4981,11 +4990,11 @@ function nhSmMount(e){e.id='nhSm';e.className=e.className||'smc pre';NHUI.insert
 function nhSmVoice(el,say,src,noteHtml){el.dataset.line=say||'';const mu=nhTtsMute(),m=el.querySelector('.meta');
   m.innerHTML='<span class="src"></span><span class="note"></span>';m.querySelector('.src').textContent=src||'';
   const sp=el.querySelector('.sp');
-  if(sp){sp.onclick=e=>{e.stopPropagation();if(el.classList.contains('talk')){nhTtsStop();el.classList.remove('talk');sp.innerHTML=ico('sound');return}if(say){nhTts(say,true);nhSmxTimer(12000)}}}
+  if(sp){sp.onclick=e=>{e.stopPropagation();if(el.classList.contains('talk')){nhTtsStop();el.classList.remove('talk');sp.innerHTML=ico('sound');return}if(say){nhTtsHint(el,nhTts(say,true));nhSmxTimer(12000)}}}
   if(!say&&sp)sp.style.display='none';
   const note=m.querySelector('.note');if(noteHtml)note.innerHTML=noteHtml;
   if(say){if(mu){el.classList.add('muted');note.innerHTML=ico('mute')+'<span>'+(mu==='dnd'?'방해 금지가 켜져 있어 읽지 않았어요':'무음·진동이라 읽지 않았어요')+'</span>'}
-    else{const r=nhTts(say,false);if(r==='mute'){el.classList.add('muted');note.innerHTML=ico('mute')+'<span>무음·진동이라 읽지 않았어요</span>'}}}}
+    else nhTtsHint(el,nhTts(say,false))}}
 function calEl(a,o){o=o||{};const el=document.createElement('div');el.className='smc pre'+(o.cls?' '+o.cls:'');
   el.innerHTML=`<span class="ic">${ico(a.ic||'calendar')}</span><div class="tx"><b></b><small></small></div><div class="ac"></div><div class="rows"></div><div class="meta"></div>`;
   el.querySelector('b').textContent=a.b||'';const sm=el.querySelector('small');sm.textContent=a.s||'';if(!a.s)sm.style.display='none';

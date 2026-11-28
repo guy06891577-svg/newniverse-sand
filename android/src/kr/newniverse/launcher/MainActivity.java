@@ -23,7 +23,7 @@ import java.util.*;
 
 public class MainActivity extends Activity {
   WebView web; boolean pageReady=false; boolean torchOn=false;
-  android.speech.tts.TextToSpeech tts; boolean ttsReady=false; boolean ttsTalk=false; String ttsPend=null;
+  NvTts nvTts;
   final Handler ui=new Handler(Looper.getMainLooper());
 
   @Override protected void onCreate(Bundle b){
@@ -45,7 +45,13 @@ public class MainActivity extends Activity {
     s.setUseWideViewPort(true); s.setLoadWithOverviewMode(true);
     web.setOverScrollMode(View.OVER_SCROLL_NEVER);
     web.setVerticalScrollBarEnabled(false); web.setHorizontalScrollBarEnabled(false);
-    web.addJavascriptInterface(new Bridge(),"NVNative"); ttsInit();
+    web.addJavascriptInterface(new Bridge(),"NVNative");
+    nvTts=new NvTts(new NvTts.Sink(){
+      public android.content.Context ctx(){ return MainActivity.this; }
+      public void post(Runnable r){ ui.post(r); }
+      public void onTts(String type){ js("window.NV_onTts&&NV_onTts("+org.json.JSONObject.quote(type)+")"); }
+    }, ui);
+    nvTts.start();
     web.setWebChromeClient(new WebChromeClient(){
       @Override public boolean onConsoleMessage(ConsoleMessage m){ android.util.Log.i("NVWeb", m.messageLevel()+" "+m.message()+" @"+m.sourceId()+":"+m.lineNumber()); return true; }
       @Override public boolean onShowFileChooser(WebView v, ValueCallback<Uri[]> cb, FileChooserParams p){ fileCb=cb; try{ startActivityForResult(p.createIntent(), 77);}catch(Exception e){fileCb=null;return false;} return true; }
@@ -108,7 +114,7 @@ public class MainActivity extends Activity {
       la.registerCallback(laCb,ui);
     }catch(Exception e){ android.util.Log.w("NVWeb","launcherapps",e); }
   }
-  @Override protected void onDestroy(){ try{ if(tts!=null){ tts.stop(); tts.shutdown(); tts=null; } }catch(Exception e){} try{unregisterReceiver(pkgRx);}catch(Exception e){} try{unregisterReceiver(smsRx);}catch(Exception e){}
+  @Override protected void onDestroy(){ try{ if(nvTts!=null) nvTts.destroy(); }catch(Exception e){} try{unregisterReceiver(pkgRx);}catch(Exception e){} try{unregisterReceiver(smsRx);}catch(Exception e){}
     try{ if(laCb!=null) ((android.content.pm.LauncherApps)getSystemService(Context.LAUNCHER_APPS_SERVICE)).unregisterCallback(laCb);}catch(Exception e){} super.onDestroy(); }
 
   // 상태 표시줄(시계·배터리)은 폰 것을 그대로 보이고, 시스템 내비 바는 숨겨 뉴니버스 내비 바와 겹치지 않게 함.
@@ -329,23 +335,6 @@ public class MainActivity extends Activity {
     }catch(Exception e){ spJs("error","e-start"); } }); }
 
   boolean tryStart(Intent i){ try{ i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(i); return true; }catch(Exception e){ return false; } }
-  void ttsInit(){ if(tts!=null) return;
-    try{ tts=new android.speech.tts.TextToSpeech(this, st->{
-      ttsReady=st==android.speech.tts.TextToSpeech.SUCCESS;
-      if(ttsReady){ try{ tts.setLanguage(java.util.Locale.KOREAN); }catch(Exception e){}
-        if(ttsPend!=null){ final String p=ttsPend; ttsPend=null; try{ tts.speak(p, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, "nv"); }catch(Exception e){} } }
-    });
-      tts.setOnUtteranceProgressListener(new android.speech.tts.UtteranceProgressListener(){
-        @Override public void onStart(String id){ ttsTalk=true; js("window.NV_onTts&&NV_onTts('start')"); }
-        @Override public void onDone(String id){ ttsTalk=false; js("window.NV_onTts&&NV_onTts('done')"); }
-        @Override public void onError(String id){ ttsTalk=false; js("window.NV_onTts&&NV_onTts('error')"); }
-      });
-    }catch(Exception e){} }
-  boolean ttsMuted(){
-    try{ AudioManager am=(AudioManager)getSystemService(AUDIO_SERVICE); if(am.getRingerMode()!=AudioManager.RINGER_MODE_NORMAL) return true; }catch(Exception e){}
-    try{ android.app.NotificationManager nm=(android.app.NotificationManager)getSystemService(NOTIFICATION_SERVICE);
-      if(nm.getCurrentInterruptionFilter()>android.app.NotificationManager.INTERRUPTION_FILTER_ALL) return true; }catch(Exception e){}
-    return false; }
   class Bridge {
     // v29 알림 배지·미리보기
     @JavascriptInterface public boolean notifAccess(){ return notifGranted(); }
@@ -746,15 +735,12 @@ public class MainActivity extends Activity {
         android.content.ClipData d=android.content.ClipData.newPlainText("뉴니버스",text==null?"":text);
         if(Build.VERSION.SDK_INT>=33){ android.os.PersistableBundle pb=new android.os.PersistableBundle(); pb.putBoolean("android.content.extra.IS_SENSITIVE",true); d.getDescription().setExtras(pb); }
         cm.setPrimaryClip(d); return true; }catch(Exception e){ return false; } }
+    // v47b: 엔진 조회·한국어 설정·오디오 포커스는 NvTts. force=1 이면 카드의 스피커 단추(무음이어도 읽기).
     @JavascriptInterface public String ttsSpeak(String text,String force){
-      final String t=text==null?"":text.trim(); if(t.isEmpty()) return "fail";
-      if(!"1".equals(force)&&ttsMuted()) return "mute";
-      ttsInit(); if(tts==null) return "fail";
-      if(!ttsReady){ ttsPend=t; return "wait"; }
-      ui.post(()->{ try{ tts.speak(t, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, "nv"); }catch(Exception e){} });
-      return "ok"; }
-    @JavascriptInterface public void ttsStop(){ ttsPend=null; ui.post(()->{ try{ if(tts!=null) tts.stop(); ttsTalk=false; }catch(Exception e){} js("window.NV_onTts&&NV_onTts('done')"); }); }
-    @JavascriptInterface public String ttsState(){ if(ttsMuted()) return "mute"; if(ttsTalk) return "talk"; if(ttsReady) return "ready"; return "wait"; }
+      if(nvTts==null) return "fail";
+      return nvTts.speak(text,force); }
+    @JavascriptInterface public void ttsStop(){ if(nvTts!=null) nvTts.stop(); }
+    @JavascriptInterface public String ttsState(){ return nvTts==null?"fail":nvTts.state(); }
     // 기본 브라우저로 http(s)만 연다 (검색 결과)
     @JavascriptInterface public boolean openUrl(String url){
       try{ Uri u=Uri.parse(url); String sch=u.getScheme(); if(sch==null) return false; sch=sch.toLowerCase(java.util.Locale.US);

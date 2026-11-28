@@ -67,7 +67,7 @@ public class CalAlarm extends BroadcastReceiver {
 
   static boolean post(Context c,NotificationManager nm,JSONObject o){
     try{ if(nm==null) return false;
-      if(Build.VERSION.SDK_INT>=26){ NotificationChannel ch=new NotificationChannel(CH,"음력 기념일·공휴일 알림",NotificationManager.IMPORTANCE_DEFAULT); ch.setDescription("등록한 음력 생일·기념일의 전날과 당일 아침"); nm.createNotificationChannel(ch); }
+      if(Build.VERSION.SDK_INT>=26){ NotificationChannel ch=new NotificationChannel(CH,"음력 기념일 알림",NotificationManager.IMPORTANCE_DEFAULT); ch.setDescription("등록한 음력 생일·기념일의 전날과 당일 아침"); nm.createNotificationChannel(ch); }
       Intent open=c.getPackageManager().getLaunchIntentForPackage(c.getPackageName()); if(open!=null) open.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TOP);
       PendingIntent pi=open==null?null:PendingIntent.getActivity(c,4702,open,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
       Notification.Builder b=Build.VERSION.SDK_INT>=26?new Notification.Builder(c,CH):new Notification.Builder(c);
