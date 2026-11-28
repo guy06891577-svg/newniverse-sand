@@ -406,6 +406,7 @@ h1 small{font-size:13px;font-weight:600;color:var(--sub)}
 .bgb .grow{flex:1;min-width:0;display:flex;flex-direction:column}
 .bgn{font-size:30px;font-weight:800;letter-spacing:-.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bgs{font-size:15px;color:var(--sub);margin-top:4px;display:flex;align-items:center;gap:6px}
+.bgno{display:block;font-size:16px;color:var(--sub);margin-top:2px;font-variant-numeric:tabular-nums}
 .bgs .mdot{width:9px;height:9px;border-radius:50%;background:var(--red);flex:none}
 .bgc{flex:none;width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--acc)}
 .bgc svg{width:30px;height:30px;stroke:#0a0820}
@@ -1328,7 +1329,7 @@ function renderBig(){const B=bigGet(),el=$('#bgList');
  if(!B.people.length){el.innerHTML=`<div class="empty"><b>큰 버튼에 넣을 사람을 골라 주세요</b>자주 거는 3~4명을 고르면 크게 보여요<br><button data-b="bigset">사람 고르기</button></div>`;return}
  const nmC={};B.people.forEach(x=>{const k=bp(x).name;nmC[k]=(nmC[k]||0)+1});
  el.innerHTML=B.people.map((x,i)=>{const p=bp(x);const dup=nmC[p.name]>1&&!p.unk;const miss=CALLS.some(c=>c.p.key===x.key&&c.type==='miss'&&dayOff(c.t)===0);
-  return `<button class="bgb glass" data-bg="${i}" aria-label="${esc(p.name)}에게 전화"><span class="bgav">${p.unk?ic('user'):esc([...p.name][0]||'')}</span><span class="grow"><span class="bgn">${esc(p.name)}</span><span class="bgs">${dup?esc(fmt(x.num))+' · ':''}${miss?'<i class="mdot"></i>오늘 못 받은 전화 · ':''}누르면 바로 전화</span></span><span class="bgc">${ic('phone',2)}</span></button>`}).join('')}
+  return `<button class="bgb glass" data-bg="${i}" aria-label="${esc(p.name)}에게 전화"><span class="bgav">${p.unk?ic('user'):esc([...p.name][0]||'')}</span><span class="grow"><span class="bgn">${esc(p.name)}</span>${dup?`<span class="bgno">${esc(fmt(x.num))}</span>`:''}<span class="bgs">${miss?'<i class="mdot"></i>오늘 못 받은 전화 · ':''}누르면 바로 전화</span></span><span class="bgc">${ic('phone',2)}</span></button>`}).join('')}
 $('#bgList').addEventListener('click',e=>{const b=e.target.closest('[data-bg]');if(!b)return;const x=bigGet().people[+b.dataset.bg];if(!x)return;buzz();const p=bp(x);toast(`${p.name}에게 전화를 걸어요`);dial(x.num,p)});
 $('#v-big').addEventListener('click',e=>{const b=e.target.closest('[data-bgv]');if(!b)return;buzz();NAV=[];show(b.dataset.bgv)});
 function renderBigSet(){const B=bigGet(),el=$('#bsList');
