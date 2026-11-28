@@ -7,7 +7,7 @@ import android.telephony.TelephonyManager;
 public class ModeSystemReceiver extends BroadcastReceiver {
   @Override public void onReceive(Context c,Intent i){
     String a=i==null?null:i.getAction(); if(a==null) return;
-    if(Intent.ACTION_BOOT_COMPLETED.equals(a)||Intent.ACTION_MY_PACKAGE_REPLACED.equals(a)) ModeManager.resume(c);
+    if(Intent.ACTION_BOOT_COMPLETED.equals(a)||Intent.ACTION_MY_PACKAGE_REPLACED.equals(a)) { ModeManager.resume(c); CalWatch.reschedule(c); }
     else if(TelephonyManager.ACTION_PHONE_STATE_CHANGED.equals(a)){
       String st=i.getStringExtra(TelephonyManager.EXTRA_STATE), num=null;
       try{ num=i.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER); }catch(Exception e){}

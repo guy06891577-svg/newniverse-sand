@@ -40,6 +40,7 @@ public class CallService extends InCallService {
   }
   @Override public void onCallRemoved(Call c){
     c.unregisterCallback(cb); calls.remove(c);
+    noteEnded(this,c);
     refreshNotifs(); tell();
     tracker.removed(this,c);   // 받지 않은 전화(부재중·거절)면 상황 모드의 자동 답장 판단으로
   }
@@ -77,6 +78,21 @@ public class CallService extends InCallService {
   }
   static Call holding(){ synchronized(calls){ for(Call c:calls) if(st(c)==Call.STATE_HOLDING) return c; } return null; }
 
+  /** v6 통화 메모: 방금 끝난 통화 (화면이 「메모 남길까요?」를 물을지 정함) */
+  static volatile JSONObject lastEnd;
+  static void noteEnded(Context ctx,Call c){
+    try{
+      String n=num(c); long since=c.getDetails().getConnectTimeMillis(), t=System.currentTimeMillis();
+      boolean connected=since>0; long dur=connected?Math.max(0,t-since):0;
+      String nm=name(ctx,c); boolean contact=!nm.isEmpty()||(Nv.contactFlags(ctx,n)&1)!=0;
+      int dir=Build.VERSION.SDK_INT>=29?c.getDetails().getCallDirection():-1;
+      JSONObject o=new JSONObject();
+      o.put("id",System.identityHashCode(c)); o.put("num",n); o.put("name",nm); o.put("dur",dur); o.put("contact",contact); o.put("at",t);
+      o.put("dir",dir==Call.Details.DIRECTION_OUTGOING?"out":"in");
+      o.put("offer",MemoRules.shouldOffer(connected,dur,contact,n,calls.size()));
+      lastEnd=o;
+    }catch(Exception e){}
+  }
   static String stateJson(Context ctx){
     JSONObject o=new JSONObject();
     try{
@@ -97,6 +113,7 @@ public class CallService extends InCallService {
         au.put("route",rt==CallAudioState.ROUTE_SPEAKER?"speaker":rt==CallAudioState.ROUTE_BLUETOOTH?"bt":rt==CallAudioState.ROUTE_WIRED_HEADSET?"wired":"earpiece");
         au.put("bt",(cs.getSupportedRouteMask()&CallAudioState.ROUTE_BLUETOOTH)!=0); } }
       o.put("audio",au); o.put("bound",s!=null);
+      JSONObject le=lastEnd; if(le!=null&&System.currentTimeMillis()-le.optLong("at")<10*60000L) o.put("ended",le);
     }catch(Exception e){}
     return o.toString();
   }

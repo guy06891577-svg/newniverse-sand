@@ -95,7 +95,14 @@ public class ShortcutAndManifestTest {
     Set<String> p=perms();
     for(String x:new String[]{"SEND_SMS","READ_SMS","READ_PHONE_STATE","ACCESS_NOTIFICATION_POLICY","RECEIVE_BOOT_COMPLETED","READ_CALL_LOG","READ_CONTACTS","CALL_PHONE"}) assertTrue(x,p.contains("android.permission."+x));
     assertFalse("인터넷 권한 없음",p.contains("android.permission.INTERNET"));
-    assertFalse(p.contains("android.permission.WRITE_SMS")); assertFalse(p.contains("android.permission.RECEIVE_SMS")); assertFalse(p.contains("android.permission.SCHEDULE_EXACT_ALARM")); assertFalse(p.contains("android.permission.USE_EXACT_ALARM"));
+    assertFalse(p.contains("android.permission.WRITE_SMS")); assertFalse(p.contains("android.permission.RECEIVE_SMS"));
+    // v6: 일정 10분 전 알림만 정확한 알람 (안드 13+ USE_EXACT_ALARM, 12 이하는 SCHEDULE_EXACT_ALARM)
+    assertTrue(p.contains("android.permission.USE_EXACT_ALARM"));
+    NodeList l=doc.getElementsByTagName("uses-permission"); for(int i=0;i<l.getLength();i++){ Element e=(Element)l.item(i); if("android.permission.SCHEDULE_EXACT_ALARM".equals(e.getAttributeNS(A,"name"))) assertEquals("32",e.getAttributeNS(A,"maxSdkVersion")); }
+    for(String x:new String[]{"RECORD_AUDIO","WRITE_CONTACTS","READ_CALENDAR"}) assertTrue(x,p.contains("android.permission."+x));
+    assertFalse("카메라 권한 없이 카메라 앱에 맡김",p.contains("android.permission.CAMERA"));
+    assertFalse("사진·파일 읽기 권한 없음",p.contains("android.permission.READ_MEDIA_IMAGES")||p.contains("android.permission.READ_EXTERNAL_STORAGE"));
+    assertFalse(p.contains("android.permission.WRITE_CALENDAR"));
     assertFalse(p.contains("android.permission.CHANGE_NETWORK_STATE")); assertFalse("항공기 모드는 건드리지 않음",p.contains("android.permission.WRITE_SECURE_SETTINGS"));
   }
   @Test public void receiversAndShortcutExposure(){
@@ -108,10 +115,18 @@ public class ShortcutAndManifestTest {
     NodeList acts=byName("receiver",".ModeSystemReceiver").getElementsByTagName("action"); Set<String> a=new HashSet<>(); for(int i=0;i<acts.getLength();i++) a.add(((Element)acts.item(i)).getAttributeNS(A,"name"));
     assertTrue(a.contains("android.intent.action.BOOT_COMPLETED")); assertTrue(a.contains("android.intent.action.MY_PACKAGE_REPLACED")); assertTrue(a.contains("android.intent.action.PHONE_STATE"));
   }
+  @Test public void v6OcrRunsInItsOwnProcessAndNothingIsExported(){
+    Element scan=byName("activity",".CardScanActivity"); assertEquals(":ocr",scan.getAttributeNS(A,"process")); assertEquals("false",scan.getAttributeNS(A,"exported"));
+    Element prov=byName("provider",".CardPhotoProvider"); assertEquals(":ocr",prov.getAttributeNS(A,"process")); assertEquals("false",prov.getAttributeNS(A,"exported")); assertEquals("true",prov.getAttributeNS(A,"grantUriPermissions"));
+    for(String n:new String[]{"com.google.android.datatransport.runtime.backends.TransportBackendDiscovery","com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService"}){ Element e=byName("service",n); assertNotNull(n,e); assertEquals(":ocr",e.getAttributeNS(A,"process")); assertEquals("false",e.getAttributeNS(A,"exported")); }
+    assertEquals("false",byName("service","com.google.mlkit.common.internal.MlKitComponentDiscoveryService").getAttributeNS(A,"exported"));
+    assertNull("ML Kit 자동 시작(InitProvider) 없음 — 명함 읽을 때만 :ocr 에서 켬",byName("provider","com.google.mlkit.common.internal.MlKitInitProvider"));
+    Element app=(Element)doc.getElementsByTagName("application").item(0); assertEquals("false",app.getAttributeNS(A,"usesCleartextTraffic")); assertEquals("false",app.getAttributeNS(A,"allowBackup"));
+  }
   @Test public void noYuniAnywhereInUserFacingStrings() throws Exception {
     String all=new String(java.nio.file.Files.readAllBytes(new File("../../AndroidManifest.xml").toPath()),"UTF-8");
     assertFalse(all.contains("유니")); 
-    for(File f:new File("../../src/kr/newniverse/phone").listFiles((d,n)->n.startsWith("Mode")||n.equals("Dnd.java")||n.equals("CallTracker.java")))
+    for(File f:new File("../../src/kr/newniverse/phone").listFiles((d,n)->n.endsWith(".java")))
       assertFalse(f.getName(),new String(java.nio.file.Files.readAllBytes(f.toPath()),"UTF-8").contains("유니"));
     String html=new String(java.nio.file.Files.readAllBytes(new File("../../assets/www/index.html").toPath()),"UTF-8");
     assertFalse("화면 글에 「유니」 없음",html.contains("유니"));

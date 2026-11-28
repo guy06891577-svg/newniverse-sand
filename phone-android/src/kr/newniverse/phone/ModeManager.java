@@ -32,7 +32,9 @@ final class ModeManager {
 
   // ============ 켜기 / 끄기 ============
   /** 모드 켜기. timerMin: 회의 자동 끝내기(0 = 직접 끌 때까지). 반환 {ok,dnd,keep,sms,def} */
-  static JSONObject start(Context c,String id,int timerMin){
+  static JSONObject start(Context c,String id,int timerMin){ return start(c,id,timerMin,0); }
+  /** v6: endAt > 지금이면 그 시각에 자동으로 꺼짐 (일정 끝나는 시각에 회의 모드 끄기) */
+  static JSONObject start(Context c,String id,int timerMin,long endAt){
     JSONObject r=new JSONObject();
     synchronized(LOCK){
       try{
@@ -43,7 +45,7 @@ final class ModeManager {
         int tm=ModeDefs.timers(id)?ModeDefs.timer(timerMin):0;
         if(ModeDefs.timers(id)&&tm!=cfg.optInt("timer")){ cfg.put("timer",tm); ModeStore.saveCfg(c,id,cfg); }
         JSONObject a=new JSONObject(); long t=now();
-        a.put("id",id); a.put("start",t); a.put("end",tm>0?t+tm*60000L:0); a.put("sent",0);
+        a.put("id",id); a.put("start",t); a.put("end",endAt>t+60000L?endAt:(tm>0?t+tm*60000L:0)); a.put("sent",0);
         a.put("replied",new JSONArray()); a.put("log",new JSONArray()); a.put("skips",new JSONObject()); a.put("seen",new JSONObject());
         JSONObject prev=Dnd.apply(c,cfg.optString("allow"),cfg.optBoolean("repeat"));
         a.put("dnd",prev!=null); a.put("keep",prev!=null&&prev.optBoolean("keep"));

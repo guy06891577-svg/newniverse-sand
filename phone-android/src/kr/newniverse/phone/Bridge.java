@@ -33,6 +33,7 @@ class Bridge {
       p.put("phone",Nv.has(a,Manifest.permission.CALL_PHONE)); p.put("log",Nv.has(a,Manifest.permission.READ_CALL_LOG));
       p.put("wlog",Nv.has(a,Manifest.permission.WRITE_CALL_LOG)); p.put("contacts",Nv.has(a,Manifest.permission.READ_CONTACTS));
       p.put("notif",Build.VERSION.SDK_INT<33||Nv.has(a,Manifest.permission.POST_NOTIFICATIONS));
+      p.put("mic",Nv.has(a,Manifest.permission.RECORD_AUDIO)); p.put("wcontacts",Nv.has(a,Manifest.permission.WRITE_CONTACTS)); p.put("cal",Nv.has(a,Manifest.permission.READ_CALENDAR));
       o.put("perms",p);
       boolean fsi=true; if(Build.VERSION.SDK_INT>=34){ NotificationManager nm=a.getSystemService(NotificationManager.class); fsi=nm!=null&&nm.canUseFullScreenIntent(); }
       o.put("fsi",fsi); o.put("inCall",CallService.inCall()); o.put("sdk",Build.VERSION.SDK_INT); o.put("ver",Nv.VER);
@@ -158,4 +159,97 @@ class Bridge {
   @JavascriptInterface public void addCall(){ a.runOnUiThread(()->{ try{ a.startActivity(new Intent(a,MainActivity.class).setAction(MainActivity.ACTION_ADD).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); }catch(Exception e){} }); }
   @JavascriptInterface public void close(){ a.runOnUiThread(()->{ if(a instanceof CallActivity){ if(!CallService.inCall()) a.finish(); else a.moveTaskToBack(true); } }); }
   @JavascriptInterface public void vibrate(int ms){ try{ Vibrator v=a.getSystemService(Vibrator.class); if(v!=null) v.vibrate(VibrationEffect.createOneShot(Math.max(5,Math.min(ms,60)),VibrationEffect.DEFAULT_AMPLITUDE)); }catch(Exception e){} }
+
+  // ================= v6 =================
+  void js(String s){ if(a instanceof MainActivity) ((MainActivity)a).js(s); else if(a instanceof CallActivity) ((CallActivity)a).js(s); }
+  @JavascriptInterface public boolean locked(){ return VoiceNote.locked(a); }
+
+  // ---------- 통화 메모 ----------
+  @JavascriptInterface public String memoAdd(String num,String name,String text,String src,long dur){ JSONObject o=MemoStore.add(a,num,name,text,src,dur); return o==null?"{}":o.toString(); }
+  @JavascriptInterface public boolean memoEdit(long id,String text){ return MemoStore.edit(a,id,text); }
+  /** 지운 메모를 돌려줌(되돌리기용) */
+  @JavascriptInterface public String memoDel(long id){ JSONObject o=MemoStore.del(a,id); return o==null?"{}":o.toString(); }
+  @JavascriptInterface public boolean memoRestore(String json){ try{ return MemoStore.restore(a,new JSONObject(json)); }catch(Exception e){ return false; } }
+  @JavascriptInterface public String memoList(String num){ JSONArray r=new JSONArray(); for(JSONObject o:MemoStore.forNum(a,num)) r.put(o); return r.toString(); }
+  @JavascriptInterface public String memoPeople(){ return MemoStore.people(a).toString(); }
+
+  /** 단골 한 줄: 잠금 화면이면 {locked:true}만 (메모 내용 숨김). 아니면 {memo,memoAgo,lastAgo,n15} */
+  @JavascriptInterface public String callerLine(String num){
+    JSONObject o=new JSONObject();
+    try{
+      if(VoiceNote.locked(a)){ o.put("locked",true); return o.toString(); }
+      o.put("locked",false); o.put("log",Nv.has(a,Manifest.permission.READ_CALL_LOG));
+      String k=ModeRules.key(num); if(k.isEmpty()) return o.toString();
+      long now=System.currentTimeMillis(); TimeZone tz=TimeZone.getDefault();
+      JSONObject m=MemoStore.latest(a,num);
+      if(m!=null){ o.put("memo",MemoRules.snippet(m.optString("text"),60)); o.put("memoAgo",MemoRules.ago(now,m.optLong("at"),tz)); o.put("memoN",MemoStore.forNum(a,num).size()); }
+      long[] lg=lastCall(k);
+      if(lg[0]>0){ o.put("lastAgo",MemoRules.ago(now,lg[0],tz)); o.put("last",lg[0]); }
+      o.put("n15",lg[1]);
+    }catch(Exception e){}
+    return o.toString();
+  }
+  static final Map<String,long[]> lineCache=new HashMap<>();
+  /** {마지막 통화 시각, 15일 통화 수} (20초 캐시) */
+  long[] lastCall(String k){
+    long now=System.currentTimeMillis();
+    synchronized(lineCache){ long[] c=lineCache.get(k); if(c!=null&&now-c[2]<20000) return c; }
+    long last=0,n15=0;
+    if(Nv.has(a,Manifest.permission.READ_CALL_LOG)){
+      Uri u=CallLog.Calls.CONTENT_URI.buildUpon().appendQueryParameter(CallLog.Calls.LIMIT_PARAM_KEY,"3000").build();
+      try(Cursor q=a.getContentResolver().query(u,new String[]{CallLog.Calls.NUMBER,CallLog.Calls.DATE},CallLog.Calls.DATE+">=?",new String[]{String.valueOf(now-365L*86400000L)},CallLog.Calls.DATE+" DESC")){
+        while(q!=null&&q.moveToNext()){ if(!k.equals(ModeRules.key(q.getString(0)))) continue; long d=q.getLong(1); if(last==0) last=d; if(now-d<=15L*86400000L) n15++; else if(last>0) break; }
+      }catch(Exception e){}
+    }
+    long[] r={last,n15,now}; synchronized(lineCache){ if(lineCache.size()>50) lineCache.clear(); lineCache.put(k,r); } return r;
+  }
+
+  // ---------- 음성 메모 (결과는 NV_voice) ----------
+  @JavascriptInterface public String voicePlan(){ return VoiceNote.plan(a); }
+  @JavascriptInterface public void voiceStart(){ a.runOnUiThread(()->{ String r=VoiceNote.start(a,j->js("window.NV_voice&&NV_voice("+j+")"));
+    js("window.NV_voice&&NV_voice({st:'start',res:"+JSONObject.quote(r)+"})"); }); }
+  @JavascriptInterface public void voiceStop(){ a.runOnUiThread(VoiceNote::stop); }
+  @JavascriptInterface public void voiceCancel(){ a.runOnUiThread(VoiceNote::cancel); }
+  /** 통화 끝난 뒤 메모 카드가 떠 있는 동안 화면을 닫지 않음 */
+  @JavascriptInterface public void holdOpen(boolean b){ a.runOnUiThread(()->{ if(a instanceof CallActivity) ((CallActivity)a).setHold(b); }); }
+
+  // ---------- 차단 ----------
+  @JavascriptInterface public String blockInfo(){ JSONObject o=new JSONObject(); try{ o.put("def",Nv.isDefault(a)); o.put("can",Blocker.can(a)); }catch(Exception e){} return o.toString(); }
+  @JavascriptInterface public String block(String num){ String r=Blocker.block(a,num); synchronized(lineCache){ lineCache.clear(); } return r; }
+  @JavascriptInterface public int unblock(String num){ return Blocker.unblock(a,num); }
+  @JavascriptInterface public String blockList(){ return Blocker.can(a)?Blocker.list(a).toString():"[]"; }
+  @JavascriptInterface public String blockKeys(){ return Blocker.can(a)?new JSONArray(Blocker.keys(a)).toString():"[]"; }
+  @JavascriptInterface public boolean isEmergency(String num){ return Blocker.emergency(a,num); }
+
+  // ---------- 명함 → 연락처 (결과는 NV_card) ----------
+  @JavascriptInterface public void cardScan(String src){ a.runOnUiThread(()->{
+    try{ Intent i=new Intent().setClassName(a,"kr.newniverse.phone.CardScanActivity").putExtra("src","camera".equals(src)?"camera":"gallery");
+      a.startActivityForResult(i,MainActivity.RQ_CARD); }
+    catch(Exception e){ js("window.NV_card&&NV_card({ok:false,err:'start'})"); } }); }
+  /** 주소록에 바로 저장. 반환 ok · perm(허용 창 띄움 → NV_perm('contacts',…)) · empty · fail */
+  @JavascriptInterface public String cardSave(String json){
+    try{ JSONObject f=new JSONObject(json);
+      String r=ContactSaver.save(a,f);
+      if("perm".equals(r)) a.runOnUiThread(()->a.requestPermissions(new String[]{Manifest.permission.WRITE_CONTACTS},MainActivity.RQ_CONTACTS));
+      return r;
+    }catch(Exception e){ return "fail"; } }
+  /** 허용을 안 주면: 휴대폰 주소록 앱의 「새 연락처」 화면에 채워서 열기 */
+  @JavascriptInterface public void cardInsert(String json){ a.runOnUiThread(()->{ try{ JSONObject f=new JSONObject(json);
+    Intent i=new Intent(ContactsContract.Intents.Insert.ACTION); i.setType(ContactsContract.RawContacts.CONTENT_TYPE);
+    String n=ContactSaver.t(f,"name"),m=ContactSaver.t(f,"mobile"),t=ContactSaver.t(f,"tel"),co=ContactSaver.t(f,"company"),ti=ContactSaver.t(f,"title"),em=ContactSaver.t(f,"email");
+    if(!n.isEmpty()) i.putExtra(ContactsContract.Intents.Insert.NAME,n);
+    if(!m.isEmpty()){ i.putExtra(ContactsContract.Intents.Insert.PHONE,m); i.putExtra(ContactsContract.Intents.Insert.PHONE_TYPE,ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE); }
+    if(!t.isEmpty()){ if(m.isEmpty()){ i.putExtra(ContactsContract.Intents.Insert.PHONE,t); i.putExtra(ContactsContract.Intents.Insert.PHONE_TYPE,ContactsContract.CommonDataKinds.Phone.TYPE_WORK); }
+      else { i.putExtra(ContactsContract.Intents.Insert.SECONDARY_PHONE,t); i.putExtra(ContactsContract.Intents.Insert.SECONDARY_PHONE_TYPE,ContactsContract.CommonDataKinds.Phone.TYPE_WORK); } }
+    if(!co.isEmpty()) i.putExtra(ContactsContract.Intents.Insert.COMPANY,co);
+    if(!ti.isEmpty()) i.putExtra(ContactsContract.Intents.Insert.JOB_TITLE,ti);
+    if(!em.isEmpty()){ i.putExtra(ContactsContract.Intents.Insert.EMAIL,em); i.putExtra(ContactsContract.Intents.Insert.EMAIL_TYPE,ContactsContract.CommonDataKinds.Email.TYPE_WORK); }
+    a.startActivity(i); }catch(Exception e){} }); }
+
+  // ---------- 일정 전 회의 모드 ----------
+  @JavascriptInterface public String calInfo(){ return CalWatch.soonJson(a).toString(); }
+  @JavascriptInterface public void calMode(String m){ CalWatch.setMode(a,m); }
+  @JavascriptInterface public void calAsk(){ a.runOnUiThread(()->{ if(Nv.has(a,Manifest.permission.READ_CALENDAR)){ CalWatch.reschedule(a); js("window.NV_perm&&NV_perm('cal',true)"); } else a.requestPermissions(new String[]{Manifest.permission.READ_CALENDAR},MainActivity.RQ_CAL); }); }
+  @JavascriptInterface public String calOn(String key,long end){ return CalWatch.turnOn(a,key,end).toString(); }
+  @JavascriptInterface public void calNo(String key){ if(key!=null) CalWatch.dismiss(a,key); }
 }

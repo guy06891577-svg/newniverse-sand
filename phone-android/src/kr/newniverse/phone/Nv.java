@@ -13,8 +13,8 @@ import android.webkit.*;
 
 /** 공용 도구: 알림 채널, 권한·기본 앱 확인, 연락처 이름 찾기, 번호 모양, WebView 설정 */
 final class Nv {
-  static final String CH_IN="incoming2", CH_ON="ongoing", CH_MISS="missed", CH_MODE="mode", CH_MODE_END="modeend";
-  static final String VER="5-test";
+  static final String CH_IN="incoming2", CH_ON="ongoing", CH_MISS="missed", CH_MODE="mode", CH_MODE_END="modeend", CH_CAL="calsoon";
+  static final String VER="6-test";
 
   static void channels(Context c){
     NotificationManager nm=c.getSystemService(NotificationManager.class);
@@ -30,6 +30,8 @@ final class Nv {
     NotificationChannel m=new NotificationChannel(CH_MODE,"상황 모드 켜짐",NotificationManager.IMPORTANCE_LOW);
     m.setShowBadge(false); nm.createNotificationChannel(m);
     nm.createNotificationChannel(new NotificationChannel(CH_MODE_END,"상황 모드 끝난 뒤 요약",NotificationManager.IMPORTANCE_DEFAULT));
+    // v6 일정 10분 전 「회의 모드 켤까요?」
+    nm.createNotificationChannel(new NotificationChannel(CH_CAL,"일정 전 회의 모드 묻기",NotificationManager.IMPORTANCE_DEFAULT));
   }
 
   static boolean has(Context c,String p){ return c.checkSelfPermission(p)==PackageManager.PERMISSION_GRANTED; }

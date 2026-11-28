@@ -9,6 +9,9 @@ public class ModeActionReceiver extends BroadcastReceiver {
     String a=i==null?null:i.getAction(); if(a==null) return;
     if(ModeManager.ACT_STOP.equals(a)) ModeManager.stop(c,"manual");
     else if(ModeManager.ACT_END.equals(a)) ModeManager.tick(c);
+    else if(CalWatch.ACT_ALARM.equals(a)) CalWatch.onAlarm(c);
+    else if(CalWatch.ACT_ON.equals(a)) CalWatch.turnOn(c,i.getStringExtra("key"),i.getLongExtra("end",0));
+    else if(CalWatch.ACT_NO.equals(a)){ String k=i.getStringExtra("key"); if(k!=null) CalWatch.dismiss(c,k); }
     else if(ModeManager.ACT_SMS_SENT.equals(a)){ String k=i.getStringExtra("k"); if(k!=null) ModeStore.markSent(c,k,getResultCode()==Activity.RESULT_OK); }
   }
 }
