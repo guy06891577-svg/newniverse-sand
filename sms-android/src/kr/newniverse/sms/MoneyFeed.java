@@ -8,7 +8,7 @@ import org.json.JSONObject;
 import java.util.*;
 
 /**
- * v10: 받은 문자함에서 입금·출금 예정 문자를 그때그때 읽어 요약을 만든다 (따로 복사해 저장하지 않음, 폰 밖으로 안 나감).
+ * v11: 받은 문자함에서 입금·출금 예정 문자를 그때그때 읽어 요약을 만든다 (따로 복사해 저장하지 않음, 폰 밖으로 안 나감).
  * 화면(입금 화면) · 런처(같은 서명 앱만, FeedProvider "money") · 음성 질문 ‘오늘 입금 얼마야’ 가 같은 JSON 을 씀.
  * 결과에는 은행·보낸 사람·금액·시각만 있고, 문자 본문과 계좌번호는 없다.
  */
@@ -36,7 +36,7 @@ final class MoneyFeed {
         if(body==null||date<=since) continue;
         if(date>=depSince){
           DepositParser.Res r=DepositParser.parse(addr,body,date);
-          if(r.ok){ MoneyLogic.Item it=new MoneyLogic.Item(); it.bank=r.dep.bank; it.who=r.dep.who; it.amt=r.dep.amount; it.at=r.dep.at; it.mobile=r.dep.mobile; deps.add(it); continue; }
+          if(r.ok){ MoneyLogic.Item it=new MoneyLogic.Item(); it.bank=r.dep.bank; it.who=r.dep.who; it.kind=r.dep.kind; it.amt=r.dep.amount; it.at=r.dep.at; it.mobile=r.dep.mobile; deps.add(it); continue; }
           if(r.suspect) suspect++;
         }
         BillParser.Res b=BillParser.parse(addr,body,date);
@@ -53,15 +53,18 @@ final class MoneyFeed {
   static JSONObject bucket(MoneyLogic.Bucket b,String when) throws Exception {
     JSONObject o=new JSONObject(); o.put("sum",b.sum); o.put("n",b.n); o.put("text",b.n==0?"없음":MoneyLogic.won(b.sum)); o.put("line",MoneyLogic.line(when,b)); o.put("say",MoneyLogic.say(b,when));
     JSONArray a=new JSONArray(); int k=0;
-    for(MoneyLogic.Item it:b.items){ if(k++>=100) break; JSONObject x=new JSONObject(); x.put("at",it.at); x.put("bank",it.bank); x.put("who",it.who); x.put("amt",it.amt); x.put("t",MoneyLogic.full(it.amt)); a.put(x); }
-    o.put("items",a); return o;
+    for(MoneyLogic.Item it:b.items){ if(k++>=100) break; JSONObject x=new JSONObject(); x.put("at",it.at); x.put("bank",it.bank); x.put("who",it.who); x.put("amt",it.amt); x.put("t",MoneyLogic.full(it.amt)); x.put("kind",MoneyLogic.depKindOf(it)); x.put("kindLabel",MoneyLogic.depKindLabel(it.kind)); a.put(x); }
+    JSONArray ks=new JSONArray();
+    long[][] sm=MoneyLogic.kindSums(b);
+    for(int i=0;i<3;i++) if(sm[i][1]>0){ JSONObject x=new JSONObject(); x.put("id",MoneyLogic.KIND_ID[i]); x.put("label",MoneyLogic.KIND_LB[i]); x.put("sum",sm[i][0]); x.put("n",sm[i][1]); x.put("text",MoneyLogic.won(sm[i][0])); ks.put(x); }
+    o.put("kinds",ks); o.put("items",a); return o;
   }
 
   static JSONObject json(Context c,long now){
     JSONObject o=new JSONObject();
     try{
       boolean perm=Nv.has(c,android.Manifest.permission.READ_SMS);
-      o.put("ver",1); o.put("ok",true); o.put("perm",perm); o.put("on",on(c)); o.put("asof",now); o.put("note",MoneyLogic.NOTE);
+      o.put("ver",2); o.put("ok",true); o.put("perm",perm); o.put("on",on(c)); o.put("asof",now); o.put("note",MoneyLogic.NOTE);
       if(!perm||!on(c)){ o.put("empty",true); return o; }
       Data d=load(c,now);
       o.put("today",bucket(d.sum.today,"오늘")); o.put("yesterday",bucket(d.sum.yesterday,"어제")); o.put("week",bucket(d.sum.week,"이번 주"));

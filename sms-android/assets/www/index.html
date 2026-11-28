@@ -144,6 +144,13 @@ em{font-style:normal;color:var(--a1);font-weight:700}
 .msum .lb{font-size:13px;font-weight:700;color:var(--sub)}
 .msum .big{font-size:34px;font-weight:800;letter-spacing:-1px;margin-top:4px;background:var(--acc);-webkit-background-clip:text;background-clip:text;color:transparent}
 .msum .sub{font-size:13.5px;color:var(--sub);margin-top:2px}
+.mkinds{display:flex;flex-direction:column;gap:6px;margin:0 0 12px}
+.mkind{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:16px}
+.mkind .mi2{flex:none;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(143,107,255,.16);border:1px solid rgba(160,190,255,.22);color:var(--a1)}
+.mkind .mi2 svg{width:16px;height:16px}
+.mkind .kl{flex:1;min-width:0;font-size:14px;font-weight:700}
+.mkind small{flex:none;font-size:12px;color:var(--sub)}
+.mkind .kv{flex:none;font-size:14px;font-weight:800;letter-spacing:-.2px;white-space:nowrap}
 .mrow{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:18px;margin-bottom:6px}
 .mrow .tm2{flex:none;width:62px;font-size:12px;color:var(--sub);line-height:1.35}
 .mrow .mid{flex:1;min-width:0}
@@ -246,7 +253,10 @@ const P={
  retry:'<path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5"/><path d="M20 12a8 8 0 0 1-14 5.3L4 15M4 20v-5h5"/>',
  coin:'<circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.6c.5-.9 1.4-1.4 2.4-1.4 1.4 0 2.4.8 2.4 1.9s-1 1.6-2.4 1.9-2.4.8-2.4 1.9 1 1.9 2.4 1.9c1 0 1.9-.5 2.4-1.4M12 6.4v1.8M12 15.8v1.8"/>',
  out:'<path d="M7 17L17 7M9 7h8v8"/>',
- hash:'<path d="M5 9h14M5 15h14M10 4l-2 16M16 4l-2 16"/>'
+ hash:'<path d="M5 9h14M5 15h14M10 4l-2 16M16 4l-2 16"/>',
+ xfer:'<path d="M7 8h11M15 5l3 3-3 3M17 16H6M9 13l-3 3 3 3"/>',
+ card:'<rect x="3.5" y="7" width="17" height="11" rx="2"/><path d="M3.5 11h17"/>',
+ voucher:'<path d="M5 7h10.5a1.5 1.5 0 0 1 0 3 1.5 1.5 0 0 1 0 3 1.5 1.5 0 0 1 0 3H5a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M8 7v11"/>'
 };
 const ic=(n,sw=1.7)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${P[n]||P.msg}</svg>`;
 function icons(root){(root||document).querySelectorAll('[data-i]').forEach(e=>{if(!e.querySelector('svg'))e.insertAdjacentHTML('afterbegin',ic(e.dataset.i))})}
@@ -588,7 +598,7 @@ function renderSettings(){status();calStatus();const p=ST.perms||{};const yes=b=
  </div>
  <div class="set glass" id="moBox"><h3>MMS 보내기 기록 (시험)</h3>${moRows(dv.d)}</div>
  <div class="set glass"><h3>알아 두기</h3>
-  <div class="steps">문자 내용은 폰 밖으로 나가지 않아요 (인터넷 권한 없음).<br>사진·장문(LMS/MMS)은 기본 문자 앱일 때 받아서 저장해요. 긴 글(한 통 70자를 넘는 한글 등)은 장문(LMS) 한 통으로 보내요. 사진 보내기는 아직 안 돼요.<br>입금 요약·출금 예정은 이 폰 안의 문자만 읽어요(빠른 확인용).<br>뉴니버스 문자 v10 시험판 · ${esc(ST.ver||'')} · 안드로이드 ${ST.sdk||'?'}</div>
+  <div class="steps">문자 내용은 폰 밖으로 나가지 않아요 (인터넷 권한 없음).<br>사진·장문(LMS/MMS)은 기본 문자 앱일 때 받아서 저장해요. 긴 글(한 통 70자를 넘는 한글 등)은 장문(LMS) 한 통으로 보내요. 사진 보내기는 아직 안 돼요.<br>입금 요약·출금 예정은 이 폰 안의 문자만 읽어요(빠른 확인용).<br>뉴니버스 문자 v11 시험판 · ${esc(ST.ver||'')} · 안드로이드 ${ST.sdk||'?'}</div>
  </div>`;bindB($('#setList'))}
 $('#sBack').onclick=()=>{buzz();goList()};
 
@@ -629,12 +639,25 @@ function moneyView(){const seg=$('#mSeg'),L=$('#moneyList');if(!seg||!L||cur!=='
  } else {
   const B=M[mTab]||{n:0,items:[]},nm={today:'오늘',yesterday:'어제',week:'이번 주'}[mTab];
   h+=`<div class="msum glass"><div class="lb">${nm} 입금</div><div class="big">${B.n?esc(B.text):'없음'}</div><div class="sub">${B.n?B.n+'건':'이 기간에 들어온 입금 문자가 없어요'}</div></div>`;
+  h+=kindRows(B);
   h+=B.items.map(x=>`<div class="mrow glass"><div class="tm2">${mTab==='today'?hm(x.at):esc(mDate(x.at)).replace(' ','<br>')}</div><div class="mid"><div class="nm2">${esc(x.who||'보낸 사람 표시 없음')}</div><span class="pill">${esc(x.bank)}</span></div><div class="am">${esc(x.t)}</div></div>`).join('');
   if(!B.n)h+=`<div class="mnote">은행에서 입금을 <b>문자</b>로 알려 주는 계좌만 보여요. 앱 알림(푸시)으로만 받는 계좌는 문자함에 없어서 안 보여요.</div>`;
   if(M.suspect)h+=`<div class="mnote">입금이라고 적혀 있지만 링크·광고·개인 번호에서 와서 <b>세지 않은 문자 ${M.suspect}통</b>이 있어요. 가짜 입금 문자일 수 있으니 은행 앱에서 꼭 확인하세요.</div>`;
   h+=`<div class="mnote">계좌번호는 화면에 보여 주지 않아요. ${esc(M.note)} 은행이 문자 형식을 바꾸면 틀릴 수 있어요.</div>`;
  }
  L.innerHTML=h}
+function kindRows(B){
+  const order=[['transfer','계좌이체','xfer'],['card','카드 정산','card'],['voucher','상품권 정산','voucher']];
+  let ks=B&&B.kinds;
+  if(!Array.isArray(ks)||!ks.length){
+    const map={transfer:{sum:0,n:0},card:{sum:0,n:0},voucher:{sum:0,n:0}};
+    (B&&B.items||[]).forEach(x=>{const k=x.kind||'transfer'; if(!map[k])map[k]={sum:0,n:0}; map[k].sum+=(+x.amt||0); map[k].n++;});
+    ks=order.map(([id,label])=>({id,label,sum:map[id].sum,n:map[id].n,text:wonShort(map[id].sum)})).filter(x=>x.n>0);
+  }else ks=ks.filter(x=>x.n>0);
+  if(!ks.length) return '';
+  const ico={transfer:'xfer',card:'card',voucher:'voucher'};
+  return '<div class="mkinds">'+ks.map(x=>`<div class="mkind glass"><span class="mi2">${ic(ico[x.id]||'coin')}</span><b class="kl">${esc(x.label)}</b><small>${x.n}건</small><b class="kv">${esc(x.text||wonShort(x.sum))}</b></div>`).join('')+'</div>';
+}
 function wonShort(v){v=+v||0;if(v<10000)return v.toLocaleString('ko-KR')+'원';const e=Math.floor(v/1e8),m=Math.floor(v%1e8/1e4),r=v%1e4;let s='';if(e)s+=e.toLocaleString('ko-KR')+'억';if(m)s+=(s?' ':'')+m.toLocaleString('ko-KR')+'만';return r?s+' '+r.toLocaleString('ko-KR')+'원':s+' 원'}
 
 /* ---------- 화면 전환 · 안드로이드 신호 ---------- */

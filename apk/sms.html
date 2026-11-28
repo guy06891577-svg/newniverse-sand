@@ -1,6 +1,6 @@
 <!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
-<title>뉴니버스 문자 v10 (시험판) 설치</title>
+<title>뉴니버스 문자 v11 (시험판) 설치</title>
 <style>body{font-family:system-ui,"Noto Sans KR",sans-serif;background:#07061a;color:#fff;margin:0;padding:22px;line-height:1.7;font-size:18px}
 h1{font-size:26px;margin:0 0 6px}h2{font-size:20px;margin:28px 0 8px;color:#9fd8ff}.sub{opacity:.72;font-size:15px}
 a.dl{display:block;text-align:center;margin:18px 0;padding:18px;border-radius:22px;background:linear-gradient(135deg,#6fd3ff,#8f6bff);color:#0a0820;font-weight:800;font-size:21px;text-decoration:none}
@@ -9,10 +9,15 @@ a.dl{display:block;text-align:center;margin:18px 0;padding:18px;border-radius:22
 ol,ul{padding-left:22px}li{margin:7px 0}b{color:#c9b8ff}
 img.shot{width:31%;border-radius:14px;margin:1%;vertical-align:top}</style></head><body>
 <img src="sms-icon-512.png" width="88" height="88" alt="" style="border-radius:22px;float:right">
-<h1>뉴니버스 문자 v10 (시험판)</h1><div class="sub">버전 10-test · 뉴니버스 고정 서명(런처·전화와 같은 서명) · 따로 까는 앱 · 인터넷 권한 없음</div>
-<a class="dl" href="newniverse-sms-v10-test.apk" download>내려받기 · 뉴니버스 문자 v10 (약 0.20MB)</a>
+<h1>뉴니버스 문자 v11 (시험판)</h1><div class="sub">버전 11-test · 뉴니버스 고정 서명(런처·전화와 같은 서명) · 따로 까는 앱 · 인터넷 권한 없음</div>
+<a class="dl" href="newniverse-sms-v11-test.apk" download>내려받기 · 뉴니버스 문자 v11 (약 0.20MB)</a>
 
 
+<h2>v11에서 새로 된 것 · 실물 농협 문자 · 종류별 합계</h2><ul>
+<li><b>대표님 실제 농협 입금 문자</b>(발신 1588-2100)를 그대로 읽어 시험했어요. 「농협 입금173,688원」 형식과 <b>「자동입금」</b>(출금으로 오인하지 않음)을 읽어요. 잔액 숫자는 입금액으로 세지 않아요.</li>
+<li>합계 카드 아래에 <b>계좌이체 / 카드 정산 / 상품권 정산</b> 종류별 금액·건수를 나눠 보여 줘요(0건인 종류는 숨겨요).</li>
+<li>카드 매출 정산 문자 <b>(KB112150583)</b>은 <b>「KB카드 정산」</b>으로, 안동사랑상품권 정산 <b>(안동정산)</b>은 <b>「안동사랑상품권 정산」</b>으로 보여 줘요. 다른 카드사 접두어(신한·하나·BC·삼성·롯데·현대·NH·우리 등, 공개 자료로 확인된 것만)도 같은 방식으로 쉬운 이름을 붙이고, 모르는 접두어는 원문 그대로 둡니다.</li>
+<li>보낸 사람이 이름처럼 보이지 않는 거래 코드(예: 735439339B)는 보낸 사람 칸을 비워요.</li></ul>
 <h2>v10에서 새로 된 것 · 입금 모아 보기 · 나갈 돈 미리 알림</h2><ul>
 <li><b>입금 요약</b>: 은행이 문자로 알려 주는 입금을 읽어 <b>「오늘 입금 35만 원 · 3건」</b>처럼 보여 줘요. 문자 목록 맨 위 카드를 누르거나 <b>⋮ › 입금 · 나갈 돈</b>에서 <b>오늘 · 어제 · 이번 주</b>(월~일)와 건별(<b>시각 · 은행 · 보낸 사람 · 금액</b>)을 봐요. <b>계좌번호는 화면에 보여 주지 않고 저장도 안 해요.</b></li>
 <li><b>세지 않는 문자</b>: 출금 · 카드 승인/결제 · 잔액 조회 · 입금 취소 · 광고 · <b>링크가 든 문자(입금 사칭)</b> · 「입금해 주세요」 같은 부탁 · 은행 이름이 없는 문자 · <b>010 같은 개인 번호에서 온 문자</b>. 입금처럼 보이지만 뺀 문자가 있으면 “세지 않은 문자 N통”이라고 알려 줘요(가짜 입금 문자 조심).</li>
@@ -21,13 +26,16 @@ img.shot{width:31%;border-radius:14px;margin:1%;vertical-align:top}</style></hea
 <li>모두 <b>이 폰 안</b>에서만 읽어요(인터넷 권한 없음). 설정 › <b>입금 · 나갈 돈</b>에서 끌 수 있어요. 런처에는 같은 서명의 뉴니버스 런처만 요약을 가져갈 수 있어요(런처 쪽 연결은 다음 버전).</li></ul>
 <h2>지원하는 은행 · 형식 확인 여부</h2>
 <div class="box"><table style="width:100%;border-collapse:collapse;font-size:15px">
-<tr><td><b>NH농협은행 · 지역 단위농협</b></td><td>공개 샘플 확인(NH 형식). 「○○농협」 이름 붙은 문자는 같은 형식이라고 보고 읽음 · 단위농협은 실제 문자 미확인</td></tr>
+<tr><td><b>NH농협은행 · 지역 단위농협</b></td><td>실제 폰 문자 확인(대표님 캡처 3건, 발신 1588-2100: 입금·자동입금·카드정산·상품권정산). 「○○농협」 이름 붙은 단위농협 문자는 같은 형식으로 읽음 · 단위농협 실물 문자는 아직 미확인</td></tr>
 <tr><td>KB국민 · 신한 · 우리 · 하나 · IBK기업</td><td>공개 샘플 확인 (줄바꿈형/한 줄형)</td></tr>
 <tr><td>카카오뱅크 · 새마을금고</td><td>공개 샘플 확인 (각 1~2건)</td></tr>
 <tr><td>토스뱅크</td><td>앱 알림 문구(「○○님이 ○○원을 보냈어요」)만 확인 · 문자 형식 미확인</td></tr>
 <tr><td>iM(대구) · 부산 · 경남 · 광주 · 전북 · 제주 · SC제일 · 씨티 · 수협 · 신협 · 우체국 · 산업 · 케이뱅크</td><td><b>형식 미확인</b> — 입금 · 금액 · 은행 이름 · (시각/가린 계좌/잔액) 일반 규칙으로 읽음</td></tr></table>
-<div class="sub">‘공개 샘플’은 공개된 자료의 예시 문자로 시험했다는 뜻이고, 실제 폰에서 받은 문자로 확인한 것은 아직 없어요. 문자가 안 읽히면 <b>보낸 사람 · 금액 · 날짜만 가린 문자</b>를 알려 주세요.</div></div>
-<h2>v10 시험 방법 (실제 폰)</h2><ol>
+<div class="sub">NH농협(대표번호 1588-2100)은 대표님 실제 문자 3건으로 확인했어요. 그 밖 ‘공개 샘플’은 공개된 자료의 예시 문자로 시험한 것이고, 해당 은행의 실제 폰 문자로 확인한 것은 아직 없어요. 문자가 안 읽히면 <b>보낸 사람 · 금액 · 날짜만 가린 문자</b>를 알려 주세요.</div></div>
+<h2>v11 시험 방법 (실제 폰)</h2><ol>
+<li>이미 v10이 있으면 이 페이지에서 v11을 덮어 설치해요. 문자는 그대로예요.</li>
+<li>농협 입금 문자(일반 입금·<b>자동입금</b>)가 오면 목록 맨 위 카드 합계와, 눌러 들어간 화면의 <b>계좌이체 / 카드 정산 / 상품권 정산</b> 나눠 보기가 은행 앱과 같은지 봐요. 카드 정산은 「KB카드 정산」처럼, 안동사랑상품권은 「안동사랑상품권 정산」으로 보여야 해요. 계좌번호는 화면에 없어야 해요.</li>
+
 <li>은행 입금 알림을 <b>문자</b>로 받는 계좌의 입금이 오면(또는 오늘 이미 온 입금 문자가 있으면) 문자 목록 맨 위에 <b>오늘 입금 ○○원 · ○건</b> 카드가 떠요. 눌러서 <b>은행 · 보낸 사람 · 금액 · 시각</b>이 은행 앱과 같은지 봐요.</li>
 <li><b>다른 폰에서 은행 문자를 흉내 내 보내면 세지 않아요</b>(개인 번호라서). 그래서 시험은 실제 입금 문자로 해 주세요. “세지 않은 문자 N통”에 잡히는 건 정상이에요.</li>
 <li>⋮ › 입금 · 나갈 돈 › <b>나갈 돈</b>에 공과금·통신·카드 대금 출금 예정이 날짜순으로 보이는지, 이미 낸 것이 섞이지 않았는지 봐요. 출금 하루 전 오전에 <b>내일 출금 예상</b> 알림이 오는지도 봐요. (알림을 받으려면 알림 권한이 필요해요.)</li>
@@ -112,7 +120,7 @@ img.shot{width:31%;border-radius:14px;margin:1%;vertical-align:top}</style></hea
 
 <h2>1. 설치하기</h2><ol>
 <li><b>Play 프로텍트 검사 잠시 끄기</b>: Play 스토어 → 프로필 사진 → Play 프로텍트 → 톱니바퀴 → ‘Play 프로텍트로 앱 검사’ 끄기.</li>
-<li>이 폰의 크롬에서 위 <b>내려받기</b> → 내 파일 › 다운로드 › <b>newniverse-sms-v10-test.apk</b> → (출처 허용) → <b>설치</b>(이미 이전 버전이 있으면 덮어 깔아요. 문자는 그대로예요).</li>
+<li>이 폰의 크롬에서 위 <b>내려받기</b> → 내 파일 › 다운로드 › <b>newniverse-sms-v11-test.apk</b> → (출처 허용) → <b>설치</b>(이미 이전 버전이 있으면 덮어 깔아요. 문자는 그대로예요).</li>
 <li>설치가 끝나면 <b>Play 프로텍트 검사를 다시 켜기</b>.</li></ol>
 
 <h2>2. 처음 켜기 (권한)</h2><ol>

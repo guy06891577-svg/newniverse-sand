@@ -96,7 +96,16 @@ public class MoneyRoboTest {
     assertEquals("KB국민", it.getJSONObject(0).getString("bank")); // 최신순
     assertEquals("안동농협", it.getJSONObject(1).getString("bank")); assertEquals("박영희", it.getJSONObject(1).getString("who"));
     assertEquals("NH농협", it.getJSONObject(2).getString("bank")); assertEquals("홍길동", it.getJSONObject(2).getString("who"));
-    for (int i = 0; i < it.length(); i++) assertEquals(new HashSet<>(Arrays.asList("at","bank","who","amt","t")), keys(it.getJSONObject(i)));
+    for (int i = 0; i < it.length(); i++) {
+      assertEquals(new HashSet<>(Arrays.asList("at","bank","who","amt","t","kind","kindLabel")), keys(it.getJSONObject(i)));
+      assertEquals("transfer", it.getJSONObject(i).getString("kind"));
+    }
+    org.json.JSONArray ks = t.getJSONArray("kinds");
+    assertEquals(1, ks.length());
+    assertEquals("transfer", ks.getJSONObject(0).getString("id"));
+    assertEquals("계좌이체", ks.getJSONObject(0).getString("label"));
+    assertEquals(350000, ks.getJSONObject(0).getLong("sum"));
+    assertEquals(3, ks.getJSONObject(0).getInt("n"));
   }
   static Set<String> keys(JSONObject o) { Set<String> s = new HashSet<>(); Iterator<String> k = o.keys(); while (k.hasNext()) s.add(k.next()); return s; }
 
@@ -211,5 +220,33 @@ public class MoneyRoboTest {
     nm().cancelAll(); SMS.clear(); sms(kst(2026,11,28,13,0), "15881234", "[삼성화재] 12/20 보험료 123,000원 자동이체 예정");
     BillScheduler.refresh(app, NOW);
     assertEquals(0, nm().getActiveNotifications().length);
+  }
+
+  @Test public void realNhSamples_kindsAndNoAccount() throws Exception {
+    sms(kst(2026,11,27,10,3), "1588-2100", "[Web발신]\n농협 입금173,688원\n11/27 10:02 302-****-9227-51\n735439339B 잔액2,833,793원");
+    sms(kst(2026,11,27,10,9), "1588-2100", "[Web발신]\n농협11/27 10:08 302-****-9227-51\n자동입금17,696원(KB112150583)\n잔액2,851,489원");
+    sms(kst(2026,11,27,14,6), "1588-2100", "[Web발신]\n농협11/27 14:05 302-****-9227-51\n자동입금58,000원(안동정산)\n잔액2,909,489원");
+    JSONObject o = MoneyFeed.json(app, kst(2026,11,27,18,0));
+    assertEquals(o.toString(), 249384, o.getJSONObject("today").getLong("sum"));
+    assertEquals(3, o.getJSONObject("today").getInt("n"));
+    assertEquals("오늘 입금 24만 9,384원 · 3건", o.getString("line"));
+    org.json.JSONArray ks = o.getJSONObject("today").getJSONArray("kinds");
+    assertEquals(3, ks.length());
+    assertEquals("계좌이체", ks.getJSONObject(0).getString("label")); assertEquals(173688, ks.getJSONObject(0).getLong("sum"));
+    assertEquals("카드 정산", ks.getJSONObject(1).getString("label")); assertEquals(17696, ks.getJSONObject(1).getLong("sum"));
+    assertEquals("상품권 정산", ks.getJSONObject(2).getString("label")); assertEquals(58000, ks.getJSONObject(2).getLong("sum"));
+    org.json.JSONArray items = o.getJSONObject("today").getJSONArray("items");
+    assertEquals("", items.getJSONObject(2).getString("who")); // 최신순: 14:05, 10:08, 10:02
+    // items are newest first
+    boolean sawCard=false, sawVoucher=false, sawEmpty=false;
+    for(int i=0;i<items.length();i++){
+      org.json.JSONObject it=items.getJSONObject(i);
+      if("card".equals(it.getString("kind"))){ sawCard=true; assertEquals("KB카드 정산", it.getString("who")); }
+      if("voucher".equals(it.getString("kind"))){ sawVoucher=true; assertEquals("안동사랑상품권 정산", it.getString("who")); }
+      if("transfer".equals(it.getString("kind"))){ sawEmpty=true; assertEquals("", it.getString("who")); }
+    }
+    assertTrue(sawCard&&sawVoucher&&sawEmpty);
+    String j=o.toString();
+    assertFalse(j, j.contains("302-")||j.contains("9227")||j.contains("****")||j.contains("2833793")||j.contains("2,833,793")||j.contains("735439339B")||j.contains("KB112150583"));
   }
 }

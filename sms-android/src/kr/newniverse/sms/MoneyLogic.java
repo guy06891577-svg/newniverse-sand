@@ -4,12 +4,12 @@ import java.time.*;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 
-/** v10: 입금 요약(오늘·어제·이번 주)·나갈 돈 목록·금액 말투 (순수 자바, 한국 시간 기준) */
+/** v11: 입금 요약(오늘·어제·이번 주)·나갈 돈 목록·금액 말투 (순수 자바, 한국 시간 기준) */
 final class MoneyLogic {
   static final ZoneId KST=DepositParser.KST;
   static final String NOTE="빠른 확인용이에요. 정확한 내역은 은행 앱에서 확인해 주세요.";
 
-  static final class Item { String bank,who; long amt,at; boolean mobile; String key; }
+  static final class Item { String bank,who,kind="transfer"; long amt,at; boolean mobile; String key; }
   static final class Bucket { long sum; int n; List<Item> items=new ArrayList<>(); }
   static final class Sum { Bucket today=new Bucket(), yesterday=new Bucket(), week=new Bucket(); int suspect; long now; }
 
@@ -54,6 +54,19 @@ final class MoneyLogic {
       if(diff==0) return "오늘"; if(diff==1) return "내일"; if(diff==2) return "모레";
       return d.getMonthValue()+"월 "+d.getDayOfMonth()+"일("+"일월화수목금토".charAt(d.getDayOfWeek().getValue()%7)+")"; }catch(Exception e){ return due; } }
   static String kindLabel(String k){ return "auto".equals(k)?"자동이체 예정":"card".equals(k)?"카드 결제 예정":"납기일"; }
+  /** 입금 종류. transfer=계좌이체, card=카드 정산, voucher=상품권 정산 */
+  static String depKindLabel(String k){ return "card".equals(k)?"카드 정산":"voucher".equals(k)?"상품권 정산":"계좌이체"; }
+  static String depKindOf(Item it){ return it!=null&&it.kind!=null&&!it.kind.isEmpty()?it.kind:"transfer"; }
+  static final String[] KIND_ID={"transfer","card","voucher"};
+  static final String[] KIND_LB={"계좌이체","카드 정산","상품권 정산"};
+  static int kindIdx(String k){ return "card".equals(k)?1:"voucher".equals(k)?2:0; }
+  /** [transfer,card,voucher] 의 {sum,n} — 0건도 칸은 있음 */
+  static long[][] kindSums(Bucket b){
+    long[][] a=new long[][]{{0,0},{0,0},{0,0}};
+    if(b==null) return a;
+    for(Item it:b.items){ int i=kindIdx(depKindOf(it)); a[i][0]+=it.amt; a[i][1]++; }
+    return a;
+  }
 
   // ---- 금액 말투 ----
   /** 350000 → 35만 원 · 1234567 → 123만 4,567원 · 9500 → 9,500원 · 100000000 → 1억 원 */

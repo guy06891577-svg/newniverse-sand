@@ -324,7 +324,7 @@ public class RereadRoboTest {
     d = SmsDiag.json(app);
     assertTrue("cal_at 갱신", d.getLong("calAt") >= t0);
     assertTrue(d.getBoolean("calCurrent"));
-    assertEquals(Nv.VER, d.getString("calVer")); assertEquals("10-test", Nv.VER);
+    assertEquals(Nv.VER, d.getString("calVer")); assertEquals("11-test", Nv.VER);
     assertTrue(d.getLong("rrAt") >= t0);
     assertEquals("MMS", d.getString("rrType"));
     assertEquals(LMS.length(), d.getInt("rrLen"));

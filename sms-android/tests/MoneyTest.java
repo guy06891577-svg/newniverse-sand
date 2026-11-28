@@ -3,7 +3,7 @@ package kr.newniverse.sms;
 import java.time.*;
 import java.util.*;
 
-/** v10: 입금 문자 읽기(은행별 샘플)·출금/카드/광고/사칭 가르기·금액·날짜 경계·요약·나갈 돈(출금 예정) 읽기. 순수 자바 */
+/** v11: 입금 문자 읽기(은행별 샘플)·출금/카드/광고/사칭 가르기·금액·날짜 경계·요약·나갈 돈(출금 예정) 읽기. 순수 자바 */
 public class MoneyTest {
   static int ok=0,bad=0;
   static void t(String n,boolean c){ if(c) ok++; else { bad++; System.out.println("FAIL "+n); } }
@@ -21,6 +21,12 @@ public class MoneyTest {
     t(name+" amt="+r.dep.amount,r.dep.amount==amt);
     if(who!=null) t(name+" who="+r.dep.who,who.equals(r.dep.who));
     if(at!=null) t(name+" at",r.dep.at==at);
+  }
+  static void kind(String name,String addr,String body,long recv,String k,String who){
+    DepositParser.Res r=dep(addr,body,recv);
+    t(name+" ok("+r.reason+")",r.ok); if(!r.ok) return;
+    t(name+" kind="+r.dep.kind,k.equals(r.dep.kind));
+    if(who!=null) t(name+" who="+r.dep.who,who.equals(r.dep.who));
   }
   static void notDep(String name,String addr,String body,String reasonPrefix){
     DepositParser.Res r=dep(addr,body,NOW);
@@ -44,6 +50,41 @@ public class MoneyTest {
     yes("NH-법인명","15882100","[Web발신]\nNH농협 입금900,000원\n11/28 10:00 351-****-1111-11 (주)예담 잔액1원",ms(2026,11,28,10,1),"NH농협",900000,"㈜예담",null);
     yes("NH-전각숫자","15882100","[Web발신]\n농협 입금１２２，５００원\n０９/２８ ２３:１４ ３０１-****-２６４０-４１ 홍길동 잔액５，４２８원",r1,"NH농협",122500,"홍길동",ms(2026,9,28,23,14));
     yes("NH-NBSP","15882100","[Web발신]\u00a0\n농협\u00a0입금122,500원\u00a009/28 23:14 301-****-2640-41 홍길동 잔액5,428원",r1,"NH농협",122500,"홍길동",null);
+    // ===== 대표님 실물 농협 입금 문자(발신 1588-2100, 2026-11-27, 줄바꿈 그대로) =====
+    String REAL1="[Web발신]\n농협 입금173,688원\n11/27 10:02 302-****-9227-51\n735439339B 잔액2,833,793원";
+    String REAL2="[Web발신]\n농협11/27 10:08 302-****-9227-51\n자동입금17,696원(KB112150583)\n잔액2,851,489원";
+    String REAL3="[Web발신]\n농협11/27 14:05 302-****-9227-51\n자동입금58,000원(안동정산)\n잔액2,909,489원";
+    long rr1=ms(2026,11,27,10,3), rr2=ms(2026,11,27,10,9), rr3=ms(2026,11,27,14,6), dayEnd=ms(2026,11,27,18,0);
+    yes("실물1-이체","1588-2100",REAL1,rr1,"NH농협",173688,"",ms(2026,11,27,10,2));
+    kind("실물1-종류","1588-2100",REAL1,rr1,"transfer","");
+    { DepositParser.Res q=dep("1588-2100",REAL1,rr1); t("실물1 잔액을 금액으로 안 씀",q.ok&&q.dep.amount==173688&&q.dep.amount!=2833793); t("실물1 거래코드는 이름 아님",q.ok&&q.dep.who.isEmpty()); t("실물1 계좌 없음",!q.dep.who.contains("302")&&!q.dep.bank.contains("9227")); }
+    yes("실물2-카드정산","1588-2100",REAL2,rr2,"NH농협",17696,"KB카드 정산",ms(2026,11,27,10,8));
+    kind("실물2-종류","1588-2100",REAL2,rr2,"card","KB카드 정산");
+    { DepositParser.Res q=dep("1588-2100",REAL2,rr2); t("실물2 잔액을 금액으로 안 씀",q.ok&&q.dep.amount==17696&&q.dep.amount!=2851489); t("실물2 출금 오인 아님",q.ok); t("실물2 가맹점번호 원문 안 씀",!q.dep.who.contains("112150583")); }
+    yes("실물3-상품권정산","1588-2100",REAL3,rr3,"NH농협",58000,"안동사랑상품권 정산",ms(2026,11,27,14,5));
+    kind("실물3-종류","1588-2100",REAL3,rr3,"voucher","안동사랑상품권 정산");
+    { DepositParser.Res q=dep("1588-2100",REAL3,rr3); t("실물3 잔액을 금액으로 안 씀",q.ok&&q.dep.amount==58000&&q.dep.amount!=2909489); }
+    { List<MoneyLogic.Item> R=new ArrayList<>();
+      for(String[] x:new String[][]{{REAL1,""+rr1},{REAL2,""+rr2},{REAL3,""+rr3}}){ DepositParser.Res q=dep("15882100",x[0],Long.parseLong(x[1])); t("실물합 ok",q.ok); if(q.ok){ MoneyLogic.Item it=item(q.dep.bank,q.dep.who,q.dep.amount,q.dep.at); it.kind=q.dep.kind; R.add(it);} }
+      MoneyLogic.Sum S=MoneyLogic.summarize(R,dayEnd,0);
+      t("실물 같은 날 합계",S.today.sum==249384&&S.today.n==3);
+      t("실물 줄 문구","오늘 입금 24만 9,384원 · 3건".equals(MoneyLogic.line("오늘",S.today)));
+      long[][] ks=MoneyLogic.kindSums(S.today);
+      t("실물 종류별 이체",ks[0][0]==173688&&ks[0][1]==1);
+      t("실물 종류별 카드",ks[1][0]==17696&&ks[1][1]==1);
+      t("실물 종류별 상품권",ks[2][0]==58000&&ks[2][1]==1);
+      String blob=MoneyLogic.line("오늘",S.today)+S.today.items.get(0).who+S.today.items.get(1).who+S.today.items.get(2).who;
+      t("실물 합계에 계좌·잔액 숫자 없음",!blob.contains("302")&&!blob.contains("9227")&&!blob.contains("2,833")&&!blob.contains("2833793")); }
+    // 카드 접두어 매핑(공개 확인분) · 모르는 접두어는 원문
+    kind("접두어-신한","15882100","[Web발신]\n농협11/27 10:08 302-****-9227-51\n자동입금10,000원(SH123456789)\n잔액1원",rr2,"card","신한카드 정산");
+    kind("접두어-하나","15882100","[Web발신]\n농협11/27 10:08 302-****-9227-51\n자동입금10,000원(HN123456789)\n잔액1원",rr2,"card","하나카드 정산");
+    kind("접두어-BC","15882100","[Web발신]\n농협11/27 10:08 302-****-9227-51\n자동입금10,000원(BC123456789)\n잔액1원",rr2,"card","BC카드 정산");
+    kind("접두어-삼성","15882100","[Web발신]\n농협11/27 10:08 302-****-9227-51\n자동입금10,000원(SS123456789)\n잔액1원",rr2,"card","삼성카드 정산");
+    kind("접두어-롯데","15882100","[Web발신]\n농협11/27 10:08 302-****-9227-51\n자동입금10,000원(LO123456789)\n잔액1원",rr2,"card","롯데카드 정산");
+    kind("접두어-현대","15882100","[Web발신]\n농협11/27 10:08 302-****-9227-51\n자동입금10,000원(HD123456789)\n잔액1원",rr2,"card","현대카드 정산");
+    kind("접두어-NH","15882100","[Web발신]\n농협11/27 10:08 302-****-9227-51\n자동입금10,000원(NH123456789)\n잔액1원",rr2,"card","NH카드 정산");
+    kind("접두어-우리","15882100","[Web발신]\n농협11/27 10:08 302-****-9227-51\n자동입금10,000원(WR123456789)\n잔액1원",rr2,"card","우리카드 정산");
+    kind("접두어-미확인은 원문","15882100","[Web발신]\n농협11/27 10:08 302-****-9227-51\n자동입금10,000원(ZZ123456789)\n잔액1원",rr2,"card","ZZ123456789");
     // ===== 확인된 형식(출처 샘플) =====
     long r=ms(2026,9,28,23,15);
     yes("우리","15885000","[Web발신]\n우리 09/28 23:14\n*456789\n입금 122,500원\n홍길동",r,"우리",122500,"홍길동",ms(2026,9,28,23,14));

@@ -5,14 +5,14 @@ import java.util.*;
 import java.util.regex.*;
 
 /**
- * v10: 은행 입금 문자 읽기 (순수 자바, 폰 안에서만). 「빠른 확인용」 — 은행이 문자 형식을 바꾸면 틀릴 수 있음.
+ * v11: 은행 입금 문자 읽기 (순수 자바, 폰 안에서만). 「빠른 확인용」 — 은행이 문자 형식을 바꾸면 틀릴 수 있음.
  * 입금으로 세는 조건: ① 은행 이름(문자 앞부분·대괄호·끝, 또는 발신번호 힌트) ② ‘입금’ 말 + 금액 ③ 시각·가린 계좌·잔액 중 하나(문자 모양)
  * 세지 않는 것: 출금·카드 결제·잔액 조회·입금 취소·광고·링크가 든 문자·입금 부탁/예정/확인 요청·개인 번호에서 온 약한 문자.
  * 계좌번호는 읽어도 저장하지 않음(결과에 계좌 칸이 없음).
  */
 final class DepositParser {
   static final ZoneId KST=ZoneId.of("Asia/Seoul");
-  static final class Dep { String bank="", who=""; long amount, at; boolean mobile; }
+  static final class Dep { String bank="", who="", kind="transfer"; long amount, at; boolean mobile; }
   static final class Res { boolean ok; String reason=""; Dep dep; boolean suspect; }
 
   // ---- 은행 표 -------------------------------------------------------------
@@ -131,7 +131,7 @@ final class DepositParser {
 
     Dep d=new Dep(); d.bank=bankName; d.amount=amt; d.mobile=mobile;
     d.at=resolveTime(f,recvMs);
-    d.who=who(f,w,bankName);
+    String[] sk=source(f,w,bankName); d.who=sk[0]; d.kind=sk[1];
     Res r=new Res(); r.ok=true; r.dep=d; r.reason=confirmed?"ok":"ok-generic";
     return r;
   }
@@ -195,7 +195,7 @@ final class DepositParser {
   // ---- 보낸 사람 -------------------------------------------------------------
   static final Pattern LBL1=Pattern.compile("(?:입금자|보낸\\s*분|보낸\\s*사람|송금인)\\s*[:：]?\\s*([^\\s,]{1,16})");
   static final Pattern LBL2=Pattern.compile("([^\\s,\\[\\]]{1,12})님이\\s*(?:\\d|[\\d,]+원)");
-  static final Pattern STOP=Pattern.compile("^(?:입금|전자금융입금|전자금융|타행|모바일|스마트|인터넷|폰뱅킹|CD|ATM|이체|계좌|님이|님|원|잔액|거래|입금액|금액|KRW|보냈어요|받았어요|내|입출금통장|통장|자동이체입금|급여|[A-Za-z]{0,2})$");
+  static final Pattern STOP=Pattern.compile("^(?:입금|전자금융입금|전자금융|타행|모바일|스마트|인터넷|폰뱅킹|CD|ATM|이체|계좌|님이|님|원|잔액|거래|입금액|금액|KRW|보냈어요|받았어요|내|입출금통장|통장|자동|자동입금|자동이체|자동이체입금|급여|[A-Za-z]{0,2})$");
   static String who(String f,String w,String bank){
     Matcher m=LBL1.matcher(f); if(m.find()) return clipName(m.group(1));
     m=LBL2.matcher(f); if(m.find()){ String n=m.group(1); n=n.replaceAll("^[^가-힣A-Za-z0-9*(㈜]+",""); if(!n.isEmpty()) return clipName(n); }
@@ -222,4 +222,51 @@ final class DepositParser {
     o.append(s.substring(p)); return o.toString();
   }
   static String clipName(String n){ n=n==null?"":n.trim(); return n.length()>14?n.substring(0,14):n; }
+
+  /** 자동입금17,696원(KB112150583) 처럼 금액 바로 뒤 괄호가 보낸 곳 */
+  static final Pattern SRC_PAREN=Pattern.compile("(?:자동\\s*)?입금\\s*[:：]?\\s*(?:\\d{1,3}(?:,\\d{3})+|\\d+)\\s*원?\\s*[\\(（]\\s*([^\\)）]{1,24})\\s*[\\)）]");
+  static final Pattern CARD_ID=Pattern.compile("^([A-Za-z]{2,3})(\\d{5,})$");
+  /** 735439339B 처럼 숫자 덩어리+끝 영문 1~2자 — 거래 코드로 보고 보낸 사람에서 뺌 */
+  static final Pattern TXN=Pattern.compile("^\\d{6,}[A-Za-z]{1,2}$");
+
+  /** [표시 이름, 종류 transfer/card/voucher] */
+  static String[] source(String f,String w,String bank){
+    Matcher m=SRC_PAREN.matcher(f);
+    if(m.find()) return labelSrc(m.group(1).trim());
+    return labelSrc(who(f,w,bank));
+  }
+  static String[] labelSrc(String raw){
+    if(raw==null) raw="";
+    raw=raw.trim();
+    if(raw.isEmpty()) return new String[]{"","transfer"};
+    // 대표님 확인: (안동정산) = 안동사랑상품권 정산 입금
+    if(raw.equals("안동정산")||raw.startsWith("안동사랑")) return new String[]{"안동사랑상품권 정산","voucher"};
+    Matcher m=CARD_ID.matcher(raw);
+    if(m.matches()){
+      String pf=m.group(1).toUpperCase(Locale.ROOT);
+      String nm=cardName(pf);
+      return new String[]{nm!=null?nm+" 정산":raw,"card"};
+    }
+    if(TXN.matcher(raw).matches()) return new String[]{"","transfer"};
+    return new String[]{clipName(raw),"transfer"};
+  }
+  /** 공개 자료·실물 문자로 확인된 카드사 접두어만 쉬운 이름으로. 그 외는 null(원문 그대로). */
+  static String cardName(String pf){
+    switch(pf){
+      case "KB": return "KB카드";   // 실물 문자(KB112150583)·Payple/PortOne 약칭
+      case "SH": return "신한카드"; // 대표님 예시(Shinhan 관용 약칭). KCP 공개 코드는 LG
+      case "LG": return "신한카드"; // NHN KCP 공개 카드코드 CCLG(구 LG카드)
+      case "HN": return "하나카드"; // NHN KCP CCHN
+      case "BC": return "BC카드";   // NHN KCP CCBC, Payple/PortOne
+      case "SS": return "삼성카드"; // NHN KCP CCSS
+      case "LO": return "롯데카드"; // NHN KCP CCLO
+      case "HD": return "현대카드"; // 대표님 예시(Hyundai 관용 약칭). KCP 공개 코드는 DI
+      case "DI": return "현대카드"; // NHN KCP CCDI
+      case "NH": return "NH카드";   // NHN KCP CCNH, PortOne
+      case "WR": return "우리카드"; // NHN KCP CCWR
+      case "CT": return "씨티카드"; // NHN KCP CCCT
+      default: return null;
+    }
+  }
 }
+

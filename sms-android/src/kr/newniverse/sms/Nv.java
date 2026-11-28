@@ -16,7 +16,7 @@ import java.util.ArrayList;
 
 /** 공용 도구: 알림, 권한·기본 문자 앱 확인, 이름 찾기, 번호 모양, 문자 보내기·저장, WebView 설정 */
 final class Nv {
-  static final String CH_MSG="sms", VER="10-test";
+  static final String CH_MSG="sms", VER="11-test";
   static final String ACTION_OPEN="kr.newniverse.sms.OPEN", ACTION_MONEY="kr.newniverse.sms.MONEY";
 
   static void channels(Context c){
