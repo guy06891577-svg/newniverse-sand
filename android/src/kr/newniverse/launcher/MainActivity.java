@@ -163,7 +163,13 @@ public class MainActivity extends Activity {
       Set<String> seen=new HashSet<>(); while(c!=null&&c.moveToNext()&&a.length()<5000){ String id=c.getString(0),n=c.getString(1),num=c.getString(2); if(n==null||num==null) continue; String k=id+"|"+num.replaceAll("[^0-9+]",""); if(!seen.add(k)) continue;
         JSONObject o=new JSONObject(); o.put("id",id); o.put("n",n); o.put("p",num); a.put(o); } }catch(Exception e){} finally{ if(c!=null) c.close(); }
     return a.toString(); }
+  // v47: 알림 권한(안드로이드 13+) — 음력 기념일을 등록할 때 한 번만 묻는다. yes / no(거절·미요청) / na(13 미만, 필요 없음)
+  static final int REQ_NOTI=7047;
+  String notifPermState(){ if(Build.VERSION.SDK_INT<33) return "na"; return checkSelfPermission("android.permission.POST_NOTIFICATIONS")==PackageManager.PERMISSION_GRANTED?"yes":"no"; }
+  boolean askNotif(){ if(Build.VERSION.SDK_INT<33) return true; if(checkSelfPermission("android.permission.POST_NOTIFICATIONS")==PackageManager.PERMISSION_GRANTED) return true;
+    try{ requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"},REQ_NOTI); }catch(Exception e){ return false; } return false; }
   @Override public void onRequestPermissionsResult(int req,String[] p,int[] g){ super.onRequestPermissionsResult(req,p,g);
+    if(req==REQ_NOTI) js("window.NV_onNotiPerm&&NV_onNotiPerm('"+notifPermState()+"')");
     if(req==REQ_LOC) js("window.NV_onBusPerm&&NV_onBusPerm('"+BusInfo.perm(this)+"')");
     if(req==REQ_MIC){ if(checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)==PackageManager.PERMISSION_GRANTED){ if(speechIntentAvail()) speechIntentGo(); else speechGo(true); } else spJs("error","perm"); }
     if(req==REQ_CON) js("window.NV_onConPerm&&NV_onConPerm('"+(checkSelfPermission(android.Manifest.permission.READ_CONTACTS)==PackageManager.PERMISSION_GRANTED?"yes":"no")+"')"); }
@@ -726,6 +732,14 @@ public class MainActivity extends Activity {
     @JavascriptInterface public String smsRecent(String days){ Bundle b=feedCall("recent",days); String j=b==null?null:b.getString("json"); return j==null?"[]":j; }
     /** v45: 마지막 문자 연결 실패 이유 ("sec" 서명 권한 없음 / "none" 옛 문자 앱 / "fail" 그 밖 / "" 정상) — 화면이 말없이 넘기지 않고 카드로 알려 줌 */
     @JavascriptInterface public String smsErr(){ return feedErr; }
+    /** v47: 문자 앱 FeedProvider 「money」(문자 v10, ver 6) — 오늘·어제·이번 주 입금 요약과 내일 나갈 돈. 기본 문자 앱+문자 권한이 없으면 {"ok":false}. 실패·옛 버전이면 "null" (이유는 smsErr) */
+    @JavascriptInterface public String smsMoney(){ Bundle b=feedCall("money",null); String j=b==null?null:b.getString("json"); return j==null?"null":j; }
+    /** v47: 입금 카드를 누르면 뉴니버스 문자의 입금 화면(액션 kr.newniverse.sms.MONEY)을 연다. 문자 앱 코드는 그대로 두고 명시적 호출만 함 */
+    @JavascriptInterface public boolean smsOpenMoney(){ try{ Intent i=new Intent("kr.newniverse.sms.MONEY"); i.setClassName(SMSPKG,SMSPKG+".MainActivity"); i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(i); return true; }catch(Exception e){ return openSms(false); } }
+    // v47: 음력 기념일 알림 — 날짜 계산은 화면이 하고, 여기는 목록을 받아 이 폰 안에서 알림만 예약. 전날·당일 오전 9시
+    @JavascriptInterface public int calSchedule(String json){ return CalAlarm.save(MainActivity.this,json); }
+    @JavascriptInterface public String calNotifPerm(){ return notifPermState(); }
+    @JavascriptInterface public boolean calAskNotif(){ return askNotif(); }
     // 인증번호 복사 (미리보기에 안 보이게 민감 표시)
     @JavascriptInterface public boolean clipCopy(final String text){
       try{ android.content.ClipboardManager cm=(android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE);

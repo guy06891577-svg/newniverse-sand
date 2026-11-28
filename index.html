@@ -562,6 +562,21 @@
   .smc .bt.pri{background:linear-gradient(135deg,rgba(110,190,255,.5),rgba(160,120,255,.5));border-color:rgba(190,205,255,.55);color:#fff}
   .smc .bt:disabled{opacity:.75}.smc .bt:active{transform:scale(.96)}
   #nhSi{display:flex;flex-direction:column;gap:8px;margin-bottom:8px}
+  /* v47 시험판: 음력·공휴일 카드(줄 목록·입력 칸) — 유리·하늘→보라, 주황 없음 */
+  .smc .rows{grid-column:1/-1;display:flex;flex-direction:column;gap:5px;margin-top:6px;padding-top:9px;border-top:1px solid rgba(255,255,255,.12)}
+  .smc .rw{display:flex;align-items:baseline;justify-content:space-between;gap:12px;font:500 12.5px/1.4 var(--nv-font,system-ui,sans-serif);color:rgba(236,241,255,.92)}
+  .smc .rw span{color:rgba(205,216,255,.62);white-space:nowrap;flex:0 0 auto;max-width:56%;overflow:hidden;text-overflow:ellipsis}
+  .smc .rw em{font-style:normal;text-align:right;min-width:0;overflow-wrap:anywhere}
+  .smc .rw .rx{flex:0 0 auto;width:30px;height:30px;margin:-6px -4px -6px 0;border-radius:15px;border:0;background:transparent;color:rgba(225,232,255,.72);display:grid;place-items:center}
+  .smc .rw .rx .ni{width:17px;height:17px}.smc .rw .rx:active{background:rgba(140,170,255,.2)}
+  .smc .cf{grid-column:1/-1;display:flex;flex-direction:column;gap:8px;margin-top:6px}
+  .smc .cfr{display:flex;gap:8px;align-items:center}
+  .smc .cfr select{flex:1;width:auto}
+  .smc .cf input,.smc .cf select{flex:none;min-width:0;width:100%;height:40px;padding:0 12px;border-radius:13px;border:1px solid rgba(170,190,255,.4);background:rgba(20,16,50,.55);color:#fff;font:600 14px/1 var(--nv-font,system-ui,sans-serif);outline:none}
+  .smc .cf input::placeholder{color:rgba(225,232,255,.42)}
+  .smc .cf input:focus,.smc .cf select:focus{border-color:rgba(160,190,255,.85);box-shadow:0 0 0 2px rgba(130,150,255,.25)}
+  .smc .cf select option{background:#161233;color:#fff}
+  .smc .cf .cfl{flex:0 0 auto;height:40px;padding:0 14px}
   /* v44b 시험판: 전원 창 안내 카드(유리·하늘→보라, 선 아이콘) */
   #nhPwr{display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:4px 12px;padding:14px 14px 12px;border-radius:22px;border:1px solid rgba(255,255,255,.18);background:linear-gradient(160deg,rgba(255,255,255,.13),rgba(255,255,255,.045));-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 10px 28px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.1);color:#fff;transition:opacity .4s,filter .4s}
   #nhPwr.pre{opacity:0;pointer-events:none}
@@ -710,6 +725,8 @@
 </div>
 <div id="hint-desktop">PC에서는 마우스로 화면을 끌어서 넘겨보세요 · 뉴니버스 시제품 by Crazing Factory</div>
 
+<script src="kcal-data.js"></script>
+<script src="kcal.js"></script>
 <script>
 (()=>{
 'use strict';
@@ -4314,6 +4331,8 @@ function nhMatch(q){const forms=nhForms(q),qn=forms[0];if(!qn)return {hd:'',tile
     groups.push({sc,I,tiles:t})});
   try{const wg=nhWxGroup(q);if(wg)groups.push(wg)}catch(_){}
   try{const mg=nhSmxGroup(q);if(mg)groups.push(mg)}catch(_){}
+  try{const kg=nhCalGroup(q);if(kg)groups.push(kg)}catch(_){}
+  try{const yg=nhMoneyGroup(q);if(yg)groups.push(yg)}catch(_){}
   try{const pg=nhPwrGroup(q);if(pg)groups.push(pg)}catch(_){}
   try{const cg=nhCtlGroup(q);if(cg)groups.push(cg)}catch(_){}
   try{const sg=nhWebGroup(q);if(sg)groups.push(sg)}catch(_){}
@@ -4796,6 +4815,7 @@ function smxInfo(it,now){now=now==null?smxNow():now;
   if(it.t==='parcel'){return {ic:'box',b:it.co+' · '+smxEtaLabel(it,now),s:(it.no?'운송장 '+smxFmtNo(it.no)+' · ':'')+smxAgo(it.at,now)+' 문자',say:it.co+' 택배가 '+smxEtaLabel(it,now).replace('예정','예정이에요').replace('완료','완료됐어요').replace('중','중이에요')}}
   if(it.t==='appt'){const k=Math.round((smxDay(it.when)-smxDay(now))/SMX_DAY);return {ic:'cross',b:it.org+' · '+smxDLabel(it.when,now)+(it.ht?' '+smxTLabel(it.when):''),s:(it.who?it.who+'님 · ':'')+(k===0?'오늘이에요':k===1?'내일이에요':k>1?k+'일 뒤예요':'지났어요'),say:(it.who?it.who+'님 ':'')+it.org+' 예약은 '+smxDLabel(it.when,now)+(it.ht?' '+smxTLabel(it.when,true):'')+'이에요',cal:true}}
   if(it.t==='card'){return {ic:'card',b:it.co+' '+(it.cancel?'−':'')+smxMoney(it.amt),s:(it.merch?it.merch+' · ':'')+smxDLabel(it.at,now)+' '+smxTLabel(it.at)+(it.cancel?' · 취소':''),say:''}}
+  if(it.t==='cal'||it.t==='money')return {ic:it.ic,b:it.b,s:it.s,say:it.say||''};
   return {ic:'info',b:'',s:'',say:''}}
 // ---- 규칙: 말·글로 물어보기 ----
 function nhSmx(raw){const q=String(raw||'').trim();if(!q)return null;const s=q.replace(/\s+/g,'');
@@ -4815,7 +4835,7 @@ function nhSmxGroup(q){const c=nhSmx(q);if(!c)return null;return {sc:c.sc,I:{id:
 async function smxEnable(on,fromAsk){if(!on){S.smx=false;saveS();smxIdleOff();return false}
   if(S.smx===true)return true;
   if(!NATIVE){toast('폰 앱에서만 쓸 수 있어요');return false}
-  const ok=await ask('문자 속 할 일을 카드로','<b>뉴니버스 문자</b>(기본 문자 앱)가 받은 문자 중 <b>택배 · 병원 예약 · 카드 결제 · 인증번호</b>만 골라 이 폰 안에서 카드로 보여 줘요.<br>· 런처는 문자 권한을 받지 않아요<br>· 인터넷으로 보내지 않고, 문자를 따로 저장하지도 않아요<br>· 설정에서 언제든 끌 수 있어요',{ok:'켜기',no:'나중에'});
+  const ok=await ask('문자 속 할 일을 카드로','<b>뉴니버스 문자</b>(기본 문자 앱)가 받은 문자 중 <b>택배 · 병원 예약 · 카드 결제 · 인증번호 · 입금</b>만 골라 이 폰 안에서 카드로 보여 줘요.<br>· 런처는 문자 권한을 받지 않아요<br>· 인터넷으로 보내지 않고, 문자를 따로 저장하지도 않아요<br>· 설정에서 언제든 끌 수 있어요',{ok:'켜기',no:'나중에'});
   if(!ok)return false;S.smx=true;saveS();setTimeout(()=>smxIdle(true),300);return true}
 function smxNeed(st){if(!st.installed)return {r:'none',ic:'msg',b:'뉴니버스 문자가 필요해요',s:'택배·예약·카드·인증 문자를 카드로 보려면 뉴니버스 문자를 설치해 주세요',btn:'받는 곳 열기',act:'get'};
   if(st.err==='sec')return {r:'sec',ic:'msg',b:'런처를 다시 설치해 주세요',s:'뉴니버스 문자를 먼저 깔았으니, 이 런처를 같은 파일로 한 번 덮어 설치하면 연결돼요 · 설정과 데이터는 그대로예요',btn:'설치 안내 열기',act:'launcher'};
@@ -4859,28 +4879,34 @@ function smxPick(items,now){const dis=smxDis(),out=[];
   const seenP=new Set(),res=[];out.forEach(x=>{if(res.length>=2)return;if(x.it.t==='parcel'){const k=x.it.co+x.it.no;if(seenP.has(k))return;seenP.add(k)}res.push(x.it)});return res}
 function smxIdleOff(){clearTimeout(SMX.idleT);SMX.idleT=0;if(SMX.idle){SMX.idle.remove();SMX.idle=null}SMX.idleEls={}}
 function smxBusy(){return !!(NH.q||NHCARD||NHWX||NHSM||NH.stars||NH.listen||NHQ===document.activeElement)}
-async function smxIdle(force){if(!nhOn()||!NATIVE){smxIdleOff();return}
+async function smxIdle(force){if(!nhOn()){smxIdleOff();return}
   if(document.hidden||smxBusy()){if(SMX.idle)SMX.idle.style.display='none';return}
-  const st=smxSt(),now=smxNow(),dis=smxDis();let pick=[];
-  if(!smxOn()){   // v45: 켜기 전 — 뉴니버스 문자가 깔려 있고 기본 문자 앱이면 한 번 켜기 카드를 자동으로 보여 줌
-    if(S.smx===false||!(st.installed&&st.def)||dis.opt||SMX.hid.opt){smxIdleOff();return}
-    pick=[smxOptItem()]}
-  else if(!st.ready){if(!(st.installed&&(st.err||!st.ok))){smxIdleOff();return}   // 미설치·기본 앱 아님·권한 없음은 조용히(물어볼 때 안내) · 연결 실패(ok=false·오류)는 말없이 넘기지 않고 카드로
-    const n=smxNeedItem(st);if(dis[n.k]||SMX.hid[n.k]){smxIdleOff();return}pick=[n]}
-  else{const items=await smxLoad(!!force);if(smxBusy())return;
-    if(SMX.err){const n=smxNeedItem(Object.assign({},st,{ok:false,err:SMX.err}));if(dis[n.k]||SMX.hid[n.k]){smxIdleOff();return}pick=[n]}
-    else pick=smxPick(items,now)}
+  const st=smxSt(),now=smxNow(),dis=smxDis();let pick=[],ready=false;
+  if(NATIVE){
+    if(!smxOn()){   // v45: 켜기 전 — 뉴니버스 문자가 깔려 있고 기본 문자 앱이면 한 번 켜기 카드를 자동으로 보여 줌
+      if(!(S.smx===false||!(st.installed&&st.def)||dis.opt||SMX.hid.opt))pick=[smxOptItem()]}
+    else if(!st.ready){if(st.installed&&(st.err||!st.ok)){   // 미설치·기본 앱 아님·권한 없음은 조용히(물어볼 때 안내) · 연결 실패(ok=false·오류)는 말없이 넘기지 않고 카드로
+        const n=smxNeedItem(st);if(!(dis[n.k]||SMX.hid[n.k]))pick=[n]}}
+    else{const items=await smxLoad(!!force);if(smxBusy())return;
+      if(SMX.err){const n=smxNeedItem(Object.assign({},st,{ok:false,err:SMX.err}));if(!(dis[n.k]||SMX.hid[n.k]))pick=[n]}
+      else{pick=smxPick(items,now);ready=true}}}
+  // v47: 오늘 입금·내일 나갈 돈(문자 v10) + 음력 기념일·공휴일 전날 카드 — 홈 카드는 모두 합쳐 최대 2장, 같은 카드는 한 번만
+  if(ready){try{const mi=await moneyIdleItems(!!force);if(smxBusy())return;mi.forEach(x=>{if(!(dis[x.k]||SMX.hid[x.k]))pick.push(x)})}catch(_){}}
+  try{calIdleItems().forEach(x=>{if(!SMX.hid[x.k]||SMX.idleEls[x.k])pick.push(x)})}catch(_){}
+  pick=smxCap(pick);
   if(smxBusy())return;
   if(!pick.length){smxIdleOff();return}
   if(!SMX.idle){const c=document.createElement('div');c.id='nhSi';NHUI.insertBefore(c,$('nhBar'));SMX.idle=c;SMX.idleEls={}}
   SMX.idle.style.display='';
   const keys=new Set(pick.map(x=>x.k));
   Object.keys(SMX.idleEls).forEach(k=>{if(!keys.has(k)){const e=SMX.idleEls[k];delete SMX.idleEls[k];smxDissolve(e)}});
-  pick.forEach(it=>{const plain=it.t==='opt'||it.t==='need';
+  pick.forEach(it=>{const plain=it.t==='opt'||it.t==='need'||it.t==='cal'||it.t==='money';
     if(SMX.idleEls[it.k]){if(!plain){const e=SMX.idleEls[it.k],f=smxInfo(it,now);e.querySelector('small').textContent=f.s}return}
     const el=smxEl(it,{now,onGone:()=>{}});SMX.idle.appendChild(el);SMX.idleEls[it.k]=el;
+    if(it.t==='cal')calMarkShown(it.k);
+    if(it.t==='money'){const ac=document.createElement('div');ac.className='ac';const b=document.createElement('button');b.type='button';b.className='bt';b.textContent='닫기';b.onclick=e=>{e.stopPropagation();smxDisSet(it.k);delete SMX.idleEls[it.k];smxDissolve(el)};ac.appendChild(b);el.insertBefore(ac,el.querySelector('.meta'))}
     el.addEventListener('pointerdown',e=>e.stopPropagation());
-    el.addEventListener('click',e=>{if(e.target.closest('button'))return;smxDisSet(it.k);delete SMX.idleEls[it.k];smxDissolve(el)});
+    el.addEventListener('click',e=>{if(e.target.closest('button'))return;if(it.t==='money'){smxOpenMoney();return}smxDisSet(it.k);delete SMX.idleEls[it.k];smxDissolve(el)});
     requestAnimationFrame(()=>{try{bfxBurst(nhRect(el),true,el)}catch(_){}setTimeout(()=>el.classList.remove('pre'),300)});
     const life=it.t==='otp'?Math.max(2000,it.exp-now):plain?40000:18000;
     setTimeout(()=>{if(SMX.idleEls[it.k]===el){delete SMX.idleEls[it.k];if(it.t!=='otp')SMX.hid[it.k]=1;smxDissolve(el)}},life)});
@@ -4927,6 +4953,164 @@ function nhSmxTimer(ms){clearTimeout(NHSMT);NHSMT=setTimeout(()=>nhSmxOff(true),
 function nhSmxOff(anim){clearTimeout(NHSMT);const el=NHSM;if(!el)return;nhTtsStop();NHSM=null;const done=()=>{el.remove();if(!NH.q&&!NHCARD&&!NHWX&&!NHSM){NHSUG.classList.remove('hide');smxIdle(false)}};
   if(anim){try{bfxBurst(nhRect(el),false,el)}catch(_){}el.classList.add('out');setTimeout(done,380)}else done()}
 
+
+// ---- v47 시험판: 음력·공휴일·24절기 + 입금 요약 카드 ----
+// 날짜 계산은 폰 안에서만(kcal.js + kcal-data.js, 한국천문연구원 달력자료 2026~2030). 인터넷·위치·연락처를 쓰지 않음.
+// 입금·나갈 돈은 뉴니버스 문자(v10, ver 6)가 같은 서명 앱에만 주는 요약(FeedProvider money)을 그대로 보여 줌 — 문자 본문·계좌번호 없음.
+var CAL=null;try{if(window.NVCAL&&window.NVCAL_DATA)CAL=NVCAL.make(window.NVCAL_DATA)}catch(_){CAL=null}
+function calToday(){const d=new Date(smxNow());return NVCAL.dn(d.getFullYear(),d.getMonth()+1,d.getDate())}
+function calEvents(){return Array.isArray(S.lunEv)?S.lunEv:[]}
+function calIc(it){return it.t==='term'?'sun':(it.t==='lunar'||it.t==='l2s'||it.t==='leap'||it.t==='add'||it.t==='form'||it.t==='evlist')?'moon':'calendar'}
+function nhCalGroup(q){if(!CAL)return null;let it=null;try{it=NVCAL.parseQ(q,CAL)}catch(_){return null}if(!it)return null;
+  const c={id:'cal',it,label:it.tile,sc:it.sc,auto:!!it.auto};
+  return {sc:it.sc,I:{id:'cal',hd:'날짜',auto:!!it.auto,none:''},tiles:[{k:'act',t:it.tile,ic:calIc(it),cal:c,fn:()=>nhCalDo(c)}],cal:true}}
+// ---- 말·글 → 입금 / 나갈 돈 ----
+function nhMoney(raw){const q=String(raw||'').trim();if(!q)return null;const s=q.replace(/\s+/g,'');
+  if(/앱|어플|열어|실행|켜줘|꺼줘|검색|구글|네이버|등록|추가|알림/.test(s))return null;
+  const ask=/얼마|있어|왔|들어|확인|알려|보여|몇|조회|요약|내역|뭐|나가|나갈|빠져|예정|예상|언제/.test(s);
+  if(/나갈돈|나가는돈|빠져나갈|낼돈|내야할돈|출금예정|출금예상|결제예정|자동이체|이체예정|공과금/.test(s)){const day=/내일|낼|모레/.test(s)?'tomorrow':'bills';return {id:'money',p:'bills',day,sc:ask||/내일|낼/.test(s)?150:70,auto:!!(ask||/내일|낼/.test(s)),label:day==='tomorrow'?'내일 나갈 돈 보기':'나갈 돈 보기'}}
+  if(/입금|들어온돈|들어왔|받은돈|월급/.test(s)&&!/문자|보내|송금해|이체해/.test(s)){
+    const p=/어제|그제/.test(s)?'yesterday':/이번주|금주|일주일|주간|이번\s*주/.test(s)?'week':'today';
+    const lab=p==='yesterday'?'어제':p==='week'?'이번 주':'오늘';
+    const strong=ask||/오늘|어제|이번주|금주|일주일/.test(s)||/입금$/.test(s)&&s.length>2;
+    return {id:'money',p,sc:strong?150:70,auto:!!strong,label:lab+' 입금 보기'}}
+  return null}
+function nhMoneyGroup(q){const c=nhMoney(q);if(!c)return null;return {sc:c.sc,I:{id:'money',hd:'입금·출금',auto:!!c.auto,none:''},tiles:[{k:'act',t:c.label,ic:'won',money:c,fn:()=>nhMoneyDo(c)}],money:true}}
+// ---- 카드 공통 ----
+function nhSmMount(e){e.id='nhSm';e.className=e.className||'smc pre';NHUI.insertBefore(e,$('nhBar'));NHSM=e;NHSUG.classList.add('hide');e.addEventListener('pointerdown',ev=>ev.stopPropagation());requestAnimationFrame(()=>{try{bfxBurst(nhRect(e),true,e)}catch(_){}setTimeout(()=>{if(NHSM===e)e.classList.remove('pre')},380)})}
+function nhSmVoice(el,say,src,noteHtml){el.dataset.line=say||'';const mu=nhTtsMute(),m=el.querySelector('.meta');
+  m.innerHTML='<span class="src"></span><span class="note"></span>';m.querySelector('.src').textContent=src||'';
+  const sp=el.querySelector('.sp');
+  if(sp){sp.onclick=e=>{e.stopPropagation();if(el.classList.contains('talk')){nhTtsStop();el.classList.remove('talk');sp.innerHTML=ico('sound');return}if(say){nhTts(say,true);nhSmxTimer(12000)}}}
+  if(!say&&sp)sp.style.display='none';
+  const note=m.querySelector('.note');if(noteHtml)note.innerHTML=noteHtml;
+  if(say){if(mu){el.classList.add('muted');note.innerHTML=ico('mute')+'<span>'+(mu==='dnd'?'방해 금지가 켜져 있어 읽지 않았어요':'무음·진동이라 읽지 않았어요')+'</span>'}
+    else{const r=nhTts(say,false);if(r==='mute'){el.classList.add('muted');note.innerHTML=ico('mute')+'<span>무음·진동이라 읽지 않았어요</span>'}}}}
+function calEl(a,o){o=o||{};const el=document.createElement('div');el.className='smc pre'+(o.cls?' '+o.cls:'');
+  el.innerHTML=`<span class="ic">${ico(a.ic||'calendar')}</span><div class="tx"><b></b><small></small></div><div class="ac"></div><div class="rows"></div><div class="meta"></div>`;
+  el.querySelector('b').textContent=a.b||'';const sm=el.querySelector('small');sm.textContent=a.s||'';if(!a.s)sm.style.display='none';
+  const rw=el.querySelector('.rows');
+  (a.rows||[]).forEach(r=>{const d=document.createElement('div');d.className='rw';const l=document.createElement('span'),v=document.createElement('em');l.textContent=r.t||'';v.textContent=r.s||'';d.appendChild(l);d.appendChild(v);rw.appendChild(d)});
+  if(!(a.rows||[]).length)rw.remove();
+  const ac=el.querySelector('.ac');
+  (o.btns||[]).forEach(b=>{const x=document.createElement('button');x.type='button';x.className='bt'+(b.pri?' pri':'');x.textContent=b.t;x.onclick=e=>{e.stopPropagation();b.fn(x,el)};ac.appendChild(x)});
+  if(o.speak){const sp=document.createElement('button');sp.type='button';sp.className='sp';sp.setAttribute('aria-label','읽어 주기');sp.innerHTML=ico('sound');ac.appendChild(sp)}
+  if(!ac.children.length)ac.remove();
+  return el}
+function nhCalDo(c){nhClear(false);nhCalShow(c)}
+function nhCalShow(c){nhCardOff(false);nhWxOff(false);nhSmxOff(false);smxIdleOff();if(!CAL)return;
+  const it=c.it,today=calToday();
+  if(it.t==='add')return calAddCard(it,today);
+  if(it.t==='form')return calFormCard(today);
+  if(it.t==='evlist')return calListCard(today);
+  let a=null;try{a=NVCAL.answer(CAL,it,today)}catch(_){a=null}
+  if(!a)a={ic:'calendar',b:'날짜를 찾지 못했어요',s:'다시 한번 말씀해 주세요',rows:[],say:''};
+  const el=calEl(a,{speak:true});nhSmMount(el);
+  nhSmVoice(el,a.say,'폰 안에서 계산 · 한국천문연구원 달력자료');
+  nhSmxTimer((a.rows||[]).length>3?18000:12000)}
+// ---- 내 음력 생일·기념일 ----
+function calEvKey(e){return [e.lm,e.ld,e.leap?1:0,e.label||''].join('|')}
+function calSaveEv(ev){const L=calEvents().slice();if(L.some(e=>calEvKey(e)===calEvKey(ev)))return 'dup';if(L.length>=30)return 'full';
+  L.push({id:'e'+Date.now().toString(36)+Math.floor(Math.random()*1e3).toString(36),lm:ev.lm,ld:ev.ld,leap:!!ev.leap,label:String(ev.label||'').slice(0,20),ca:Date.now()});S.lunEv=L;saveS();calSync(false);return 'ok'}
+function calDelEv(id){S.lunEv=calEvents().filter(e=>e.id!==id);saveS();calSync(false);try{localStorage.removeItem('nv_calsh')}catch(_){}}
+function calOccRows(ev,today){const rows=[];const o=CAL.occurrences(ev,today,today+800);o.slice(0,2).forEach((x,i)=>{rows.push({t:i?'그다음':'다음 양력',s:NVCAL.fmt(x.n,today)+(x.leapAdj?' · 윤달이 없어 평달로':'')})});return rows}
+function calNotiNote(){let p='na';try{if(NATIVE&&NVNative.calNotifPerm)p=NVNative.calNotifPerm()}catch(_){}return p}
+function calAfterSave(el,r,ev,today){
+  if(r==='ok'){let ask=true;try{if(NATIVE&&NVNative.calAskNotif)ask=!!NVNative.calAskNotif()}catch(_){}
+    const o=CAL.nextOccurrence(ev,today);toast('저장했어요 · 전날과 당일에 알려 드려요');
+    if(!ask)setTimeout(()=>toast('알림을 허용해야 아침 알림이 와요 · 홈 카드는 허용 없이도 떠요'),1800)}
+  else if(r==='dup')toast('이미 등록했어요');else toast('더 이상 등록할 수 없어요 (30개까지)');
+  nhSmxOff(true)}
+function calAddCard(it,today){
+  const ev={lm:it.lm,ld:it.ld,leap:!!it.leap,label:it.label||''};
+  const bad=!(ev.lm>=1&&ev.lm<=12&&ev.ld>=1&&ev.ld<=30);
+  const lab=NVCAL.evLabel(ev);
+  let rows=[],s='',say='';
+  if(bad){const el=calEl({ic:'moon',b:'음력 날짜를 확인해 주세요',s:'음력은 1~12월, 1~30일이에요',rows:[]},{btns:[{t:'날짜 직접 고르기',pri:true,fn:()=>{nhSmxOff(false);calFormCard(today,ev)}}]});nhSmMount(el);nhSmVoice(el,'','폰 안에서 계산');nhSmxTimer(12000);return}
+  const o=CAL.nextOccurrence(ev,today);
+  if(!o){const el=calEl({ic:'moon',b:'이 날짜는 표에 없어요',s:'음력 표는 2031년 2월까지만 있어요',rows:[]});nhSmMount(el);nhSmVoice(el,'','폰 안에서 계산');nhSmxTimer(9000);return}
+  rows=calOccRows(ev,today);rows.push({t:'알림',s:'전날·당일 아침 9시'});
+  const a={ic:'moon',b:lab,s:NVCAL.evLunar(ev)+(ev.label?'':' · 이름을 말씀하시면 같이 저장해요'),rows};
+  const el=calEl(a,{btns:[{t:'저장',pri:true,fn:()=>{const r=calSaveEv(ev);calAfterSave(el,r,ev,today)}},{t:'닫기',fn:()=>nhSmxOff(true)}]});
+  nhSmMount(el);nhSmVoice(el,'','음력을 양력으로 바꿔 해마다 알려 드려요');nhSmxTimer(30000)}
+function calFormCard(today,pre){pre=pre||{};
+  const el=calEl({ic:'moon',b:'음력 생일·기념일 등록',s:'한 번만 넣으면 해마다 양력으로 알려 드려요',rows:[]},{cls:'cal-form',btns:[]});
+  const f=document.createElement('div');f.className='cf';
+  const mo=[...Array(12)].map((_,i)=>`<option value="${i+1}"${(pre.lm||1)===i+1?' selected':''}>${i+1}월</option>`).join(''),dy=[...Array(30)].map((_,i)=>`<option value="${i+1}"${(pre.ld||1)===i+1?' selected':''}>${i+1}일</option>`).join('');
+  f.innerHTML=`<input class="cfn" type="text" maxlength="20" placeholder="이름 (예: 어머니 생신)" aria-label="이름" autocomplete="off"><div class="cfr"><select class="cfm" aria-label="음력 달">${mo}</select><select class="cfd" aria-label="음력 날">${dy}</select><button type="button" class="cfl bt${pre.leap?' pri':''}" aria-pressed="${pre.leap?'true':'false'}">윤달</button></div>`;
+  f.querySelector('.cfn').value=pre.label||'';
+  const lp=f.querySelector('.cfl');lp.onclick=e=>{e.stopPropagation();const on=lp.getAttribute('aria-pressed')!=='true';lp.setAttribute('aria-pressed',on?'true':'false');lp.classList.toggle('pri',on)};
+  el.insertBefore(f,el.querySelector('.meta'));
+  const ac=el.querySelector('.ac')||(()=>{const d=document.createElement('div');d.className='ac';el.insertBefore(d,f);return d})();
+  const sv=document.createElement('button');sv.type='button';sv.className='bt pri';sv.textContent='저장';
+  sv.onclick=e=>{e.stopPropagation();const ev={lm:+f.querySelector('.cfm').value,ld:+f.querySelector('.cfd').value,leap:lp.getAttribute('aria-pressed')==='true',label:f.querySelector('.cfn').value.trim()};
+    if(!CAL.nextOccurrence(ev,today)){toast('이 날짜는 표에 없어요');return}
+    const r=calSaveEv(ev);calAfterSave(el,r,ev,today)};
+  ac.appendChild(sv);
+  nhSmMount(el);nhSmVoice(el,'','폰 안에서만 저장해요');clearTimeout(NHSMT)}
+function calListCard(today){const L=calEvents();
+  if(!L.length){const el=calEl({ic:'moon',b:'등록한 음력 날짜가 없어요',s:'「음력 생일 등록」이라고 말씀하시면 넣을 수 있어요',rows:[]},{btns:[{t:'등록하기',pri:true,fn:()=>{nhSmxOff(false);calFormCard(today)}}]});nhSmMount(el);nhSmVoice(el,'','폰 안에서만 저장해요');nhSmxTimer(12000);return}
+  const rows=L.map(e=>{const o=CAL.nextOccurrence(e,today);return {id:e.id,t:NVCAL.evLabel(e)+' · '+NVCAL.evLunar(e),s:o?NVCAL.fmt(o.n,today):'표 밖'}});
+  const el=calEl({ic:'moon',b:'등록한 음력 날짜 '+L.length+'개',s:'다음 양력 날짜 · 전날·당일 아침 9시에 알려 드려요',rows:[]},{btns:[{t:'추가',fn:()=>{nhSmxOff(false);calFormCard(today)}}]});
+  const rw=document.createElement('div');rw.className='rows';
+  rows.forEach(r=>{const d=document.createElement('div');d.className='rw';const l=document.createElement('span'),v=document.createElement('em'),x=document.createElement('button');l.textContent=r.t;v.textContent=r.s;x.type='button';x.className='rx';x.setAttribute('aria-label',r.t+' 지우기');x.innerHTML=ico('trash');
+    x.onclick=e=>{e.stopPropagation();calDelEv(r.id);d.remove();toast('지웠어요');if(!calEvents().length)nhSmxOff(true)};d.appendChild(l);d.appendChild(v);d.appendChild(x);rw.appendChild(d)});
+  el.insertBefore(rw,el.querySelector('.meta'));nhSmMount(el);nhSmVoice(el,'','폰 안에서만 저장해요');nhSmxTimer(30000)}
+// ---- 알림 예약(전날·당일 오전 9시) — 계산은 여기서, 알림 띄우기는 앱(CalAlarm) ----
+function calSync(){if(!CAL)return 0;let n=0;try{const today=calToday(),L=NVCAL.evAlerts(CAL,calEvents(),today,800),out=[];
+    L.forEach(a=>{const o=NVCAL.ymd(a.n);const at=new Date(o.y,o.m-1,o.d,a.hour||9,0,0,0).getTime();out.push({id:a.id,at,t:'음력 기념일',x:a.text})});
+    CAL_SYNC=out;if(NATIVE&&NVNative.calSchedule)n=NVNative.calSchedule(JSON.stringify(out.slice(0,80)))}catch(_){}return n}
+var CAL_SYNC=[];
+// ---- 홈 카드(전날·당일, 한 번만) ----
+function calShown(){let o={};try{o=JSON.parse(localStorage.getItem('nv_calsh')||'{}')||{}}catch(_){}const n=Date.now();Object.keys(o).forEach(k=>{if(n-o[k]>60*SMX_DAY)delete o[k]});return o}
+function calMarkShown(k){const o=calShown();o[k]=Date.now();try{localStorage.setItem('nv_calsh',JSON.stringify(o))}catch(_){}}
+function calIdleItems(){if(!CAL)return[];const sh=calShown();let L=[];try{L=NVCAL.eveCards(CAL,calEvents(),calToday())}catch(_){return[]}
+  return L.filter(c=>!sh[c.k]||(SMX.idleEls&&SMX.idleEls[c.k])).map(c=>({t:'cal',k:c.k,p:c.p,ic:c.kind==='ev'?'gift':'calendar',b:c.b,s:c.s,say:c.say,kind:c.kind}))}
+// ---- 입금 요약 (문자 v10 · FeedProvider money, ver 6) ----
+var MONEY={at:0,d:null};
+function moneyLoad(force){if(!force&&MONEY.d!==undefined&&MONEY.at&&Date.now()-MONEY.at<15000)return MONEY.d;let j=null;
+  try{if(NATIVE&&NVNative.smsMoney){const r=NVNative.smsMoney();j=r&&r!=='null'?JSON.parse(r):null}}catch(_){j=null}
+  MONEY.at=Date.now();MONEY.d=j;return j}
+// ok / old(문자 앱이 옛 버전) / need(기본 문자 앱·권한 없음 → {ok:false}) / perm / off
+function moneyState(j,st){st=st||smxSt();if(j==null||(st.ver&&st.ver<6))return 'old';if(j.ok===false)return 'need';if(j.perm===false)return 'perm';if(j.on===false||j.empty)return 'off';return 'ok'}
+function moneyGuide(r){
+  if(r==='old')return {ic:'won',b:'뉴니버스 문자를 업데이트해 주세요',s:'입금 요약은 문자 v10 이상에서 보여 드려요',btn:'받는 곳 열기',act:'get'};
+  if(r==='need')return {ic:'won',b:'입금 요약은 기본 문자 앱이어야 해요',s:'뉴니버스 문자를 기본 문자 앱으로 두고 문자 권한을 허용하면 보여 드려요',btn:'문자 열기',act:'open'};
+  if(r==='perm')return {ic:'won',b:'문자 권한을 허용해 주세요',s:'뉴니버스 문자에서 문자 읽기를 허용하면 입금 요약이 나와요',btn:'문자 열기',act:'open'};
+  return {ic:'won',b:'입금 요약이 꺼져 있어요',s:'뉴니버스 문자의 입금 화면에서 켤 수 있어요',btn:'문자 열기',act:'open'}}
+function smxOpenMoney(){let ok=false;try{if(NATIVE&&NVNative.smsOpenMoney)ok=!!NVNative.smsOpenMoney()}catch(_){}if(!ok)smxGo('open');return ok}
+function moneyRows(B,now,week){return (B.items||[]).slice(0,3).map(x=>({t:week?smxDLabel(x.at,now)+' '+smxTLabel(x.at):smxTLabel(x.at),s:(x.bank?x.bank+' ':'')+(x.who?x.who+' · ':(x.bank?'· ':''))+(x.t||smxMoney(x.amt))}))}
+function moneyBillSay(L,j){const f=L[0];return f.org+' '+(f.t||'')+(L.length>1?' 외 '+smxCnt(L.length-1)+' 건':'')}
+function moneyAnswer(c,j,now){
+  const note=j.note||'빠른 확인용이에요. 정확한 내역은 은행 앱에서 확인해 주세요.';
+  if(c.p==='bills'){const T=j.tomorrow||[],B=j.bills||[];
+    if(T.length){const rows=T.slice(0,4).map(b=>({t:b.org,s:(b.kindLabel||'')+' · '+(b.t||smxMoney(b.amt))}));
+      return {ic:'won',b:j.billLine||('내일 출금 예상 · '+moneyBillSay(T,j)),s:'내일 나갈 돈 · 빠른 확인용',rows,say:'내일 출금 예상은 '+moneyBillSay(T,j)+'이에요. 빠른 확인용이라 정확한 내역은 은행 앱에서 봐 주세요.',note}}
+    if(B.length){const f=B[0],rows=B.slice(0,3).map(b=>({t:(b.when||b.due)+' '+b.org,s:(b.kindLabel||'')+' · '+(b.t||smxMoney(b.amt))}));
+      return {ic:'won',b:'내일 나갈 돈은 없어요',s:'다음은 '+(f.when||f.due)+' '+f.org+' '+(f.t||smxMoney(f.amt)),rows,say:'내일 나갈 돈은 없어요. 다음은 '+(f.when||f.due)+' '+f.org+' '+(f.t||'')+'이에요. 빠른 확인용이에요.',note}}
+    return {ic:'won',b:'나갈 돈 문자가 없어요',s:'앞으로 45일 안에 출금 예정 문자가 없어요',rows:[],say:'앞으로 나갈 돈 문자는 아직 없어요. 빠른 확인용이라 은행 앱도 봐 주세요.',note}}
+  const B=j[c.p]||{n:0,items:[],line:'',say:''};
+  const sus=j.suspect>0?'수상한 문자 '+j.suspect+'건은 뺐어요':'';
+  return {ic:'won',b:B.line||'입금 없음',s:B.n?(c.p==='week'?'이번 주 문자로 들어온 입금':'문자로 들어온 입금'):'아직 들어온 입금 문자가 없어요',rows:moneyRows(B,now,c.p==='week'),say:B.say||'',note,sus}}
+async function nhMoneyDo(c){nhClear(false);nhMoneyShow(c)}
+async function nhMoneyShow(c){nhCardOff(false);nhWxOff(false);nhSmxOff(false);smxIdleOff();
+  if(!smxOn()){const ok=await smxEnable(true);if(!ok)return}
+  const st=smxSt();let el;
+  if(!st.ready){el=smxEl(smxNeedItem(st));nhSmMount(el);nhSmxTimer(9000);return}
+  const j=moneyLoad(true),r=moneyState(j,st),now=smxNow();
+  if(r!=='ok'){const g=moneyGuide(r);el=smxEl(Object.assign({t:'need',k:'money:'+r},g));nhSmMount(el);nhSmxTimer(10000);return}
+  const a=moneyAnswer(c,j,now);
+  el=calEl(a,{speak:true,cls:'money',btns:[{t:'열기',pri:true,fn:()=>smxOpenMoney()}]});
+  el.addEventListener('click',e=>{if(e.target.closest('button'))return;smxOpenMoney()});
+  nhSmMount(el);nhSmVoice(el,a.say,'폰 안에서만 · 뉴니버스 문자');
+  const nt=el.querySelector('.meta .note');if(nt&&!nt.innerHTML)nt.textContent=a.sus?'빠른 확인용 · '+a.sus:'빠른 확인용이에요';
+  nhSmxTimer(14000)}
+async function moneyIdleItems(force){const j=moneyLoad(!!force);if(moneyState(j)!=='ok')return[];const out=[],day=smxDay(smxNow());
+  if(j.tomorrow&&j.tomorrow.length&&j.billLine)out.push({t:'money',k:'money:bill:'+day+':'+j.tomorrow.length+':'+j.tomorrow[0].org,p:1.8,ic:'won',b:j.billLine,s:'내일 나갈 돈 · 빠른 확인용이에요',say:''});
+  const T=j.today;if(T&&T.n>0)out.push({t:'money',k:'money:in:'+day+':'+T.sum+':'+T.n,p:2.2,ic:'won',b:T.line||j.line,s:(T.items&&T.items[0]?smxTLabel(T.items[0].at)+' '+((T.items[0].bank||'')+' '+(T.items[0].who||'')).trim()+' · 빠른 확인용':'빠른 확인용이에요'),say:''});
+  return out}
+// 한 번에 보이는 카드 수: 홈 카드 최대 2장 — 번호가 작을수록 먼저 (인증번호 0 · 예약 1 · 음력 기념일 1.5 · 나갈 돈 1.8 · 택배 2 · 입금 2.2 · 공휴일 전날 2.5)
+function smxCap(L){const rank=it=>it.p!=null?it.p:it.t==='otp'?0:it.t==='appt'?1:it.t==='parcel'?2:-1;return L.map((it,i)=>({it,i,p:rank(it)})).sort((a,b)=>a.p-b.p||a.i-b.i).slice(0,2).map(x=>x.it)}
 
 // ---- v44b 시험판: 말·글씨로 안드로이드 전원 창만 열기 (전원을 직접 끄지 않음) ----
 // Play 스토어 출시 전 이 기능을 빼거나(./build.sh basic play) 접근성 선언이 필요. pwrAvail()=false 이면 명령도 안내도 없음.
@@ -5001,12 +5185,18 @@ window.addEventListener('resize',()=>setTimeout(nhPlace,30));
 setInterval(()=>{if(nhOn()&&!document.hidden&&!NH.q)nhSug()},60000);
 nhApply();
 setTimeout(()=>{try{smxIdle(true)}catch(_){}},1500);
-window.NV_onSms=()=>{SMX.items=null;try{smxIdle(true)}catch(_){}};
+window.NV_onSms=()=>{SMX.items=null;MONEY.at=0;try{smxIdle(true)}catch(_){}};
+// v47: 음력 기념일 알림 목록을 켤 때마다 다시 계산해 앱에 넘김(해가 바뀌어도 800일 앞까지 채워 둠(최대 80건)) · 알림 권한 답이 오면 한 번 더
+setTimeout(()=>{try{calSync()}catch(_){}},2500);
+window.NV_onNotiPerm=r=>{try{calSync()}catch(_){}if(r==='no')toast('알림이 꺼져 있어요 · 홈 카드로만 알려 드려요')};
+{const orz2=window.NV_onResume;window.NV_onResume=()=>{try{orz2&&orz2()}catch(_){}try{calSync()}catch(_){}}}
 setTimeout(()=>{nhPlace();nhSug();if(nhOn()&&!S.nhTip){S.nhTip=1;saveS();setTimeout(()=>toast('빈 곳을 두 번 톡톡하면 말로 찾기 · 위로 밀면 최근 앱 · 아래로 빠른 설정'),900)}},300);
 window.__nv.nh={on:nhOn,set:nhSet,q:v=>nhSetQ(v),tiles:()=>NH.tiles.map(x=>x.k==='act'?'act:'+x.t:(x.a.__base||x.a).pkg),hd:()=>NHRES.querySelector('.hd').textContent,sug:()=>[...NHSUG.querySelectorAll('button:not(.nvall)')].map(b=>b.textContent),
   stars:()=>NH.stars,starsOpen:nhStarsOpen,recent:()=>nhRecent().map(a=>a.pkg),state:()=>({q:NH.q,listen:NH.listen,stars:NH.stars,still:NH.still,drift:NHCOS.classList.contains('mo'),tw:NHCOS.querySelectorAll('.tw i').length,busUntil:NH.busUntil,heard:NH.heard||'',ui:!!NH.speechUi,hold:!!NH.hold,cue:!!(document.getElementById('nhCue')&&document.getElementById('nhCue').classList.contains('go')),listening:!!(NH.listen||NH.speechUi||NHEL.classList.contains('listen'))}),back:nhBack,reset:nhReset,place:nhPlace,
   pwr:{q:nhPwr,avail:pwrAvail,on:()=>S.pwr===true,enabled:pwrEnabled,card:()=>{const c=document.getElementById('nhPwr');return c?{b:c.querySelector('b').textContent,s:c.querySelector('small').textContent,btn:(c.querySelector('.bt')||{}).textContent||''}:null}},
   smx:{auto:q=>{const r=nhMatch(q);return !!(r.top&&r.top.I&&r.top.I.auto)},q:nhSmx,parse:smxParse,build:smxBuild,info:smxInfo,idle:smxIdle,pick:()=>smxPick(SMX.items||[],smxNow()).map(i=>i.k),won:smxWon,dts:smxDts,ad:smxAd,sus:smxSus,state:()=>({idle:!!SMX.idle&&SMX.idle.style.display!=='none'?[...SMX.idle.querySelectorAll('.smc')].map(e=>e.dataset.k):[],ans:!!NHSM})},
+  cal:{ok:()=>!!CAL,q:q=>{try{return NVCAL.parseQ(q,CAL)}catch(_){return null}},match:q=>{const r=nhMatch(q);return {top:r.top&&r.top.cal?'cal':r.top&&r.top.money?'money':r.top&&r.top.smx?'smx':r.top&&r.top.I?r.top.I.id:'app',auto:!!(r.top&&r.top.I&&r.top.I.auto),sc:r.top?r.top.sc:0,tiles:r.tiles.map(x=>x.k==='act'?'act:'+x.t:'app')}},today:calToday,events:calEvents,sync:calSync,queue:()=>CAL_SYNC,idle:()=>calIdleItems().map(i=>({k:i.k,b:i.b,s:i.s})),shown:calShown,add:calSaveEv,del:calDelEv,
+    money:{q:nhMoney,state:moneyState,load:moneyLoad,idle:moneyIdleItems,guide:moneyGuide},cap:smxCap},
   wx:q=>{const c=nhWx(q);return c?{id:c.id,ask:c.ask||'',auto:!!c.auto,label:c.label}:null},
   web:q=>{const c=nhWeb(q);return c?{engine:c.engine,q:c.q,auto:!!c.auto,label:c.label}:null},
   wxLine:wxLineS,wxDir:wxDir,

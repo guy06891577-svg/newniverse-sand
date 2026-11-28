@@ -10,7 +10,7 @@ set -e
 cd "$(dirname "$0")"
 FLAVOR=${1:-basic}
 STORE=${2:-}
-VC=48; VN=0.46b-$FLAVOR
+VC=49; VN=47-test-$FLAVOR
 export JAVA_HOME=${JAVA_HOME:-$HOME/jdk}; export PATH=$JAVA_HOME/bin:$PATH
 SDK=${ANDROID_HOME:-$HOME/android-sdk}; BT=$SDK/build-tools/34.0.0; JAR=$SDK/platforms/android-34/android.jar
 KEYDIR=${NV_KEYDIR:-$HOME/.nv-release}
@@ -19,7 +19,7 @@ B=build/$FLAVOR
 rm -rf $B && mkdir -p $B/gen/kr/newniverse/launcher $B/classes $B/dex $B/res
 # 1) 웹 자산 복사
 rm -rf assets/www && mkdir -p assets/www
-cp $WEB/index.html assets/www/
+cp $WEB/index.html $WEB/kcal.js $WEB/kcal-data.js assets/www/
 cp -r $WEB/wallpapers assets/www/
 cp -r $WEB/models assets/www/
 # 2) 판별 설정

@@ -21,6 +21,9 @@
   <!-- v43b: 뉴니버스 문자(같은 서명)가 넘겨 주는 택배·예약·카드·인증 문자만 읽음. 런처는 문자 권한(READ_SMS/RECEIVE_SMS)이 없음 -->
   <permission android:name="kr.newniverse.permission.SMS_FEED" android:protectionLevel="signature"/>
   <uses-permission android:name="kr.newniverse.permission.SMS_FEED"/>
+  <!-- v47: 음력 기념일 알림 (전날·당일 아침). 알림 권한은 기념일을 등록할 때 한 번만 묻고, 부팅 뒤 알람을 다시 걸기 위해 부팅 완료 신호를 받음 -->
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+  <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
   <queries>
     <intent><action android:name="android.appwidget.action.APPWIDGET_UPDATE"/></intent>
     <intent><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent>
@@ -62,5 +65,9 @@
       <intent-filter><action android:name="android.accessibilityservice.AccessibilityService"/></intent-filter>
       <meta-data android:name="android.accessibilityservice" android:resource="@xml/power_service"/>
     </service>
+    <!-- v47: 음력 기념일 알림 알람 받이 + 부팅·업데이트 뒤 다시 걸기 (내용은 이 폰 안에만 저장) -->
+    <receiver android:name=".CalAlarm" android:exported="true">
+      <intent-filter><action android:name="android.intent.action.BOOT_COMPLETED"/><action android:name="android.intent.action.MY_PACKAGE_REPLACED"/></intent-filter>
+    </receiver>
   </application>
 </manifest>
